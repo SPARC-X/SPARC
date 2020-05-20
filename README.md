@@ -1,13 +1,13 @@
 ## SPARC installation and usage 
 
 ### (1) Brief:
-Simulation Package for Ab-initio Real-space Calculations (SPARC) is a real-space code for performing electronic structure calculations based on Kohn-Sham Density Functional Theory (DFT). The main features of SPARC v1.0.0 include
+SPARC is an open-source software package for the accurate, effcient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem. The main features of SPARC currently include
 
-* Boundary conditions for crystals, surfaces, wires, and molecules. 
+* Isolated systems such as molecules and clusters as well as extended systems such as crystals, surfaces, and wires.
 * Calculation of ground state energy, atomic forces, and stress tensor.
 * Unconstrained collinear magnetization via spin polarized calculations.
-* Structural relaxation and molecular dynamics (MD). 
-* LDA and GGA exchange correlation functionals.
+* Structural relaxation and quantum molecular dynamics (QMD). 
+* Local and semilocal exchange correlation functionals.
 * ONCV and TM pseudopotentials in psp8 (ABINIT) format. 
 
 Additional details regarding the formulation and implementation of SPARC can be found in the accompanying paper.
@@ -138,7 +138,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
   Information necessary to perform a restarted structural relaxation calculation. Only created if atomic relaxation is performed.
 
-**Molecular dynamics (MD) calculations**
+**Quantum molecular dynamics (QMD) calculations**
 
 - `.out` file  
 
@@ -146,8 +146,8 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
 - `.aimd` file  
 
-  Atomic positions, atomic velocities, atomic forces, electronic temperature, ionic temperature and total energy for each MD step.
+  Atomic positions, atomic velocities, atomic forces, electronic temperature, ionic temperature and total energy for each QMD step.
 
 - `.restart` file  
 
-  Information necessary to perform a restarted MD calculation. 
+  Information necessary to perform a restarted QMD calculation. 
