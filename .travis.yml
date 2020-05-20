@@ -1,0 +1,36 @@
+sudo: true
+
+language: Generic
+os:
+  - linux
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - build-essential
+    - gfortran
+    - g++
+    - mpich
+before_install:
+    - wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    - sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    - rm GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    - sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+    - sudo apt-get update
+    - sudo apt-get install intel-mkl-2018.2-046
+    - sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so  libblas.so-x86_64-linux-gnu /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+    - sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3   libblas.so.3-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+    - sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so   liblapack.so-x86_64-linux-gnu    /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+    - sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so.3 liblapack.so.3-x86_64-linux-gnu  /opt/intel/mkl/lib/intel64/libmkl_rt.so 150
+    - export MKLROOT=/opt/intel/compilers_and_libraries_2018/linux/mkl
+    - wget http://www.mpich.org/static/downloads/3.3.1/mpich-3.3.1.tar.gz
+    - tar xzvf mpich-3.3.1.tar.gz
+    - cd mpich-3.3.1;sudo ./configure;sudo make;sudo make install; cd ..
+    - pwd
+install:
+  # - ./exe_tests/activate_gtm.py
+  - cd src/;make
+  - export LD_LIBRARY_PATH=$MKLROOT/lib/intel64:$LD_LIBRARY_PATH
+script:
+  - cd src/;make test

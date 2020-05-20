@@ -1,0 +1,85 @@
+***************************************************************************
+*                           SPARC (June 27, 2019)                        *
+*   Copyright (c) 2018 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                 Start time: Fri Jul  5 19:18:18 2019                    *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 75.589045 75.589045 75.589045 
+LATVEC:
+1.000000000000000 -0.000000000000000 -0.000000000000000 
+-0.000000000000000 1.000000000000000 -0.000000000000000 
+-0.000000000000000 -0.000000000000000 1.000000000000000 
+FD_GRID: 267 267 267
+FD_ORDER: 12
+BOUNDARY_CONDITION: 2
+KPOINT_GRID: 1 1 1
+ELEC_TEMP_TYPE: gaussian
+SMEARING: 0.006863605
+CHEB_DEGREE: 27
+NSTATES: 4805
+EXCHANGE_CORRELATION: GGA
+CALC_STRESS: 0
+CALC_PRES: 0
+TWTIME: 999999999.000000
+MD_FLAG: 1
+MD_METHOD: NVK_G
+MD_TIMESTEP: 1.00
+MD_NSTEP: 100
+ION_ELEC_EQT: 1
+ION_VEL_DSTR: 2
+ION_TEMP: 2167.355680
+QMASS: 1.000000
+CHEFSI_BOUND_FLAG: 1
+MAXIT_SCF: 100
+TOL_SCF: -1.00E+00
+TOL_POISSON: -1.00E-02
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: -1.00E-02
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.30
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.50
+RHO_TRIGGER: 4
+FIX_RAND: 0
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_MDOUT: 1
+PRINT_VELS: 1
+PRINT_RESTART: 1
+PRINT_RESTART_FQ: 1
+OUTPUT_FILE: sprc-calc
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 1
+NP_DOMAIN_PARAL: 1 1 1
+NP_DOMAIN_PHI_PARAL: 1 1 1
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  1
+Mesh spacing                       :  0.283105 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  ./sprc-calc.out
+MD output printed to               :  ./sprc-calc.aimd
+Total number of atom types         :  2
+Total number of atoms              :  3000
+Total number of electrons          :  8000
+Atom type 1  (valence electrons)   :  H 1
+Pseudopotential                    :  ./H.pot
+Atomic mass                        :  1.008000000000000
+Pseudocharge radii of atom type 1  :  8.78 8.78 8.78 (x, y, z dir)
+Number of atoms of type 1          :  2000
+Atom type 2  (valence electrons)   :  O 6
+Pseudopotential                    :  ./O.pot
+Atomic mass                        :  15.999000000000001
+Pseudocharge radii of atom type 2  :  8.78 8.78 8.78 (x, y, z dir)
+Number of atoms of type 2          :  1000

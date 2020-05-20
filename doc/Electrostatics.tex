@@ -1,0 +1,149 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{Electrostatics}
+
+\begin{center}
+\Huge \textbf{Electrostatics}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_POISSON}} \label{TOL_POISSON}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+\hyperlink{TOL_SCF}{\texttt{TOL\_SCF}}$\times 0.01$
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_POISSON}: 1e-6
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the norm of the relative residual for the Poisson equation.
+\end{block}
+
+\begin{block}{Remark}
+The tolerance for poisson solver should not be worse than \hyperlink{TOL_SCF}{\texttt{TOL\_SCF}}, otherwise it might seriously affect  the convergence of the SCF iteration.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MAXIT\_POISSON}} \label{MAXIT_POISSON}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+$3000$
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MAXIT\_POISSON}: 1000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The maximum number of iterations for solving the Poisson equation using an iterative linear solver.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_PSEUDOCHARGE}} \label{TOL_PSEUDOCHARGE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+\hyperlink{TOL_SCF}{\texttt{TOL\_SCF}}$\times 0.01$
+\end{block}
+
+\column{0.45\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_PSEUDOCHARGE}: 1e-6
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The error in the net enclosed charge for the pseudocharge density of each atom.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{REFERENCE\_CUTOFF}} \label{REFERENCE_CUTOFF}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.5
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{REFERENCE\_CUTOFF}: 1.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The cutoff radius of the reference potential used for evaluating the electrostatic correction arising from overlapping pseudocharge densities.
+\end{block}
+
+\begin{block}{Remark}
+This number should be smaller than half the smallest interatomic distance.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

@@ -1,0 +1,31 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE:   <atom type name> 
+# PSEUDO_POT:  <path/to/pseudopotential/>
+# N_TYPE_ATOM: <num of atoms of this type>
+# ATOMIC_MASS: <mass of atom of this type> #(optional, for MD only)
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX: #(optional)
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+# this is a comment
+
+ATOM_TYPE:   Si                            # atom type 
+N_TYPE_ATOM: 8                             # number of atoms of this type
+PSEUDO_POT:  ../../Psp_for_tests/Si.psp8   # pseudopotential
+COORD:                                     # coordinates follows
+    10.1125411215367	10.0765471169036	10.113043676778
+    2.95653516043033	2.63398060192012	2.66929676263919
+    9.37166118938978	4.98640185404505	4.49093733615268
+    2.21372835208964	8.02415063445594	7.15850094781513
+    4.50225550006177	9.73478678376459	5.66444839974562
+    6.97055138693485	3.23694649494429	8.52714021422809
+    4.57245800113971	4.29012799290881	9.9284390682327
+    7.42054841920098	7.99793510677415	2.90677346787017
+
+
+

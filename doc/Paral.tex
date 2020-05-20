@@ -1,0 +1,245 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{Paral options}
+
+\begin{center}
+\Huge \textbf{Parallelization options}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_SPIN\_PARAL}} \label{NP_SPIN_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_SPIN\_PARAL}: 2
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of spin groups.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_KPOINT\_PARAL}} \label{NP_KPOINT_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_KPOINT\_PARAL}: 5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of k-point groups.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_BAND\_PARAL}} \label{NP_BAND_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_BAND\_PARAL}: 5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of band groups.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_DOMAIN\_PARAL}} \label{NP_DOMAIN_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_DOMAIN\_PARAL}: 4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of processors in the Cartesian topology embedded in each domain group.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_DOMAIN\_PHI\_PARAL}} \label{NP_DOMAIN_PHI_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_DOMAIN\_PHI\_PARAL}: 4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of processors in the Cartesian topology embedded in the global communicator.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EIG\_SERIAL\_MAXNS}} \label{EIG_SERIAL_MAXNS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+2000
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EIG\_SERIAL\_MAXNS}: 1000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Maximum \hyperlink{NSTATES}{\texttt{NSTATES}} value up to which a serial algorithm will be used to solve the subspace eigenproblem.
+\end{block}
+
+\begin{block}{Remark}
+If one wants to use a parallel algorithm to solve the subspace eigenproblem for all cases, simply set \texttt{EIG\_SERIAL\_MAXNS} to $0$. Alternatively, set \texttt{EIG\_SERIAL\_MAXNS} to a very large value to always use serial algorithm.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EIG\_PARAL\_BLKSZ}} \label{EIG_PARAL_BLKSZ}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+128
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EIG\_PARAL\_BLKSZ}: 64
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Block size for the distribution of matrix in block-cyclic format in a parallel algorithm for solving the subspace eigenproblem.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

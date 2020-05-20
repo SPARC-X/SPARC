@@ -1,0 +1,298 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{Print options}
+
+\begin{center}
+\Huge \textbf{Print options}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_ATOMS}} \label{PRINT_ATOMS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_ATOMS}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing the atomic positions. For ground-state calculations, atom positions are printed to a `.static' output file. For structural relaxation calculations, atom positions are printed to a `.geopt' file. For QMD calculations, atom positions are printed to a `.aimd' file.
+\end{block}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_FORCES}} \label{PRINT_FORCES}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_FORCES}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing the atomic forces. For ground-state calculations, forces are printed to a `.static' output file. For structural relaxation calculations, forces are printed to a `.geopt' file. For QMD calculations, forces are printed to a `.aimd' file.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_MDOUT}} \label{PRINT_MDOUT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_MDOUT}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for printing the the QMD output into the .aimd file. 
+\end{block}
+
+%\begin{block}{Remark}
+%\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_RELAXOUT}} \label{PRINT_RELAXOUT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_RELAXOUT}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for printing the structural relaxation data in a .geopt file.
+\end{block}
+
+\begin{block}{Remark}
+Required only if \hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} is greater than $0$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_RESTART}} \label{PRINT_RESTART}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_RESTART}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing the .restart file, used to restart QMD and structural relaxation simulations. 
+\end{block}
+
+\begin{block}{Remark}
+Relevant only if either \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is $1$ or \hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} is $1$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_RESTART\_FQ}} \label{PRINT_RESTART_FQ}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_RESTART\_FQ}: 10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Frequency at which .restart file is written in QMD and structural optimization simulations.
+\end{block}
+
+\begin{block}{Remark}
+Relevant only if either \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is $1$ or \hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} is $1$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_VELS}} \label{PRINT_VELS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_VELS}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for printing the ion velocities in an QMD simulation into the .aimd file. 
+\end{block}
+
+\begin{block}{Remark}
+Relevant only if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{OUTPUT\_FILE}} \label{OUTPUT_FILE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+Same as the input file name
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{OUTPUT\_FILE}: myfname
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The name of the output files. The output files are attached with a suffix (`.out',`.static',`.geopt' and `.aimd'). 
+\end{block}
+
+\begin{block}{Remark}
+If an output file with the same name already exist, the results will be written to a file with a number attached, e.g., `myfname.out\_1'. The maximum number of output files with the same name allowed is 100. After that the output files will be overwritten in succession.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

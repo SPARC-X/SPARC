@@ -1,0 +1,793 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{SCF}
+
+\begin{center}
+\Huge \textbf{SCF}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{CHEB\_DEGREE}} \label{CHEB_DEGREE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically set.
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{CHEB\_DEGEE}: 25
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Degree of polynomial used for Chebyshev filtering. 
+\end{block}
+
+\begin{block}{Remark}
+For larger mesh-sizes, smaller values of \texttt{CHEB\_DEGREE} are generally more efficient, and vice-versa.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{CHEFSI\_BOUND\_FLAG}} \label{CHEFSI_BOUND_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{CHEFSI\_BOUND\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to recalculate the bounds for Chebyshev filtering. If set to $0$, then only for the very first SCF will the upper bound be evaluated based on the maximum eigenvalue using Lanczos algorithm, and the upper bound will be the same for the rest steps. If set to $1$, the upper bound will be reevaluated for every SCF.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RHO\_TRIGGER}} \label{RHO_TRIGGER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+4
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RHO\_TRIGGER}: 5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The number of times Chebyshev filtering is repeated before updating the electron density in the very first SCF iteration.
+\end{block}
+
+\begin{block}{Remark}
+Values smaller than the default value of 4 can result in a significant increase in the number of SCF
+iterations. Larger values can sometimes reduce the number of SCF iterations. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MAXIT\_SCF}}} \label{MAXIT_SCF}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+100
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MAXIT\_SCF}: 50
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Maximum number of SCF iterations.
+\end{block}
+
+\begin{block}{Remark}
+Larger values than the default of 100 may be required for highly inhomogeneous systems, particularly when small values of \hyperlink{SMEARING}{\texttt{SMEARING}}/\hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} are chosen. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MINIT\_SCF}}} \label{MINIT_SCF}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MAXIT\_SCF}: 5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Minimum number of SCF iterations.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_SCF}} \label{TOL_SCF}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Automatically set for $10^{-3}$ Ha/Bohr accuracy in force
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_SCF}: 1e-5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the normalized residual of the effective potential or the electron density for convergence of the SCF iteration. 
+\end{block}
+
+\begin{block}{Remark}
+Only one of \hyperlink{TOL_SCF}{\texttt{TOL\_SCF}}, \hyperlink{SCF_ENERGY_ACC}{\texttt{SCF\_ENERGY\_ACC}}, or \hyperlink{SCF_FORCE_ACC}{\texttt{SCF\_FORCE\_ACC}} can be specified.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SCF\_FORCE\_ACC}} \label{SCF_FORCE_ACC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha/Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{SCF\_FORCE\_ACC}: 1e-4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the atomic forces for convergence of the SCF iteration. 
+\end{block}
+
+\begin{block}{Remark}
+Only one of \hyperlink{SCF_FORCE_ACC}{\texttt{SCF\_FORCE\_ACC}}, \hyperlink{TOL_SCF}{\texttt{TOL\_SCF}} or \hyperlink{SCF_ENERGY_ACC}{\texttt{SCF\_ENERGY\_ACC}} can be specified.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SCF\_ENERGY\_ACC}} \label{SCF_ENERGY_ACC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha/atom
+\end{block}
+
+\begin{block}{Example}
+\texttt{SCF\_ENERGY\_ACC}: 1e-5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the free energy for the convergence of the SCF iteration. 
+\end{block}
+
+\begin{block}{Remark}
+Only one of \hyperlink{SCF_ENERGY_ACC}{\texttt{SCF\_ENERGY\_ACC}}, \hyperlink{SCF_FORCE_ACC}{\texttt{SCF\_FORCE\_ACC}}, or \hyperlink{TOL_SCF}{\texttt{TOL\_SCF}} can be specified.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_LANCZOS}} \label{TOL_LANCZOS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1e-2
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_LANCZOS}: 1e-3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance within the Lanczos algorithm for calculating the extremal eigenvalues of the Hamiltonian, required as part of the CheFSI method. 
+\end{block}
+
+\begin{block}{Remark}
+Typically, the Lanczos tolerance does not need to be very strict.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_VARIABLE}} \label{MIXING_VARIABLE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+\texttt{density}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_VARIABLE}: \texttt{potential}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+This specifies whether potential or density mixing is performed in the SCF iteration. Available options are: \texttt{potential} and \texttt{density}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_HISTORY}} \label{MIXING_HISTORY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+7
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_HISTORY}: 40
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The mixing history used in Pulay mixing.
+\end{block}
+
+\begin{block}{Remark}
+Too small values of \hyperlink{MIXING_HISTORY}{\texttt{MIXING\_HISTORY}} can result in poor SCF convergence.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PARAMETER}} \label{MIXING_PARAMETER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PARAMETER}: 0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The value of the relaxation parameter used in Pulay/simple mixing.
+\end{block}
+
+\begin{block}{Remark}
+Values larger than the default value of 0.3 can be used for insulating systems, whereas smaller values are generally required for metallic  systems, particularly at small values of \hyperlink{SMEARING}{\texttt{SMEARING}} or \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PARAMETER\_SIMPLE}} \label{MIXING_PARAMETER_SIMPLE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Automatically set to the same as \hyperlink{MIXING_PARAMETER}{\texttt{MIXING\_PARAMETER}}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PARAMETER\_SIMPLE}: 0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The value of the relaxation parameter used in the simple mixing step in the periodic Pulay scheme.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PULAY\_FREQUENCY}} \label{PULAY_FREQUENCY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PULAY\_FREQUENCY}: 4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The frequency of Pulay mixing in Periodic Pulay. 
+\end{block}
+
+\begin{block}{Remark}
+The default value of 1 corresponds to Pulay mixing.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PULAY\_RESTART}} \label{PULAY_RESTART}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PULAY\_RESTART}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The flag for restarting the `Periodic Pulay' mixing. If set to 0, the restarted Pulay method is turned off.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PRECOND}} \label{MIXING_PRECOND}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+\texttt{kerker}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PRECOND}: \texttt{none}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+This specifies the preconditioner used in the SCF iteration. Available options are: \texttt{none}, \texttt{kerker}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_PRECOND}} \label{TOL_PRECOND}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+$h^2\times0.001$
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_PRECOND}: 1e-4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the relative residual for the linear systems arising during the real-space preconditioning of the SCF.
+\end{block}
+
+\begin{block}{Remark}
+The linear systems do not need to be solved very accurately. $h$ is the mesh spacing.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRECOND\_KERKER\_KTF}} \label{PRECOND_KERKER_KTF}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+$\textrm{Bohr}^{-1}$
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRECOND\_KERKER\_KTF}: 0.8
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The Thomas-Fermi screening length appearing in the \texttt{kerker} preconditioner (\hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}}). 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRECOND\_KERKER\_THRESH}} \label{PRECOND_KERKER_THRESH}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.1
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRECOND\_KERKER\_THRESH}: 0.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The threshold for the \texttt{kerker} preconditioner (\hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}}).
+\end{block}
+
+\begin{block}{Remark}
+This threshold will be scaled by the \hyperlink{MIXING_PARAMETER}{\texttt{MIXING\_PARAMETER}}. If the threshold is set to 0, the original \texttt{kerker} preconditioner is recovered.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks]{\texttt{PRECOND\_RESTA\_Q0}} \label{PRECOND_RESTA_Q0}
+%\vspace*{-12pt}
+%\begin{columns}
+%\column{0.4\linewidth}
+%\begin{block}{Type}
+%Double
+%\end{block}
+%
+%\begin{block}{Default}
+%1.36
+%\end{block}
+%
+%\column{0.5\linewidth}
+%\begin{block}{Unit}
+%$\textrm{Bohr}^{-1}$
+%\end{block}
+%
+%\begin{block}{Example}
+%\texttt{PRECOND\_RESTA\_Q0}: 1.10
+%\end{block}
+%\end{columns}
+%
+%\begin{block}{Description}
+%The Fermi-momentum-related quantity appearing in \texttt{resta} preconditioner (\hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}}).
+%\end{block}
+%
+%\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks]{\texttt{PRECOND\_RESTA\_RS}} \label{PRECOND_RESTA_RS}
+%\vspace*{-12pt}
+%\begin{columns}
+%\column{0.4\linewidth}
+%\begin{block}{Type}
+%Double
+%\end{block}
+%
+%\begin{block}{Default}
+%2.76
+%\end{block}
+%
+%\column{0.5\linewidth}
+%\begin{block}{Unit}
+%Bohr
+%\end{block}
+%
+%\begin{block}{Example}
+%\texttt{PRECOND\_RESTA\_RS}: 4.28
+%\end{block}
+%\end{columns}
+%
+%\begin{block}{Description}
+%The screening length appearing in the \texttt{resta} preconditioner (\hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}}). 
+%\end{block}
+%
+%\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks]{\texttt{PRECOND\_FITPOW}} \label{PRECOND_FITPOW}
+%\vspace*{-12pt}
+%\begin{columns}
+%\column{0.4\linewidth}
+%\begin{block}{Type}
+%Integer
+%\end{block}
+%
+%\begin{block}{Default}
+%2
+%\end{block}
+%
+%\column{0.4\linewidth}
+%\begin{block}{Unit}
+%No unit
+%\end{block}
+%
+%\begin{block}{Example}
+%\texttt{PRECOND\_FITPOW}: 3
+%\end{block}
+%\end{columns}
+%
+%\begin{block}{Description}
+%Half of the highest degree of rational polynomials used for the real-space preconditioning of the SCF iteration. 
+%\end{block}
+%
+%\begin{block}{Remark}
+%Currently this number cannot be larger than 5. Used only for the \texttt{resta} and \texttt{truncated\_kerker} preconditioners.
+%\end{block}
+%
+%\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FIX\_RAND}} \label{FIX_RAND}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{FIX\_RAND}: \texttt{1}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to fix the random seeds for setting initial guesses. Once set to $1$, the random seeds will be fixed for different runs and for different numbers of processors. This option will make sure the answers will be exactly the same (up to machine precision) when SPARC is executed with different numbers of processors.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

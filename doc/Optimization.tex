@@ -1,0 +1,573 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{Structural relaxation}
+
+\begin{center}
+\Huge \textbf{Structural relaxation}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RELAX\_FLAG}} \label{RELAX_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RELAX\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for performing structural relaxation. $0$ means no structural relaxation. $1$ represents relaxation of atom positions. $2$ represents optimization of volume with the fractional coordinates of the atoms fixed. $3$ represents full optimization of the cell i.e., both atoms and cell volume are relaxed
+\end{block}
+
+\begin{block}{Remark}
+This flag should not be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RELAX\_METHOD}} \label{RELAX_METHOD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+LBFGS
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RELAX\_METHOD}: NLCG
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the algorithm for structural relaxation. The choices are `LBFGS' (limited-memory BFGS), `NLCG' (Non-linear conjugate gradient), and `FIRE' (Fast inertial relaxation engine). 
+\end{block}
+
+\begin{block}{Remark}
+LBFGS is typically the best choice.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RELAX\_NITER}} \label{RELAX_NITER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+300
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RELAX\_NITER}: 25
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the maximum number of iterations for the structural relaxation (\hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}}).
+\end{block}
+
+\begin{block}{Remark}
+If \hyperlink{RESTART_FLAG}{\texttt{RESTART\_FLAG}} is set to $1$, then relaxation will restart from the last atomic configuration and run for maximum of \hyperlink{RELAX_NITER}{\texttt{RELAX\_NITER}} iterations. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_RELAX}} \label{TOL_RELAX}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+5e-4
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha/Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_RELAX}: 1e-3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the tolerance for termination of the structural relaxation. The tolerance is defined on the maximum force component (in absolute sense) over all atoms. 
+\end{block}
+
+%\begin{block}{Remark}
+%\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_RELAX\_CELL}} \label{TOL_RELAX_CELL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1e-2
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+GPa
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_RELAX}: 1e-3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the tolerance for termination of the cell relaxation. The tolerance is defined on the maximum principle stress component. 
+\end{block}
+
+%\begin{block}{Remark}
+%\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RELAX\_MAXDILAT}} \label{RELAX_MAXDILAT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.06
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RELAX\_MAXDILAT}: 1.4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The maximum scaling of the volume allowed with respect to the initial volume defined by \hyperlink{CELL}{\texttt{CELL}} and \hyperlink{LATVEC}{\texttt{LATVEC}}. This will determine the upper-bound and lower-bound in the bisection method (Brent's method) for the volume optimization.
+\end{block}
+
+%\begin{block}{Remark}
+%\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NLCG\_SIGMA}} \label{NLCG_SIGMA}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.5
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NLCG\_SIGMA}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Parameter in the secant method used to control the step length in NLCG (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}). 
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_HISTORY}} \label{L_HISTORY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+20
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_HISTORY}: 15
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Size of history in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_FINIT\_STP}} \label{L_FINIT_STP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+5e-3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_FINIT\_STP}: 0.01
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Step length for line optimizer in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_MAXMOV}} \label{L_MAXMOV}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.2
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_MAXMOV}: 1.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The maximum allowed step size in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_AUTOSCALE}} \label{L_AUTOSCALE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_AUTOSCALE}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for automatically determining the inverse curvature that is used to determine the direction for next iteration in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_LINEOPT}} \label{L_LINEOPT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_LINEOPT}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for atomic force based line minimization in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}). 
+\end{block}
+
+\begin{block}{Remark}
+Required only if \hyperlink{L_AUTOSCALE}{\texttt{L\_AUTOSCALE}} is $0$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{L\_ICURV}} \label{L_ICURV}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{L\_ICURV}: 0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Initial inverse curvature, used to construct the inverse Hessian matrix in LBFGS (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}). 
+\end{block}
+
+\begin{block}{Remark}
+Needed only if  \hyperlink{L_AUTOSCALE}{\texttt{L\_AUTOSCALE}} is $0$. Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FIRE\_DT}} \label{FIRE_DT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Femto second
+\end{block}
+
+\begin{block}{Example}
+\texttt{FIRE\_DT}: 0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Time step used in FIRE (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FIRE\_MASS}} \label{FIRE_MASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Atomic mass unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{FIRE\_MASS}: 2.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Pseudomass used in FIRE (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FIRE\_MAXMOV}} \label{FIRE_MAXMOV}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.2
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{FIRE\_MAXMOV}: 1.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Maximum movement for any atom in FIRE (\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}}).
+\end{block}
+
+\begin{block}{Remark}
+Default value works well in most cases.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+

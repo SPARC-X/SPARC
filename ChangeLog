@@ -1,0 +1,967 @@
+----------------
+-Date
+-Name
+-changes
+
+
+--------------
+May 20, 2020
+Name: Qimen Xu
+Changes: 
+1. Update documentation and README.
+2. Some small changes to the output headings.
+3. Add Examples to tests/ folder.
+
+
+--------------
+May 18, 2020
+Name: Qimen Xu
+Changes: 
+1. Fix MD time printing issue. When PRINT_MDOUT is turned off, the MD step time was not correctly printed to .out. 
+2. Fix the issue where an empty .static is created for relax and MD simulations.
+3. Change default relax method from NLCG to LBFGS.
+4. Rerun the tests in the tests/ folder.
+
+
+--------------
+May 11, 2020
+Name: Qimen Xu
+Changes: 
+1. Bug fix: nonlocal force calculation occasionally fails during MPI_Reduce
+between kptcomms, switching to MPI_Allreduce fixed the issue.
+2. Change input EIG_SCALAPACK_BLKSZ to EIG_PARAL_BLKSZ.
+3. Change input EIG_LAPACK_MAXNS to EIG_SERIAL_MAXNS.
+4. Remove EIG_USE_LAPACK option.
+5. Remove rational function approx. to Kerker preconditioner (truncated_kerker
+and resta), move AAR_complex to extras folder.
+
+
+--------------
+May 06, 2020
+Name: Qimen Xu
+Changes: 
+1. Change default preconditioner to density mixing + Kerker preconditioner, with a preconditioner threshold of 0.1.
+2. Add a parallelization summary to log file in DEBUG mode.
+3. Add an input option to choose whether to use LAPACK for solving the subspace eigenproblem (specify by EIG_USE_LAPACK).
+4. Change default block size for solving subspace eigenproblem using ScaLAPACK from 64 to 128.
+5. Add an input option to modify the above block size (specify by EIG_SCALAPACK_BLKSZ).
+6. Add an input option to change the maximum NSTATES up to which LAPACK will be used to solve the subspace eigenproblem (specify by EIG_LAPACK_MAXNS). 
+7. Modify occupation warnings.
+
+
+--------------
+May 02, 2020
+Name: Abhiraj Sharma
+Changes: initialization.c
+1) Time reversal symmetry edited to account for additional symmetry points on the boundary of IBZ
+
+
+--------------
+Apr 28, 2020
+Name: Qimen Xu
+Changes: 
+--------------
+1. Add another MPI_Barrier after MPI_Bcast in Transfer_Veff_loc to avoid slowdown in the MPI_Bcast step.
+
+
+Apr 27, 2020
+Name: Qimen Xu
+Changes: 
+1. Modify comments in makefile.
+
+
+--------------
+Apr 25, 2020
+Name: Qimen Xu
+Changes: 
+1. Add MPI_Barrier before MPI_Bcast in Transfer_Veff_loc to avoid slowdown in the MPI_Bcast step.
+2. Modify occupation warning message.
+3. Print relative error in CG linear solver in DEBUG mode.
+
+
+--------------
+Apr 24, 2020
+Name: Qimen Xu, Abhiraj Sharma
+Changes: 
+1. Print stress tensor to .static file for single point calculations instead of .out file, print max stress to .out file.
+2. Print energy to .static file and .geopt file as well as .out file.
+3. Fix scf# issue for restarted calculations.
+
+
+--------------
+Apr 17, 2020
+Name: Qimen Xu, Abhiraj Sharma
+Changes: 
+1. Add .static file for single point calculations.
+2. Memory leak fixes.
+3. For relaxation, instead of exiting, print a warning if Brent's method didn't converge.
+4. Modify SPIN_TYP option, used to be 1 (no spin) or 2 (with spin). Now changed to 0 (no spin) or 1 (with spin).
+
+
+--------------
+Apr 08, 2020
+Name: Qimen Xu
+Changes: 
+1. Clean some source files.
+2. 2D decomposition of proc according to matrix for ScaLAPACK context (for most cases we end up with domain-only parallelization).
+
+
+--------------
+Apr 02, 2020
+Name: Qimen Xu
+Changes: 
+1. Modify occupation warnings (back toocc[Ns * 90%] < 1e-6), also provide a suggested Ns.
+2. Add an option to randomize the initial velocities in MD. Set `ION_VEL_DSTR_RAND: 1` to enable it.
+3. Move ExtVecAccel/ to extras/.
+4. Fix some valgrind warnings.
+5. Clean some source files.
+
+
+--------------
+Mar 31, 2020
+Name: Qimen Xu
+Changes: 
+1. Modify occupation warnings (occ[Ns * 95%] < 1e-6).
+
+
+--------------
+Mar 29, 2020
+Name: Qimen Xu
+Changes: 
+1. Simplify paths (Unix style) to canonical paths, e.g., "././foo/../foo/a.txt" => "foo/a.txt".
+
+
+--------------
+Mar 28, 2020
+Name: Qimen Xu
+Changes: 
+1. Allow users to provide both relative path and absolute path to pseudopotentials.
+2. Increase max length for file/directory paths to 4096 (default PATH_MAX on linux systems).
+
+
+--------------
+Mar 26, 2020
+Name: Qimen Xu
+Changes: 
+1. LAPACK + GTMatrix option (no MKL or ScaLAPACK).
+2. LAPACK + GTMatrix + ScaLAPACK (for subspace eigenproblem only) option.
+3. Fix some potential memory leak issue.
+
+
+--------------
+Mar 25, 2020
+Name: Abhiraj Sharma
+Changes: md.c, relax.c
+1. If RestartFlag = 1 and .restart files are absent then dynamics will start from the beginning.
+
+
+--------------
+Mar 19, 2020
+Name: Qimen Xu, Hua Huang
+Changes: 
+1. Remove compiler warnings (mostly "may be uninitialized" warnings).
+2. Remove some valgrind warnings.
+3. Separate out data distribution routines for projection/rotation and move
+them to parallelization.c.
+4. Create a framework for using ScaLAPACK only for subspace eigenproblem.
+5. Fix bug in MD, allocate correct memory for array storing ":MIND:".
+6. Fix bug in MD, initialize mean_TE_ext and std_TE_ext to zero.
+
+
+--------------
+Mar 11, 2020
+Name: Qimen Xu
+Changes: (readfiles.c, eigenSolver.c, eigenSolverKpt.c)
+1. Change warnings regarding occupation numbers.
+2. Modify pseudopotential reading so that it reads special pseudopotentials
+(lmax = lloc = 0) in psp8 format.
+3. Automatically expand bounds in Brent's method.
+
+
+--------------
+Mar 04, 2020
+Name: Hua Huang
+Changes: (eigenSolver.c, eigenSolverKpt.c, makefile)
+1. Replace GTMatrix with MPI_Alltoallv to use domain parallelization (decomposition) only data layout for solving subspace eigenproblem.
+2. Update the makefile
+
+
+--------------
+Feb 26, 2020
+Name: Qimen Xu
+Changes: (electrostatics.c, readfiles.c, initialization.c)
+1) Improve speed for spline (around 8x for uniform grid, 2x times for non-uniform grid).
+2) Give warning when radial grid in the pseudopotential is not uniform.
+3) Read TM pseudopotential in psp8 format.
+
+
+--------------
+Feb 23, 2020
+Name: Qimen Xu
+Changes: (mixing.c, readfiles.c, initialization.c)
+1) Add real-space abinit-like preconditioner. Use by setting
+PRECOND_KERKER_THRESH (equivalent to 1/DIEMAC).
+2) Give warning when pspxc in the pseudopotential is not equal to input XC.
+3) Exit if nonlinear core correction is present in the pseudopotential file.
+
+
+--------------
+Feb 20, 2020
+Name: Qimen Xu
+Changes: (included headers, makefile)
+1) Add option to use ScaLAPACK instead of MKL.
+2) Add strcmpi function for comparing strings igoring case.
+
+
+--------------
+Feb 19, 2020
+Name: Abhiraj Sharma
+Changes: (relax.c, initialization.c, isddft.h, orbitalelecDens.c)
+1) Added full relaxation (atom + stress) option in the code.
+2) Changed the units of stress for different BCs.
+3) Stress for different BCs is printed differently.
+
+
+--------------
+Feb 13, 2020
+Name: Qimen Xu
+Changes: (initialization.c, readfiles.c, relax.c)
+1) Add cell volume relaxation.
+2) Print memory estimate.
+
+
+--------------
+Feb 10, 2020
+Name: Abhiraj Sharma
+Changes: (initialization.c, readfiles.c, finalization.c)
+1. Removed ion_elec_eqT as input option.
+2. Changed default electronic smearing and its type for MD depending on different user inputs.
+3. Memory bug regarding release of pSPARC->forces fixed.
+
+
+---------------
+Feb 07, 2020
+Name: Qimen Xu
+* Add MESH_SPACING, ECUT options (alternative ways to define mesh spacing).
+
+
+---------------
+Feb 05, 2020
+Name: Abhiraj Sharma, Qimen Xu
+* Modify k-point grid definition. K-point shift is defined wrt the gamma point.
+* Replace "strcpy" function with safer function "snprintf".
+
+
+---------------
+Feb 02, 2020
+Name: Abhiraj Sharma
+Fixed compilation bug in non-debug mode
+
+----------------
+Feb 01, 2020
+Name: Abhiraj Sharma
+Changes: (isddft.h, md.c, readfiles.c, initialization.c, energy.c, electronicgroundstate.c)
+1. Pressure bug for the first step of MD fixed (ionic pressure was calculated twice)
+2. ion_T used instead of thermos_T in Ideal gas pressure implementation.
+3. potential energy in MD corrected.
+4. occ in .eigen file factored by 2 for non-spin cases.
+5. MD_Nstep made to take input in exponential forms like 1e9.
+6. TWtime or MD_Nstep or both can be used for MD simulation. Default MD_Nstep made a very high number.
+7. Minimum atomic distance uncommented and printed in .aimd file.
+8. All constants put in isddft.h file and values are taken from NIST website.
+9. Default values of ion_elec_eqT made 0.
+10. :MDTM: in .aimd file shows wall time rather than MD simulation time.  
+
+----------------
+Jan 30, 2020
+Name: Xin Jing
+Changes: (electrostatics.c, isddft.h, linearSolver.h, initialization.c, linearSolver.c, readfiles.c)
+1. Add Conjugate Gradient Solver
+2. Add control in input file and output
+
+
+----------------
+Jan 02, 2020
+Name: Qimen Xu
+Changes: (electrostatics.c)
+1. Add wire boundary condition for electrostatics.
+
+
+----------------
+Jan 01, 2020
+Name: Qimen Xu
+Changes:(readfiles.c, electrostatics.c)
+1. Add BC input option.
+2. Add surface boundary condition in electrostatics.
+
+
+----------------
+Dec 20, 2019
+Name: Qimen Xu
+Changes:(parallelization.c, readfiles.c)
+1. Fix bug when ONCV pseudopotential has lloc < lmax.
+2. Fix bug in parallelization when kptgroup is larger than kpt_topo.
+
+
+----------------
+Dec 19, 2019
+Name: Abhiraj Sharma
+Changes:(exchangeCorrelation.c, parallelization.c, stress.c, pressure.c,finalization.c)
+1. Put in RPBE and PBEsol GGAs in the code.
+
+
+----------------
+Dec 18, 2019
+Name: Abhiraj Sharma
+Changes:
+1. Small changes in files to make code compatible with different boundary conditions.(Cyclix)
+
+
+----------------
+Nov 16, 2019
+Name: Qimen Xu
+Changes: (eigenSolver.c)
+1. Remove Jacobi eigensolver header inclusion in eigenSolver.c when using GTMatrix.
+
+
+----------------
+Nov 05, 2019
+Name: Qimen Xu
+Changes: (md.c, electronicGroundstate.c)
+1. MD walltime limit, using last MD walltime to decide whether to continue MD or not.
+2. Throw error if Etot becomes NaN.
+
+
+----------------
+Oct 24, 2019
+Name: Qimen Xu
+Changes: (electronicGroundstate.c)
+1. Bug fix: fix failure problem for Dirichlet BC.
+
+
+----------------
+Oct 22, 2019
+Name: Qimen Xu, Abhiraj Sharma
+Changes: (GTMatrix/*, extras/Jacobi_dsyev.{c,h}, exchangeCorrelation.c)
+1. remove non-unix text in GTMatrix/ directory.
+2. Bug fix: spin + extrapolation gives NaN V_xc values.
+
+
+----------------
+Oct 16, 2019
+Name: Qimen Xu
+Changes: (parallelization.c, energy.c, include/scalapack.h, eigenSolver.c, eigenSolverKpt.c)
+1. Bug fix: in Exc calculation, sendbuf and recvbuf are swapped in MPI_Allreduce.
+2. Bug fix: for idle process not in kptcomm_topo, initialize Nd_d_kptcomm to 0 to avoid memory allocation failure.
+3. Modify Chefsi bound calculation, only use Lanczos once in the first SCF of each MD/relax step.
+4. Remove explicit declaration of numroc_, descinit_, pdgemr2d_ and pzgemr2d_, include "mkl_scalpack.h" instead.
+
+
+----------------
+Oct 12, 2019
+Name: Qimen Xu
+Changes: (across all sources files)
+1. Remove unused variables.
+
+
+----------------
+Oct 09, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c, parallelization.c, etc)
+1. Add QE scf error option. Meant for spin-unpolarized systems with density
+mixing. For other cases, it might not be equivalent to QE's definition.
+2. Modify current scf error definition for potential mixing: denominator
+||veff|| is also the shifted veff.
+
+
+----------------
+Oct 07, 2019
+Name: Qimen Xu
+Changes: (extras/Jacobi_dsyev.{c,h})
+1. Move jacobi eigensolver to extras/.
+
+
+----------------
+Oct 05, 2019
+Name: Hua Huang
+Changes: (src/makefile, src/parallelization.c, src/eigenSolver.c, src/eigenSolverKpt.c)
+1. Add GTMatrix (a git submodule in this git repo) as an alternative to ScaLAPACK.
+
+
+----------------
+Oct 04, 2019
+Name: Qimen Xu
+Changes: (finialization.c, nlocVecRoutines.c, parallelization.c)
+1. Bug fix: various memory leak fix.
+
+
+----------------
+Oct 02, 2019
+Name: Qimen Xu
+Changes: (initialization.c,electronicGroundState.c,parallelization.c)
+1. Bug fix: failure in D2D when poisson domain is larger than psi domain.
+2. Bug fix: failure when chefsi_bound_flag is off.
+4. Bug fix: in a few places, abs() was used for double type variables.
+5. Add printing eigenvalues and occupations (specify by 'PRINT_EIGEN').
+4. Move warnings to .out file.
+
+----------------
+Sep 23, 2019
+Name: Qimen Xu
+Changes: (initialization.c,electronicGroundState.c,md.c)
+1. Change .out format.
+2. Change .aimd format.
+
+
+----------------
+Sep 19, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Add minimum SCF iterations (variable name MINIT_SCF).
+
+
+----------------
+Sep 13, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. change output format.
+
+
+----------------
+Sep 12, 2019
+Name: Qimen Xu
+Changes: (stress_new.c, psd_oncv_Cu.pot, pressure.h, stress.h, ExtVecAccel/,
+Cu.psp8)
+1. Convert non-unix text to unix text.
+
+
+----------------
+Sep 10, 2019
+Name: Qimen Xu
+Changes: (doc/ folder)
+1. Add documentation.
+
+
+----------------
+Sep 09, 2019
+Name: Qimen Xu
+Changes: (initialization.c, electronicGroundState.c)
+1. Print density for spin polarized or spin unpolarized systems.
+
+
+----------------
+Sep 06, 2019
+Name: Qimen Xu
+Changes: (initialization.c, mixing.c)
+1. Add MAXIT_POISSON: maximum number of iterations for Poisson solver.
+2. Add Mixing parameter for simple mixing step.
+3. Fix bug in k-point parallelization (with symmetry reduction).
+4. Fix bug in scaling density (when density becomes negative) in density mixing.
+
+
+----------------
+Sep 04, 2019
+Name: Qimen Xu
+Changes: (initialization.c, mixing.c)
+1. Add Resta preconditioner and truncated Kerker preconditioner.
+
+
+----------------
+Sep 01, 2019
+Name: Qimen Xu
+Changes: (initialization.c, parallelization.c)
+1. Add k point shift from Monkhorst-Pack grid.
+
+
+----------------
+Aug 27, 2019
+Name: Qimen Xu
+Changes: (stress.c, initialization.c, electronicGroundState.c)
+1. Remove non-unix text in stress.c.
+2. Fix bug when TOL_SCF is not set, TOL_SCF becomes negative.
+3. Set default preconditioner to 'none'.
+4. For large peridoc systems, print warning if preconditioner is off.
+5. Change .out heading for Energy section to 'Energy and force calculation'.
+
+
+----------------
+July 29, 2019
+Name: Abhiraj Sharma
+Changes: (md.c, relax.c, initialization.c, isddft.h)
+1. Restart for MD changed to incorporate atleast two histories to be stored.
+
+----------------
+July 27, 2019
+Name: Abhiraj Sharma
+Changes:
+1. Spin polarized calculation added.
+2. Spin parallelization added.
+
+
+----------------
+June 27, 2019
+Name: Abhiraj Sharma
+Changes: (initialization.c, readfiles.c, md.c, relax.c, isddft.h)
+1. Formatted the .aimd and .out file.
+
+
+----------------
+June 18, 2019
+Name: Abhiraj Sharma
+Changes: (hamiltonianVecRoutines.c, eigenSolver.c, eigenSolverKpt.c)
+1. Fixed the bug associated with nonorthogonal cell when chefsibound_flag = 1.
+2. Changed the filter cutoff criteria to be based on max eigval rather than fermi-level.
+
+
+----------------
+May 30, 2019
+Name: Abhiraj Sharma
+Changes: (parallelization.c, eigenSolverKpt.c, finalization.c, isddft.h)
+1. Use D2D instead of DD2DD for finding eigen bounds.
+2. Bug fixed for initial guess to lanczos.
+
+
+----------------
+May 29, 2019
+Name: Qimen Xu
+Changes: (readfiles.c, parallelization.c, electronicGroundState.c, mixing.c, tools.c)
+1. Add SCF_FORCE_ACC, SCF_ENERGY_ACC, CHEFSI_BOUND_FLAG options.
+2. Precondioned SCF: minimize the residual instead of minimzing the preconditioned residual.
+3. Modify the seed for random number generator back to time independent seed. Use rank*100 + 1 as seed.
+4. Bug fix: fisrt argument of descinit_ should be a pointer instead of a pointer to a pointer.
+5. Bug fix: initial guess for Lanczos was deallocated after each SCF, which causes Lanczos to fail once chefsi_bound_flag is turned on.
+
+
+----------------
+May 20, 2019
+Name: Abhiraj Sharma
+Changes:
+1) Added constrained relaxation and constrained MD features.
+2) Changed default relaxation tolerance to 5e-4.
+
+
+----------------
+May 15, 2019
+Name: Abhiraj Sharma
+Changes:
+1) Added kpts in the code
+2) Created separate file for electron density (electronDensity.c)
+
+
+----------------
+May 10, 2019
+Name: Qimen Xu
+Changes: (mixing.c, tools.c)
+1. Precondioned SCF: minimize the preconditioned residual instead of minimzing the residual.
+2. Modify the seed for random number generator. Use MPI_Wtime() + rank + 1 as seed.
+
+
+----------------
+May 06, 2019
+Name: Qimen Xu
+Changes: (initialization.c, forces.c, stress.c, nlocVecRoutines.c)
+1. Bug fix: fix undefined behavior in nonlocal under -O2, -O3 optimization. (By creating temporary variable int lloc = localPsd[ityp].)
+
+----------------
+May 02, 2019
+Name: Qimen Xu
+Changes: (initialization.c, parallelization.c, orbitalElecDensInit.c)
+1. Fix the random number seeds so that all random numbers generated in
+   parallel under MPI are the same as those generated in sequential execution,
+   this will ensure that SPARC gives the same results when excecuted with
+   any number of processors.
+
+----------------
+April 30, 2019
+Name: Qimen Xu
+Changes: (initialization.c, scalapack.h)
+1. Adjust default Kerker tolerance and rhoTriger.
+2. Modify declaration of pdgemr2d_ and descinit_.
+
+----------------
+April 26, 2019
+Name: Hua Huang
+Changes: ExtVecAccel module
+1. Support non-orthogonal cell types in ExtVecAccel module (OpenMP & CUDA)
+2. Remove EVA module entrance in poisson_residual() (lapVecRoutines.c)
+
+----------------
+April 24, 2019
+Name: Qimen Xu
+Changes: (initialization.c)
+1. Add accuracy level (specify by ACCURACY in .inpt file).
+
+
+----------------
+April 23, 2019
+Name: Abhiraj Sharma
+Changes: (electronicGroundState.c, eigenSolver.c)
+1. Restructured the eigenSolver file
+
+
+----------------
+April 20, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Potential mixing with kerker preconditioner.
+
+
+----------------
+April 19, 2019
+Name: Abhiraj Sharma
+Changes: (exchangeCorrelation.c)
+1. Bug fixed in GGA exchange-correlation corresponding to zero e- density at a node.
+
+
+----------------
+April 15, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c, tools.c, initialization.c)
+1. Modify energy evaluation for density mixing.
+2. Set default poisson tol and pseudocharge tol based on SCF tol.
+3. Modify rb tol definition to abs tol instead of charge normalized tol.
+4. Modify rhoTriger option so that it's consistent with previous settings.
+5. Create function for printing and reading distributed vectors.
+
+
+----------------
+April 12, 2019
+Name: Abhiraj Sharma
+Changes: (eigensolver.c, electronicgroundstate.c, isddft.h)
+1. Formatted the layout of SCF
+2. Added option to perform many Chebyshevs <= rhoTriger in each SCF
+
+----------------
+April 11, 2019
+Name: Qimen Xu, Abhiraj Sharma
+Changes: (initialization.c, readfiles.c)
+1. Change default smearing for Fermi-Dirac.
+2. Change default nstates calculation (potential bug if npkpt is not specified).
+3. Default smearing and smearing type for MD included.
+
+
+ ----------------
+April 10, 2019
+Name: Qimen Xu
+Changes: (stess.c)
+1. update stess.c, include lapVecNonOrth.h instead of lapVecnonorth.h.
+
+
+----------------
+April 09, 2019
+Name: Qimen Xu
+Changes: (electronGroundState.c, energy.c, initialization.c, readfiles.c)
+1. Add gaussian smearing and set as default. To specify smearing type, use "ELEC_TEMP_TYPE" flag, the options are "fd" (or "fermi-dirac") and "gaussian".
+2. Add smearing option "SMEARING" in input file, set default smearing to 0.2 eV = 0.00735 Ha.
+3. Modify default number of bands.
+4. Update bug fix on input options "BETA" and "ELEC_TEMP", which still cause failure if they are specified at the end of the file.
+
+
+---------------
+April 05, 2019
+Name: Abhiraj Sharma
+Changes: md.c
+Added Isokinetic ensemble with Gaussian Thermostat
+
+
+---------------
+Mar 30, 2019
+Name: Abhiraj Sharma
+Changes: (electrostatics.c, forces.c, stress.c)
+Merged orthgonal and non orthogonal components into one function
+
+
+---------------
+Mar 29, 2019
+Name: Abhiraj Sharma
+Changes: (lapVecnonorth.c, electrostatics.c, forces.c, stress.c)
+1. Stencil for non orthogonal laplacian created and used in Poisson, Chebyshev, electrostatics, forces, stress
+2. For non orth lap_VJ, a separate function created.
+
+
+----------------
+Mar 28, 2019
+Name: Qimen Xu
+Changes: (lapVecOrth.c, electrostatics.c, forces.c)
+1. Modify free energy functional evaluation.
+    (1.a) Add self consistent correction to free energy for potential mixing.
+    (1.b) Evaluate energy before density update for density mixing.
+2. Bug fix: stencil kernel fails unpredictably when overlapping of communication
+and computaion happens. This might be due to the fact that there are two indices
+inside the for loop under SIMD instruction (need to understand this behavior).
+3. Use stencil kernel in b and force calculation.
+
+ ----------------
+Mar 21, 2019
+Name: Qimen Xu
+Changes: (lapVecOrth.c, readfiles.c)
+1. Start using EVA stencil kernel (with a few modifications) in orth Laplacian
+   mat-vec, which will speed up the mat-vec routines.
+2. Bug fix: input options "BETA" and "ELEC_TEMP" will cause program failure if
+            there's an extra blank line after them, this is fixed now.
+
+-------------------
+Mar 17, 2019
+Name: Abhiraj Sharma
+Changes: Added GGA_PBE exchange correlation
+
+Mar 13, 2019
+Name: Qimen Xu
+Changes: (add lapVecOrth.c, scalapack.h)
+1. Create general Laplacian (orthogonal case) function (a*Laplacian+b*v+c)*x,
+   remove all the subroutines.
+2. Add scalapack.h for explicit declaration of scalapack functions.
+3. Bug fix: in (Lap + v + c)*x, v and x are sharing the index, this is wrong
+            if ncol > 1.
+
+----------------
+Mar 11, 2019
+Name: Abhiraj Sharma
+Changes:
+1) Add stress and pressure
+2) Fixed bug in lapvecroutines.c
+
+Mar 07, 2019
+Name: Qimen Xu
+Changes:
+1. Add density mixing
+2. Add Kerker preconditioner
+
+----------------
+Feb 27, 2019
+Name: Hua Huang
+Changes:
+1. Add CUDA support for Chebyshev Filtering procedure.
+2. Replace MKL sparse BLAS SpMV & SpMM functions with an OpenMP implementation for portability.
+3. Update EVA module README file.
+
+----------------
+Feb 14, 2019
+Name: Hua Huang
+Changes: EVA entry and related changes
+
+----------------
+Feb 12, 2019
+Name: Abhiraj Sharma
+Changes: Commented extra(hypothetical) cases of non orthogonal cells from the code for faster compilation.
+
+----------------
+Feb 11, 2019
+Name: Abhiraj Sharma
+Changes: 1) Added feature to perform DFT calculations (energy, force, MD, relaxation) on non orthogonal cells.
+         2) Removed error in Relaxation restart
+
+----------------
+Feb 09, 2019
+Name: Abhiraj Sharma
+Changes: (md.c, relax.c, readfiles.c, initialization.c)
+1. Changed MD_maxIter -> MD_Niter and Relax_maxIter to Relax_Niter.
+2. Added restart options for continuation from where the MD stopped and to do a fresh restart using last step's atomic positions and velocities only.
+3. Added the fractional atomic coordinate option for the user input of atomic positions.
+
+
+-----------------
+Feb 08, 2019
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Use eigenvector of periodic discrete Laplacian as initial guess for Lanczos.
+
+
+-----------------
+Feb 05, 2019
+Name: Qimen Xu
+Changes: (initialization.c, readfiles.c)
+1. Change format of input files:
+   1.1) NTYPES is removed from .inpt file
+   1.2) PSEUDOPOTENTIAL_LOCAL is removed from .inpt file, the local component (lloc) will be read from the pseudopotential file.
+   1.3) PSEUDOPOTENTIAL_FILES is moved from .inpt file to .ion file, and the flag name is changed to PSEUDO_POT.
+   1.4) ATOMIC_MASS is moved from .inpt file to .ion file.
+   1.5) Valence charge is not needed in .ion file any more. It will be read from the pseudopotential file.
+2. The .out file format is changed according to the input file format.
+3. Check if position goes out the domain for Dirichlet BC.
+4. Print first and last occupation in the warning if nstates is not large enough.
+
+
+----------------
+Jan 24, 2019
+Name: Qimen Xu
+Changes: (most source files and a few header files)
+1. Reorganize the functions and files in the code.
+	1.01) Move min_eig_solver() from eigenSolver.c to extras.c
+	1.02) electronDensInit.c --> orbitalElecDensInit.c (rename file)
+		  ChargeExtrapolation() -> elecDensExtrapolation() (rename function)
+	1.03) Calculate_EGS_Energy() -> Calculate_EGS_elecDensEnergy()
+	1.04) Move Calculate_Eband and Calculate_Entropy into Calculate_Free_Energy()
+	1.05) Create parallelization.c, include functions  DD2DD(), Setup_Comms(),
+	      SPARC_Dims_Create(), ScaLAPACK_Dims_2D_BLCYC(), block_decompose(),
+	      block_decompose_nstart()
+    1.06) Move Mesh2ChebDegree() from initialization.c to eigenSolver.c
+    1.07) Separate matVecRoutines.c into three files: lapVecRoutines.c, gradVecRoutines.c
+    	  and hamiltonianVecRoutines.c
+    1.08) Create Mixing_Pulay(), call this from Mix_Veff_loc()
+    1.09) Move RealSphericalHarmonic() from nonlocal.c to tools.c
+	1.10) nonlocal.c --> nlocVecRoutines.c
+	1.11) Remove poisson.h
+	1.12) Remove Read_psd_TM()
+	1.13) Remove sddft.h
+	1.14) Change format of output file (Developers' info. section)
+	1.15) Print warning when SCF is not converged (both log file and output file)
+	1.16) Print time for force calculation
+
+----------------
+Jan 19, 2019
+Name: Qimen Xu
+Changes: (eigenSolver.c)
+1. Use eigmin = -2.0 and eigmax = max eigval of -1/2*Lap as initial lower/upper bounds
+   for Chebyshev Filtering in the very first SCF step.
+2. Created a function for estimating max eigval of the Laplacian operator
+   using Lanczos for Dirichlet B.C..
+
+----------------
+Jan 11, 2019
+Name: Hua Huang
+Changes: (electronGroundState.c, eigenSolver.c, matVecRoutines.c, makefile, ./ExtVecAccel/)
+1. Add EVA module entrance points (see ./ExtVecAccel/README.md for detail information).
+
+----------------
+Jan 10, 2019
+Name: Qimen Xu
+Changes: (matVecRoutines.c)
+1. Fix bugs caused by undefined behavior and sequence points.
+
+----------------
+Jan 08, 2019
+Name: Qimen Xu
+Changes: (matVecRoutines.c, initialization.c)
+1. Separate out Vnl * vector from Hamiltonian * vector.
+2. Use LAPACK for subspace eigenproblem when Nstates <= 2000.
+
+----------------
+Jan 02, 2019
+Name: Qimen Xu
+Changes: (nonlocal.c, nonlocal.h)
+1. Convert dos/mac newlines to unix format.
+
+
+----------------
+Dec 22, 2018
+Name: Qimen Xu
+Changes: (eigensolver.c, initialization.c, finalization.c)
+1. Provide more workspace for ScaLAPACK eigensolver.
+2. Use LAPACK for solving generalized eigenvalue problems
+   when Nstates <= 3000.
+3. Free D2D targets.
+
+
+----------------
+Dec 20, 2018
+Name: Qimen Xu
+Changes: (readfiles.c)
+1. Correct misspelled flag "EXCHAGE_CORRELATION" to
+   "EXCHANGE_CORRELATION". Modify corresponding input test files.
+
+
+----------------
+Dec 16, 2018
+Name: Qimen Xu
+Changes: (initialization.c, eigensolver)
+1. Switch to LAPACK for subspace eigenproblem when Nstates <= 1000.
+
+----------------
+Dec 08, 2018
+Name: Abhiraj Sharma
+Changes: (md.c)
+1. Added thermostat temperature variation option in md
+
+
+----------------
+Dec 07, 2018
+Name: Qimen Xu, Abhiraj Sharma
+Changes: (electronicGroundState.c, eigensolver.c, initialization.c, relax.c)
+1. Improve DD2DD. Split DD2DD into three steps: find target, transfer data,
+free target object, where finding target is only done once. (by Qimen)
+2. Add FIRE algorithm. (by Abhiraj)
+
+----------------
+Dec 06, 2018
+Name: Abhiraj Sharma
+Changes: (relax.c)
+1. Added LBFGS and constraint on atoms for relaxation
+
+
+----------------
+Nov 27, 2018
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Improve bounds for calculating fermi level. TODO: change accordingly when
+   k-points are added.
+
+
+----------------
+Nov 25, 2018
+Name: Qimen Xu
+Changes: (electronicGroundState.c, eigensolver.c, initialization.c)
+1. Remove scaling rho to impose the condition int_rho + int_b = 0. This will
+   reduce unnecessary global communication time in rho calculation.
+2. Use previous minimum eigenvalue as lowerbound for Chebyshev filtering,
+   instead of calculating lowerbound using Lanczos in each scf iteration.
+3. Disable default pseudopotential filenames and default path.
+
+
+----------------
+Nov 06, 2018
+Name: Qimen Xu
+Changes: (finalization.c)
+1. Deallocate local and nonlocal influencing atom info. and nonlocal projectors
+   in the end of each electronic ground state calculation.
+
+----------------
+-Date:  05 Nov 2018
+-Name:   Qimen, Abhiraj
+-changes: Added Dirichlet boundary condition (Qimen) and Molecular dynamics (Abhiraj)
+
+
+
+----------------
+Oct 30, 2018
+Name: Qimen Xu
+Changes: (finalization.c)
+1. Bug fix: in the case nonlocal influencing atom = 0, the corresponding
+			Atom_Influence_nloc arrays are not allocated, thus
+			deallocating those arrays will cause error.
+
+
+----------------
+Oct 27, 2018
+Name: Qimen Xu
+Changes: (electrostatics.c, nonlocal.c)
+1. Spherical harmonics formula l = 6, m = 3 fixed, const C6p3 changed.
+2. Multiple moment expansion bug: radius (y2) not calculated correctly
+   during calculation of the multipole moments Qlm.
+
+
+----------------
+Oct 18, 2018
+Name: Qimen Xu
+Changes: (electrostatics.c, tools.c)
+1. Bug fix: interpolation error when len = 0.
+   Sol: return directly if len = 0. (tools.c)
+2. Bug fix: error when there's no nonlocal influencing atom in current
+            process domain, which will cause a segment fault error.
+   Sol: specify influencing n_atom = 0 in such cases. (electrostatics.c)
+
+
+----------------
+Oct 16, 2018
+Name: Qimen Xu
+Changes: (nonlocal.c, force.c)
+1. Bug fix: MKL cblacs_pdgemm error for systems with hydrogen atoms.
+   Sol: skip nonlocal component if nproj = 0.
+
+
+----------------
+Oct 12, 2018
+Name: Qimen Xu
+Changes: (initialization.c)
+1. Print last modified date of the code to output file.
+2. Create ChangeLog

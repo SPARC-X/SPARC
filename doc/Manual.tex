@@ -1,0 +1,102 @@
+\documentclass[xcolor=dvipsnames,t]{beamer}
+%\usepackage[utf8]{inputenc}
+\usepackage{verbatim} % for comment
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\usepackage{beamerouterthemesplit}
+
+\setbeamerfont{institute}{size=\normalsize}
+
+\title[] {SPARC  \\ {\normalsize Simulation Package for Ab-initio Real-space Calculations} \\ {\small User guide}}
+%\author{}
+%\author{Qimen Xu, Abhiraj Sharma, Phanish Suryanarayana, }
+
+\institute[]
+{
+Material Physics \& Mechanics Group \\
+PI: Phanish Suryanarayana \\
+Main Developers: Qimen Xu, Abhiraj Sharma \\
+Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT) \\
+Georgia Institute of Technology
+}
+
+\date{}
+\setbeamertemplate{frametitle continuation}{}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{block title}{bg=Apricot!50,fg=black}
+%\addtobeamertemplate{block begin}{\vskip -\smallskipamount}{}
+%\addtobeamertemplate{block end}{}{\vskip -\smallskipamount}
+\addtobeamertemplate{block begin}{\vspace*{-0.6pt}}{}
+\addtobeamertemplate{block end}{}{\vspace*{-0.6pt}}
+\hypersetup{colorlinks,
+citecolor=violet,
+linkcolor=blue,
+menucolor=white, 
+anchorcolor=yellow
+filecolor=pink,  
+}
+
+
+\setbeamertemplate{footline}{
+    \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=1ex,dp=1.5ex,leftskip=2ex,rightskip=2ex]{page footer}%
+        \usebeamerfont{title in head/foot}%
+        \insertshorttitle \hfill
+            \insertsection \hfill
+        \insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}}%
+}
+
+% \setbeamertemplate{headline} [split theme] 
+% {%
+% \begin{beamercolorbox}{section in head/foot}
+% \vskip2pt\insertnavigation{\paperwidth}\vskip2pt
+% \end{beamercolorbox}%
+% }
+
+% \defbeamertemplate*{footline}{split theme}
+% {%
+%   \leavevmode%
+%   \hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{section in head/foot}%
+%     \usebeamerfont{author in head/foot}\insertshortauthor
+%   \end{beamercolorbox}%
+%   \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+%     \usebeamerfont{title in head/foot}\insertshorttitle
+%   \end{beamercolorbox}}%
+%   \vskip0pt%
+% }
+
+
+
+\let\otp\titlepage
+\renewcommand{\titlepage}{\otp\addtocounter{framenumber}{-1}}
+
+
+%\includeonly{Introduction,Stress,MD,Optimization,Print}
+%\includeonly{Introduction}
+
+\begin{document}
+
+%\frame{\titlepage}
+
+\begin{frame}[plain]
+ \titlepage
+\end{frame}
+
+\include{Introduction}
+\include{System}
+\include{SCF}
+\include{Electrostatics}
+\include{Stress}
+\include{MD}
+\include{Optimization}
+\include{Print}
+\include{Paral}
+
+
+\begin{frame}[allowframebreaks]{\textbf{Acknowledgments}} \label{Acknowledgments}
+The work was supported by the grant DE-SC0019410 funded by the U.S. Department of Energy, Office of Science. Initial development efforts were supported by the grants 1333500 and 1553212 funded by the U.S. National Science Foundation.
+\end{frame}
+
+
+\end{document}

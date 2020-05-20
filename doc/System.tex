@@ -1,0 +1,811 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{System}
+
+\begin{center}
+\Huge \textbf{System: .inpt file}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{CELL}} \label{CELL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+    
+\begin{block}{Example}
+\texttt{CELL}: 10.20 11.21 7.58
+\end{block}
+\end{columns}
+\begin{block}{Description}
+A set of three whitespace delimited values specifying the cell lengths in the lattice vector (\hyperlink{LATVEC}{\texttt{LATVEC}}) directions, respectively.
+\end{block}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{LATVEC}} \label{LATVEC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double array
+\end{block}
+
+\begin{block}{Default}
+1.0 0.0 0.0\\
+0.0 1.0 0.0\\
+0.0 0.0 1.0\\
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{LATVEC}: \\
+0.5 0.5 0.0\\
+0.0 0.5 0.5\\
+0.5 0.0 0.5\\
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+A set of three vectors in row major order specifying the lattice vectors of the simulation domain (\hyperlink{CELL}{\texttt{CELL}}).
+\end{block}
+
+%\begin{block}{Remark}
+%Lattice vectors need not be unit vectors.
+%\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FD\_GRID}} \label{FD_GRID}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{FD\_GRID}: 26 26 30
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+A set of three whitespace delimited values specifying the number of finite-difference intervals in the lattice vector (\hyperlink{LATVEC}{\texttt{LATVEC}}) directions, respectively.
+\end{block}
+
+\begin{block}{Remark}
+The convergence of results with respect to spatial discretization needs to be verified. \hyperlink{ECUT}{\texttt{ECUT}}, \hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}}, \hyperlink{FD_GRID}{\texttt{FD\_GRID}} cannot be specified simultaneously.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MESH\_SPACING}} \label{MESH_SPACING}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{MESH\_SPACING}: 0.4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Mesh spacing of the finite-difference grid. 
+\end{block}
+
+\begin{block}{Remark}
+The exact mesh-size will be determined by the size of the domain.  \hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}}, \hyperlink{FD_GRID}{\texttt{FD\_GRID}}, \hyperlink{ECUT}{\texttt{ECUT}} cannot be specified simultaneously.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ECUT}} \label{ECUT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha
+\end{block}
+
+\begin{block}{Example}
+\texttt{ECUT}: 30
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Equivalent plane-wave energy cutoff, based on which \hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}} will be automatically calculated. 
+\end{block}
+
+\begin{block}{Remark}
+This is not exact, but rather an estimate. \hyperlink{ECUT}{\texttt{ECUT}}, \hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}}, \hyperlink{FD_GRID}{\texttt{FD\_GRID}} cannot be specified simultaneously.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{BC}} \label{BC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Character
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{BC}: \texttt{P D D}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+A set of three whitespace delimited characters specifying the boundary conditions in the lattice vector directions, respectively. \texttt{P} represents periodic boundary conditions and \texttt{D} represents Dirichlet boundary conditions.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{FD\_ORDER}} \label{FD_ORDER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+12
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{FD\_ORDER}: 12
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Order of the finite-difference approximation. 
+\end{block}
+
+\begin{block}{Remark}
+Restricted to even integers since central finite-differences are employed. The default value of 12 has been found to be an efficient choice for most systems.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXCHANGE\_CORRELATION}} \label{EXCHANGE_CORRELATION}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.35\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+No Default
+\end{block}
+
+\column{0.55\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXCHANGE\_CORRELATION}: \texttt{LDA\_PW}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids).
+\end{block}
+
+\begin{block}{Remark}
+For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ} is not available.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SPIN\_TYP}} \label{SPIN_TYP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SPIN\_TYP}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+\texttt{SPIN\_TYP}: 0 performs spin unpolarized calculation. \\
+\texttt{SPIN\_TYP}: 1 performs unconstrained collinear spin-polarized calculation.   
+\end{block}
+
+\begin{block}{Remark}
+\texttt{SPIN\_TYP} can only take values 0 and 1.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{KPOINT\_GRID}} \label{KPOINT_GRID}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer array
+\end{block}
+
+\begin{block}{Default}
+ 1 1 1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{KPOINT\_GRID}: 2 3 4
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of k-points in each direction of the Monkhorst-Pack grid for Brillouin zone integration.
+\end{block}
+
+\begin{block}{Remark}
+Time-reversal symmetry is assumed to hold. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{KPOINT\_SHIFT}} \label{KPOINT_SHIFT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double array
+\end{block}
+
+\begin{block}{Default}
+ 0.0 for odd k-point mesh\\
+ 0.5 for even k-point mesh
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{KPOINT\_SHIFT}: 0.5 0.5 0.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Shift of k-points with respect to k-point grid containing $\Gamma$-point.
+\end{block}
+
+\begin{block}{Remark}
+The shift is in reduced coordinates. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ELEC\_TEMP\_TYPE}} \label{ELEC_TEMP_TYPE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+\texttt{gaussian}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{ELEC\_TEMP\_TYPE}: \texttt{fd}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Function used for the smearing (electronic temperature). Options are: \texttt{fermi-dirac} (or \texttt{fd}), \texttt{gaussian}.
+\end{block}
+
+\begin{block}{Remark}
+Use \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} or \hyperlink{SMEARING}{\texttt{SMEARING}} to set smearing value.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ELEC\_TEMP}} \label{ELEC_TEMP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+2320.904 for \texttt{gaussian} \\
+1160.452 for \texttt{fermi-dirac}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Kelvin
+\end{block}
+
+\begin{block}{Example}
+\texttt{ELEC\_TEMP}: 315.775
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Electronic temperature. 
+\end{block}
+
+\begin{block}{Remark}
+This is equivalent to setting \hyperlink{SMEARING}{\texttt{SMEARING}} (0.001 Ha = 315.775 Kelvin).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SMEARING}} \label{SMEARING}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.007350 for \texttt{gaussian} \\
+0.003675 for \texttt{fermi-dirac}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha
+\end{block}
+
+\begin{block}{Example}
+\texttt{SMEARING}: 0.001
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Value of smearing.
+\end{block}
+
+\begin{block}{Remark}
+Equivalent to setting \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} (0.001 Ha = 315.775 Kelvin).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NSTATES}} \label{NSTATES}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+$N_e/2 \times 1.2 + 5$
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NSTATES}: 24
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The number of Kohn-Sham states/orbitals.
+\end{block}
+
+\begin{block}{Remark}
+This number should not be smaller than half of
+the total number of valence electrons ($N_e$) in the system. Note that the number of additional states required increases with increasing values of \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}}/\hyperlink{SMEARING}{\texttt{SMEARING}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{System:ion}
+
+\begin{center}
+\Huge \textbf{System: .ion file}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ATOM\_TYPE}} \label{ATOM_TYPE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{ATOM\_TYPE: Fe}  
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Atomic type symbol. 
+\end{block}
+
+\begin{block}{Remark}
+The atomic type symbol can be attached with a number, e.g., Fe1 and Fe2. This feature is useful if one needs to provide two different pseudopotential files (\hyperlink{PSEUDO_POT}{\texttt{PSEUDO\_POT}}) for the same element.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PSEUDO\_POT}} \label{PSEUDO_POT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PSEUDO\_POT: ../psp/Fe.psp8}  
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Path to the pseudopotential file. 
+\end{block}
+
+\begin{block}{Remark}
+The default directory for the pseudopotential files is the same as the input files. For example, if a pseudopotential Fe.psp8 is put in the same directory as the input files, one can simply specify \texttt{PSEUDO\_POT: Fe.psp8}. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{N\_TYPE\_ATOM}} \label{N_TYPE_ATOM}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{N\_TYPE\_ATOM: 2}  
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The number of atoms of a \hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}} specified immediately before this variable.
+\end{block}
+
+\begin{block}{Remark}
+For a system with different types of atoms, one has to specify the number of atoms for every type.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{COORD}} \label{COORD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{COORD: \\}
+0.0 0.0 0.0 \\
+2.5 2.5 2.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The Cartesian coordinates of atoms of a \hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}} specified before this variable. If the coordinates are outside the fundamental domain (see \hyperlink{CELL}{\texttt{CELL}} and \hyperlink{LATVEC}{\texttt{LATVEC}}) in the periodic directions (see \hyperlink{BC}{\texttt{BC}}), it will be automatically mapped back to the domain.
+\end{block}
+
+\begin{block}{Remark}
+For a system with different types of atoms, one has to specify the coordinates for every \hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}}. One can also specify the coordinates of the atoms using \hyperlink{COORD_FRAC}{\texttt{COORD\_FRAC}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{COORD\_FRAC}} \label{COORD_FRAC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+None
+\end{block}
+
+\begin{block}{Example}
+\texttt{COORD\_FRAC: \\}
+0.5 0.5 0.0 \\
+0.0 0.5 0.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The fractional coordinates of atoms of a \hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}} specified before this variable. \texttt{COORD\_FRAC}$(i,j)$ $\times$ \hyperlink{CELL}{\texttt{CELL}}$(j)$, $(j = 1,2,3)$ gives the coordinate of the $i^{th}$ atom along the $j^{th}$ \hyperlink{LATVEC}{\texttt{LATVEC}} direction. If the coordinates are outside the fundamental domain (see \hyperlink{CELL}{\texttt{CELL}} and \hyperlink{LATVEC}{\texttt{LATVEC}}) in the periodic directions (see \hyperlink{BC}{\texttt{BC}}), it will be automatically mapped back to the domain.
+\end{block}
+
+\begin{block}{Remark}
+For a system with different types of atoms, one has to specify the coordinates for every \hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}}. One can also specify the coordinates of the atoms using \hyperlink{COORD}{\texttt{COORD}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RELAX}} \label{RELAX}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1 1 1
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RELAX: \\}
+1 0 1 \\
+0 1 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Atomic coordinate with the corresponding \texttt{RELAX} value 0 is held fixed during relaxation/QMD.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SPIN}} \label{SPIN}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.0
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SPIN: \\}
+1.0 \\
+-1.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the net initial spin on each atom for a spin-polarized calculation.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

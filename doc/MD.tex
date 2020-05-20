@@ -1,0 +1,431 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{MD}
+
+\begin{center}
+\Huge \textbf{QMD}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MD\_FLAG}} \label{MD_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MD\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+QMD simulations are performed if the flag is set to 1.
+\end{block}
+
+\begin{block}{Remark}
+\hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} and \hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} both cannot be set to a value greater than 0. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MD\_METHOD}} \label{MD_METHOD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+NVT\_NH
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MD\_METHOD}: NVE
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), and NVK\_G (isokinetic ensemble with Gaussian thermostat) are supported.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MD\_NSTEP}} \label{MD_NSTEP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1e7
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MD\_NSTEP}: 100
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the number of QMD steps.
+\end{block}
+
+\begin{block}{Remark}
+If MD\_NSTEP $= N$, the QMD runs from $0$ to $(N-1) \times$ \hyperlink{MD_TIMESTEP}{\texttt{MD\_TIMESTEP}} fs.  
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MD\_TIMESTEP}} \label{MD_TIMESTEP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Femtosecond
+\end{block}
+
+\begin{block}{Example}
+\texttt{MD\_TIMESTEP}: 0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+QMD time step. 
+\end{block}
+
+\begin{block}{Remark}
+Total QMD time is given by:  \hyperlink{MD_TIMESTEP}{\texttt{MD\_TIMESTEP}} $\times$ (\hyperlink{MD_NSTEP}{\texttt{MD\_NSTEP}} - 1).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ION\_TEMP}} \label{ION_TEMP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+No Default
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Kelvin
+\end{block}
+
+\begin{block}{Example}
+\texttt{ION\_TEMP}: 315
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Starting ionic temperature in QMD, used to generate initial velocity distribution.
+\end{block}
+
+\begin{block}{Remark}
+Must be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ION\_TEMP\_END}} \label{ION_TEMP_END}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+ION\_TEMP
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Kelvin
+\end{block}
+
+\begin{block}{Example}
+\texttt{ION\_TEMP\_END}: 100
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the final temperature of the thermostat. Thermostat temperature is varied linearly from \hyperlink{ION_TEMP}{\texttt{ION\_TEMP}} to \hyperlink{ION_TEMP_END}{\texttt{ION\_TEMP\_END}} with respect to time.
+\end{block}
+
+\begin{block}{Remark}
+Available for NVT\_NH quantum molecular dynamics only.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{frame}[allowframebreaks]{\texttt{ION\_ELEC\_EQT}} \label{ION_ELEC_EQT}
+% \vspace*{-12pt}
+% \begin{columns}
+% \column{0.4\linewidth}
+% \begin{block}{Type}
+% Integer
+% \end{block}
+
+% \begin{block}{Default}
+% 1
+% \end{block}
+
+% \column{0.4\linewidth}
+% \begin{block}{Unit}
+% No unit
+% \end{block}
+
+% \begin{block}{Example}
+% \texttt{ION\_ELEC\_EQT}: 0
+% \end{block}
+% \end{columns}
+
+% \begin{block}{Description}
+% Flag that determines whether the \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} will be set equal to \hyperlink{ION_TEMP}{\texttt{ION\_TEMP}} during MD.
+% \end{block}
+
+% \begin{block}{Remark}
+% If the flag is set to 0, the values of \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} and \hyperlink{ION_TEMP}{\texttt{ION\_TEMP}} need to be identical.  
+% \end{block}
+
+% \end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ION\_VEL\_DSTR}} \label{ION_VEL_DSTR}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+2
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{ION\_VEL\_DSTR}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specifies the type of distribution for the initial velocity of atoms based on their initial temperature. Choose $1$ for uniform velocity distribution and $2$ for Maxwell-Boltzmann distribution.
+\end{block}
+
+\begin{block}{Remark}
+Currently, the code supports only two options for the variable.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ION\_VEL\_DSTR\_RAND}} \label{ION_VEL_DSTR_RAND}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{ION\_VEL\_DSTR\_RAND}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to reseed the initial velocities of atoms in a QMD simulation. Set this flag to $1$ to shuffle (change the random seed for) the initial velocities for different runs. Set this flag to $0$ to maintain the same initial velocities.
+\end{block}
+
+\begin{block}{Remark}
+This option is convenient for parallel statistics calculations.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{QMASS}} \label{QMASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1653.654933459720
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+atomic unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{QMASS}: 100000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the inertia factor for Nose Hoover thermostat.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NVT\_NH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{RESTART\_FLAG}} \label{RESTART_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{RESTART\_FLAG}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for restarting quantum molecular dynamics and structural relaxation. Stores last three histories for quantum molecular dynamics simulations in .restart, .restart-$0$ and .restart-$1$ files, respectively.
+\end{block}
+
+\begin{block}{Remark}
+Restarts from the previous configuration which is stored in a .restart file. Currently, code provides restart feature for atomic relaxation and QMD only. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TWTIME}} \label{TWTIME}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1e9
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+min
+\end{block}
+
+\begin{block}{Example}
+\texttt{TWTIME}: 1000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the upper bound on the wall time for quantum molecular dynamics.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
