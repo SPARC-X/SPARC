@@ -68,7 +68,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         forces.o stress.o pressure.o finalization.o
 
 LIBBASE = ../lib/sparc
-TESTBASE = ../exe_tests
+TESTBASE = ../.ci
 
 override CC=mpicc
 
@@ -84,5 +84,5 @@ sparc: $(OBJSC)
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
-test: ../exe_tests/run_tests.py
+test: ../.ci/run_tests.py
 	cd $(TESTBASE); ./run_tests.py
