@@ -17,6 +17,6 @@ addons:
     - libopenblas-dev
     - mpich
 install:
-  - cd src/; make 2> makeLog
+  - cd src/; make clean; make #2> makeLog
 script:
   - make test # already in src/ during install
