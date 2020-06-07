@@ -375,11 +375,15 @@ void Calc_DX(
         {
             int jshift_DX = kshift_DX + j * stride_y_DX;
             int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
             #pragma omp simd
-            for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            //for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_DX = jshift_DX + i;
-                int ishift_X = jshift_X + ii;
+                //int ishift_DX = jshift_DX + i;
+                //int ishift_X = jshift_X + ii;
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
                 double temp = X[ishift_X] * c;
                 for (r = 1; r <= radius; r++)
                 {

@@ -1412,11 +1412,15 @@ void Calc_DX1_DX2(
         {
             int jshift_DX = kshift_DX + j * stride_y_DX;
             int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
             #pragma omp simd
-            for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            //for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_DX = jshift_DX + i;
-                int ishift_X = jshift_X + ii;
+                // int ishift_DX = jshift_DX + i;
+                // int ishift_X = jshift_X + ii;
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X  = jshift_X  + i + x_X_spos;
                 double temp1 = 0.0;
                 double temp2 = 0.0;
                 for (r = 1; r <= radius; r++)
@@ -1467,12 +1471,20 @@ void stencil_4comp(
             int jshift_X1 = kshift_X1 + j * stride_y_X1;
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX = kshift_DX + jjj * stride_y_DX;
+            
+            //#pragma omp simd
+            //for (i = x_X1_spos, ii = x_X_spos, iii = x_DX_spos; i < x_X1_epos; i++, ii++, iii++)
+            
+            const int niters = x_X1_epos - x_X1_spos;
             #pragma omp simd
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX_spos; i < x_X1_epos; i++, ii++, iii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX    = jshift_DX + iii;
+                // int ishift_X1    = jshift_X1 + i;
+                // int ishift_X     = jshift_X + ii;
+                // int ishift_DX    = jshift_DX + iii;
+                int ishift_X1    = jshift_X1 + i + x_X1_spos;
+                int ishift_X     = jshift_X  + i + x_X_spos;
+                int ishift_DX    = jshift_DX + i + x_DX_spos;
                 double res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {
@@ -1531,13 +1543,19 @@ void stencil_5comp(
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX1 = kshift_DX1 + jjj * stride_y_DX1;
             int jshift_DX2 = kshift_DX2 + jjjj * stride_y_DX2;
+            const int niters = x_X1_epos - x_X1_spos;
             #pragma omp simd
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX1_spos, iiii = x_DX2_spos; i < x_X1_epos; i++, ii++, iii++, iiii++)
+            // for (i = x_X1_spos, ii = x_X_spos, iii = x_DX1_spos, iiii = x_DX2_spos; i < x_X1_epos; i++, ii++, iii++, iiii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX1    = jshift_DX1 + iii;
-                int ishift_DX2    = jshift_DX2 + iiii;
+                // int ishift_X1    = jshift_X1   + i;
+                // int ishift_X     = jshift_X    + ii;
+                // int ishift_DX1    = jshift_DX1 + iii;
+                // int ishift_DX2    = jshift_DX2 + iiii;
+                int ishift_X1    = jshift_X1   + i + x_X1_spos;
+                int ishift_X     = jshift_X    + i + x_X_spos;
+                int ishift_DX1    = jshift_DX1 + i + x_DX1_spos;
+                int ishift_DX2    = jshift_DX2 + i + x_DX2_spos;
                 double res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {
@@ -1592,12 +1610,17 @@ void stencil_4comp_extd(
             int jshift_X1 = kshift_X1 + j * stride_y_X1;
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX = kshift_DX + jjj * stride_y_DX;
+            const int niters = x_X1_epos - x_X1_spos;
             #pragma omp simd
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX_spos; i < x_X1_epos; i++, ii++, iii++)
+            //for (i = x_X1_spos, ii = x_X_spos, iii = x_DX_spos; i < x_X1_epos; i++, ii++, iii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX    = jshift_DX + iii;
+                // int ishift_X1    = jshift_X1 + i;
+                // int ishift_X     = jshift_X + ii;
+                // int ishift_DX    = jshift_DX + iii;
+                int ishift_X1    = jshift_X1 + i + x_X1_spos;
+                int ishift_X     = jshift_X  + i + x_X_spos;
+                int ishift_DX    = jshift_DX + i + x_DX_spos;
                 double res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {
@@ -1657,13 +1680,19 @@ void stencil_5comp_extd(
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX1 = kshift_DX1 + jjj * stride_y_DX1;
             int jshift_DX2 = kshift_DX2 + jjjj * stride_y_DX2;
+            const int niters = x_X1_epos - x_X1_spos;
             #pragma omp simd
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX1_spos, iiii = x_DX2_spos; i < x_X1_epos; i++, ii++, iii++, iiii++)
+            //for (i = x_X1_spos, ii = x_X_spos, iii = x_DX1_spos, iiii = x_DX2_spos; i < x_X1_epos; i++, ii++, iii++, iiii++)
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX1    = jshift_DX1 + iii;
-                int ishift_DX2    = jshift_DX2 + iiii;
+                // int ishift_X1    = jshift_X1 + i;
+                // int ishift_X     = jshift_X + ii;
+                // int ishift_DX1    = jshift_DX1 + iii;
+                // int ishift_DX2    = jshift_DX2 + iiii;
+                int ishift_X1    = jshift_X1   + i + x_X1_spos;
+                int ishift_X     = jshift_X    + i + x_X_spos;
+                int ishift_DX1    = jshift_DX1 + i + x_DX1_spos;
+                int ishift_DX2    = jshift_DX2 + i + x_DX2_spos;
                 double res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {

@@ -12,9 +12,9 @@ MESH_SPACING: 0.35 # h=0.2 -> 3.5e-4 Ha/atom, h=0.3 -> 7.3e-4 Ha/atom
 MAXIT_SCF: 1000
 ELEC_TEMP: 1160.45
 MIXING_PARAMETER: 0.2
-#MIXING_VARIABLE: potential
-#MIXING_PRECOND: kerker
-#PRECOND_KERKER_THRESH: 0.1
+MIXING_VARIABLE: potential
+MIXING_PRECOND: kerker
+PRECOND_KERKER_THRESH: 0
 SPIN_TYP: 1 # with SPARC version > 2020-04-08, this means spin polarized
 
 PRINT_DENSITY: 1 # for Magnetization density contour
