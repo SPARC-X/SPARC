@@ -1443,7 +1443,7 @@ void poisson_RHS(SPARC_OBJ *pSPARC, double *rhs) {
 	}
     
     // for charged systems, add a uniform background charge so that total charge is 0
-    if (fabs(pSPARC->NetCharge) > TEMP_TOL) {
+    if (fabs((double)pSPARC->NetCharge) > TEMP_TOL) {
 		double Lx = pSPARC->range_x;
 		double Ly = pSPARC->range_y;
 		double Lz = pSPARC->range_z;

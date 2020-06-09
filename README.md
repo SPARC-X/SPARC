@@ -73,6 +73,8 @@ There are several options to compile SPARC, depending on the available external 
     ```
 **Remark**: make sure in the makefile `USE_MKL = 0` and `USE_SCALAPACK = 1` for option 3.
 
+Once compilation is done, a binary named `sparc` will be created in the `lib/` directory.
+
 ### (3) Input files:
 The required input files to run a simulation with SPARC are (with shared names)  
 
