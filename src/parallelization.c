@@ -1435,8 +1435,8 @@ void ScaLAPACK_Dims_2D_BLCYC(int nproc, int *gridsizes, int *dims)
     double diff1, diff2, last_diff;
     last_diff = 1e20;
     for (i = 0; i < ftors.count/2; i++) {
-        diff1 = fabs(gridsizes[1] / ftors.list[2*i] - gridsizes[0] / ftors.list[2*i+1]);
-        diff2 = fabs(gridsizes[0] / ftors.list[2*i] - gridsizes[1] / ftors.list[2*i+1]);
+        diff1 = fabs((double)gridsizes[1] / ftors.list[2*i] - (double)gridsizes[0] / ftors.list[2*i+1]);
+        diff2 = fabs((double)gridsizes[0] / ftors.list[2*i] - (double)gridsizes[1] / ftors.list[2*i+1]);
         diff = diff1 < diff2 ? diff1 : diff2;
         if (i > 0 && diff > last_diff) {
             ind1 = (i - 1) * 2;
@@ -1450,7 +1450,7 @@ void ScaLAPACK_Dims_2D_BLCYC(int nproc, int *gridsizes, int *dims)
     }
 
     if (ftors.count % 2 && i == ftors.count/2) {
-        diff1 = fabs(gridsizes[1] / ftors.list[ftors.count-1] - gridsizes[0] / ftors.list[ftors.count-1]);
+        diff1 = fabs((double)gridsizes[1] / ftors.list[ftors.count-1] - (double)gridsizes[0] / ftors.list[ftors.count-1]);
         if (diff1 < diff) {
             ind1 = ind2 = ftors.count-1;
         }

@@ -15,6 +15,18 @@
 // #include <complex.h>
 // #include <mkl_scalapack.h> // for numroc_, descinit_, pdgemr2d_, pzgemr2d_
 
+#ifdef IBM
+#define numroc_ numroc
+#define descinit_ descinit
+#define pdlamch_ pdlamch
+#define pdgemr2d_ pdgemr2d
+#define pdgemm_ pdgemm
+#define pdsygvx_ pdsygvx
+#define pzgemm_ pzgemm
+#define pzgemr2d_ pzgemr2d
+#define pzhegvx_ pzhegvx
+#endif
+
 extern void   pdlawrite_();
 extern void   pdelset_();
 extern double pdlamch_();
