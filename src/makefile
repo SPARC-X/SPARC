@@ -54,7 +54,7 @@ endif
 
 # to compile with DEBUG mode
 ifeq ($(DEBUG_MODE), 1)
-CPPFLAGS += -Wall -g -DDEBUG -Wformat-security
+CPPFLAGS += -Wall -g -DDEBUG
 endif
 
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
