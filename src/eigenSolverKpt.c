@@ -1195,7 +1195,7 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         //** calculate eigenvalues and eigenvectors **//
         // Warning: pdsygvx requires the block sizes in both row and col 
         //          dimension to be the same!
-        lwork = (int) fabs(work[0]);
+        lwork = (int) cabs(work[0]);
         int NB = pSPARC->desc_Hp_BLCYC[4]; // distribution block size
         int NN = max(max(N, NB),2);
         int NP0 = numroc_( &NN, &NB, &ZERO, &ZERO, &nprow );

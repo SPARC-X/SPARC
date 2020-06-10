@@ -1204,7 +1204,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
     int *kpt_displs= (int    *)malloc((pSPARC->npkpt+1) * sizeof(int));
 
     char EigenFilename[L_STRING];
-    snprintf(EigenFilename, L_STRING, pSPARC->EigenFilename);
+    snprintf(EigenFilename, L_STRING, "%s", pSPARC->EigenFilename);
     
     FILE *output_fp;
     // first create an empty file
