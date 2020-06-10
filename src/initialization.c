@@ -1294,11 +1294,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
 
-    if(pSPARC->cell_typ == 0) {
 #ifdef DEBUG
         t1 = MPI_Wtime();
 #endif
-        // maximum eigenvalue of -0.5 * Lap (only with periodic boundary conditions)
+    pSPARC->MaxEigVal_mhalfLap = 0.0; // initialize to 0 to avoid accessing uninitialized variable
+    if(pSPARC->cell_typ == 0) {
+        // maximum eigenvalue of -0.5 * Lap (only accurate with periodic boundary conditions)
         pSPARC->MaxEigVal_mhalfLap = pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0]
                                      + pSPARC->D2_stencil_coeffs_z[0];
         double scal_x, scal_y, scal_z;
@@ -1306,25 +1307,60 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         scal_y = (pSPARC->Ny - pSPARC->Ny % 2) / (double) pSPARC->Ny;
         scal_z = (pSPARC->Nz - pSPARC->Nz % 2) / (double) pSPARC->Nz;
         for (p = 1; p < FDn + 1; p++) {
-            //pSPARC->MaxEigVal_mhalfLap += 2.0 * (1-2*(p%2)) * (pSPARC->D2_stencil_coeffs_x[p] + pSPARC->D2_stencil_coeffs_y[p] + pSPARC->D2_stencil_coeffs_z[p]);
-            pSPARC->MaxEigVal_mhalfLap += 2.0 * (pSPARC->D2_stencil_coeffs_x[p] * cos(M_PI*p*scal_x) + pSPARC->D2_stencil_coeffs_y[p] * cos(M_PI*p*scal_y) + pSPARC->D2_stencil_coeffs_z[p] * cos(M_PI*p*scal_z));
+            pSPARC->MaxEigVal_mhalfLap += 2.0 * (pSPARC->D2_stencil_coeffs_x[p] * cos(M_PI*p*scal_x) 
+                                               + pSPARC->D2_stencil_coeffs_y[p] * cos(M_PI*p*scal_y) 
+                                               + pSPARC->D2_stencil_coeffs_z[p] * cos(M_PI*p*scal_z));
         }
         pSPARC->MaxEigVal_mhalfLap *= -0.5;
-
+    } else if (pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
+        // WARNING: for non-orthogonal cells, this is only a rough estimate, which gives a lowerbound of the accurate answer
+        // maximum eigenvalue of -0.5 * Lap (non-orthogonal lattice)
+        pSPARC->MaxEigVal_mhalfLap = pSPARC->D2_stencil_coeffs_x[0]  // note lapcT[0] is already multiplied in D2_stencil_coeffs_x above
+                                   + pSPARC->D2_stencil_coeffs_y[0]
+                                   + pSPARC->D2_stencil_coeffs_z[0];
+        double scal_x, scal_y, scal_z;
+        scal_x = (pSPARC->Nx - pSPARC->Nx % 2) / (double) pSPARC->Nx;
+        scal_y = (pSPARC->Ny - pSPARC->Ny % 2) / (double) pSPARC->Ny;
+        scal_z = (pSPARC->Nz - pSPARC->Nz % 2) / (double) pSPARC->Nz;
+        for (p = 1; p < FDn + 1; p++) {
+            pSPARC->MaxEigVal_mhalfLap += 2.0 * pSPARC->D2_stencil_coeffs_x[p] * cos(M_PI*p*scal_x) 
+                                        + 2.0 * pSPARC->D2_stencil_coeffs_y[p] * cos(M_PI*p*scal_y) 
+                                        + 2.0 * pSPARC->D2_stencil_coeffs_z[p] * cos(M_PI*p*scal_z);
+        }
+        // for mixed terms (actually it's a better approx. if we neglect these terms!)
+        double sx, sy, sz;
+        sx = sy = sz = 0.0;
+        for (p = 1; p < FDn + 1; p++) {
+            sx += 2.0 * pSPARC->D1_stencil_coeffs_x[p] * sin(M_PI*p*scal_x); // very close to 0 (exactly 0 for even Nx)
+            sy += 2.0 * pSPARC->D1_stencil_coeffs_y[p] * sin(M_PI*p*scal_y); // very close to 0 (exactly 0 for even Ny)
+            sz += 2.0 * pSPARC->D1_stencil_coeffs_z[p] * sin(M_PI*p*scal_z); // very close to 0 (exactly 0 for even Nz)
+        }
+        sx = sy = sz = 0.0; // forcing the mixed terms to be zero here!
+        pSPARC->MaxEigVal_mhalfLap += 2.0 * pSPARC->lapcT[1] * sx * sy; // x,y
+        pSPARC->MaxEigVal_mhalfLap += 2.0 * pSPARC->lapcT[2] * sx * sz; // x,z
+        pSPARC->MaxEigVal_mhalfLap += 2.0 * pSPARC->lapcT[5] * sy * sz; // y,z
+        pSPARC->MaxEigVal_mhalfLap *= -0.5;
+    }
 #ifdef DEBUG
         t2 = MPI_Wtime();
         if (!rank) printf("Max eigenvalue of -0.5*Lap is %.13f, time taken: %.3f ms\n",pSPARC->MaxEigVal_mhalfLap, (t2-t1)*1e3);
 #endif
-    }
+
     // find Chebyshev polynomial degree based on max eigenvalue (spectral width)
     if (pSPARC->ChebDegree < 0) {
         double h_eff = 0.0;
-        if (fabs(pSPARC->delta_x - pSPARC->delta_y) < 1E-12 &&
-            fabs(pSPARC->delta_y - pSPARC->delta_z) < 1E-12) {
-            h_eff = pSPARC->delta_x;
-        } else {
-            // find effective mesh s.t. it has same spectral width
-            h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
+        if (pSPARC->cell_typ == 0) {
+            if (fabs(pSPARC->delta_x - pSPARC->delta_y) < 1E-12 &&
+                fabs(pSPARC->delta_y - pSPARC->delta_z) < 1E-12) {
+                h_eff = pSPARC->delta_x;
+            } else {
+                // find effective mesh s.t. it has same spectral width
+                h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
+            }
+        } else if (pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
+            // use max eigenvalue of -1/2*Lap to estimate the effective mesh size for orthogonal Laplacian
+            const double lambda_ref = 6.8761754299116333; // max eigval for 1D orthogonal -1.0*Lap for h_eff = 1.0
+            h_eff = sqrt(3.0*lambda_ref/(2.0*pSPARC->MaxEigVal_mhalfLap));
         }
         pSPARC->ChebDegree = Mesh2ChebDegree(h_eff);
 #ifdef DEBUG
@@ -2172,7 +2208,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jun 09, 2020)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Jun 10, 2020)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
