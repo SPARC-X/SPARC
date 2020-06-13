@@ -365,7 +365,7 @@ void Calc_DX(
     const double c
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
     
     for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
     {
