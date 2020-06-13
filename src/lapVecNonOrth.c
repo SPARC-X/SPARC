@@ -1402,7 +1402,7 @@ void Calc_DX1_DX2(
     const double *stencil_coefs2
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
     
     for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
     {
@@ -1459,7 +1459,7 @@ void stencil_4comp(
     const double *v0,       double *X1
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, r;
+    int i, j, k, jj, kk, jjj, kkk, r;
     
     for (k = z_X1_spos, kk = z_X_spos, kkk = z_DX_spos; k < z_X1_epos; k++, kk++, kkk++)
     {
@@ -1529,7 +1529,7 @@ void stencil_5comp(
     const double *v0,        double *X1
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, iiii, jjjj, kkkk, r;
+    int i, j, k, jj, kk, jjj, kkk, jjjj, kkkk, r;
     
     for (k = z_X1_spos, kk = z_X_spos, kkk = z_DX1_spos, kkkk = z_DX2_spos; k < z_X1_epos; k++, kk++, kkk++, kkkk++)
     {
@@ -1598,7 +1598,7 @@ void stencil_4comp_extd(
     double *X1
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, r;
+    int i, j, k, jj, kk, jjj, kkk, r;
     
     for (k = z_X1_spos, kk = z_X_spos, kkk = z_DX_spos; k < z_X1_epos; k++, kk++, kkk++)
     {
@@ -1666,7 +1666,7 @@ void stencil_5comp_extd(
     double *X1
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, iiii, jjjj, kkkk, r;
+    int i, j, k, jj, kk, jjj, kkk, jjjj, kkkk, r;
     
     for (k = z_X1_spos, kk = z_X_spos, kkk = z_DX1_spos, kkkk = z_DX2_spos; k < z_X1_epos; k++, kk++, kkk++, kkkk++)
     {

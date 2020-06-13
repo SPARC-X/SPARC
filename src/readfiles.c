@@ -123,8 +123,11 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%lf", &pSPARC_Input->range_z);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"LATVEC:") == 0) {
-            fscanf(input_fp,"%lf %lf %lf\n", &pSPARC_Input->LatVec[0], &pSPARC_Input->LatVec[1], &pSPARC_Input->LatVec[2]);
-            fscanf(input_fp,"%lf %lf %lf\n", &pSPARC_Input->LatVec[3], &pSPARC_Input->LatVec[4], &pSPARC_Input->LatVec[5]);
+            fscanf(input_fp, "%*[^\n]\n");
+            fscanf(input_fp,"%lf %lf %lf", &pSPARC_Input->LatVec[0], &pSPARC_Input->LatVec[1], &pSPARC_Input->LatVec[2]);
+            fscanf(input_fp, "%*[^\n]\n");
+            fscanf(input_fp,"%lf %lf %lf", &pSPARC_Input->LatVec[3], &pSPARC_Input->LatVec[4], &pSPARC_Input->LatVec[5]);
+            fscanf(input_fp, "%*[^\n]\n");
             fscanf(input_fp,"%lf %lf %lf", &pSPARC_Input->LatVec[6], &pSPARC_Input->LatVec[7], &pSPARC_Input->LatVec[8]);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"BOUNDARY_CONDITION:") == 0) { 
