@@ -10,7 +10,7 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 * Local and semilocal exchange correlation functionals.
 * ONCV and TM pseudopotentials in psp8 (ABINIT) format. 
 
-Additional details regarding the formulation and implementation of SPARC can be found in the accompanying paper.
+SPARC is straightforward to install/use and highly competitive with state-of-the-art planewave codes, demonstrating comparable performance on a small number of processors and order-of-magnitude advantages as the number of processors increases. Notably, the current version of SPARC brings solution times down to a few seconds for systems with O(100-500) atoms on large-scale parallel computers, outperforming planewave counterparts by an order of magnitude and more. Additional details regarding the formulation and implementation of SPARC can be found in the paper referenced below. Future versions will target similar solution times for large-scale systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
 
 **Users of SPARC are expected to cite the following publication: Q. Xu, A. Sharma, B. Comer, H. Huang, E. Chow, A.J. Medford, J.E. Pask, and P. Suryanarayana, 2020. SPARC: Simulation Package for Ab-initio Real-space Calculations. arXiv preprint arXiv:2005.10431.**
 
