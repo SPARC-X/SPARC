@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <mpi.h>
 #include <complex.h>
@@ -106,7 +107,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
 #endif
     // split the MPI_COMM_WORLD into spincomms using color = spincomm_index
-    MPI_Comm_split(MPI_COMM_WORLD, pSPARC->spincomm_index, 0, &pSPARC->spincomm);
+    color = (pSPARC->spincomm_index >= 0) ? pSPARC->spincomm_index : INT_MAX; 
+    MPI_Comm_split(MPI_COMM_WORLD, color, 0, &pSPARC->spincomm);
 #ifdef DEBUG
     t2 = MPI_Wtime();
     if (rank == 0) printf("\n--set up spincomm took %.3f ms\n",(t2-t1)*1000);
@@ -120,7 +122,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     if (rank < nproc - nproc % pSPARC->npspin) {
         color = rank_spincomm;
     } else {
-        color = -1;
+        color = INT_MAX;
     }
     MPI_Comm_split(MPI_COMM_WORLD, color, pSPARC->spincomm_index, &pSPARC->spin_bridge_comm);
 
@@ -164,7 +166,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
 #endif
     // split the pSPARC->spincomm into several kptcomms using color = kptcomm_index
-    MPI_Comm_split(pSPARC->spincomm, pSPARC->kptcomm_index, 0, &pSPARC->kptcomm);
+    color = (pSPARC->kptcomm_index >= 0) ? pSPARC->kptcomm_index : INT_MAX;
+    MPI_Comm_split(pSPARC->spincomm, color, 0, &pSPARC->kptcomm);
 
     //setup_core_affinity(pSPARC->kptcomm);
     //bind_proc_to_phys_core();
@@ -356,7 +359,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     if (rank_spincomm < size_spincomm - size_spincomm % pSPARC->npkpt) {
         color = rank_kptcomm;
     } else {
-        color = -1;
+        color = INT_MAX;
     }
     MPI_Comm_split(pSPARC->spincomm, color, pSPARC->kptcomm_index, &pSPARC->kpt_bridge_comm); // TODO: exclude null kptcomms
 
@@ -403,7 +406,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
 #endif
     // split the kptcomm into several bandcomms using color = bandcomm_index
-    MPI_Comm_split(pSPARC->kptcomm, pSPARC->bandcomm_index, 0, &pSPARC->bandcomm);
+    color = (pSPARC->bandcomm_index >= 0) ? pSPARC->bandcomm_index : INT_MAX;
+    MPI_Comm_split(pSPARC->kptcomm, color, 0, &pSPARC->bandcomm);
 
 #ifdef DEBUG
     t2 = MPI_Wtime();
@@ -590,12 +594,13 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
 
     // The following code sets up blacscomm in the 1st way described above
     color = rank_dmcomm;
-    if (pSPARC->bandcomm_index == -1 || pSPARC->dmcomm == MPI_COMM_NULL || pSPARC->kptcomm_index == -1)   color = -1;
+    if (pSPARC->bandcomm_index == -1 || pSPARC->dmcomm == MPI_COMM_NULL || pSPARC->kptcomm_index == -1)   color = INT_MAX;
 
 #ifdef DEBUG
     t1 = MPI_Wtime();
 #endif
     // split the kptcomm into several cblacscomms using color = rank_dmcomm
+    color = (color >= 0) ? color : INT_MAX;
     MPI_Comm_split(pSPARC->kptcomm, color, pSPARC->bandcomm_index, &pSPARC->blacscomm);
 #ifdef DEBUG
     t2 = MPI_Wtime();
