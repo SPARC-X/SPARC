@@ -1,0 +1,91 @@
+# Makefile for IBM machines using LAPACK or ScaLAPACK libraries
+# Set MACHOPT to select LAPACK, ScaLAPACK+LAPACK, or ScaLAPACK+ESSL libraries
+# Options: lapack, scalapack, scalapack_essl
+MACHOPT = scalapack_essl
+
+# Set variables according to MACHOPT
+USE_SCALAPACK = 0
+USE_SCALAPACK_ESSL = 0
+ifeq ($(MACHOPT),scalapack)
+USE_SCALAPACK = 1
+else ifeq ($(MACHOPT),scalapack_essl)
+USE_SCALAPACK_ESSL = 1
+endif
+
+# Set USE_DP_SUBEIG = 1 to use SPARC rather than ScaLAPACK routines for matrix data distribution
+# (Required if not using ScaLAPACK)
+# Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
+USE_DP_SUBEIG = 0
+
+# Set DEBUG_MODE = 1 to run with debug mode and print debug output
+DEBUG_MODE    = 0
+
+# Specify the paths to LAPACK, ScaLAPACK, and/or ESSL, as needed
+# Note: May use environment variables set by ml command: e.g., ml lapack, ml essl, etc.
+LAPACKLIB = ${LAPACK_DIR}
+LAPACKINC = ${LAPACK_INC}
+ESSLLIB = ${ESSLLIBDIR64}
+ESSLINC = ${ESSLHEADERDIR}
+SCALAPACKLIB = ${LAPACKLIB}
+SCALAPACKINC = ${LAPACKINC}
+
+###################################################
+
+# set local includes/libs
+CPPFLAGS = -Iinclude/
+LDLIBS   =
+
+# set external includes/libs
+ifeq ($(USE_SCALAPACK), 1)
+CPPFLAGS += -I${SCALAPACKINC} -I${LAPACKINC} -DUSE_SCALAPACK -DIBM
+LDLIBS   += -L${SCALAPACKLIB} -L${LAPACKLIB} -lcblas -llapacke -llapack -lscalapack
+else ifeq ($(USE_SCALAPACK_ESSL), 1)
+CPPFLAGS += -I${SCALAPACKINC} -I${ESSLINC} -DUSE_SCALAPACK -DUSE_ESSL -DIBM
+LDLIBS   += -L${SCALAPACKLIB} -L${ESSLLIB} -lessl -llapacke -llapackforessl -lscalapack 
+else
+CPPFLAGS += -I${LAPACKINC}
+LDLIBS   += -L${LAPACKLIB} -lcblas -llapacke -llapack
+endif
+
+# set DP_SUBEIG
+ifeq ($(USE_DP_SUBEIG), 1)
+CPPFLAGS += -DUSE_DP_SUBEIG
+endif
+
+# set DEBUG mode
+ifeq ($(DEBUG_MODE), 1)
+CPPFLAGS += -Wall -g -DDEBUG
+endif
+
+# compiler flags
+# IBM xlc optimization levels: O0 O2 O3 O4 O5 Ofast, default O0, O = O2
+# N.B. Spurious results beyond -O3 -qstrict with xlc
+#CFLAGS = -std=gnu99 -O2
+CFLAGS = -std=gnu99 -O3 -qstrict
+
+OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o    \
+        electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o         \
+        occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
+        hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
+        linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
+        forces.o stress.o pressure.o finalization.o
+
+LIBBASE = ../lib/sparc
+TESTBASE = ../.ci
+
+override CC=mpicc
+
+all: sparc
+
+# Note the implicit rule to compile '.c' files into '.o' files is
+# %.o : %.c
+# 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+sparc: $(OBJSC)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
+
+.PHONY: clean
+clean:
+	rm -f  $(OBJSC) $(LIBBASE)
+test: ../.ci/run_tests.py
+	cd $(TESTBASE); ./run_tests.py
