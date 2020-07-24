@@ -78,7 +78,7 @@ void Calculate_ionic_stress(SPARC_OBJ *pSPARC){
         cell_measure *= pSPARC->range_x;
     if(pSPARC->BCy == 0)
         cell_measure *= pSPARC->range_y;
-    if(pSPARC->BCy == 0)
+    if(pSPARC->BCz == 0)
         cell_measure *= pSPARC->range_z;
 
     for(j = 0; j < 6; j++){
@@ -250,7 +250,7 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
             cell_measure *= pSPARC->range_x;
         if(pSPARC->BCy == 0)
             cell_measure *= pSPARC->range_y;
-        if(pSPARC->BCy == 0)
+        if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
        for(int i = 0; i < 6; i++)
@@ -678,7 +678,7 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
             cell_measure *= pSPARC->range_x;
         if(pSPARC->BCy == 0)
             cell_measure *= pSPARC->range_y;
-        if(pSPARC->BCy == 0)
+        if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
        for(int i = 0; i < 6; i++)
@@ -1055,7 +1055,7 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
             cell_measure *= pSPARC->range_x;
         if(pSPARC->BCy == 0)
             cell_measure *= pSPARC->range_y;
-        if(pSPARC->BCy == 0)
+        if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
        for(int i = 0; i < 6; i++) {
@@ -1473,7 +1473,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
             cell_measure *= pSPARC->range_x;
         if(pSPARC->BCy == 0)
             cell_measure *= pSPARC->range_y;
-        if(pSPARC->BCy == 0)
+        if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
        for(int i = 0; i < 6; i++) {
