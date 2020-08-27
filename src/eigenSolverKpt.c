@@ -842,29 +842,41 @@ void DP_Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i
         #endif
     } else {
         #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        int ONE = 1;
-        // Step 1: redistribute DP_CheFSI_kpt->Hp_local and DP_CheFSI_kpt->Mp_local on rank_kpt == 0 to ScaLAPACK format 
-        pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI_kpt->Hp_local, &ONE, &ONE, 
-                  DP_CheFSI_kpt->desc_Hp_local, pSPARC->Hp_kpt, &ONE, &ONE, 
-                  pSPARC->desc_Hp_BLCYC, &pSPARC->ictxt_blacs_topo);
-        pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI_kpt->Mp_local, &ONE, &ONE, 
-                  DP_CheFSI_kpt->desc_Mp_local, pSPARC->Mp_kpt, &ONE, &ONE, 
-                  pSPARC->desc_Mp_BLCYC, &pSPARC->ictxt_blacs_topo);
+        int rank_dmcomm = -1;
+        if (pSPARC->dmcomm != MPI_COMM_NULL) 
+            MPI_Comm_rank(pSPARC->dmcomm, &rank_dmcomm);
+        // Hp and Mp is only correct at the first blacscomm
+        if (rank_dmcomm == 0) {
+            int ONE = 1;
+            // Step 1: redistribute DP_CheFSI_kpt->Hp_local and DP_CheFSI_kpt->Mp_local on rank_kpt == 0 to ScaLAPACK format 
+            pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI_kpt->Hp_local, &ONE, &ONE, 
+                      DP_CheFSI_kpt->desc_Hp_local, pSPARC->Hp_kpt, &ONE, &ONE, 
+                      pSPARC->desc_Hp_BLCYC, &pSPARC->ictxt_blacs_topo);
+            pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI_kpt->Mp_local, &ONE, &ONE, 
+                      DP_CheFSI_kpt->desc_Mp_local, pSPARC->Mp_kpt, &ONE, &ONE, 
+                      pSPARC->desc_Mp_BLCYC, &pSPARC->ictxt_blacs_topo);
 
-        // Step 2: use pzsygvx_ to solve the generalized eigenproblem
-        Solve_Generalized_EigenProblem_kpt(pSPARC, kpt, spn_i);
-        
-        // Step 3: redistribute the obtained eigenvectors from ScaLAPACK format to DP_CheFSI_kpt->eig_vecs on rank_kpt == 0
-        pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Q_kpt, &ONE, &ONE, 
-                  pSPARC->desc_Q_BLCYC, DP_CheFSI_kpt->eig_vecs, &ONE, &ONE, 
-                  DP_CheFSI_kpt->desc_eig_vecs, &pSPARC->ictxt_blacs_topo);
+            // Step 2: use pzsygvx_ to solve the generalized eigenproblem
+            Solve_Generalized_EigenProblem_kpt(pSPARC, kpt, spn_i);
+            
+            // Step 3: redistribute the obtained eigenvectors from ScaLAPACK format to DP_CheFSI_kpt->eig_vecs on rank_kpt == 0
+            pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Q_kpt, &ONE, &ONE, 
+                      pSPARC->desc_Q_BLCYC, DP_CheFSI_kpt->eig_vecs, &ONE, &ONE, 
+                      DP_CheFSI_kpt->desc_eig_vecs, &pSPARC->ictxt_blacs_topo);
+        }
 
         int Ns_dp = DP_CheFSI_kpt->Ns_dp;
         MPI_Bcast(DP_CheFSI_kpt->eig_vecs, Ns_dp * Ns_dp, MPI_C_DOUBLE_COMPLEX, 0, DP_CheFSI_kpt->kpt_comm);
-        #else
+        
+        if (pSPARC->npNd > 1 && pSPARC->bandcomm_index >= 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
+            double *eig_val = pSPARC->lambda + kpt*Ns_dp + spn_i*pSPARC->Nkpts_kptcomm*Ns_dp;
+            MPI_Bcast(eig_val, Ns_dp, MPI_DOUBLE, 0, pSPARC->dmcomm);
+        }
+
+        #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
         if (DP_CheFSI_kpt->rank_kpt == 0) printf("[FATAL] Subspace eigenproblem should be solved using ScaLAPACK but ScaLAPACK is not compiled\n");
         exit(255);
-        #endif
+        #endif  // #if defined(USE_MKL) || defined(USE_SCALAPACK)
     }
 }
 
