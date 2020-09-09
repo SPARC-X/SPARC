@@ -186,6 +186,10 @@ void stencil_3axis_thread_kpt(
     int countx, county, countz;
     int shift_y = sz_x;
     int shift_z = sz_x + sz_y;
+
+    double complex *Phase_fac_x = Phase_fac;
+    double complex *Phase_fac_y = Phase_fac + shift_y;
+    double complex *Phase_fac_z = Phase_fac + shift_z;
     
     count1 = 0;
     const int shift_ip = x_ex_spos - x_spos;
@@ -199,7 +203,7 @@ void stencil_3axis_thread_kpt(
             int offset_ex = kp * stride_z_ex + jp * stride_y_ex;
             //global_j = j + DMVertices[2];
             countx = 0;
-            //#pragma simd
+            #pragma omp simd
             for (i = x_spos; i < x_epos; i++)
             {
                 int ip     = i + shift_ip;
@@ -213,10 +217,11 @@ void stencil_3axis_thread_kpt(
                 {
                     int stride_y_r = r * stride_y_ex;
                     int stride_z_r = r * stride_z_ex;
-                    
-                    double complex res_x = (x0[idx_ex - r]          * Phase_fac[countx]           + x0[idx_ex + r]          * Phase_fac[countx+1])             * stencil_coefs[3*r];
-                    double complex res_y = (x0[idx_ex - stride_y_r] * Phase_fac[county + shift_y] + x0[idx_ex + stride_y_r] * Phase_fac[county + shift_y + 1]) * stencil_coefs[3*r+1];
-                    double complex res_z = (x0[idx_ex - stride_z_r] * Phase_fac[countz + shift_z] + x0[idx_ex + stride_z_r] * Phase_fac[countz + shift_z + 1]) * stencil_coefs[3*r+2];
+                    county = count2 + (r-1)*2;
+                    countz = count1 + (r-1)*2;
+                    double complex res_x = (x0[idx_ex - r]          * Phase_fac_x[countx] + x0[idx_ex + r]          * Phase_fac_x[countx+1]) * stencil_coefs[3*r];
+                    double complex res_y = (x0[idx_ex - stride_y_r] * Phase_fac_y[county] + x0[idx_ex + stride_y_r] * Phase_fac_y[county+1]) * stencil_coefs[3*r+1];
+                    double complex res_z = (x0[idx_ex - stride_z_r] * Phase_fac_z[countz] + x0[idx_ex + stride_z_r] * Phase_fac_z[countz+1]) * stencil_coefs[3*r+2];
                     
                     /*int indx_l = (global_i - r + pSPARC->Nx)/pSPARC->Nx;
                     int indx_r = (global_i + r)/pSPARC->Nx;
@@ -230,7 +235,7 @@ void stencil_3axis_thread_kpt(
                     double complex res_z = (x0[idx_ex - stride_z_r] * ((1-indz_l) * phase_fac_l_z + indz_l) + x0[idx_ex + stride_z_r] * (indz_r * phase_fac_r_z + (1-indz_r)) ) * stencil_coefs[3*r+2];
                     */
                     res += res_x + res_y + res_z;
-                    countx += 2; county += 2; countz += 2;                 
+                    countx += 2; // county += 2; countz += 2;                 
                 }
                 y[idx] = res + b * (v0[idx] * x0[idx_ex]);
             }

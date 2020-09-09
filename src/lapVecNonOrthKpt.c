@@ -1197,12 +1197,13 @@ void Calc_DX1_DX2_kpt(
         {
             int jshift_DX = kshift_DX + j * stride_y_DX;
             int jshift_X = kshift_X + jj * stride_y_X;
-            //#pragma simd
             init1_m1 = init1_m2 = 0;
-            for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            const int niters = x_DX_epos - x_DX_spos;
+            #pragma omp simd
+            for (i = 0; i < niters; i++)
             {
-                int ishift_DX = jshift_DX + i;
-                int ishift_X = jshift_X + ii;
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
                 double complex temp1 = 0.0;
                 double complex temp2 = 0.0;
                 count_m1 = init1_m1 + init2_m1 + init3_m1;
@@ -1370,12 +1371,13 @@ void stencil_4comp_kpt(
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX = kshift_DX + jjj * stride_y_DX;
             countx = init1 = 0;
-            //#pragma simd
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX_spos; i < x_X1_epos; i++, ii++, iii++)
+            const int niters = x_X1_epos - x_X1_spos;
+            #pragma omp simd
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX    = jshift_DX + iii;
+                int ishift_X1    = jshift_X1 + i + x_X1_spos;
+                int ishift_X     = jshift_X  + i + x_X_spos;
+                int ishift_DX    = jshift_DX + i + x_DX_spos;
                 county = count2;
                 countz = count3;
                 countm = init1 + init2 + init3;
@@ -1577,14 +1579,15 @@ void stencil_5comp_kpt(
             int jshift_X  = kshift_X + jj * stride_y_X;
             int jshift_DX1 = kshift_DX1 + jjj * stride_y_DX1;
             int jshift_DX2 = kshift_DX2 + jjjj * stride_y_DX2;
-            //#pragma simd
             countx = init1_m1 = init1_m2 = 0;
-            for (i = x_X1_spos, ii = x_X_spos, iii = x_DX1_spos, iiii = x_DX2_spos; i < x_X1_epos; i++, ii++, iii++, iiii++)
+            const int niters = x_X1_epos - x_X1_spos;
+            #pragma omp simd
+            for (i = 0; i < niters; i++)
             {
-                int ishift_X1    = jshift_X1 + i;
-                int ishift_X     = jshift_X + ii;
-                int ishift_DX1    = jshift_DX1 + iii;
-                int ishift_DX2    = jshift_DX2 + iiii;
+                int ishift_X1  = jshift_X1  + i + x_X1_spos;
+                int ishift_X   = jshift_X   + i + x_X_spos;
+                int ishift_DX1 = jshift_DX1 + i + x_DX1_spos;
+                int ishift_DX2 = jshift_DX2 + i + x_DX2_spos;
                 county = count2;
                 countz = count3;
                 countm1 = init1_m1 + init2_m1 + init3_m1;
