@@ -437,22 +437,22 @@ void Calc_DX_kpt(
         {
             int jshift_DX = kshift_DX + j * stride_y_DX;
             int jshift_X = kshift_X + jj * stride_y_X;
-            //#pragma omp simd
-            init1 = 0;
-            for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            const int niters = x_DX_epos - x_DX_spos;
+            #pragma omp simd
+            for (i = 0; i < niters; i++)
             {
-                int ishift_DX = jshift_DX + i;
-                int ishift_X = jshift_X + ii;
-                count = init1 + init2 + init3;
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
+                init1 = i * shift1;
+                int countshift = init1 + init2 + init3;
                 double complex temp = X[ishift_X] * c;
                 for (r = 1; r <= radius; r++)
                 {
                     int stride_X_r = r * stride_X;
+                    count = countshift + (r-1)*2;
                     temp += (X[ishift_X + stride_X_r] * Phase_fac[count] - X[ishift_X - stride_X_r] * Phase_fac[count + 1]) * stencil_coefs[r];
-                    count += 2;
                 }
                 DX[ishift_DX] = temp;
-                init1 += shift1;
             }
             init2 += shift2;
         }
