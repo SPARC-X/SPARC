@@ -845,7 +845,6 @@ void Calculate_local_forces_linear(SPARC_OBJ *pSPARC)
                         DVcJ_x_val = DVcJ_y_val = DVcJ_z_val = 0.0;
                         //bJ_val = VJ[ishift_p] * w2_diag;
                         //bJ_ref_val = VJ_ref[ishift_p] * w2_diag;
-                        //#pragma simd
                         for (p = 1; p <= FDn; p++) {
                             DVcJ_x_val += (VcJ[ishift_p+p] - VcJ[ishift_p-p]) * pSPARC->D1_stencil_coeffs_x[p];
                             DVcJ_y_val += (VcJ[ishift_p+pshifty_ex[p]] - VcJ[ishift_p-pshifty_ex[p]]) * pSPARC->D1_stencil_coeffs_y[p];
