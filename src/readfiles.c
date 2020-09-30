@@ -183,12 +183,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d",&pSPARC_Input->order);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"FD_GRID:") == 0) {
-        	fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_x);
-	        fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_y);
-	        fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_z);
+            fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_x);
+            fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_y);
+            fscanf(input_fp,"%d",&pSPARC_Input->numIntervals_z);
             Flag_fdgrid++; // count number of times FD grid is defined
             snprintf(str, L_STRING, "undefined");    // initialize str
-	        fscanf(input_fp, "%*[^\n]\n");
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MESH_SPACING:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->mesh_spacing);
             Flag_meshspacing++; // count number of times mesh is defined
@@ -522,15 +522,15 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"PRINT_DENSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PrintElecDensFlag);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"OUTPUT_FILE:") == 0) {	  
+        } else if (strcmpi(str,"OUTPUT_FILE:") == 0) {    
             fscanf(input_fp,"%s",pSPARC_Input->filename_out);
             fscanf(input_fp, "%*[^\n]\n");
-	    } else {
+        } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
         }
     }
-    
+
     // copy filename into pSPARC struct
     snprintf(pSPARC->filename, L_STRING, "%s", pSPARC_Input->filename);
     
@@ -686,21 +686,21 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         }
         */
 
-        if (Flag_elecT == 0){	
-            pSPARC_Input->elec_T = pSPARC_Input->ion_T;	
-            pSPARC_Input->Beta = 1./(CONST_KB * pSPARC_Input->elec_T);	
-            pSPARC_Input->ion_elec_eqT = 0; 	
-        } else if (Flag_elecT == 1 && pSPARC_Input->elec_T > 0){	
-            pSPARC_Input->ion_elec_eqT = 0;	
-        } else if (Flag_elecT == 1 && pSPARC_Input->elec_T <= 0){	
-            pSPARC_Input->elec_T = pSPARC_Input->ion_T;	
-            pSPARC_Input->Beta = 1./(CONST_KB * pSPARC_Input->elec_T);	
-            pSPARC_Input->ion_elec_eqT = 1;	
-        }	
+        if (Flag_elecT == 0){   
+            pSPARC_Input->elec_T = pSPARC_Input->ion_T; 
+            pSPARC_Input->Beta = 1./(CONST_KB * pSPARC_Input->elec_T);  
+            pSPARC_Input->ion_elec_eqT = 0;     
+        } else if (Flag_elecT == 1 && pSPARC_Input->elec_T > 0){    
+            pSPARC_Input->ion_elec_eqT = 0; 
+        } else if (Flag_elecT == 1 && pSPARC_Input->elec_T <= 0){   
+            pSPARC_Input->elec_T = pSPARC_Input->ion_T; 
+            pSPARC_Input->Beta = 1./(CONST_KB * pSPARC_Input->elec_T);  
+            pSPARC_Input->ion_elec_eqT = 1; 
+        }   
 
-        if(Flag_smear_typ == 0){	
-            pSPARC_Input->elec_T_type = 0; //fermi-dirac               	
-        }        	
+        if(Flag_smear_typ == 0){    
+            pSPARC_Input->elec_T_type = 0; //fermi-dirac                
+        }           
 
         // Start and end temperatures of thermostat
         if(strcmpi(pSPARC_Input->MDMeth,"NVT_NH") == 0){
@@ -1075,7 +1075,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         fscanf(psd_fp, "%*[^\n]\n"); // skip current line
         
         int pspcod, pspxc;
-		fscanf(psd_fp,"%d",&pspcod); // pspcod
+        fscanf(psd_fp,"%d",&pspcod); // pspcod
         fscanf(psd_fp,"%d %d %d %d",&pspxc,&pSPARC->psd[ityp].lmax,&pSPARC->localPsd[ityp],&pSPARC->psd[ityp].size); 
         pSPARC->psd[ityp].pspxc = pspxc;
 #ifdef DEBUG
@@ -1100,19 +1100,19 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         fseek(psd_fp, 0L, SEEK_SET);  // returns 0 if succeeded, can use to check status
         
         // read rc
-    	do {
-			fscanf(psd_fp,"%s",str);
-		} while (strcmpi(str,"r_core="));
+        do {
+            fscanf(psd_fp,"%s",str);
+        } while (strcmpi(str,"r_core="));
 
         for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
             fscanf(psd_fp,"%lf",&vtemp);
             pSPARC->psd[ityp].rc[l] = vtemp;
-		}
+        }
         
         // read number of projectors 
         do {
-			fscanf(psd_fp,"%s",str);
-		} while (strcmpi(str,"qchrg"));
+            fscanf(psd_fp,"%s",str);
+        } while (strcmpi(str,"qchrg"));
 
         lpos[0] = 0;
         for (l = 0; l <= lmax; l++) {
@@ -1122,10 +1122,10 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         nproj = lpos[lmax+1]; 
         
         do {
-			fscanf(psd_fp,"%s",str);
-		} while (strcmpi(str,"extension_switch"));
-		
-		// allocate memory
+            fscanf(psd_fp,"%s",str);
+        } while (strcmpi(str,"extension_switch"));
+        
+        // allocate memory
         pSPARC->psd[ityp].RadialGrid = (double *)calloc(pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].UdV = (double *)calloc(nproj * pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].rVloc = (double *)calloc(pSPARC->psd[ityp].size , sizeof(double)); 
@@ -1133,71 +1133,74 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         pSPARC->psd[ityp].Gamma = (double *)calloc(nproj , sizeof(double)); 
         
         // start reading projectors
-        fscanf(psd_fp,"%d",&l);
-        while (l <= pSPARC->psd[ityp].lmax) {
+        int l_read = 0;
+        fscanf(psd_fp,"%d",&l_read); 
+        for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
             if (l != pSPARC->localPsd[ityp]) {
-				for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++) {
-					fscanf(psd_fp,"%lf", &vtemp);
-					pSPARC->psd[ityp].Gamma[lpos[l]+kk] = vtemp;
-				}
-    			for (jj = 0; jj < pSPARC->psd[ityp].size; jj++) {
-    				fscanf(psd_fp,"%lf", &vtemp);
-    				fscanf(psd_fp,"%lf", &vtemp);
-    				pSPARC->psd[ityp].RadialGrid[jj] = vtemp;
-    				for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++) {
-    					fscanf(psd_fp,"%lf",&vtemp);
-    				    pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size+jj] = vtemp/pSPARC->psd[ityp].RadialGrid[jj];
-    				}
-    			}
-    			for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++)
-    			    pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size] = pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size+1];
-			} else {
-				// first read Vloc(r = 0)
+                for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++) {
+                    fscanf(psd_fp,"%lf", &vtemp);
+                    pSPARC->psd[ityp].Gamma[lpos[l]+kk] = vtemp;
+                }
+                for (jj = 0; jj < pSPARC->psd[ityp].size; jj++) {
+                    fscanf(psd_fp,"%lf", &vtemp);
+                    fscanf(psd_fp,"%lf", &vtemp);
+                    pSPARC->psd[ityp].RadialGrid[jj] = vtemp;
+                    for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++) {
+                        fscanf(psd_fp,"%lf",&vtemp);
+                        pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size+jj] = vtemp/pSPARC->psd[ityp].RadialGrid[jj];
+                    }
+                }
+                for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++)
+                    pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size] = pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size+1];
+            } else {
+                // first read Vloc(r = 0)
                 fscanf(psd_fp, "%*[^\n]\n"); // skip current line
-				fscanf(psd_fp, "%lf", &vtemp); // skip index
-				fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-				pSPARC->psd[ityp].RadialGrid[0] = vtemp;
-				pSPARC->psd[ityp].rVloc[0] = vtemp * vtemp2;
-				pSPARC->psd[ityp].Vloc_0 = vtemp2;
-				// read r and Vloc, store rVloc
-				for (jj = 1; jj < pSPARC->psd[ityp].size; jj++) {
-					fscanf(psd_fp, "%lf", &vtemp);
-					fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-					pSPARC->psd[ityp].RadialGrid[jj] = vtemp;
-					pSPARC->psd[ityp].rVloc[jj] = vtemp * vtemp2;
-				}
+                fscanf(psd_fp, "%lf", &vtemp); // skip index
+                fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+                pSPARC->psd[ityp].RadialGrid[0] = vtemp;
+                pSPARC->psd[ityp].rVloc[0] = vtemp * vtemp2;
+                pSPARC->psd[ityp].Vloc_0 = vtemp2;
+                // read r and Vloc, store rVloc
+                for (jj = 1; jj < pSPARC->psd[ityp].size; jj++) {
+                    fscanf(psd_fp, "%lf", &vtemp);
+                    fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+                    pSPARC->psd[ityp].RadialGrid[jj] = vtemp;
+                    pSPARC->psd[ityp].rVloc[jj] = vtemp * vtemp2;
+                }
             }
-            fscanf(psd_fp,"%d",&l); 
-		}
+            fscanf(psd_fp,"%d",&l_read); 
+        }
         
         // read Vloc if lloc > lmax
         //if (pSPARC->localPsd[ityp] > pSPARC->psd[ityp].lmax || l > pSPARC->psd[ityp].lmax) {
-	    if (pSPARC->localPsd[ityp] > pSPARC->psd[ityp].lmax || l == 4) {
+        if (pSPARC->localPsd[ityp] > pSPARC->psd[ityp].lmax || l_read == 4) {
             // first read Vloc(r = 0)
-	        fscanf(psd_fp, "%lf", &vtemp);
-			fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-			pSPARC->psd[ityp].rVloc[0] = vtemp * vtemp2;
-			pSPARC->psd[ityp].Vloc_0 = vtemp2;
-	        
-	        // read r and Vloc, store rVloc
-			for (jj = 1; jj < pSPARC->psd[ityp].size; jj++) {
-			    fscanf(psd_fp, "%lf", &vtemp);
-				fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-				pSPARC->psd[ityp].rVloc[jj] = vtemp * vtemp2;
-			}
-		}	
+            fscanf(psd_fp, "%lf", &vtemp);
+            fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+            pSPARC->psd[ityp].rVloc[0] = vtemp * vtemp2;
+            pSPARC->psd[ityp].Vloc_0 = vtemp2;
+            
+            // read r and Vloc, store rVloc
+            for (jj = 1; jj < pSPARC->psd[ityp].size; jj++) {
+                fscanf(psd_fp, "%lf", &vtemp);
+                fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+                pSPARC->psd[ityp].rVloc[jj] = vtemp * vtemp2;
+            }
+        } else {
+            fseek (psd_fp, -1*4, SEEK_CUR ); // move back 4 columns
+        }  
 
         // read isolated atom electron density (the 3rd number of each line)
-		for (jj = 0; jj < pSPARC->psd[ityp].size;jj++) {
-			fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-			fscanf(psd_fp,"%lf",&vtemp);
-			pSPARC->psd[ityp].rhoIsoAtom[jj] = vtemp / (4.0 * M_PI);
-			fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
-		}
+        for (jj = 0; jj < pSPARC->psd[ityp].size;jj++) {
+            fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+            fscanf(psd_fp,"%lf",&vtemp);
+            pSPARC->psd[ityp].rhoIsoAtom[jj] = vtemp / (4.0 * M_PI);
+            fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
+        }
         
         //// read rc from <INPUT> parameters
         //do {
-        //	fscanf(psd_fp,"%s",str);
+        //  fscanf(psd_fp,"%s",str);
         //} while (strcmpi(str,"qcut"));
 
         //for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
@@ -1218,28 +1221,28 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         double dr_j;
         int is_r_uniform = 1;
         for (jj = 1; jj < pSPARC->psd[ityp].size; jj++) {
-        	dr_j = pSPARC->psd[ityp].RadialGrid[jj] - pSPARC->psd[ityp].RadialGrid[jj-1];
-        	// check if dr is 0
-        	if (fabs(dr_j) < TEMP_TOL) {
-        		printf("\nError: repeated radial grid values in pseudopotential (%s)!\n\n", psd_filename);
-        		exit(EXIT_FAILURE);
-        	}
-        	// check if mesh is uniform
-        	if (fabs(dr_j - dr0) > TEMP_TOL) {
-        		is_r_uniform = 0;
+            dr_j = pSPARC->psd[ityp].RadialGrid[jj] - pSPARC->psd[ityp].RadialGrid[jj-1];
+            // check if dr is 0
+            if (fabs(dr_j) < TEMP_TOL) {
+                printf("\nError: repeated radial grid values in pseudopotential (%s)!\n\n", psd_filename);
+                exit(EXIT_FAILURE);
+            }
+            // check if mesh is uniform
+            if (fabs(dr_j - dr0) > TEMP_TOL) {
+                is_r_uniform = 0;
                 #ifdef DEBUG
-        		printf("r[%d] = %.6E\n",jj-1, pSPARC->psd[ityp].RadialGrid[jj-1]);
-        		printf("r[%d] = %.6E\n",jj, pSPARC->psd[ityp].RadialGrid[jj]);
+                printf("r[%d] = %.6E\n",jj-1, pSPARC->psd[ityp].RadialGrid[jj-1]);
+                printf("r[%d] = %.6E\n",jj, pSPARC->psd[ityp].RadialGrid[jj]);
                 printf("r(%d)-r(%d) = %.6E, r(2)-r(1) = %.6E\n", jj+1, jj, dr_j, dr0);
                 #endif
                 break;
-        	}
+            }
         }
 
         pSPARC->psd[ityp].is_r_uniform = is_r_uniform;
 
         if (pspcod == 8 && is_r_uniform == 0) {
-        	printf("\nWARNING: radial grid is non-uniform for psp8 format! (%s)\n\n", psd_filename);
+            printf("\nWARNING: radial grid is non-uniform for psp8 format! (%s)\n\n", psd_filename);
         }
 
         // close the file
