@@ -5,6 +5,14 @@
 
 
 --------------
+Oct 01, 2020
+Name: Qimen Xu
+Changes: (readfiles.c)
+1. Modify the function for reading pseudopotentials to support two formats of converted TM pseudopotentials.
+2. Memory leak fix in DP (kpt_comm not freed for idle processes).
+
+
+--------------
 Sep 09, 2020
 Name: Qimen Xu
 Changes: (gradVecRoutinesKpt.c, lapVecNonOrthKpt.c, lapVecOrthKpt.c)
