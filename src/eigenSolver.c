@@ -650,6 +650,7 @@ void init_DP_CheFSI(SPARC_OBJ *pSPARC)
     MPI_Comm_split(pSPARC->kptcomm, proc_active, rank_kpt, &DP_CheFSI->kpt_comm);
     if (proc_active == 0)
     {
+        MPI_Comm_free(&DP_CheFSI->kpt_comm);
         free(DP_CheFSI);
         pSPARC->DP_CheFSI = NULL;
         return;
