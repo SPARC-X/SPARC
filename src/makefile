@@ -13,6 +13,10 @@ USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 0
 
+# Enable SIMD vectorization for complex stencil routines
+# CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
+ENABLE_SIMD_COMPLEX = 0
+
 # Specify the path MKLROOT if it's not already set to compile with MKL, e.g,
 # MKLROOT = /opt/intel/compilers_and_libraries_2017.4.196/linux/mkl
 
@@ -55,6 +59,11 @@ endif
 # to compile with DEBUG mode
 ifeq ($(DEBUG_MODE), 1)
 CPPFLAGS += -Wall -g -DDEBUG
+endif
+
+# to enable SIMD for complex stencil routines
+ifeq ($(ENABLE_SIMD_COMPLEX), 1)
+CPPFLAGS += -DENABLE_SIMD_COMPLEX
 endif
 
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
