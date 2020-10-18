@@ -1199,7 +1199,9 @@ void Calc_DX1_DX2_kpt(
             int jshift_X = kshift_X + jj * stride_y_X;
             init1_m1 = init1_m2 = 0;
             const int niters = x_DX_epos - x_DX_spos;
-            #pragma omp simd
+#ifdef ENABLE_SIMD_COMPLEX            
+#pragma omp simd
+#endif            
             for (i = 0; i < niters; i++)
             {
                 int ishift_DX = jshift_DX + i + x_DX_spos;
@@ -1372,7 +1374,9 @@ void stencil_4comp_kpt(
             int jshift_DX = kshift_DX + jjj * stride_y_DX;
             countx = init1 = 0;
             const int niters = x_X1_epos - x_X1_spos;
-            #pragma omp simd
+#ifdef ENABLE_SIMD_COMPLEX            
+#pragma omp simd
+#endif            
             for (i = 0; i < niters; i++)
             {
                 int ishift_X1    = jshift_X1 + i + x_X1_spos;
@@ -1581,7 +1585,9 @@ void stencil_5comp_kpt(
             int jshift_DX2 = kshift_DX2 + jjjj * stride_y_DX2;
             countx = init1_m1 = init1_m2 = 0;
             const int niters = x_X1_epos - x_X1_spos;
-            #pragma omp simd
+#ifdef ENABLE_SIMD_COMPLEX            
+#pragma omp simd
+#endif            
             for (i = 0; i < niters; i++)
             {
                 int ishift_X1  = jshift_X1  + i + x_X1_spos;
