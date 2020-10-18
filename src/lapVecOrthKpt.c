@@ -203,7 +203,9 @@ void stencil_3axis_thread_kpt(
             int offset_ex = kp * stride_z_ex + jp * stride_y_ex;
             //global_j = j + DMVertices[2];
             countx = 0;
-            #pragma omp simd
+#ifdef ENABLE_SIMD_COMPLEX            
+#pragma omp simd
+#endif            
             for (i = x_spos; i < x_epos; i++)
             {
                 int ip     = i + shift_ip;
