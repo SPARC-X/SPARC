@@ -35,7 +35,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 114
+#define N_MEMBR 117
 
 
 
@@ -44,15 +44,36 @@
  */
 void print_usage() {
     printf("\n");
-    printf("Usage: {SPARCROOT}/lib/sparc -name <filename>\n");
-    printf("       {SPARCROOT} is the location of SPARC folder\n");
-    printf("       Required argument:\n");
-    printf("           <filename>     The filename shared by .inpt file and .ion\n");
-    printf("                          file (without extension)\n");
-    printf("       Example:\n");
-    printf("           {SPARCROOT}/lib/sparc -name test\n");
-    printf("       The example command runs sparc with input file test.inpt,\n");
-    printf("       ion file test.ion.\n");
+    printf("USAGE:\n"); 
+    printf("    mpirun -np <nproc> {SPARCROOT}/lib/sparc -name <filename>\n");
+    printf("\n");
+    printf("    {SPARCROOT} is the location of the SPARC folder\n");
+    printf("\n");
+    printf("REQUIRED ARGUMENT:\n");
+    printf("    -name <filename>\n");
+    printf("           The filename shared by .inpt file and .ion\n");
+    printf("           file (without extension)\n");
+    printf("\n");
+    printf("OPTIONS: \n");
+    printf("    -h, --help\n");
+    printf("           Display help (from command line).\n");
+    printf("    -n <number of Nodes>\n");
+    printf("    -c <number of CPUs per node>\n");
+    printf("    -a <number of Accelerators (e.g., GPUs) per node>\n");
+    printf("\n");
+    printf("EXAMPLE:\n");
+    printf("\n");
+    printf("    mpirun -np 8 {SPARCROOT}/lib/sparc -name test\n");
+    printf("\n");
+    printf("    The example command runs sparc with 8 cores, with input file named\n");
+    printf("    test.inpt, and ion file named test.ion.\n");
+    printf("\n");
+    printf("NOTE: \n");
+    printf("    This is a short description of the usage of SPARC. For a detailed \n");
+    printf("    discription, refer to the manual online at\n");
+    printf("\n");
+    printf("        https://github.com/SPARC-X/SPARC/tree/master/doc \n");
+    printf("\n");
 }
 
 
@@ -274,15 +295,30 @@ void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[]) {
 
     // save input filename
     memset(pSPARC_Input->filename, '\0', sizeof(pSPARC_Input->filename));
+    pSPARC_Input->num_node = 0;
+    pSPARC_Input->num_cpu_per_node = 0;
+    pSPARC_Input->num_acc_per_node = 0;
     for (i = 1; i < argc-1; i++) {
+        if (strcmp(argv[i],"--help") == 0 || strcmp(argv[i],"-h") == 0) {
+            print_usage();
+            exit(EXIT_FAILURE);
+        }
         if (strcmp(argv[i],"-name") == 0) {
             name_flag = 'Y';
-            // snprintf(pSPARC_Input->filename, L_STRING, "%s", argv[i+1]);
             simplifyPath(argv[i+1], pSPARC_Input->filename, L_STRING);
-            break;
+            // break;
+        }
+        if (strcmp(argv[i],"-n") == 0) {
+            pSPARC_Input->num_node = atoi(argv[i+1]);
+        }
+        if (strcmp(argv[i],"-c") == 0) {
+            pSPARC_Input->num_cpu_per_node = atoi(argv[i+1]);
+        }
+        if (strcmp(argv[i],"-a") == 0) {
+            pSPARC_Input->num_acc_per_node = atoi(argv[i+1]);
         }
     }
-
+    
     if (name_flag != 'Y') {
         print_usage();
         exit(EXIT_FAILURE);
@@ -734,6 +770,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     /* copy input values from input struct */
     // int type values
+    pSPARC->num_node = pSPARC_Input->num_node;
+    pSPARC->num_cpu_per_node = pSPARC_Input->num_cpu_per_node;
+    pSPARC->num_acc_per_node = pSPARC_Input->num_acc_per_node;
     pSPARC->npspin = pSPARC_Input->npspin;
     pSPARC->npkpt = pSPARC_Input->npkpt;
     pSPARC->npband = pSPARC_Input->npband;
@@ -2208,7 +2247,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 18, 2020)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Oct 21, 2020)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2416,6 +2455,13 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");
     fprintf(output_fp,"***************************************************************************\n");
+    if (pSPARC->num_node || pSPARC->num_cpu_per_node || pSPARC->num_acc_per_node) {
+        fprintf(output_fp,"# Command line arguments: ");
+        if (pSPARC->num_node) fprintf(output_fp,"-n %d ", pSPARC->num_node);
+        if (pSPARC->num_cpu_per_node) fprintf(output_fp,"-c %d ", pSPARC->num_cpu_per_node);
+        if (pSPARC->num_acc_per_node) fprintf(output_fp,"-a %d ", pSPARC->num_acc_per_node);
+        fprintf(output_fp,"\n");
+    }
     fprintf(output_fp,"NP_SPIN_PARAL: %d\n",pSPARC->npspin);
     fprintf(output_fp,"NP_KPOINT_PARAL: %d\n",pSPARC->npkpt);
     fprintf(output_fp,"NP_BAND_PARAL: %d\n",pSPARC->npband);
@@ -2547,6 +2593,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2570,7 +2617,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1, 1, 1, /* int */
+                          1, 1, 1, 1, 1,
+                          1, 1, 1,       /* int */ 
                           1, 1, 1, 9, 1,
                           1, 3, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -2587,6 +2635,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     int i = 0;
     MPI_Get_address(&sparc_input_tmp, &base);
     // int type
+    MPI_Get_address(&sparc_input_tmp.num_node, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.num_cpu_per_node, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.num_acc_per_node, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npspin, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npkpt, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npband, addr + i++);

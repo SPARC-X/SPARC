@@ -167,6 +167,9 @@ typedef struct _SPARC_OBJ{
     char restartP_Filename[L_STRING];  
     
     /* Parallelizing parameters */
+    int num_node;       // number of processor nodes
+    int num_cpu_per_node; // number of cpu per node
+    int num_acc_per_node; // number of accelerators per node (e.g., GPUs)
     int npspin;         // number of spin communicators
     int npkpt;          // number of processes for paral. over k-points
     int npband;         // number of processes for paral. over bands
@@ -677,6 +680,9 @@ typedef struct _SPARC_OBJ{
  */
 typedef struct _SPARC_INPUT_OBJ{ 
     /* Parallelizing parameters */
+    int num_node;       // number of processor nodes
+    int num_cpu_per_node; // number of cpu per node
+    int num_acc_per_node; // number of accelerators per node (e.g., GPUs)
     int npspin;         // number of spin communicators
     int npkpt;          // number of processes for paral. over k-points
     int npband;         // number of processes for paral. over bands
