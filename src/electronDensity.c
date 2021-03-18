@@ -16,12 +16,14 @@
 #include <mpi.h>
 #include <math.h>
 
+
 #include "electronicGroundState.h"
 #include "electronDensity.h"
 #include "eigenSolver.h"
 #include "eigenSolverKpt.h" 
 #include "isddft.h"
 
+#include <libpce.h>
 
 
 /*
@@ -31,6 +33,15 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
     int i;
     double *rho = (double *) calloc(pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
     double t1 = MPI_Wtime();
+    double fd_in_coeff[6] = {0, 0, 0, 1, 1, 1};
+    Hybrid_Decomp hd;
+    FD_Info fd_raw;
+    NonLocal_Info nl;
+    device_type compute_device = DEVICE_TYPE_DEVICE;
+    MPI_Comm cart_comm;
+    MPI_Comm rho_comm;
+    PCE_Init(1,1,1,1,40,40,40,0,0,0,450,14,fd_in_coeff, -0.5, &hd, &fd_raw, compute_device, &cart_comm, &rho_comm);
+    printf("PCE Local fd: %i\n", hd.local_num_fd);
     
     // Currently only involves Chebyshev filtering eigensolver
     if (pSPARC->isGammaPoint){
