@@ -31,7 +31,7 @@ ENABLE_SIMD_COMPLEX = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC
+CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
 LDLIBS   = -lrt -L ../Hamiltonian/lib -L ../Hamiltonian/CA3DMM/lib  -lpce -lca3dmm
 
 ifeq ($(USE_MKL), 1)
