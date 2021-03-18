@@ -14,11 +14,17 @@
 #define ELECTRONDENSITY_H
 
 #include "isddft.h"
+#include <libpce.h>
+#include "hamstruct.h"
 
 /*
 @ brief: Main function responsible to find electron density
 */
-void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error);
+void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
+                        Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+                        Our_Hamiltonian_Struct *ham_struct, 
+                        Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+                        MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm);
 
 /*
 @ brief: calculate electron density from psi with no kpts
