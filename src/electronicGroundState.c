@@ -38,7 +38,9 @@
 #include "pressure.h"
 
 #include <libpce.h>
+#include <vnl_mod.h>
 #include "hamstruct.h"
+#include "pce_interface.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -513,6 +515,9 @@ void scf(SPARC_OBJ *pSPARC)
     PCE_Eig_Init(&Eigvals);
 
     PCE_Veff_Init(&veff_info);
+
+    // TODO: Add this line back in
+    // SPARC2NONLOCAL_interface(pSPARC, &nl); 
 
     // START OF SCF LOOP
 

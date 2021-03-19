@@ -11,7 +11,7 @@ USE_SCALAPACK = 0
 # Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
 USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 0
+DEBUG_MODE    = 1
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -74,7 +74,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
-        forces.o stress.o pressure.o finalization.o
+        forces.o stress.o pressure.o finalization.o hamstruct.o pce_interface.o
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci

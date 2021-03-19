@@ -1,5 +1,8 @@
 #ifndef HAMSTRUCT_H
 #define HAMSTRUCT_H
+
+#include <libpce.h>
+
 typedef struct
 {
     Hybrid_Decomp* const hd;
@@ -13,4 +16,6 @@ typedef struct
     double laplacian_scaling;
     int do_nonlocal;
 } Our_Hamiltonian_Struct;
+
+void Our_Hamiltonian(const void* ham_struct, const Psi_Info* const psi_in, Psi_Info* psi_out, double c);
 #endif

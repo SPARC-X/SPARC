@@ -330,17 +330,26 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_EVA_MODULE
     if (CheFSI_use_EVA == 1)
     {
-        EVA_Chebyshev_Filtering(
+        EVA_Chebyshev_Filtering(cheb, (void*)ham_struct, 
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
             pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb + spn_i*size_s
         );
     } else {
     #endif
+    
+        PCE_Chebyshev_Filter(cheb, (void*)ham_struct, Our_Hamiltonian, hd->local_num_fd,
+                             hd->local_num_cols, Psi1, Psi2,
+                             ham_struct->communication_device, ham_struct->compute_device, Psi3);
+    
+/*
         ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
                            pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
                            pSPARC->dmcomm, &t_temp);
+*/
+        memcpy(pSPARC->Yorb, Psi2->data, hd->local_num_cols * hd->local_num_fd * sizeof(double));
+
     #ifdef USE_EVA_MODULE
     }
     #endif

@@ -42,11 +42,11 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
     // Currently only involves Chebyshev filtering eigensolver
     if (pSPARC->isGammaPoint){
 
-       eigSolve_CheFSI(rank, pSPARC, SCFcount, error,
-                       hd, cheb, Eigvals,
-                       ham_struct, 
-                       Psi1, Psi2, Psi3,
-                       kptcomm, dmcomm, blacscomm);
+        eigSolve_CheFSI(rank, pSPARC, SCFcount, error,
+                        hd, cheb, Eigvals,
+                        ham_struct, 
+                        Psi1, Psi2, Psi3,
+                        kptcomm, dmcomm, blacscomm);
 
         if(pSPARC->spin_typ == 0)
             CalculateDensity_psi(pSPARC, rho);
