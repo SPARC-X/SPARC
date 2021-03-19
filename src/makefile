@@ -32,6 +32,7 @@ ENABLE_SIMD_COMPLEX = 0
 # LDFLAGS += -L$(BLASROOT)
 
 CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
+#CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION -DUSE_GPU
 LDLIBS   = -lrt -L ../Hamiltonian/lib -L ../Hamiltonian/CA3DMM/lib  -lpce -lca3dmm
 
 ifeq ($(USE_MKL), 1)
@@ -47,7 +48,8 @@ endif
 ifeq ($(USE_MKL), 0)
 # if you are using BLAS instead of OpenBLAS, change -lopenblas to -lblas
 # and move it to after -llapack
-LDLIBS += -lopenblas -llapacke -llapack -lm
+LDLIBS += -lopenblas -lm
+LDLIBS += -lopenblas -llapack -llapacke -lm
 #LDLIBS += -llapacke -llapack -lblas -lm
 endif
 
