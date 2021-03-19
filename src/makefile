@@ -89,6 +89,7 @@ all: sparc
 
 sparc: $(OBJSC)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
+	#nvcc -DUSE_GPU -lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -lopenblas -G $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
 
 .PHONY: clean
 clean:
