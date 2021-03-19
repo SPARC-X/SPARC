@@ -45,6 +45,10 @@
 #include "isddft.h"
 #include "parallelization.h"
 
+#include <libpce.h>
+#include "hamstruct.h"
+#include "ca3dmm.h"
+
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -53,12 +57,54 @@
 int CheFSI_use_EVA = -1;
 #endif
 
+#ifdef USE_DP_SUBEIG
+struct DP_CheFSI_s
+{
+    int      nproc_row;         // Number of processes in process row, == comm size of pSPARC->blacscomm
+    int      nproc_kpt;         // Number of processes in kpt_comm 
+    int      rank_row;          // Rank of this process in process row, == rank in pSPARC->blacscomm
+    int      rank_kpt;          // Rank of this process in kpt_comm;
+    int      Ns_bp;             // Number of bands this process has in the original band parallelization (BP), 
+                                // == number of local states (bands) in SPARC == pSPARC->{band_end_indx-band_start_indx} + 1
+    int      Ns_dp;             // Number of bands this process has in the converted domain parallelization (DP),
+                                // == number of total states (bands) in SPARC == pSPARC->Nstates
+    int      Nd_bp;             // Number of FD points this process has in the original band parallelization (BP), == pSPARC->Nd_d_dmcomm
+    int      Nd_dp;             // Number of FD points this process has after converted to domain parallelization (DP)
+    #if defined(USE_MKL) || defined(USE_SCALAPACK)
+    int      desc_Hp_local[9];  // descriptor for Hp_local on each ictxt_blacs_topo
+    int      desc_Mp_local[9];  // descriptor for Mp_local on each ictxt_blacs_topo
+	int      desc_eig_vecs[9];  // descriptor for eig_vecs on each ictxt_blacs_topo
+    #endif
+    int      *Ns_bp_displs;     // Size nproc_row+1, the pSPARC->band_start_indx on each process in pSPARC->blacscomm
+    int      *Nd_dp_displs;     // Size nproc_row+1, displacements of FD points for each process in DP
+    int      *bp2dp_sendcnts;   // BP to DP send counts
+    int      *bp2dp_sdispls;    // BP to DP displacements
+    int      *dp2bp_sendcnts;   // DP to BP send counts
+    int      *dp2bp_sdispls;    // DP to BP send displacements
+    double   *Y_packbuf;        // Y pack buffer
+    double   *HY_packbuf;       // HY pack buffer
+    double   *Y_dp;             // Y block in DP
+    double   *HY_dp;            // HY block in DP
+    double   *Mp_local;         // Local Mp result
+    double   *Hp_local;         // Local Hp result
+    double   *eig_vecs;         // Eigen vectors from solving generalized eigenproblem
+    MPI_Comm kpt_comm;          // MPI communicator that contains all active processes in pSPARC->kptcomm
+};
+typedef struct DP_CheFSI_s* DP_CheFSI_t;
+#endif
+
 //static int SCFcount_;
 
 /*
  * @ brief: Main function of Chebyshev filtering 
  */
-void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
+
+void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
+                     Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+                     Our_Hamiltonian_Struct *ham_struct, 
+                     Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+                     MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
+{
     // Set up for CheFSI function
     if(pSPARC->spincomm_index < 0) return; 
     
@@ -184,7 +230,11 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
         // 2) Chebyshev filtering,          3) Projection, 
         // 4) Solve projected eigenproblem, 5) Subspace rotation
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++)
-            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
+            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i, 
+                   hd, cheb, Eigvals,
+                   ham_struct,
+                   Psi1, Psi2, Psi3,
+                   kptcomm, dmcomm, blacscomm);
 
         t1 = MPI_Wtime();
         
@@ -209,7 +259,12 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
         //    MPI_Allreduce(MPI_IN_PLACE, &eigmax_g, 1, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
         //}
         
+        //PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
+
         pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
+
+        PCE_Occ_Set(Eigvals, hd, pSPARC->occ);
+
         
         // check occupation (if Nstates is large enough) for every SCF
         // for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
@@ -266,10 +321,15 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
 }
 
 
+
 /**
  * @brief   Apply Chebyshev-filtered subspace iteration steps.
  */
-void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i)
+void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i,
+            Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+            Our_Hamiltonian_Struct *ham_struct, 
+            Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+            MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
 {
     int rank, rank_spincomm, nproc_kptcomm;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -278,7 +338,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     
     // determine the constants for performing chebyshev filtering
     Chebyshevfilter_constants(pSPARC, x0, &lambda_cutoff, &pSPARC->eigmin[spn_i], &pSPARC->eigmax[spn_i], count, k, spn_i);
-    
+   
+    cheb->filter_left = lambda_cutoff;
+    cheb->filter_right = pSPARC->eigmax[spn_i];
+    cheb->min_eig = pSPARC->eigmin[spn_i];
+    cheb->order = pSPARC->ChebDegree;
+
 #ifdef DEBUG
             if (!rank && spn_i == 0) {
                 printf("\n Chebfilt %d, in Chebyshev filtering, lambda_cutoff = %f,"
@@ -315,10 +380,39 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         );
     } else {
     #endif
-        ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-                           pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
-                           pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
-                           pSPARC->dmcomm, &t_temp);
+    
+      printf("spn_i: %i, size_s: %i\n", spn_i, size_s);
+
+        // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
+        //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
+        //   if(res > 1e-12) {
+        //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
+        //     exit(-1);
+        //   }
+        // }
+        // printf("local num_fd: %i, num_cols: %i, comm dev: %i, comp dev: %i\n",
+        //     hd->local_num_fd, hd->local_num_cols, ham_struct->communication_device,
+        //     ham_struct->compute_device);
+        // //pSPARC->ChebDegree=0;
+        // //cheb->order=0;
+        PCE_Chebyshev_Filter(cheb, (void*)ham_struct, Our_Hamiltonian, hd->local_num_fd,
+                             hd->local_num_cols, Psi1, Psi2,
+                             ham_struct->communication_device, ham_struct->compute_device, Psi3);
+    
+        // ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
+        //                    pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
+        //                    pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
+        //                    pSPARC->dmcomm, &t_temp);
+
+        // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
+        //   double res = fabs(pSPARC->Yorb[i]- Psi2->data[i]);
+        //   if(res > 1e-12) {
+        //     printf("Yorb EEEK!: %i , %f, %f\n", i, pSPARC->Yorb[i], Psi2->data[i]);
+        //     exit(-1);
+        //   }
+        // }
+        // memcpy(pSPARC->Yorb, Psi2->data, hd->local_num_cols * hd->local_num_fd * sizeof(double));
+
     #ifdef USE_EVA_MODULE
     }
     #endif
@@ -332,10 +426,45 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
-    DP_Project_Hamiltonian(
-        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
-        pSPARC->Hp, pSPARC->Mp, spn_i
-    );
+      Our_Hamiltonian(ham_struct, Psi2, Psi1, 0);
+
+      // Perform Psi^T*Psi
+      ca3dmm_engine_p mult_ptp;
+      Mat_Info        M_s;
+      PCE_Mat_Init(&M_s);
+
+      // M_s= Psi^T Psi
+      //TODO: Fix comm
+      PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, dmcomm);
+      ca3dmm_engine_free(&mult_ptp);
+
+      // Perform Psi^T*HPsi
+      ca3dmm_engine_p mult_pthp;
+      Mat_Info        H_s;
+      PCE_Mat_Init(&H_s);
+
+      // H_s= Psi^T Psi
+      PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, ham_struct->communication_device, ham_struct->compute_device,
+                   dmcomm);
+
+      ca3dmm_engine_free(&mult_pthp);
+
+    //  DP_Project_Hamiltonian(
+    //      pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
+    //      pSPARC->Hp, pSPARC->Mp, spn_i
+    //  );
+      MPI_Barrier(MPI_COMM_WORLD);
+
+    // DP_CheFSI_t DP_CheFSI = (DP_CheFSI_t) pSPARC->DP_CheFSI;
+    // if(rank == 0) {
+    //     for(int i = 0;  i < hd->local_num_cols * hd->local_num_cols; i++) {
+    //       double res = fabs(DP_CheFSI->Hp_local[i]- H_s.data[i]);
+    //       if(res > 1e-12) {
+    //         printf("Hp EEEK!: %i , %.15f, %.15f\n", i, DP_CheFSI->Hp_local[i], H_s.data[i]);
+    //         exit(-1);
+    //       }
+    //     }
+    // }
     #else
     Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
@@ -348,17 +477,35 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
-    DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
+    PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+
+
+    // DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
+    //PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
+
+    // if(rank == 0) {
+    //     for(int i = 0;  i < hd->local_num_cols; i++) {
+    //       double res = fabs(Eigvals->eigval[i]- pSPARC->lambda[i]);
+    //       if(res > 1e-12) {
+    //         printf("Eigvals EEEK!: %i , %.15f, %.15f\n", i, Eigvals->eigval[i], pSPARC->lambda[i]);
+    //         exit(-1);
+    //       }
+    //     }
+    // }
+    PCE_Mat_Destroy(&M_s);
+
+    //PCE_Eig_Get(&Eigvals, &hd, pSPARC->lambda);
     #else
     Solve_Generalized_EigenProblem(pSPARC, k, spn_i);
     #endif
     
     t3 = MPI_Wtime();
+    PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
     // if eigvals are calculated in root process, then bcast the eigvals
-    if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
-        MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, 
-                  MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
-    }
+    // if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
+    //     MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, 
+    //               MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
+    // }
     
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -386,7 +533,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** subspace rotation ** //
     #ifdef USE_DP_SUBEIG
-    DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
+      // DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
+
+      ca3dmm_engine_p mult_subsp;
+      PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, ham_struct->communication_device,
+                            ham_struct->compute_device, dmcomm);
+      PCE_Mat_Destroy(&H_s);
+      printf("ABCD\n");
     #else
 	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
 	Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
@@ -396,6 +549,16 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef DEBUG
     if(!rank) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
     #endif
+
+    // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
+    //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
+    //   if(res > 1e-12) {
+    //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
+    //     exit(-1);
+    //   }
+    // }
+
+    //PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
 }
 
 
@@ -590,39 +753,6 @@ void ChebyshevFiltering(
 }
 
 #ifdef USE_DP_SUBEIG
-struct DP_CheFSI_s
-{
-    int      nproc_row;         // Number of processes in process row, == comm size of pSPARC->blacscomm
-    int      nproc_kpt;         // Number of processes in kpt_comm 
-    int      rank_row;          // Rank of this process in process row, == rank in pSPARC->blacscomm
-    int      rank_kpt;          // Rank of this process in kpt_comm;
-    int      Ns_bp;             // Number of bands this process has in the original band parallelization (BP), 
-                                // == number of local states (bands) in SPARC == pSPARC->{band_end_indx-band_start_indx} + 1
-    int      Ns_dp;             // Number of bands this process has in the converted domain parallelization (DP),
-                                // == number of total states (bands) in SPARC == pSPARC->Nstates
-    int      Nd_bp;             // Number of FD points this process has in the original band parallelization (BP), == pSPARC->Nd_d_dmcomm
-    int      Nd_dp;             // Number of FD points this process has after converted to domain parallelization (DP)
-    #if defined(USE_MKL) || defined(USE_SCALAPACK)
-    int      desc_Hp_local[9];  // descriptor for Hp_local on each ictxt_blacs_topo
-    int      desc_Mp_local[9];  // descriptor for Mp_local on each ictxt_blacs_topo
-	int      desc_eig_vecs[9];  // descriptor for eig_vecs on each ictxt_blacs_topo
-    #endif
-    int      *Ns_bp_displs;     // Size nproc_row+1, the pSPARC->band_start_indx on each process in pSPARC->blacscomm
-    int      *Nd_dp_displs;     // Size nproc_row+1, displacements of FD points for each process in DP
-    int      *bp2dp_sendcnts;   // BP to DP send counts
-    int      *bp2dp_sdispls;    // BP to DP displacements
-    int      *dp2bp_sendcnts;   // DP to BP send counts
-    int      *dp2bp_sdispls;    // DP to BP send displacements
-    double   *Y_packbuf;        // Y pack buffer
-    double   *HY_packbuf;       // HY pack buffer
-    double   *Y_dp;             // Y block in DP
-    double   *HY_dp;            // HY block in DP
-    double   *Mp_local;         // Local Mp result
-    double   *Hp_local;         // Local Hp result
-    double   *eig_vecs;         // Eigen vectors from solving generalized eigenproblem
-    MPI_Comm kpt_comm;          // MPI communicator that contains all active processes in pSPARC->kptcomm
-};
-typedef struct DP_CheFSI_s* DP_CheFSI_t;
 
 static int calc_block_spos(const int len, const int nblk, const int iblk)
 {

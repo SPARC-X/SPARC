@@ -87,7 +87,7 @@ void Hamiltonian_vectors_mult(
     #ifdef USE_EVA_MODULE
     t1 = MPI_Wtime();
     #endif
-    Vnl_vec_mult(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, x, Hx, comm);
+    //Vnl_vec_mult(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, x, Hx, comm);
     #ifdef USE_EVA_MODULE
     t2 = MPI_Wtime();
     EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
