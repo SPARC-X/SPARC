@@ -373,6 +373,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_EVA_MODULE
     if (CheFSI_use_EVA == 1)
     {
+      exit(-1);
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
@@ -383,26 +384,26 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     
       printf("spn_i: %i, size_s: %i\n", spn_i, size_s);
 
-        // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
-        //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
-        //   if(res > 1e-12) {
-        //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
-        //     exit(-1);
-        //   }
-        // }
-        // printf("local num_fd: %i, num_cols: %i, comm dev: %i, comp dev: %i\n",
-        //     hd->local_num_fd, hd->local_num_cols, ham_struct->communication_device,
-        //     ham_struct->compute_device);
-        // //pSPARC->ChebDegree=0;
-        // //cheb->order=0;
+         // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
+         //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
+         //   if(res > 1e-12) {
+         //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
+         //     exit(-1);
+         //   }
+         // }
+         // printf("local num_fd: %i, num_cols: %i, comm dev: %i, comp dev: %i\n",
+         //     hd->local_num_fd, hd->local_num_cols, ham_struct->communication_device,
+         //     ham_struct->compute_device);
+         //pSPARC->ChebDegree=1;
+         //cheb->order=1;
         PCE_Chebyshev_Filter(cheb, (void*)ham_struct, Our_Hamiltonian, hd->local_num_fd,
                              hd->local_num_cols, Psi1, Psi2,
                              ham_struct->communication_device, ham_struct->compute_device, Psi3);
     
-        // ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-        //                    pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
-        //                    pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
-        //                    pSPARC->dmcomm, &t_temp);
+        //  ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
+        //                     pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
+        //                     pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
+        //                     pSPARC->dmcomm, &t_temp);
 
         // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
         //   double res = fabs(pSPARC->Yorb[i]- Psi2->data[i]);
@@ -466,6 +467,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //     }
     // }
     #else
+      exit(-1);
     Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
     #endif
@@ -496,6 +498,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 
     //PCE_Eig_Get(&Eigvals, &hd, pSPARC->lambda);
     #else
+      exit(-1);
     Solve_Generalized_EigenProblem(pSPARC, k, spn_i);
     #endif
     
@@ -541,6 +544,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       PCE_Mat_Destroy(&H_s);
       printf("ABCD\n");
     #else
+      exit(-1);
 	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
 	Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
 	                  pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*size_s, k, spn_i);
@@ -558,7 +562,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //   }
     // }
 
-    //PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
+    PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
 }
 
 

@@ -8,6 +8,7 @@ void Our_Hamiltonian(const void* ham_struct, const Psi_Info* const psi_in, Psi_I
   Our_Hamiltonian_Struct* ohs = (Our_Hamiltonian_Struct*)ham_struct;
 
 
+
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -127,7 +128,6 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
   if(ohs->do_nonlocal) {
   PCE_NonLocal_Apply(ohs->nonlocal_info, ohs->hd, psi_in, psi_out, ohs->communication_device, ohs->compute_device,
       ohs->comm);  // V_ion
-  printf("DOING NONLOCAL\n");
   }
 
 #if USE_GPU
