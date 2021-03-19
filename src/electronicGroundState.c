@@ -778,6 +778,8 @@ void scf(SPARC_OBJ *pSPARC)
             t_cum_scf = 0.0;
         }
     }
+
+    PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
     
     if (!rank) {
         output_fp = fopen(pSPARC->OutFilename,"a");

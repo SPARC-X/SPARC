@@ -48,8 +48,10 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
                         Psi1, Psi2, Psi3,
                         kptcomm, dmcomm, blacscomm);
 
-        if(pSPARC->spin_typ == 0)
-            CalculateDensity_psi(pSPARC, rho);
+        if(pSPARC->spin_typ == 0) {
+            //CalculateDensity_psi(pSPARC, rho);
+            PCE_Density_Calculate(rho, Eigvals, hd, Psi1, pSPARC->dV, ham_struct->communication_device, ham_struct->compute_device, blacscomm);
+        }
         else
             CalculateDensity_psi_spin(pSPARC, rho);     
     }
