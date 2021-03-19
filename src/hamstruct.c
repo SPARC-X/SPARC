@@ -127,6 +127,7 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
   if(ohs->do_nonlocal) {
   PCE_NonLocal_Apply(ohs->nonlocal_info, ohs->hd, psi_in, psi_out, ohs->communication_device, ohs->compute_device,
       ohs->comm);  // V_ion
+  printf("DOING NONLOCAL\n");
   }
 
 #if USE_GPU

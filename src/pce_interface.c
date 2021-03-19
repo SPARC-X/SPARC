@@ -8,6 +8,7 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl)
     min_SPARC_OBJ *min_SPARC = nl->pSPARC;
 
     min_SPARC->n_atom = pSPARC->n_atom;
+    printf("NAtom: %i\n", nl->pSPARC->n_atom);
     min_SPARC->dV = pSPARC->dV;
     min_SPARC->Ntypes = pSPARC->Ntypes;
 
@@ -21,7 +22,7 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl)
 
 
     min_SPARC->lmax = (int *) malloc( pSPARC->Ntypes * sizeof(int) );
-    min_SPARC->partial_sum = (int *) malloc( pSPARC->Ntypes * sizeof(int) );
+    //min_SPARC->partial_sum = (int *) malloc( pSPARC->Ntypes * sizeof(int) );
     min_SPARC->ppl = (int **)malloc( sizeof(int*) * pSPARC->Ntypes );
     min_SPARC->Gamma = (double **)malloc( sizeof(double*) * pSPARC->Ntypes );
 
@@ -32,9 +33,10 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl)
         int ppl_sum = 0;
         for (int j = 0; j <= pSPARC->psd[i].lmax; j++)
         {
+          printf("J: %i\n", j);
             (min_SPARC->ppl[i])[j] = pSPARC->psd[i].ppl[j];
             ppl_sum += pSPARC->psd[i].ppl[j];
-	    min_SPARC->partial_sum[j] = ppl_sum;
+	          //min_SPARC->partial_sum[j] = ppl_sum;
         }
 
         min_SPARC->Gamma[i] = (double*) malloc( sizeof(double) * ppl_sum );

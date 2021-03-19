@@ -456,7 +456,7 @@ void scf(SPARC_OBJ *pSPARC)
     MPI_Comm temp_comm2;
     double laplacian_scaling = -0.5;
     double veff_scaling = 1.0;
-    int do_nonlocal = 1;
+    int do_nonlocal = 0;
 
     int pxyz[3];
     int temp_cart1[3];
@@ -517,7 +517,7 @@ void scf(SPARC_OBJ *pSPARC)
     PCE_Veff_Init(&veff_info);
 
     // TODO: Add this line back in
-    // SPARC2NONLOCAL_interface(pSPARC, &nl); 
+    //SPARC2NONLOCAL_interface(pSPARC, &nl); 
 
     // START OF SCF LOOP
 
