@@ -45,6 +45,9 @@
 #include "isddft.h"
 #include "parallelization.h"
 
+#include <libpce.h>
+#include "hamstruct.h"
+
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -58,7 +61,13 @@ int CheFSI_use_EVA = -1;
 /*
  * @ brief: Main function of Chebyshev filtering 
  */
-void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
+
+void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
+                     Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+                     Our_Hamiltonian_Struct *ham_struct, 
+                     Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+                     MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
+{
     // Set up for CheFSI function
     if(pSPARC->spincomm_index < 0) return; 
     
@@ -184,7 +193,11 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
         // 2) Chebyshev filtering,          3) Projection, 
         // 4) Solve projected eigenproblem, 5) Subspace rotation
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++)
-            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
+            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i, 
+                   hd, cheb, Eigvals,
+                   ham_struct,
+                   Psi1, Psi2, Psi3,
+                   kptcomm, dmcomm, blacscomm);
 
         t1 = MPI_Wtime();
         
@@ -269,7 +282,11 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
 /**
  * @brief   Apply Chebyshev-filtered subspace iteration steps.
  */
-void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i)
+void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i,
+            Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+            Our_Hamiltonian_Struct *ham_struct, 
+            Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+            MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
 {
     int rank, rank_spincomm, nproc_kptcomm;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -278,7 +295,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     
     // determine the constants for performing chebyshev filtering
     Chebyshevfilter_constants(pSPARC, x0, &lambda_cutoff, &pSPARC->eigmin[spn_i], &pSPARC->eigmax[spn_i], count, k, spn_i);
-    
+   
+    cheb->filter_left = lambda_cutoff;
+    cheb->filter_right = pSPARC->eigmax[spn_i];
+    cheb->min_eig = pSPARC->eigmin[spn_i];
+    cheb->order = pSPARC->ChebDegree;
+
 #ifdef DEBUG
             if (!rank && spn_i == 0) {
                 printf("\n Chebfilt %d, in Chebyshev filtering, lambda_cutoff = %f,"
@@ -308,17 +330,26 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_EVA_MODULE
     if (CheFSI_use_EVA == 1)
     {
-        EVA_Chebyshev_Filtering(
+        EVA_Chebyshev_Filtering(cheb, (void*)ham_struct, 
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
             pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb + spn_i*size_s
         );
     } else {
     #endif
+    
+        PCE_Chebyshev_Filter(cheb, (void*)ham_struct, Our_Hamiltonian, hd->local_num_fd,
+                             hd->local_num_cols, Psi1, Psi2,
+                             ham_struct->communication_device, ham_struct->compute_device, Psi3);
+    
+/*
         ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
                            pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
                            pSPARC->dmcomm, &t_temp);
+*/
+        memcpy(pSPARC->Yorb, Psi2->data, hd->local_num_cols * hd->local_num_fd * sizeof(double));
+
     #ifdef USE_EVA_MODULE
     }
     #endif

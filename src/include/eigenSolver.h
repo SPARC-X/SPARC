@@ -15,13 +15,18 @@
 #define EIGENSOLVER_H 
 
 #include "isddft.h"
+#include <libpce.h>
+#include "hamstruct.h"
 
 /*
  @ brief: Main function of Chebyshev filtering 
 */
 
-void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error);
-
+void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
+                     Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+                     Our_Hamiltonian_Struct *ham_struct, 
+                     Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+                     MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm);
 
 /**
  * @brief   Lanczos algorithm for calculating min and max eigenvalues
@@ -64,8 +69,11 @@ void Lanczos_laplacian(
 /**
  * @brief   Apply Chebyshev-filtered subspace iteration steps.
  */
-void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i);
-
+void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i,
+            Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
+            Our_Hamiltonian_Struct *ham_struct, 
+            Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
+            MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm);
 
 /**
  * @brief   Find Chebyshev filtering bounds and cutoff constants.

@@ -37,13 +37,17 @@
 #include "stress.h"
 #include "pressure.h"
 
+#include <libpce.h>
+#include <vnl_mod.h>
+#include "hamstruct.h"
+#include "pce_interface.h"
+
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
 #endif
 
 #define max(x,y) ((x)>(y)?(x):(y))
 #define min(x,y) ((x)<(y)?(x):(y))
-
 
 /**
  * @brief   Calculate the ground state energy and forces for fixed atom positions.  
@@ -428,6 +432,95 @@ void scf(SPARC_OBJ *pSPARC)
     // electron density updates
     SCFcount = 0;
 
+    // START OF INTEGRATION WITH LIBPCE
+
+    int fd_radius = pSPARC->order / 2;
+    double *fd_in_coeff = (double*) malloc(3*(fd_radius + 1) * sizeof(double));
+    for (int ix = 0; ix < (fd_radius + 1); ix++)
+    {
+        fd_in_coeff[3*ix + 0] = pSPARC->D2_stencil_coeffs_x[ix];
+        fd_in_coeff[3*ix + 1] = pSPARC->D2_stencil_coeffs_y[ix];
+        fd_in_coeff[3*ix + 2] = pSPARC->D2_stencil_coeffs_z[ix];
+    }
+    
+    Hybrid_Decomp hd;
+    FD_Info fd_raw;
+    NonLocal_Info nl;
+    Veff_Info veff_info;
+    Chebyshev_Info cheb;
+
+    device_type communication_device = DEVICE_TYPE_HOST;
+    device_type compute_device = DEVICE_TYPE_HOST;
+
+    MPI_Comm temp_comm1;
+    MPI_Comm temp_comm2;
+    double laplacian_scaling = -0.5;
+    double veff_scaling = 1.0;
+    int do_nonlocal = 1;
+
+    int pxyz[3];
+    int temp_cart1[3];
+    int temp_cart2[3];
+    int pc;
+    MPI_Cart_get(pSPARC->dmcomm, 3, pxyz, temp_cart1, temp_cart2);
+    MPI_Comm_size(pSPARC->blacscomm, &pc);
+
+    int Nx_true = pSPARC->Nx + pSPARC->BCx;
+    int Ny_true = pSPARC->Ny + pSPARC->BCy;
+    int Nz_true = pSPARC->Nz + pSPARC->BCz;
+
+    PCE_Init(pc, pxyz[0], pxyz[1], pxyz[2], Nx_true, Ny_true, Nz_true, 
+             pSPARC->BCx, pSPARC->BCy, pSPARC->BCz, pSPARC->Nstates, 
+             pSPARC->order, fd_in_coeff, laplacian_scaling, 
+             &hd, &fd_raw, compute_device, &temp_comm1, &temp_comm2);
+
+    hd.local_num_cols = pSPARC->band_end_indx - pSPARC->band_start_indx + 1;
+    hd.local_start_col = pSPARC->band_start_indx;
+    hd.local_fd_coords[0] = pSPARC->DMVertices_dmcomm[0];
+    hd.local_fd_coords[1] = pSPARC->DMVertices_dmcomm[1] + 1;
+    hd.local_fd_coords[2] = pSPARC->DMVertices_dmcomm[2];
+    hd.local_fd_coords[3] = pSPARC->DMVertices_dmcomm[3] + 1;
+    hd.local_fd_coords[4] = pSPARC->DMVertices_dmcomm[4];
+    hd.local_fd_coords[5] = pSPARC->DMVertices_dmcomm[5] + 1;
+    hd.local_num_fd = (hd.local_fd_coords[1] - hd.local_fd_coords[0])*
+                      (hd.local_fd_coords[3] - hd.local_fd_coords[2])*
+                      (hd.local_fd_coords[5] - hd.local_fd_coords[4]);
+
+    Our_Hamiltonian_Struct ham_struct = 
+        (Our_Hamiltonian_Struct){.hd = &hd,
+                                 .fd_info = &fd_raw,
+                                 .nonlocal_info = &nl,
+                                 .veff_info = &veff_info,
+                                 .communication_device = communication_device,
+                                 .compute_device = compute_device,
+                                 .comm = pSPARC->dmcomm,
+                                 .laplacian_scaling = laplacian_scaling,
+                                 .veff_scaling = veff_scaling,
+                                 .do_nonlocal = do_nonlocal,
+                                };
+
+    Psi_Info Psi1;
+    PCE_Psi_Init(&Psi1);
+    Psi_Info Psi2;
+    PCE_Psi_Init(&Psi2);
+    Psi_Info Psi3;
+    PCE_Psi_Init(&Psi3);
+
+    // Psi2 and Psi3 values necessarily get overwritten (initial values unused)
+    PCE_Psi_Set(&Psi1, &hd, pSPARC->Xorb);
+    PCE_Psi_Set(&Psi2, &hd, pSPARC->Xorb);
+    PCE_Psi_Set(&Psi3, &hd, pSPARC->Xorb);
+
+    Eig_Info Eigvals;
+    PCE_Eig_Init(&Eigvals);
+
+    PCE_Veff_Init(&veff_info);
+
+    // TODO: Add this line back in
+    // SPARC2NONLOCAL_interface(pSPARC, &nl); 
+
+    // START OF SCF LOOP
+
     while (SCFcount < pSPARC->MAXIT_SCF) {
 #ifdef DEBUG
         if (rank == 0) {
@@ -446,7 +539,11 @@ void scf(SPARC_OBJ *pSPARC)
 		// start scf timer
         t_scf_s = MPI_Wtime();
         
-        Calculate_elecDens(rank, pSPARC, SCFcount, error);
+        PCE_Veff_Set(&veff_info, &hd, pSPARC->Veff_loc_dmcomm);
+
+        Calculate_elecDens(rank, pSPARC, SCFcount, error, 
+                           &hd, &cheb, &Eigvals, &ham_struct, &Psi1, &Psi2, &Psi3,
+                           pSPARC->kptcomm, pSPARC->dmcomm, pSPARC->blacscomm);
 
         // Calculate net magnetization for spin polarized calculations
         if (pSPARC->spin_typ != 0)
