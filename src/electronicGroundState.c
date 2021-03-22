@@ -449,8 +449,13 @@ void scf(SPARC_OBJ *pSPARC)
     Veff_Info veff_info;
     Chebyshev_Info cheb;
 
+#if USE_GPU
+    device_type communication_device = DEVICE_TYPE_DEVICE;
+    device_type compute_device = DEVICE_TYPE_DEVICE;
+#else
     device_type communication_device = DEVICE_TYPE_HOST;
     device_type compute_device = DEVICE_TYPE_HOST;
+#endif
 
     MPI_Comm temp_comm1;
     MPI_Comm temp_comm2;
@@ -781,6 +786,16 @@ void scf(SPARC_OBJ *pSPARC)
     }
 
     PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
+
+    PCE_Psi_Destroy(&Psi1);
+    PCE_Psi_Destroy(&Psi2);
+    PCE_Psi_Destroy(&Psi3);
+    PCE_Veff_Destroy(&veff_info);
+    PCE_FD_Destroy(&fd_raw);
+    PCE_Eig_Destroy(&Eigvals);
+    PCE_Internal_NonLocal_Destroy(&nl, compute_device);
+    printf("DESTROYED\n");
+
     
     if (!rank) {
         output_fp = fopen(pSPARC->OutFilename,"a");
