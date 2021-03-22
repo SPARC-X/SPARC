@@ -13,6 +13,8 @@ USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
+USE_GPU    = 0
+
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
 ENABLE_SIMD_COMPLEX = 0
@@ -31,8 +33,8 @@ ENABLE_SIMD_COMPLEX = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
+#CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
 CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-#CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION -DUSE_GPU
 LDLIBS   = -lrt -L ../Hamiltonian/lib -L ../Hamiltonian/CA3DMM/lib  -lpce -lca3dmm
 
 ifeq ($(USE_MKL), 1)
@@ -44,12 +46,16 @@ CPPFLAGS += -DUSE_SCALAPACK
 LDLIBS   += -lscalapack
 endif
 
+ifeq ($(USE_GPU), 1)
+CPPFLAGS += -DUSE_GPU
+endif
+
 # if MKL is not used, link BLAS and LAPACK directly
 ifeq ($(USE_MKL), 0)
 # if you are using BLAS instead of OpenBLAS, change -lopenblas to -lblas
 # and move it to after -llapack
 LDLIBS += -lopenblas -lm
-LDLIBS += -lopenblas -llapack -llapacke -lm
+#LDLIBS += -lopenblas -llapack -llapacke -lm
 #LDLIBS += -llapacke -llapack -lblas -lm
 endif
 
@@ -90,8 +96,11 @@ all: sparc
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 sparc: $(OBJSC)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
-	#nvcc -DUSE_GPU -lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -lopenblas -G $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
+	if [ "$(USE_GPU)" == "1" ]; then \
+		nvcc -DUSE_GPU -lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -lopenblas -G $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
+	else \
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
+	fi
 
 .PHONY: clean
 clean:

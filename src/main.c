@@ -60,5 +60,8 @@ int main(int argc, char *argv[]) {
     
     // finalize MPI
     MPI_Finalize();
+#if USE_GPU
+    cudaDeviceReset();
+#endif
     return 0;
 }

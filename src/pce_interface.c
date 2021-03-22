@@ -7,19 +7,20 @@
 #include <cuda.h>
 #endif
 
+#if USE_GPU
 void NONLOCAL_GPU(min_SPARC_OBJ *pSPARC,  ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,   NLOC_PROJ_OBJ *nlocProj,
     min_SPARC_OBJ **d_SPARC, ATOM_NLOC_INFLUENCE_OBJ **d_Atom_Influence_nloc, NLOC_PROJ_OBJ **d_locProj)
 {
     double t1 = MPI_Wtime();
+    //TODO: GARBAGE COLLECTION
     cudaMalloc((void **)d_SPARC,                sizeof(min_SPARC_OBJ));
     cudaMalloc((void **)d_Atom_Influence_nloc,  sizeof(ATOM_NLOC_INFLUENCE_OBJ) * pSPARC->Ntypes);
     *d_locProj = (NLOC_PROJ_OBJ*) malloc(sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes);
-  
-    //TODO: GARBAGE COLLECTION
     interface_gpu(pSPARC,              *d_SPARC,
                                Atom_Influence_nloc, *d_Atom_Influence_nloc,
                                nlocProj,            *d_locProj);  
 }
+#endif
 
 void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl, device_type device)
 {
