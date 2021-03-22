@@ -562,7 +562,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //   }
     // }
 
-    PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
+    //PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
 }
 
 
