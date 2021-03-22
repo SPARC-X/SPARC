@@ -543,6 +543,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
                             ham_struct->compute_device, dmcomm);
       PCE_Mat_Destroy(&H_s);
       printf("ABCD\n");
+      ca3dmm_engine_free(&mult_subsp);
     #else
       exit(-1);
 	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
