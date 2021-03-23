@@ -433,16 +433,10 @@ void scf(SPARC_OBJ *pSPARC)
     SCFcount = 0;
 
     // START OF INTEGRATION WITH LIBPCE
-
-    int fd_radius = pSPARC->order / 2;
-    double *fd_in_coeff = (double*) malloc(3*(fd_radius + 1) * sizeof(double));
-    for (int ix = 0; ix < (fd_radius + 1); ix++)
-    {
-        fd_in_coeff[3*ix + 0] = pSPARC->D2_stencil_coeffs_x[ix];
-        fd_in_coeff[3*ix + 1] = pSPARC->D2_stencil_coeffs_y[ix];
-        fd_in_coeff[3*ix + 2] = pSPARC->D2_stencil_coeffs_z[ix];
-    }
-    
+    Psi_Info Psi1;
+    Psi_Info Psi2;
+    Psi_Info Psi3;
+    Eig_Info Eigvals;
     Hybrid_Decomp hd;
     FD_Info fd_raw;
     NonLocal_Info nl;
@@ -456,6 +450,18 @@ void scf(SPARC_OBJ *pSPARC)
     device_type communication_device = DEVICE_TYPE_HOST;
     device_type compute_device = DEVICE_TYPE_HOST;
 #endif
+
+
+    int fd_radius = pSPARC->order / 2;
+    double *fd_in_coeff = (double*) malloc(3*(fd_radius + 1) * sizeof(double));
+    for (int ix = 0; ix < (fd_radius + 1); ix++)
+    {
+        fd_in_coeff[3*ix + 0] = pSPARC->D2_stencil_coeffs_x[ix];
+        fd_in_coeff[3*ix + 1] = pSPARC->D2_stencil_coeffs_y[ix];
+        fd_in_coeff[3*ix + 2] = pSPARC->D2_stencil_coeffs_z[ix];
+    }
+    
+
 
     MPI_Comm temp_comm1;
     MPI_Comm temp_comm2;
@@ -504,11 +510,9 @@ void scf(SPARC_OBJ *pSPARC)
                                  .do_nonlocal = do_nonlocal,
                                 };
 
-    Psi_Info Psi1;
+    if (pSPARC->isGammaPoint) {
     PCE_Psi_Init(&Psi1);
-    Psi_Info Psi2;
     PCE_Psi_Init(&Psi2);
-    Psi_Info Psi3;
     PCE_Psi_Init(&Psi3);
 
     // Psi2 and Psi3 values necessarily get overwritten (initial values unused)
@@ -516,13 +520,13 @@ void scf(SPARC_OBJ *pSPARC)
     PCE_Psi_Set(&Psi2, &hd, pSPARC->Xorb);
     PCE_Psi_Set(&Psi3, &hd, pSPARC->Xorb);
 
-    Eig_Info Eigvals;
     PCE_Eig_Init(&Eigvals);
 
     PCE_Veff_Init(&veff_info);
 
     // TODO: Add this line back in
     SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
+    }
 
 
     // START OF SCF LOOP
@@ -545,7 +549,9 @@ void scf(SPARC_OBJ *pSPARC)
 		// start scf timer
         t_scf_s = MPI_Wtime();
         
-        PCE_Veff_Set(&veff_info, &hd, pSPARC->Veff_loc_dmcomm);
+        if (pSPARC->isGammaPoint) {
+          PCE_Veff_Set(&veff_info, &hd, pSPARC->Veff_loc_dmcomm);
+        }
 
         Calculate_elecDens(rank, pSPARC, SCFcount, error, 
                            &hd, &cheb, &Eigvals, &ham_struct, &Psi1, &Psi2, &Psi3,
@@ -785,15 +791,17 @@ void scf(SPARC_OBJ *pSPARC)
         }
     }
 
-    PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
+    if(pSPARC->isGammaPoint) {
+      PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
+      PCE_Psi_Destroy(&Psi1);
+      PCE_Psi_Destroy(&Psi2);
+      PCE_Psi_Destroy(&Psi3);
+      PCE_Veff_Destroy(&veff_info);
+      PCE_Eig_Destroy(&Eigvals);
+      PCE_Internal_NonLocal_Destroy(&nl, compute_device);
+    }
 
-    PCE_Psi_Destroy(&Psi1);
-    PCE_Psi_Destroy(&Psi2);
-    PCE_Psi_Destroy(&Psi3);
-    PCE_Veff_Destroy(&veff_info);
     PCE_FD_Destroy(&fd_raw);
-    PCE_Eig_Destroy(&Eigvals);
-    PCE_Internal_NonLocal_Destroy(&nl, compute_device);
     printf("DESTROYED\n");
 
     

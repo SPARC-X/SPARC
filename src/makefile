@@ -34,8 +34,27 @@ ENABLE_SIMD_COMPLEX = 0
 # LDFLAGS += -L$(BLASROOT)
 
 #CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-LDLIBS   = -lrt -L ../Hamiltonian/lib -L ../Hamiltonian/CA3DMM/lib  -lpce -lca3dmm
+LIBPCE_DIR=../Hamiltonian/
+CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
+
+# Uses gcc
+LIBPCE_MAKEFILE=Makefile.linux
+
+CPPFLAGS = -Iinclude/ -I $(LIBPCE_DIR)/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
+LDLIBS   = -lrt -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
+
+ifeq ($(USE_GPU), 1)
+LFLAGS_GPU=-lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G
+ifeq ($(USE_MKL), 1)
+LFLAGS_GPU += -mkl
+else
+LFLAGS_GPU += -lopenblas
+endif
+endif
+
+
+		
+
 
 ifeq ($(USE_MKL), 1)
 CPPFLAGS += -m64 -I${MKLROOT}/include -DUSE_MKL
@@ -95,9 +114,11 @@ all: sparc
 # %.o : %.c
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-sparc: $(OBJSC)
+$(LIBPCE_DIR)/lib/libpce.a:
+	$(MAKE) -C $(LIBPCE_DIR) -f $(LIBPCE_MAKEFILE) 
+sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
 	if [ "$(USE_GPU)" == "1" ]; then \
-		nvcc -DUSE_GPU -lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -lopenblas -G $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
+		nvcc -DUSE_GPU $(LFLAGS_GPU) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
 	else \
 		$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
 	fi
@@ -105,5 +126,6 @@ sparc: $(OBJSC)
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
+	$(MAKE) -C $(LIBPCE_DIR) -f $(LIBPCE_MAKEFILE) clean
 test: ../.ci/run_tests.py
 	cd $(TESTBASE); ./run_tests.py
