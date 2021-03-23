@@ -1046,9 +1046,11 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         DMnd = DMnx * DMny * DMnz;
         // allocate memory for electron density (sum of atom potential) and charge density
         pSPARC->electronDens_at = (double *)malloc( DMnd * (2*pSPARC->Nspin-1) * sizeof(double) );
+        pSPARC->electronDens_core = (double *)calloc( DMnd * (2*pSPARC->Nspin-1), sizeof(double) );
         pSPARC->psdChrgDens = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->psdChrgDens_ref = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->Vc = (double *)malloc( DMnd * sizeof(double) );
+        assert(pSPARC->electronDens_core != NULL);
         assert(pSPARC->electronDens_at != NULL && pSPARC->psdChrgDens != NULL &&
                pSPARC->psdChrgDens_ref != NULL && pSPARC->Vc != NULL);
         // allocate memory for electron density

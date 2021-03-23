@@ -1,0 +1,112 @@
+***************************************************************************
+*                      M-SPARC v1.0.0 (Oct 07, 2020)                      *
+*   Copyright (c) 2019 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                Date: 03-Dec-2020  Start time: 12:00:14                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 15.000000 7.500000 7.500000 
+LATVEC:
+0.000000000000000 0.500000000000000 0.500000000000000 
+0.500000000000000 0.000000000000000 0.500000000000000 
+0.500000000000000 0.500000000000000 0.000000000000000 
+FD_GRID: 75 38 38
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 1
+ELEC_TEMP_TYPE: fermi-dirac
+SMEARING: 0.010000000
+CHEB_DEGREE: 35
+NSTATES: 15
+EXCHANGE_CORRELATION: GGA_PBE
+CALC_STRESS: 1
+MAXIT_SCF: 100
+TOL_SCF: 5.00E-06
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.30
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART_FREQ: 0
+REFERENCE_CUTOFF: 0.50
+RHO_TRIGGER: 4
+FIX_RAND: 0
+PRINT_FORCES: 1
+PRINT_ATOMS: 0
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: /storage/hive/scratch/5/skumar416/nonlinearcore/M-SPARC-master/tests/tests_NLCC_spin/TESTS_NLCC_ABINIT_MSPARC/nonorthogonal/GGA/Al/msparc/Al.out_1
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Mesh spacing in x-direction        :  0.200000 (Bohr)
+Mesh spacing in y-direction        :  0.197368 (Bohr)
+Mesh spacing in z direction        :  0.197368 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  /storage/hive/scratch/5/skumar416/nonlinearcore/M-SPARC-master/tests/tests_NLCC_spin/TESTS_NLCC_ABINIT_MSPARC/nonorthogonal/GGA/Al/msparc/Al.out_1
+Total number of atom types         :  1
+Total number of atoms              :  2
+Total number of electrons          :  6
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  ./../../../../psps_GGA/Al.psp8
+lloc                               :  4
+Pseudocharge radii of atom type 1  :  7.80 7.80 7.70
+Number of atoms of type 1          :  2
+Estimated total memory usage       :  401.56 MB
+========================================================================================
+                            Self Consistent Field (SCF#1)                     
+========================================================================================
+Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
+1            -2.3541983472E+00         2.4064E-04        6.132E-02        36.563
+2            -2.3669175164E+00         1.6881E-04        3.481E-02        21.420
+3            -2.3680025549E+00         1.0808E-04        2.157E-02        20.285
+4            -2.3681619883E+00         2.3132E-05        5.473E-03        18.133
+5            -2.3681804265E+00         3.3248E-06        2.119E-03        19.124
+6            -2.3681844536E+00         9.0804E-07        1.331E-03        18.448
+7            -2.3681865764E+00        -1.2248E-07        4.074E-04        18.225
+8            -2.3681866968E+00         8.6867E-08        1.622E-04        17.012
+9            -2.3681867415E+00         4.4596E-08        7.788E-05        16.012
+10           -2.3681867324E+00         2.3475E-08        1.943E-05        15.028
+11           -2.3681867496E+00         2.1853E-08        1.425E-05        15.266
+12           -2.3681867466E+00        -8.9540E-10        3.359E-06        14.024
+Total number of SCF: 12    
+====================================================================
+                                Energy                              
+====================================================================
+Free energy per atom               : -2.3681867466E+00 (Ha/atom)
+Total free energy                  : -4.7363734932E+00 (Ha)
+Band structure energy              : -7.4024471585E-01 (Ha)
+Exchange correlation energy        : -1.7933174001E+00 (Ha)
+Self and correction energy         : -1.0601571901E+01 (Ha)
+Entropy*kb*T                       : -1.6879280996E-05 (Ha)
+Fermi level                        :  6.6720184654E-02 (Ha)
+Net Magnetization                  : -8.9539931025E-10 
+Average force                      :  6.0227719619E-03 (Ha/Bohr)
+Maximum force                      :  6.0227719619E-03 (Ha/Bohr)
+Time for force calculation         :  4.625 (sec)
+Stress (GPa):
+     19.7326491415      12.4517977058      12.4503255906
+     12.4555244778      19.7296685445     -12.6172159069
+     12.4537047296     -12.6168930958      19.7284304653
+Pressure                           : -1.9730249384E+01 (GPa)
+Maximum stress                     :  1.9732649141E+01 (GPa)
+Time for stress calculation        :  11.531 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  292.169 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Acknowledgements: U.S. DOE (DE-SC0019410); NSF (1333500,1553212)    *
+***************************************************************************
+                                                                           

@@ -1,0 +1,43 @@
+# Al in the diamond structure
+
+# Definition of the k-point grid
+ngkpt  1 1 1
+
+shiftk   0 0 0
+toldfe   1.0d-10
+occopt 3
+tsmear 0.01
+nband 15
+# Definition of the unit cell: fcc
+acell 21.213203435596427  10.606601717798213  10.606601717798213 #Same parameters as Shiskin
+rprim  0.0  0.5  0.5        #FCC primitive vectors (to be scaled by acell)
+       0.5  0.0  0.5   
+       0.5  0.5  0.0
+
+# Definition of the atom types
+ntypat  1         
+znucl   13
+                         
+# Definition of the atoms
+natom 2           # There are two atoms
+typat  1 1     
+xred              # Reduced coordinate of atoms
+       0.0   0.01   0.02
+       0.51  0.01   0.01
+
+# Definition of the planewave basis set (at convergence 16 Rydberg 8 Hartree)
+ecut 100.0          # Maximal kinetic energy cut-off, in Hartree
+
+
+# Definition of the SCF procedure
+# nstep   8        # For testing purpose only
+diemac  12.0      # Although this is not mandatory, it is worth to
+                  # precondition the SCF cycle. The model dielectric
+                  # function used as the standard preconditioner
+                  # is described in the "dielng" input variable section.
+                  # Here, we follow the prescription for bulk silicon.
+
+nsppol 2
+spinat
+0 0 1
+0 0 1
