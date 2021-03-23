@@ -3,6 +3,10 @@
 #include <libpce.h>
 #include "hamstruct.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void Our_Hamiltonian(const void* ham_struct, const Psi_Info* const psi_in, Psi_Info* psi_out, double c)
 {
   Our_Hamiltonian_Struct* ohs = (Our_Hamiltonian_Struct*)ham_struct;
@@ -163,3 +167,7 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
   }
 #endif
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -22,6 +22,10 @@
 #include "isddft.h"
 #include "electronicGroundState.h"
 
+#if USE_GPU
+#include <cuda.h>
+#endif
+
 int main(int argc, char *argv[]) {
     // set up MPI
     MPI_Init(&argc, &argv);

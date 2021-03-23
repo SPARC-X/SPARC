@@ -15,7 +15,7 @@
 #define EIGENSOLVER_H 
 
 #include "isddft.h"
-#include <libpce.h>
+#include <libpce_structs.h>
 #include "hamstruct.h"
 
 /*
