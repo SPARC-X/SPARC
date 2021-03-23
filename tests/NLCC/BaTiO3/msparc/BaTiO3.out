@@ -1,0 +1,113 @@
+***************************************************************************
+*                      M-SPARC v1.0.0 (Oct 07, 2020)                      *
+*   Copyright (c) 2019 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                Date: 18-Nov-2020  Start time: 02:52:29                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 7.630000 7.630000 7.630000 
+FD_GRID: 51 51 51
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+ELEC_TEMP_TYPE: gaussian
+SMEARING: 0.007349864
+CHEB_DEGREE: 42
+NSTATES: 29
+EXCHANGE_CORRELATION: LDA_PZ
+CALC_STRESS: 1
+MAXIT_SCF: 100
+TOL_SCF: 1.00E-05
+TOL_POISSON: 1.00E-07
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-05
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.30
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART_FREQ: 0
+REFERENCE_CUTOFF: 0.50
+RHO_TRIGGER: 4
+FIX_RAND: 0
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: /storage/hive/scratch/5/skumar416/nonlinearcore/M-SPARC-master/tests/Non-orthogonal_tests_NLCC/orthogonal/LDA/BaTiO3/msparc/BaTiO3.out
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Mesh spacing                       :  0.149608 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  /storage/hive/scratch/5/skumar416/nonlinearcore/M-SPARC-master/tests/Non-orthogonal_tests_NLCC/orthogonal/LDA/BaTiO3/msparc/BaTiO3.out
+Total number of atom types         :  3
+Total number of atoms              :  5
+Total number of electrons          :  40
+Atom type 1  (valence electrons)   :  Ba 10
+Pseudopotential                    :  ./../../../../psps_LDA/Ba.psp8
+lloc                               :  4
+Pseudocharge radii of atom type 1  :  3.74 3.74 3.74
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  Ti 12
+Pseudopotential                    :  ./../../../../psps_LDA/Ti.psp8
+lloc                               :  4
+Pseudocharge radii of atom type 2  :  4.04 4.04 4.04
+Number of atoms of type 2          :  1
+Atom type 3  (valence electrons)   :  O 6
+Pseudopotential                    :  ./../../../../psps_LDA/O.psp8
+lloc                               :  4
+Pseudocharge radii of atom type 3  :  4.19 4.19 4.19
+Number of atoms of type 3          :  3
+Estimated total memory usage       :  487.81 MB
+=====================================================================
+                    Self Consistent Field (SCF#1)                     
+=====================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.7218085945E+01        1.676E-01        21.282
+2            -2.7347158794E+01        2.415E-02        8.668
+3            -2.7349339224E+01        1.361E-02        9.028
+4            -2.7349492300E+01        9.803E-03        8.432
+5            -2.7349852282E+01        3.109E-03        8.084
+6            -2.7349868314E+01        2.393E-03        8.082
+7            -2.7349880273E+01        1.751E-03        7.870
+8            -2.7349893969E+01        2.257E-04        8.146
+9            -2.7349894207E+01        3.927E-05        7.771
+10           -2.7349894118E+01        2.731E-05        7.630
+11           -2.7349894187E+01        6.355E-06        7.410
+Total number of SCF: 11    
+====================================================================
+                                Energy                              
+====================================================================
+Free energy per atom               : -2.7349894187E+01 (Ha/atom)
+Total free energy                  : -1.3674947094E+02 (Ha)
+Band structure energy              : -1.0677882744E+01 (Ha)
+Exchange correlation energy        : -2.7834439764E+01 (Ha)
+Self and correction energy         : -1.9232406057E+02 (Ha)
+Entropy*kb*T                       : -7.0704430523E-07 (Ha)
+Fermi level                        :  3.0498928533E-01 (Ha)
+Average force                      :  1.2343641694E-01 (Ha/Bohr)
+Maximum force                      :  2.7272731060E-01 (Ha/Bohr)
+Time for force calculation         :  3.305 (sec)
+Stress (GPa):
+    -26.8039555743       5.9345658644      -3.0530966564
+      5.9358007648     -28.8921716032       2.0750641605
+     -3.0532218514       2.0739146637     -40.2591740305
+Pressure                           :  3.1985100403E+01 (GPa)
+Maximum stress                     :  4.0259174030E+01 (GPa)
+Time for stress calculation        :  4.414 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  121.821 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Acknowledgements: U.S. DOE (DE-SC0019410); NSF (1333500,1553212)    *
+***************************************************************************
+                                                                           

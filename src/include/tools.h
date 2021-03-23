@@ -157,6 +157,15 @@ int binary_interval_search(const double *list, const int len, const double x);
 
 
 /**
+ * @brief   The main funciton for Cubic spline evaluation from precalculated
+ *          data. This function calls the appropriate uniform or non-uniform
+ *          routines.         
+ */
+void SplineInterpMain(double *X1,double *Y1,int len1,
+    double *X2,double *Y2,int len2,double *YD,int isUniform);
+
+
+/**
  * @brief   Cubic spline coefficients.
  *
  *          This function finds the coefficients of the cubic polynomials within each data interval

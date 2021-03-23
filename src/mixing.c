@@ -378,7 +378,7 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         }
         
         // consider doing this every time, not just when density is negative
-        if (neg_flag > 0) {
+        if (neg_flag > 0 || 1) { // Warning: forcing if cond to be always true
             double int_rho = 0.0;
             for (i = 0; i < pSPARC->Nd_d; i++) {
                 int_rho += pSPARC->electronDens[i];
