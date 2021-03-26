@@ -7,7 +7,12 @@
 #include <cuda.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if USE_GPU
+
 void NONLOCAL_GPU(min_SPARC_OBJ *pSPARC,  ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,   NLOC_PROJ_OBJ *nlocProj,
     min_SPARC_OBJ **d_SPARC, ATOM_NLOC_INFLUENCE_OBJ **d_Atom_Influence_nloc, NLOC_PROJ_OBJ **d_locProj)
 {
@@ -77,3 +82,7 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl, device
 
     return;
 }
+
+#ifdef __cplusplus
+}
+#endif
