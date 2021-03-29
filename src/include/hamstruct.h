@@ -1,7 +1,8 @@
 #ifndef HAMSTRUCT_H
 #define HAMSTRUCT_H
 
-#include <libpce.h>
+#include <enum.h>
+#include <libpce_structs.h>
 
 typedef struct
 {

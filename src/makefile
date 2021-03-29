@@ -38,18 +38,23 @@ LIBPCE_DIR=../Hamiltonian/
 CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
 
 # Uses gcc
-LIBPCE_MAKEFILE=Makefile.linux
+LIBPCE_MAKEFILE=Makefile.pace.icc
 
 CPPFLAGS = -Iinclude/ -I $(LIBPCE_DIR)/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
 LDLIBS   = -lrt -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
 
 ifeq ($(USE_GPU), 1)
-LFLAGS_GPU=-lcudart -ccbin=mpicxx -Xcompiler -std=gnu++98,-MMD,-MP,-O3,-g,-march=native -O3 -L$CUDA_ROOT/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G
+
+LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native
+CPPFLAGS += -I $(CUDA_ROOT)/include
+LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
 ifeq ($(USE_MKL), 1)
-LFLAGS_GPU += -mkl
+LFLAGS_GPU_HOST:=$(LFLAGS_GPU_HOST),-mkl
+LFLAGS_GPU   += -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
 else
-LFLAGS_GPU += -lopenblas
+LFLAGS_GPU_HOST:=$(LFALGS_GPU_HOST),-lopenblas
 endif
+LFLAGS_GPU+=-Xcompiler $(LFLAGS_GPU_HOST) 
 endif
 
 
@@ -66,7 +71,7 @@ LDLIBS   += -lscalapack
 endif
 
 ifeq ($(USE_GPU), 1)
-CPPFLAGS += -DUSE_GPU
+CPPFLAGS += -DUSE_GPU=1
 endif
 
 # if MKL is not used, link BLAS and LAPACK directly
@@ -114,11 +119,9 @@ all: sparc
 # %.o : %.c
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-$(LIBPCE_DIR)/lib/libpce.a:
-	$(MAKE) -C $(LIBPCE_DIR) -f $(LIBPCE_MAKEFILE) 
 sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
 	if [ "$(USE_GPU)" == "1" ]; then \
-		nvcc -DUSE_GPU $(LFLAGS_GPU) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
+		nvcc -DUSE_GPU $(LFLAGS_GPU) $(LDFLAGS) -o $(LIBBASE) $^; \
 	else \
 		$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS); \
 	fi
@@ -126,6 +129,5 @@ sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
-	$(MAKE) -C $(LIBPCE_DIR) -f $(LIBPCE_MAKEFILE) clean
 test: ../.ci/run_tests.py
 	cd $(TESTBASE); ./run_tests.py
