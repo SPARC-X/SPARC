@@ -513,7 +513,7 @@ void scf(SPARC_OBJ *pSPARC)
     PCE_Init(pc, pxyz[0], pxyz[1], pxyz[2], pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, 
              pSPARC->BCx, pSPARC->BCy, pSPARC->BCz, pSPARC->Nstates, 
              pSPARC->order, fd_in_coeff, laplacian_scaling, 
-             &hd, &fd_raw, compute_device, pSPARC->isGammaPoint?MPI_COMM_WORLD:pSPARC->kptcomm, &temp_comm1, &temp_comm2);
+             &hd, &fd_raw, compute_device, pSPARC->kptcomm, &temp_comm1, &temp_comm2);
 
     hd.local_num_cols = pSPARC->band_end_indx - pSPARC->band_start_indx + 1;
     hd.local_start_col = pSPARC->band_start_indx;
