@@ -70,7 +70,10 @@ typedef struct {
 
 void xferFactors( Factors *fctrs, int *flist, int flix );
 Factors *factor( int num, Factors *fctrs);
+void sorted_factor( int num, Factors *fctrs);
 
+// Equivalent to ceil(x / (double)y), where x, y are positive integers
+int ceil_div(const unsigned int x, const unsigned int y);
 
 /**
  * @brief   Calculates derivatives of a tabulated function required for spline interpolation.
