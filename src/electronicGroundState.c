@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <time.h>
 #include <math.h>
+#include <assert.h>
 
 #include "electronicGroundState.h"
 #include "initialization.h"
@@ -444,8 +445,41 @@ void scf(SPARC_OBJ *pSPARC)
     Chebyshev_Info cheb;
 
 #if USE_GPU
-    device_type communication_device = DEVICE_TYPE_DEVICE;
-    device_type compute_device = DEVICE_TYPE_DEVICE;
+    device_type compute_device = DEVICE_TYPE_HOST;
+    int use_gpu = 0;
+
+    const char* s_use_gpu = getenv("LIBPCE_USE_GPU");
+    if (s_use_gpu != NULL)
+    {
+      use_gpu = atoi(s_use_gpu);
+    }
+    printf("TO USE GPU: %i\n", use_gpu);
+
+    if (use_gpu)
+    {
+      compute_device = DEVICE_TYPE_DEVICE;
+      printf("USING GPU\n");
+    }
+    else
+    {
+      compute_device = DEVICE_TYPE_HOST;
+    }
+
+    if (use_gpu)
+    {
+      int n_dev = 0;
+      gpuErrchk(cudaGetDeviceCount(&n_dev));
+      if (n_dev == 0)
+      {
+        fprintf(stderr, "NO CUDA DEVICES\n");
+        assert(-1);
+      }
+      cudaFree(0);
+    }
+
+    //Assume CAM. TODO: FIX
+    device_type communication_device = compute_device;
+
 #else
     device_type communication_device = DEVICE_TYPE_HOST;
     device_type compute_device = DEVICE_TYPE_HOST;
