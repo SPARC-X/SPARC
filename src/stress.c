@@ -1163,10 +1163,6 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[3] += dpsi2_dpsi2 * g_nk;
                 }
                 
-                stress_k[0] *= -(2.0/pSPARC->Nspin);
-                stress_k[1] *= -(2.0/pSPARC->Nspin);
-                stress_k[3] *= -(2.0/pSPARC->Nspin);
-
                 Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 2, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_1
@@ -1180,8 +1176,6 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[2] += dpsi1_dpsi3 * g_nk;
                     stress_k[5] += dpsi3_dpsi3 * g_nk;
                 }
-                stress_k[2] *= -(2.0/pSPARC->Nspin);
-                stress_k[5] *= -(2.0/pSPARC->Nspin);
             } else if(dim == 1){
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_2
@@ -1192,11 +1186,17 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     }
                     stress_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                 }
-                stress_k[4] *= -(2.0/pSPARC->Nspin);
             }
             count++;
         }    
     }
+    
+    stress_k[0] *= -(2.0/pSPARC->Nspin);
+    stress_k[1] *= -(2.0/pSPARC->Nspin);
+    stress_k[2] *= -(2.0/pSPARC->Nspin);
+    stress_k[3] *= -(2.0/pSPARC->Nspin);
+    stress_k[4] *= -(2.0/pSPARC->Nspin);
+    stress_k[5] *= -(2.0/pSPARC->Nspin);
     
     free(dpsi_full);
 
