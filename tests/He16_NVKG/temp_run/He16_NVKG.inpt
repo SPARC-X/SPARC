@@ -1,0 +1,60 @@
+# nprocs: 8
+
+
+
+CELL: 12.151112185593 6.0755560927965 6.0755560927965  
+LATVEC:                       
+  1 0 0
+  0 1 0
+  0 0 1
+BC: P P P                     
+
+
+EXCHANGE_CORRELATION: LDA_PZ  
+
+
+NSTATES: 24                   
+     
+ELEC_TEMP_TYPE: fermi-dirac   
+ELEC_TEMP: 800               
+
+
+
+MESH_SPACING: 0.08          
+FD_ORDER: 12                 
+KPOINT_GRID: 1 1 1           
+KPOINT_SHIFT: 0.0 0.0 0.0     
+
+MIXING_VARIABLE: potential    
+
+TOL_SCF: 1e-6                 # density/potential relative residual convergence (unitless)
+
+MAXIT_SCF: 100                 # max SCF iterations
+MINIT_SCF: 3                  # min SCF iterations
+
+
+# MD ##############################################
+MD_FLAG: 1                  # 1= MD, 0= no MD (default)
+ION_TEMP: 800                 # kelvin
+ION_TEMP_END: 800             # kelvin: vary temp linearly from ION_TEMP to ION_TEMP_END
+      
+MD_METHOD: NVK_G              # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+#QMASS: 10                     # mass for NH thermostat (au): default ~1654
+MD_TIMESTEP: 0.6              # fs
+MD_NSTEP: 10                   # run MD_NSTEP steps or TWTIME minutes, whichever comes first
+#TWTIME: 1400
+ION_VEL_DSTR: 1               # initial velocity distrib: 1= uniform, 2= Maxwell-Boltzmann (default)
+ION_VEL_DSTR_RAND: 0          # initial velocity distrib seed: 0= fixed (default), 1= random
+PRINT_RESTART: 1              # output .restart files for restarting
+PRINT_RESTART_FQ: 3           # .restart files output every PRINT_RESTART_FQ steps
+RESTART_FLAG: 1               # 1= restart MD from .restart file if present, 0= start new
+
+# outputs #########################################
+CALC_PRES: 1
+CALC_STRESS: 1
+PRINT_ATOMS: 1
+PRINT_VELS: 1
+PRINT_FORCES: 1
+PRINT_EIGEN: 1                # print eigenvalues and occupations to .eigen file
+PRINT_DENSITY: 0
+PRINT_MDOUT: 1                # print MD output to .aimd file
