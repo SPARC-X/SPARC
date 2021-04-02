@@ -99,11 +99,11 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 # SYSTEMS["Tols"].append([1e-6, 1e-5, 1e-1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Au_fcc211')
-SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'kerker', 'nonorth','smear_fd','gamma'])
+SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'kerker', 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MgO')
-SYSTEMS["Tags"].append(['bulk','gga','potmix','nonorth','smear_gauss','nlcc','gamma'])
+SYSTEMS["Tags"].append(['bulk','gga','potmix','nonorth','smear_gauss','nlcc'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MoS2')
@@ -600,7 +600,264 @@ def isfinishedJobsID(JobID):
 	else:
 		return True
 
+def getInfoAbinit(syst,singlept,Type,isspin,ifVHQ):
+	#""" Reads the Energy, Forces, Stress etc from ABINIT reference output """
+	os.chdir(syst)
+	if (singlept == True):
+		with open(syst+".refabinitout",'r') as f_out:
+			f_out_content = [ line.strip() for line in f_out ]
+			Ener = []
+			force = []
+			stress = []
+			magnetization = 0
+			for lines in f_out_content:
+				if re.findall(r'natom', lines) == ['natom']:
+					temp = re.findall(r'\d+',lines)
+					natoms = int(float(temp[0]))
+					break
+			for lines in f_out_content:
+				if re.findall(r'Etotal', lines) == ['Etotal']:
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
+					Ener.append(float(temp[0]) /natoms)
+					break
+			for lines in f_out_content:
+				if re.findall(r'cartesian forces \(hartree/bohr\)', lines) == ['cartesian forces (hartree/bohr)']:
+					index_force =  f_out_content.index(lines)
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+',f_out_content[index_force+i+1])
+						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						force.append(ftemp)
+					break
+			for lines in f_out_content:
+				if re.findall(r'Cartesian components of stress tensor \(GPa\)', lines) == ['Cartesian components of stress tensor (GPa)']:
+					index_stress =  f_out_content.index(lines)
+					for i in range(3):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
+						stemp = [float(temp[0]),float(temp[1])]
+						stress.append(stemp)
+					stress = [[stress[0][0], stress[2][1],  stress[1][1]], [stress[2][1], stress[1][0],  stress[0][1]], [stress[1][1], stress[0][1],  stress[2][0]]]
+					break
 
+			for lines in f_out_content:				
+				if isspin ==  True:
+					if re.findall(r'up - dn',lines) == ['up - dn']:
+						temp_m = re.findall(r'\d+\.\d+',lines)
+						magnetization = float(temp_m[0])
+						break
+
+		Info = {"Type": "singlepnt",
+		"energy": Ener,
+		"force": force,
+		"stress": stress,
+		"magnetization": magnetization}
+		os.chdir("./..")
+		return(Info)
+
+	elif ((singlept == False) and (Type == "relax_atom")):
+		with open(syst+".refabinitout",'r') as f_out:
+			f_out_content = [ line.strip() for line in f_out ]
+
+		Ener = []
+		force = []
+		scfpos = []
+		magnetization = 0
+		for lines in f_out_content:
+				if re.findall(r'natom', lines) == ['natom']:
+					temp = re.findall(r'\d+',lines)
+					natoms = int(float(temp[0]))
+					break
+		for lines in f_out_content:
+				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
+					Ener.append(float(temp[0]) / natoms)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
+					index_force =  f_out_content.index(lines)
+					ftemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
+						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						ftemp1.append(ftemp)
+					force.append(ftemp1)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
+					index_scfpos =  f_out_content.index(lines)
+					spostemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
+						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						spostemp1.append(ftemp)
+					scfpos.append(spostemp1)
+
+		for lines in f_out_content:
+			if isspin ==  True:
+				if re.findall(r'up - dn',lines) == ['up - dn']:
+					temp_m = re.findall(r'\d+\.\d+',lines)
+					magnetization.append(float(temp_m[0]))
+
+		Info = {"Type": "relax_atom",
+		"energy": Ener,
+		"force": force,
+		"scfpos": scfpos,
+		"magnetization": magnetization}
+		os.chdir("./..")
+		return(Info)
+
+	elif ((singlept == False) and (Type == "relax_total")):
+		with open(syst+".refabinitout",'r') as f_out:
+			f_out_content = [ line.strip() for line in f_out ]
+
+		Ener = []
+		force = []
+		scfpos = []
+		stress = []
+		cell = []
+		magnetization = 0
+
+		for lines in f_out_content:
+				if re.findall(r'natom', lines) == ['natom']:
+					temp = re.findall(r'\d+',lines)
+					natoms = int(float(temp[0]))
+					break
+		for lines in f_out_content:
+				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
+					Ener.append(float(temp[0]) / natoms)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
+					index_force =  f_out_content.index(lines)
+					ftemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
+						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						ftemp1.append(ftemp)
+					force.append(ftemp1)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
+					index_scfpos =  f_out_content.index(lines)
+					spostemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
+						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						spostemp1.append(ftemp)
+					scfpos.append(spostemp1)
+
+		for lines in f_out_content:
+				if re.findall(r'Lengths \[Bohr\]', lines) == ['Lengths [Bohr]']:
+					index_cell =  f_out_content.index(lines)
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_cell+1])
+					cell.append([float(temp[0]), float(temp[1]), float(temp[2])])
+
+		for lines in f_out_content:
+				if re.findall(r'Stress tensor in cartesian coordinates', lines) == ['Stress tensor in cartesian coordinates']:
+					index_stress =  f_out_content.index(lines)
+					stresstemp1=[]
+					for i in range(3):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
+						strtemp = [float(temp[0])*29421.02648438959,float(temp[1])*29421.02648438959,float(temp[2])*29421.02648438959]
+						stresstemp1.append(strtemp)
+					stress.append(stresstemp1)
+
+
+		for lines in f_out_content:
+			if isspin ==  True:
+				if re.findall(r'up - dn',lines) == ['up - dn']:
+					temp_m = re.findall(r'\d+\.\d+',lines)
+					magnetization.append(float(temp_m[0]))
+
+		Info = {"Type": "relax_atom",
+		"energy": Ener,
+		"force": force,
+		"scfpos": scfpos,
+		"stress": stress,
+		"cell": cell,
+		"magnetization": magnetization}
+		os.chdir("./..")
+		return(Info)
+
+	elif ((singlept == False) and (Type == "MD")):
+		with open(syst+".refabinitout",'r') as f_out:
+			f_out_content = [ line.strip() for line in f_out ]
+
+		Ener = []
+		force = []
+		scfpos = []
+		stress = []
+		KEN = []
+		magnetization = 0
+		cell=[]
+		for lines in f_out_content:
+				if re.findall(r'natom', lines) == ['natom']:
+					temp = re.findall(r'\d+',lines)
+					natoms = int(float(temp[0]))
+					break
+
+		for lines in f_out_content:
+				if re.findall(r'Kinetic energy of ions \(ekin\)', lines) == ['Kinetic energy of ions (ekin)']:
+					temp = re.findall(r'\d+',lines)
+					KEN.append(int(float(temp[0]) / natoms))
+					
+
+		for lines in f_out_content:
+				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
+					Ener.append(float(temp[0]) / natoms)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
+					index_force =  f_out_content.index(lines)
+					ftemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
+						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						ftemp1.append(ftemp)
+					force.append(ftemp1)
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
+					index_scfpos =  f_out_content.index(lines)
+					spostemp1=[]
+					for i in range(natoms):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
+						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
+						spostemp1.append(ftemp)
+					scfpos.append(spostemp1)
+
+		for lines in f_out_content:
+				if re.findall(r'Lengths \[Bohr\]', lines) == ['Lengths [Bohr]']:
+					index_cell =  f_out_content.index(lines)
+					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_cell+1])
+					cell.append([float(temp[0]), float(temp[1]), float(temp[2])])
+
+		for lines in f_out_content:
+				if re.findall(r'Cartesian components of stress tensor', lines) == ['Cartesian components of stress tensor']:
+					index_stress =  f_out_content.index(lines)
+					stresstemp1=[]
+					for i in range(3):
+						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
+						strtemp = [float(temp[0])*29421.02648438959,float(temp[1])*29421.02648438959]
+						stresstemp1.append(strtemp)
+					stress.append([[stresstemp1[0][0], stresstemp1[2][1],  stresstemp1[1][1]], [stresstemp1[2][1], stresstemp1[1][0],  stresstemp1[0][1]], [stresstemp1[1][1], stresstemp1[0][1],  stresstemp1[2][0]]])
+
+		for lines in f_out_content:
+			if isspin ==  True:
+				if re.findall(r'up - dn',lines) == ['up - dn']:
+					temp_m = re.findall(r'\d+\.\d+',lines)
+					magnetization.append(float(temp_m[0]))
+		
+		Info = {"Type": "relax_atom",
+		"energy": Ener,
+		"force": force,
+		"scfpos": scfpos,
+		"stress": stress,
+		"KEN": KEN,
+		"magnetization": magnetization}
+		os.chdir("./..")
+		return(Info)
 
 def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 	#""" Reads .out file from SPARC runs and reference """
@@ -2352,7 +2609,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 01 April 2021)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 30 March 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -2401,16 +2658,18 @@ args = sys.argv[1:]
 isparallel = True
 ismempbs =False
 ifVHQ = False
+isAuto = False
 if len(args) == 1:
 	if args[0] == "autosys":
+		isAuto =  True
 		ifVHQ = False
 		isparallel = False
 		systems=SYSTEMS['systemname']
 		tags_sys=SYSTEMS['Tags']
 		tols_sys=SYSTEMS['Tols']
-		tags_sys = [ tags_sys[i] for i in range(len(systems)) if systems[i] not in ['He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		tags_sys = [ tags_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
 		no_systems = len(systems)
 
 # if len(args) == 1:
@@ -2602,36 +2861,102 @@ else:
 ######################### Launching the jobs ######################################################################
 # launch in a batch of 5 systems in a single pbs file in case of "mempbscheck == False" and in a batch of 1 otherwise
 # Input to the launch function should be  - (i) systems (ii) ifmempbs (iii) numberofprocs
-
-jobID = launchsystems(systems,memcheck,procs_sys,ismempbs, ifVHQ, isorient, not isparallel)
+if isAuto == False:
+	jobID = launchsystems(systems,memcheck,procs_sys,ismempbs, ifVHQ, isorient, not isparallel)
 
 ############################### Monitoring #########################################################################
-syst_temp = []
-isorient_temp=[]
-for i in range(len(systems)):
-	syst_temp.append(systems[i])
-	isorient_temp.append(isorient[i])
+	syst_temp = []
+	isorient_temp=[]
+	for i in range(len(systems)):
+		syst_temp.append(systems[i])
+		isorient_temp.append(isorient[i])
 
-for i in range_with_status(len(systems)):
-	temp = True
-	while temp:
-		# print(syst_temp, "\n")
-		for j in range(len(syst_temp)):
-			if isfinishedJobsID(jobID) == True:
-				del syst_temp[j]
-				del isorient_temp[j]
-				temp = False
-				break
-			if isfinished(syst_temp[j], isorient_temp[j]) == True:
-				del syst_temp[j]
-				del isorient_temp[j]
-				# syst_temp.remove(syst_temp[j])
-				# isorient_temp.remove(isorient_temp[j])
-				temp = False
-				break
-		time.sleep(.3)
+	for i in range_with_status(len(systems)):
+		temp = True
+		while temp:
+			# print(syst_temp, "\n")
+			for j in range(len(syst_temp)):
+				if isfinishedJobsID(jobID) == True:
+					del syst_temp[j]
+					del isorient_temp[j]
+					temp = False
+					break
+				if isfinished(syst_temp[j], isorient_temp[j]) == True:
+					del syst_temp[j]
+					del isorient_temp[j]
+					# syst_temp.remove(syst_temp[j])
+					# isorient_temp.remove(isorient_temp[j])
+					temp = False
+					break
+			time.sleep(.3)
 
-print('\n')
+	print('\n')
+else:
+	countrun=0
+	for systs in systems:
+		print(str(countrun)+": "+systs+" started running")
+		os.chdir(systs)
+		if isorient[countrun] == False:
+			if os.path.exists("temp_run"):
+				os.system("rm -r temp_run")
+				os.system("mkdir temp_run")
+				os.system("cp low_accuracy/*.inpt ./temp_run/")
+				os.system("cp low_accuracy/*.ion ./temp_run/")
+				os.system("cp ./*.psp8 ./temp_run/")
+			else:
+				os.system("mkdir temp_run")
+				os.system("cp low_accuracy/*.inpt ./temp_run/")
+				os.system("cp low_accuracy/*.ion ./temp_run/")
+				os.system("cp ./*.psp8 ./temp_run/")
+			os.chdir("temp_run")
+			os.system("./../../sparc -name "+systs+" > log")
+		else:
+			if os.path.exists("temp_run1"):
+				os.system("rm -r temp_run1")
+				os.system("mkdir temp_run1")
+				os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
+				os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
+				os.system("cp ./*.psp8 ./temp_run1/")
+			else:
+				os.system("mkdir temp_run1")
+				os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
+				os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
+				os.system("cp ./*.psp8 ./temp_run1/")
+			os.chdir("temp_run1")
+			os.system("./../../sparc -name "+systs+" > log")
+
+			os.chdir("./..")
+			if os.path.exists("temp_run2"):
+				os.system("rm -r temp_run2")
+				os.system("mkdir temp_run2")
+				os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
+				os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
+				os.system("cp ./*.psp8 ./temp_run2/")
+			else:
+				os.system("mkdir temp_run2")
+				os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
+				os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
+				os.system("cp ./*.psp8 ./temp_run2/")
+
+			os.chdir("temp_run2")
+			os.system("./../../sparc -name "+systs+" > log")
+			os.chdir("./..")
+			if os.path.exists("temp_run3"):
+				os.system("rm -r temp_run3")
+				os.system("mkdir temp_run3")
+				os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
+				os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
+				os.system("cp ./*.psp8 ./temp_run3/")
+			else:
+				os.system("mkdir temp_run3")
+				os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
+				os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
+				os.system("cp ./*.psp8 ./temp_run3/")
+			os.chdir("temp_run3")
+			os.system("./../../sparc -name "+systs+" > log")
+		countrun=countrun+1
+		print(str(countrun)+": "+systs+" has finished running")
+		os.chdir("./../..")
 
 
 #######################################################################################################################
@@ -2671,7 +2996,7 @@ for i in range(len(systems)):
 			sys_which_ran_idx.append(count_run)
 			count_run=count_run+1
 		except:
-			print("Warning: system named '"+systems[i]+"' has some issues or hasn't finished running: please check and rerun this system again \n")
+			print("Warning: system named '"+systems[i]+"' has some issues: please check and rerun this system again \n")
 
 
 
@@ -2709,3 +3034,7 @@ os.chdir(home_directory)
 if os.path.exists("launch_1.pbs"):
 	os.system("rm *.pbs")
 	os.system("rm *.sparc")
+
+if isAuto == True:
+	if failtests > 0:
+		raise Exception(str(failtests) + " out of "+str(passtests+failtests) " failed")
