@@ -2659,6 +2659,7 @@ isparallel = True
 ismempbs =False
 ifVHQ = False
 isAuto = False
+no_concurrency=6 # number of jobs running concurrently on github server
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
 	indx_test = int(indx_test_temp[0])
@@ -2673,14 +2674,14 @@ if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
 		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
 		no_systems = len(systems)
-		if indx_test != 12:
-			systems = systems[(indx_test-1)*int(no_systems/12):(indx_test-1)*int(no_systems/12)+int(no_systems/12)]
-			tols_sys = tols_sys[(indx_test-1)*int(no_systems/12):(indx_test-1)*int(no_systems/12)+int(no_systems/12)]
-			tags_sys = tags_sys[(indx_test-1)*int(no_systems/12):(indx_test-1)*int(no_systems/12)+int(no_systems/12)]
+		if indx_test != no_concurrency:
+			systems = systems[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			tols_sys = tols_sys[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			tags_sys = tags_sys[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
 		else:
-			systems = systems[(indx_test-1)*int(no_systems/12) : no_systems]
-			tols_sys = tols_sys[(indx_test-1)*int(no_systems/12) : no_systems]
-			tags_sys = tags_sys[(indx_test-1)*int(no_systems/12) : no_systems]
+			systems = systems[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
+			tols_sys = tols_sys[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
+			tags_sys = tags_sys[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
 		no_systems = len(systems)
 
 
