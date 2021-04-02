@@ -437,6 +437,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // M_s= Psi^T Psi
       //TODO: Fix comm
       PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+#if USE_GPU
+      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk(cudaDeviceSynchronize());
+      }
+#endif
+
       ca3dmm_engine_free(&mult_ptp);
 
       // Perform Psi^T*HPsi
@@ -447,6 +454,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // H_s= Psi^T Psi
       PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, ham_struct->communication_device, ham_struct->compute_device,
                    kptcomm, dmcomm);
+#if USE_GPU
+      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk(cudaDeviceSynchronize());
+      }
+#endif
 
       ca3dmm_engine_free(&mult_pthp);
 
@@ -480,6 +493,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
     PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+#if USE_GPU
+      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk(cudaDeviceSynchronize());
+      }
+#endif
+
 
 
     // DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
