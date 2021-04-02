@@ -2191,7 +2191,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			#text = text+"Error in stress "
 			#text = text+"Error in number of SCF iterations for convergence: "+'{0:1.2e}'.format(cell_error)+"\n"
 			text = text+text1+text2+text3
-			if (errspin <= spin_tol  and E_sys_err <= E_tol  and cell_error <= CELL_tol  and  memlost == 0 and stress_error <= stress_tol):
+			if (errspin <= spin_tol  and E_sys_err <= E_tol  and cell_error <= CELL_tol  and  memlost == 0):
 				test_status.append("passed")
 				text="Test Result: Passed \n"+text
 			else:
