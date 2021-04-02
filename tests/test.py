@@ -3037,4 +3037,4 @@ if os.path.exists("launch_1.pbs"):
 
 if isAuto == True:
 	if failtests > 0:
-		raise Exception(str(failtests) + " out of "+str(passtests+failtests) " failed")
+		raise Exception(str(failtests) + " out of "+str(passtests+failtests) +" failed")
