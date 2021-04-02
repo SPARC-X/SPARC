@@ -2660,7 +2660,7 @@ ismempbs =False
 ifVHQ = False
 isAuto = False
 if len(args) == 1:
-	if args[0] == "autosys":
+	if args[0] == "autosys1":
 		isAuto =  True
 		ifVHQ = False
 		isparallel = False
@@ -2671,6 +2671,26 @@ if len(args) == 1:
 		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
 		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
 		no_systems = len(systems)
+		systems = systems[0:int(no_systems/2)]
+		tols_sys = tols_sys[0:int(no_systems/2)]
+		tags_sys = tags_sys[0:int(no_systems/2)]
+		no_systems = len(systems)
+	if args[0] == "autosys2":
+		isAuto =  True
+		ifVHQ = False
+		isparallel = False
+		systems=SYSTEMS['systemname']
+		tags_sys=SYSTEMS['Tags']
+		tols_sys=SYSTEMS['Tols']
+		tags_sys = [ tags_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		no_systems = len(systems)
+		systems = systems[int(no_systems/2):no_systems]
+		tols_sys = tols_sys[int(no_systems/2):no_systems]
+		tags_sys = tags_sys[int(no_systems/2):no_systems]
+		no_systems = len(systems)
+
 
 # if len(args) == 1:
 # 	if args[0] == "autosys":

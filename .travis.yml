@@ -19,4 +19,6 @@ addons:
 install:
   - cd src/; make clean; make #2> makeLog
 script:
-  - travis_wait 60 make test # already in src/ during install
+  - travis_wait 60 make test1 # already in src/ during install
+script:
+  - travis_wait 60 make test2 # already in src/ during install
