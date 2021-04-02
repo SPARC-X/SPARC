@@ -2,6 +2,7 @@ sudo: true
 language: Generic
 os:
   - linux
+  - linux
 addons:
   apt:
     sources:
@@ -18,6 +19,16 @@ addons:
     - mpich
 install:
   - cd src/; make clean; make #2> makeLog
-script:
-- travis_wait 40 make test1 # already in src/ during install 
-- travis_wait 40 make test2 # already in src/ during install 
+
+jobs:
+  include:
+    - name: v1
+      os: linux
+      script:
+        - travis_wait 40 make test1 # already in src/ during install 
+    - name: v2
+      os: linux
+      script:
+        - travis_wait 40 make test2 # already in src/ during install 
+
+
