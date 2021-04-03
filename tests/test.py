@@ -2662,7 +2662,7 @@ isAuto = False
 no_concurrency=6 # number of jobs running concurrently on github server
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
-	indx_test = int(indx_test_temp[0])0
+	indx_test = int(indx_test_temp[0])
 	if True:
 		isAuto =  True
 		ifVHQ = False
