@@ -88,4 +88,4 @@ sparc: $(OBJSC)
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
 test: ../tests/test.py
-	cd ../tests; python test.py autosys
+	cd ../tests; python test.py

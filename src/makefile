@@ -94,6 +94,4 @@ sparc: $(OBJSC)
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
 test1: ../tests/test.py
-	cd ../tests; python test.py autosys1
-test2: ../tests/test.py
-	cd ../tests; python test.py autosys2
+	cd ../tests; python test.py 
