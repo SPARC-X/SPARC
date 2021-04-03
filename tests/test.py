@@ -2662,7 +2662,7 @@ isAuto = False
 no_concurrency=6 # number of jobs running concurrently on github server
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
-	indx_test = int(indx_test_temp[0])
+	indx_test = int(indx_test_temp[0])0
 	if True:
 		isAuto =  True
 		ifVHQ = False
@@ -2670,9 +2670,9 @@ if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 		systems1=SYSTEMS['systemname']
 		tags_sys1=SYSTEMS['Tags']
 		tols_sys1=SYSTEMS['Tols']
-		tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+		tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+		systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
 		no_systems = len(systems2)
 
 		systems = systems2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
