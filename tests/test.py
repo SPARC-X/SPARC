@@ -2667,23 +2667,23 @@ if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 		isAuto =  True
 		ifVHQ = False
 		isparallel = False
-		systems=SYSTEMS['systemname']
-		tags_sys=SYSTEMS['Tags']
-		tols_sys=SYSTEMS['Tols']
-		tags_sys = [ tags_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		tols_sys = [ tols_sys[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		systems = [ systems[i] for i in range(len(systems)) if systems[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
-		no_systems = len(systems)
-		if indx_test != no_concurrency:
-			systems = systems[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-			tols_sys = tols_sys[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-			tags_sys = tags_sys[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-		else:
-			systems = systems[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
-			tols_sys = tols_sys[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
-			tags_sys = tags_sys[(indx_test-1)*int(no_systems/no_concurrency) : no_systems]
-		no_systems = len(systems)
+		systems1=SYSTEMS['systemname']
+		tags_sys1=SYSTEMS['Tags']
+		tols_sys1=SYSTEMS['Tols']
+		tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVTNH','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','Au_fcc211','SiH4','BaTiO3_valgrind']]
+		no_systems = len(systems2)
 
+		systems = systems2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+		tols_sys = tols_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+		tags_sys = tags_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+		remain_systems = no_systems - no_concurrency * int(no_systems/no_concurrency);
+
+		if indx_test < remain_systems:
+			systems.append(systems2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
+			tols_sys.append(tols_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
+			tags_sys.append(tags_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
 
 # if len(args) == 1:
 # 	if args[0] == "autosys":
