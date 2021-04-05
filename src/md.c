@@ -868,7 +868,10 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 	        fprintf(output_md,":STRIO:\n");
 	        PrintStress (pSPARC, pSPARC->stress_i, output_md);
 	        fprintf(output_md,":STRESS:\n");
-	        PrintStress (pSPARC, pSPARC->stress, output_md);
+	        double stress_e[6]; // electronic stress
+            for (int i = 0; i < 6; i++) 
+                stress_e[i] = pSPARC->stress[i] - pSPARC->stress_i[i];
+            PrintStress (pSPARC, stress_e, output_md);
 	    }
 
 	    // print pressure
@@ -1203,3 +1206,4 @@ void Rename_restart(SPARC_OBJ *pSPARC) {
 	if( access(pSPARC->restartC_Filename, F_OK ) != -1 )
 	    rename(pSPARC->restartC_Filename, pSPARC->restartP_Filename);
 }
+
