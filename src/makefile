@@ -93,5 +93,5 @@ sparc: $(OBJSC)
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
-test: ../.ci/run_tests.py
-	cd $(TESTBASE); ./run_tests.py
+test1: ../tests/test.py
+	cd ../tests; python test.py 

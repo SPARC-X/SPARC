@@ -1,0 +1,56 @@
+1) Running the framework
+
+## The framework will be written such that, it could be executed by single command:
+$ python test.py -tags <tag1> <tag2> <tag3> ...
+
+OR
+
+$ python test.py -systems <system1> <system2> ...
+
+For example:
+$ python test.py -tags Bulk Relaxation ----> Will run all the Bulk systems with relaxation tests
+$ python test.py -tags wire Spin ---> Will run all the wire systems with spin  tags
+
+Note:
+$ python test.py ---->  will launch all the systems without VHQ tag
+
+tests could also be launched by using command "make test" inside the src folder.
+
+The tests use the "sparc" executable inside the "lib" folder.
+
+2) tags:
+
+bulk, surface, wire, molecule
+orth, nonorth
+lda, gga
+potmix denmix kerker
+smear_gauss, smear_fd
+relax_atom_nlcg, relax_atom_lbfgs, relax_atom_fire
+relax_cell
+relax_total_nlcg, relax_total_lbfgs, relax_total_fire
+md_nvtnh, md_nvkg, md_nve
+gamma, kpt
+nlcc
+spin
+diff_length, diff_mesh
+memcheck, memused
+serial
+VHQ
+
+
+3) To add a system:
+
+Follow following steps:
+	(a) make a directory having same name as the system name
+	(b) make 2 subdirectories - "low_accuracy" and "high_accuracy". Place the .inpt, .ion, .psp8 and reference output files inside the directory
+	(c) Name the reference output files as as: .refout, .refstatic, .refaimd, .refgeopt, .refabinitout 
+	(d) The first line of .inpt file should be - "# nprocs: NP" where NP is the number of processors the system will be run on when run parallel
+	(e) Add the new system in the dictionary variable named "SYSTEMS" under the keys "systemname", "Tags" and "Tols" on the top of test.py file.
+	(f) put a sample pbs file (with appropriate walltime preferably larger than 1 hour) with the name "samplepbs" for the given cluster in the tests folder
+
+
+4) how to grep details of passed and failed tests
+
+	sed -n '/Details for the Failed systems/,/End for the Failed systems/p' Report.txt > Fail_file
+
+	sed -n '/Details for the Passed systems/,/End for the Passed systems/p' Report.txt > Pass_file

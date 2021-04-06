@@ -1,0 +1,80 @@
+# nprocs: 24
+
+# He QMD test
+# 4x2x2 unit cell, 800 K, 1.6 g/cc
+
+# cell and boundary conditions ####################
+CELL: 12.151112185593 6.0755560927965 6.0755560927965    # cell vector multipliers
+LATVEC:                       # cell vectors (in rows): multipliers x vectors -> vectors in bohr
+  1 0 0
+  0 1 0
+  0 0 1
+BC: P P P                     # boundary cond. in each direction: P= Bloch-periodic, D= Dirichlet
+
+# spin polarization ###############################
+SPIN_TYP: 0                   # 0= non-spin-polarized, 1= spin-polarized
+
+# exchange-correlation ############################
+EXCHANGE_CORRELATION: LDA_PZ  # LDA_PZ, LDA_PW, GGA_PBE, GGA_RPBE, GGA_PBEsol
+
+# states/occupation ###############################
+NSTATES: 24                   # number of states/bands to compute: default 1.2*Nelec/2 + 5
+      # Increase for higher temperature. Ensure sufficient for efficient SCF convergence
+ELEC_TEMP_TYPE: fermi-dirac   # fermi-dirac, gaussian
+ELEC_TEMP: 800                # kelvin. ELEC_TEMP <= 0 to keep electron T = ion T in MD
+# SMEARING: 0.01              # hartree
+
+# discretization ##################################
+#FD_GRID: 100 50 50            # specify either FD_GRID or MESH_SPACING to set number of points in
+MESH_SPACING: 0.08          # each direction of real-space grid sufficient for accuracy desired
+FD_ORDER: 12                  # finite-difference order: default 12
+KPOINT_GRID: 1 1 1            # k-point grid: default 1x1x1
+KPOINT_SHIFT: 0.0 0.0 0.0     # k-point grid shift: default 0 0 0 for odd grid, 0.5 0.5 0.5 for even
+
+# SCF convergence #################################
+MIXING_VARIABLE: potential    # density (default), potential
+MIXING_PRECOND: none          # kerker (default), none
+#PRECOND_KERKER_THRESH: 0.1    # threshold in Kerker precon (0.0 for original Kerker): default 0.1
+#PRECOND_KERKER_KTF: 1.0       # screening wavenumber in Kerker precon: default 1.0 bohr^-1
+MIXING_PARAMETER: 0.8         # default 0.3
+      # density mixing with Kerker precon, 0.0 threshold, and mixing parameter at/near 1.0
+      # often most efficient for systems with significant partial occupation
+MIXING_HISTORY: 7             # default 7
+TOL_SCF: 1e-6                # density/potential relative residual convergence (unitless)
+#SCF_ENERGY_ACC: 1e-5          # free energy convergence (Ha/atom)
+#SCF_FORCE_ACC: 1e-4           # force convergence (Ha/bohr)
+MAXIT_SCF: 10                 # max SCF iterations
+MINIT_SCF: 3                  # min SCF iterations
+
+# other ###########################################
+REFERENCE_CUTOFF: 0.5         # reference pseudocharge cutoff radius: default 0.5 bohr
+                              # should be less than half nearest neighbor distance
+FIX_RAND: 0                   # 1= fixed random seed for initial guesses, 0= not fixed (default)
+EIG_SERIAL_MAXNS: 2000        # use serial eigensolver for NSTATES <= EIG_SERIAL_MAXNS: default 2000
+EIG_PARAL_BLKSZ: 128          # parallel eigensolver block size: default 128
+
+# MD ##############################################
+MD_FLAG: 1                    # 1= MD, 0= no MD (default)
+ION_TEMP: 800                 # kelvin
+ION_TEMP_END: 800             # kelvin: vary temp linearly from ION_TEMP to ION_TEMP_END
+      # over course of simulation. Available only with NH thermostat
+MD_METHOD: NVT_NH             # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+#QMASS: 10                     # mass for NH thermostat (au): default ~1654
+MD_TIMESTEP: 0.6              # fs
+MD_NSTEP: 10                   # run MD_NSTEP steps or TWTIME minutes, whichever comes first
+#TWTIME: 1400
+ION_VEL_DSTR: 1               # initial velocity distrib: 1= uniform, 2= Maxwell-Boltzmann (default)
+ION_VEL_DSTR_RAND: 0          # initial velocity distrib seed: 0= fixed (default), 1= random
+PRINT_RESTART: 1              # output .restart files for restarting
+PRINT_RESTART_FQ: 3           # .restart files output every PRINT_RESTART_FQ steps
+RESTART_FLAG: 1               # 1= restart MD from .restart file if present, 0= start new
+
+# outputs #########################################
+CALC_PRES: 1
+CALC_STRESS: 1
+PRINT_ATOMS: 1
+PRINT_VELS: 1
+PRINT_FORCES: 1
+PRINT_EIGEN: 1                # print eigenvalues and occupations to .eigen file
+PRINT_DENSITY: 0
+PRINT_MDOUT: 1                # print MD output to .aimd file

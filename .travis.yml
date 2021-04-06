@@ -2,6 +2,18 @@ sudo: true
 language: Generic
 os:
   - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+  - linux
+
 addons:
   apt:
     sources:
@@ -17,6 +29,68 @@ addons:
     - libopenblas-dev
     - mpich
 install:
-  - cd src/; make clean; make #2> makeLog
-script:
-  - make test # already in src/ during install
+  - cd src/; make clean; make; cd ../tests #2> makeLog
+
+jobs:
+  include:
+    - name: v1
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys1 # already in src/ during install 
+
+    - name: v2
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys2 # already in src/ during install 
+
+    - name: v3
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys3 # already in src/ during install 
+
+    - name: v4
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys4 # already in src/ during install 
+
+    - name: v5
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys5 # already in src/ during install 
+
+    - name: v6
+      os: linux
+      script:
+        - travis_wait 40 python test.py autosys6 # already in src/ during install 
+
+    # - name: v7
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys7 # already in src/ during install 
+
+    # - name: v8
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys8 # already in src/ during install 
+
+    # - name: v9
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys9 # already in src/ during install 
+
+    # - name: v10
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys10 # already in src/ during install 
+
+    # - name: v11
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys11 # already in src/ during install 
+
+    # - name: v12
+    #   os: linux
+    #   script:
+    #     - travis_wait 40 python test.py autosys12 # already in src/ during install 
+
+

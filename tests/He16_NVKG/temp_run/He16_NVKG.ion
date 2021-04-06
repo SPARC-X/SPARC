@@ -1,0 +1,34 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+ATOM_TYPE: He                 # atom type
+ATOMIC_MASS: 4.002602         # atomic mass (amu)
+PSEUDO_POT: ./He-2-0.5-loc.psp8  # pseudopotential file
+N_TYPE_ATOM: 16               # number of atoms of this type
+# COORD:                      # Cartesian coordinates (au)
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+  0.000000  0.000000  0.000000
+  0.000000  0.000000  0.500000
+  0.000000  0.500000  0.000000
+  0.000000  0.500000  0.500000
+  0.250000  0.000000  0.000000
+  0.250000  0.000000  0.500000
+  0.250000  0.500000  0.000000
+  0.250000  0.500000  0.500000
+  0.500000  0.000000  0.000000
+  0.500000  0.000000  0.500000
+  0.500000  0.500000  0.000000
+  0.500000  0.500000  0.500000
+  0.750000  0.000000  0.000000
+  0.750000  0.000000  0.500000
+  0.750000  0.500000  0.000000
+  0.750000  0.500000  0.500000
