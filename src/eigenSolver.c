@@ -427,7 +427,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
+      double b_HY = MPI_Wtime();
       Our_Hamiltonian(ham_struct, Psi2, Psi1, 0);
+      double a_HY = MPI_Wtime();
+
+#ifdef DEBUG
+      if (rank == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, calc HY used %.3lf ms\n", 1000.0 * (a_HY - b_HY));
+#endif
 
       // Perform Psi^T*Psi
       ca3dmm_engine_p mult_ptp;
@@ -462,6 +468,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 #endif
 
       ca3dmm_engine_free(&mult_pthp);
+
+      double a_PsiTPsi = MPI_Wtime();
+    #ifdef DEBUG
+    if (rank == 0 && spn_i == 0) 
+        printf("DP_Project_Hamiltonian, rank 0, DP_Project_Hamiltonian used %.3lf ms\n", 1000.0 * (a_PsiTPsi - b_HY));
+    #endif
 
     //  DP_Project_Hamiltonian(
     //      pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
