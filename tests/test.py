@@ -2609,7 +2609,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 30 March 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 06 April 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
