@@ -1,0 +1,133 @@
+***************************************************************************
+*                       SPARC (version Mar 30, 2021)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Wed Mar 31 12:03:03 2021                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 7.5 8.1 8.2 
+LATVEC:
+0.970404375040354 0 -0.24148571159085 
+-0.504751331827941 0.862706058268719 -0.031053985965896 
+0 0 1 
+FD_GRID: 63 68 68
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001000000336
+CHEB_DEGREE: 49
+NSTATES: 17
+EXCHANGE_CORRELATION: GGA_PBE
+CALC_STRESS: 1
+CHEFSI_BOUND_FLAG: 0
+MAXIT_SCF: 100
+MINIT_SCF: 3
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 0
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: P_triclinic/temp_run/P_triclinic
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 6
+NP_DOMAIN_PARAL: 1 2 2
+NP_DOMAIN_PHI_PARAL: 2 3 4
+EIG_SERIAL_MAXNS: 2000
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  24
+Mesh spacing in x-direction        :  0.119048 (Bohr)
+Mesh spacing in y-direction        :  0.119118 (Bohr)
+Mesh spacing in z direction        :  0.120588 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  P_triclinic/temp_run/P_triclinic.out
+Total number of atom types         :  1
+Total number of atoms              :  4
+Total number of electrons          :  20
+Atom type 1  (valence electrons)   :  P 5
+Pseudopotential                    :  P_triclinic/temp_run/P.psp8
+Pseudocharge radii of atom type 1  :  6.79 6.79 6.75 (x, y, z dir)
+Number of atoms of type 1          :  4
+Estimated total memory usage       :  288.93 MB
+Estimated memory per processor     :  12.04 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -8.3942109501E+00        4.396E-02        3.563
+2            -6.5337223830E+00        3.780E-02        1.146
+3            -6.5489121338E+00        4.147E-02        1.158
+4            -6.5581798725E+00        2.559E-02        1.125
+5            -6.5607855479E+00        1.638E-02        1.102
+6            -6.5616919279E+00        8.600E-03        1.120
+7            -6.5620276573E+00        3.732E-03        1.082
+8            -6.5620486253E+00        3.100E-03        1.086
+9            -6.5620834672E+00        1.543E-03        1.056
+10           -6.5620901988E+00        8.263E-04        1.028
+11           -6.5620930666E+00        1.529E-04        1.025
+12           -6.5620931740E+00        5.237E-05        0.974
+13           -6.5620931508E+00        3.012E-05        0.947
+14           -6.5620931626E+00        1.530E-05        0.932
+15           -6.5620931639E+00        4.224E-06        0.907
+16           -6.5620931348E+00        1.982E-06        0.861
+17           -6.5620931588E+00        1.025E-06        0.845
+18           -6.5620931792E+00        4.423E-07        0.828
+Total number of SCF: 18    
+
+k = [0.000, 0.000, 0.000]
+Occupation of state 15 = 0.000000000000000.
+Occupation of state 17 = 0.000000000000000.
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -6.5620931792E+00 (Ha/atom)
+Total free energy                  : -2.6248372717E+01 (Ha)
+Band structure energy              :  3.0137859991E+00 (Ha)
+Exchange correlation energy        : -6.9594525404E+00 (Ha)
+Self and correction energy         : -1.5478337870E+02 (Ha)
+Entropy*kb*T                       : -7.1481754550E-05 (Ha)
+Fermi level                        :  3.6596168955E-01 (Ha)
+RMS force                          :  6.2123726697E-02 (Ha/Bohr)
+Maximum force                      :  6.7131337965E-02 (Ha/Bohr)
+Time for force calculation         :  0.052 (sec)
+Pressure                           :  3.9566020849E+01 (GPa)
+Maximum stress                     :  7.2632470410E+01 (GPa)
+Time for stress calculation        :  0.173 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  21.716 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           
