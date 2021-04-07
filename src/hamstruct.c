@@ -118,6 +118,12 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
   if(c != 0) {
     const double shift_start = MPI_Wtime();
     PCE_Internal_Shift(psi_in, psi_out, ohs->hd->local_num_cols * ohs->hd->local_num_fd, -c);
+#if USE_GPU
+if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
+  gpuErrchk( cudaPeekAtLastError() );
+  gpuErrchk( cudaDeviceSynchronize() );
+  }
+#endif
     const double shift_end = MPI_Wtime();
 
     if((PCE_Internal_debug_level() <= DEBUG_VERBOSE) && (rank==0)) {
