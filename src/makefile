@@ -49,7 +49,7 @@ LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native
 CPPFLAGS += -I $(CUDA_ROOT)/include
 LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
 ifeq ($(USE_MKL), 1)
-LFLAGS_GPU_HOST:=$(LFLAGS_GPU_HOST),-mkl
+LFLAGS_GPU_HOST:=$(LFLAGS_GPU_HOST)
 LFLAGS_GPU   += -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
 else
 LFLAGS_GPU_HOST:=$(LFALGS_GPU_HOST),-lopenblas
