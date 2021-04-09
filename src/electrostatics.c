@@ -719,12 +719,14 @@ void GetInfluencingAtoms(SPARC_OBJ *pSPARC) {
  */
 void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 #define electronDens_at(s,i,j,k) electronDens_at[s+(k)*DMnx*DMny+(j)*DMnx+(i)]
+#define electronDens_core(s,i,j,k) electronDens_core[s+(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define psdChrgDens(i,j,k) psdChrgDens[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define psdChrgDens_ref(i,j,k) psdChrgDens_ref[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define Vc(i,j,k) Vc[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define VJ(i,j,k) VJ[(k)*nxp*nyp+(j)*nxp+(i)]
 #define VJ_ref(i,j,k) VJ_ref[(k)*nxp*nyp+(j)*nxp+(i)]
 #define rho_J(i,j,k) rho_J[(k)*nxp*nyp+(j)*nxp+(i)]
+#define rho_c_J(i,j,k) rho_c_J[(k)*nxp*nyp+(j)*nxp+(i)]
     int nproc, rank, ityp, iat, i, j, k, ip, jp, kp, i_global, j_global, k_global, 
         i_DM, j_DM, k_DM,dI, dJ, dK, FDn, count, count_interp, DMnx, DMny, DMnz, 
         DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, icor, jcor, kcor, len_interp;
@@ -908,10 +910,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
             // calculate the sum of atomic charge densities as initial electron density guess, only in the very 
             // first MD/Relaxation step, and only if restart_flag is off
 			rho_J = (double *)malloc( nd_ex * sizeof(double) );
-            if (rho_J == NULL) {
-                printf("\nMemory allocation failed!\n");
-                exit(EXIT_FAILURE);
-            }
+            assert(rho_J != NULL);
 
             len_interp = nd_ex;
 			if (pSPARC->psd[ityp].is_r_uniform == 1) {
@@ -922,8 +921,16 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 				         R, rho_J, len_interp, pSPARC->psd[ityp].SplineFitIsoAtomDen);
 			}
             
+            double *rho_c_J = (double *)malloc( nd_ex * sizeof(double) );
+            assert(rho_c_J != NULL);
+            SplineInterpMain(pSPARC->psd[ityp].RadialGrid,pSPARC->psd[ityp].rho_c_table, pSPARC->psd[ityp].size, 
+                         R, rho_c_J, len_interp, pSPARC->psd[ityp].SplineRhocD,pSPARC->psd[ityp].is_r_uniform);
+
             for (i = 0; i < nd_ex; i++) {
-                if (R[i] > rchrg) rho_J[i] = 0.0;
+                if (R[i] > rchrg) {
+                    rho_J[i] = 0.0;
+                    rho_c_J[i] = 0.0;
+                }
             }
 
             for (k = 0; k < nz; k++) {
@@ -942,13 +949,17 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                         i_DM = i_global - pSPARC->DMVertices[0]; // local coord 
                         if (i_DM < 0 || i_DM >= DMnx) continue;
                         pSPARC->electronDens_at(0,i_DM,j_DM,k_DM) += rho_J(ip,jp,kp);
-                        for(spn_i = 1; spn_i < 2*pSPARC->Nspin - 1; spn_i++)
+                        pSPARC->electronDens_core(0,i_DM,j_DM,k_DM) += rho_c_J(ip,jp,kp);
+                        for(spn_i = 1; spn_i < 2*pSPARC->Nspin - 1; spn_i++) {
                             pSPARC->electronDens_at(spn_i*DMnd,i_DM,j_DM,k_DM) += (0.5 + (1.5 - spn_i) * spin_frac) * rho_J(ip,jp,kp);
+                            pSPARC->electronDens_core(spn_i*DMnd,i_DM,j_DM,k_DM) += 0.5 * rho_c_J(ip,jp,kp);
+                        }
                     }
                 }
             }
 
             free(rho_J); rho_J = NULL;
+            free(rho_c_J); rho_c_J = NULL;
             tt2 = MPI_Wtime();
             ttot2 += (tt2 - tt1);
             
@@ -1103,10 +1114,12 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 #undef psdChrgDens
 #undef psdChrgDens_ref
 #undef electronDens_at
+#undef electronDens_core
 #undef Vc
 #undef VJ
 #undef VJ_ref
 #undef rho_J
+#undef rho_c_J
 }
 
 

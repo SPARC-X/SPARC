@@ -3,6 +3,42 @@
 -Name
 -changes
 
+--------------
+Apr 06, 2021
+Name: Shashikant Kumar
+Changes: (.travis.yml, makefile, makefile-ibm, tests)
+1. Enabled concurrent .ci testing in travis.yml
+
+
+--------------
+Apr 05, 2021
+Name: Qimen Xu, Abhraj Sharma
+Changes: (md.c)
+1. Fix bug in stress printing in .aimd files, print electronic stress which excludes the ionic contribution.
+
+--------------
+April 1, 2021
+Name: Shashikant Kumar
+Changes: Tests
+1. Added automatic testing
+2. Removed old tests folder
+
+
+--------------
+Mar 30, 2021
+Name: Qimen Xu, Abhraj Sharma
+Changes: (parallelization.c, tools.c, stress.c)
+1. Add new default parallelization parameter choosing routine.
+2. Fix bug in kinetic stress for spin case without kpts for single processor.
+
+
+--------------
+Mar 22, 2021
+Name: Qimen Xu
+Changes: (initialization.c, include/isddft.h)
+1. Add non-linear core correction (NLCC) support (energy, force, stress, and pressure).
+2. Statically link MKL by using the -rpath option in the makefile.
+
 
 --------------
 Oct 21, 2020

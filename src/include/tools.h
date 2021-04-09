@@ -70,7 +70,10 @@ typedef struct {
 
 void xferFactors( Factors *fctrs, int *flist, int flix );
 Factors *factor( int num, Factors *fctrs);
+void sorted_factor( int num, Factors *fctrs);
 
+// Equivalent to ceil(x / (double)y), where x, y are positive integers
+int ceil_div(const unsigned int x, const unsigned int y);
 
 /**
  * @brief   Calculates derivatives of a tabulated function required for spline interpolation.
@@ -154,6 +157,15 @@ void SplineInterpNonuniform(
  *          increasing.
  */
 int binary_interval_search(const double *list, const int len, const double x);
+
+
+/**
+ * @brief   The main funciton for Cubic spline evaluation from precalculated
+ *          data. This function calls the appropriate uniform or non-uniform
+ *          routines.         
+ */
+void SplineInterpMain(double *X1,double *Y1,int len1,
+    double *X2,double *Y2,int len2,double *YD,int isUniform);
 
 
 /**

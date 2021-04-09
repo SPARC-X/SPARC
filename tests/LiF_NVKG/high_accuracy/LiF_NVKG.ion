@@ -1,0 +1,32 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+ATOM_TYPE: Li                 # atom type
+ATOMIC_MASS: 6.941            # atomic mass (amu)
+PSEUDO_POT: Li-3-1.125.psp8 # pseudopotential file
+N_TYPE_ATOM: 4                # number of atoms of this type
+# COORD:                      # Cartesian coordinates (au)
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+   0.016261173519463   0.034038572666613   0.025509511545927
+   0.011899768155838   0.558526775097978   0.550595705166514
+   0.549836405198214   0.022381193949114   0.569907672265669
+   0.595974395851608   0.575126705930565   0.089090325253580
+ATOM_TYPE: F                  # atom type
+ATOMIC_MASS: 18.998403        # atomic mass (amu)
+PSEUDO_POT: F-7-1.1.psp8    # pseudopotential file
+N_TYPE_ATOM: 4                # number of atoms of this type
+# COORD:                      # Cartesian coordinates (au)
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+0.595929142520544   0.525750825412374   0.524352496872499
+   0.554721552996380   0.084071725598366   0.092926362318723
+   0.013862444282868   0.525428217897153   0.034998376598481
+   0.014929400555906   0.081428482606882   0.519659525043121

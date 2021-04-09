@@ -92,6 +92,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
 
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         free(pSPARC->electronDens_at);
+        free(pSPARC->electronDens_core);
         free(pSPARC->electronDens);
         free(pSPARC->psdChrgDens);
         free(pSPARC->psdChrgDens_ref);
@@ -241,8 +242,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->psd[i].SplinerVlocD);
         free(pSPARC->psd[i].SplineFitUdV);
         free(pSPARC->psd[i].SplineFitIsoAtomDen);
+        free(pSPARC->psd[i].SplineRhocD);
         free(pSPARC->psd[i].rc);
         free(pSPARC->psd[i].Gamma);
+        free(pSPARC->psd[i].rho_c_table);
         free(pSPARC->psd[i].ppl);
     }
     // then free the psd struct itself

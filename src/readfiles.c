@@ -1084,11 +1084,11 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         double rchrg, fchrg, qchrg;
         fscanf(psd_fp, "%*[^\n]\n"); // skip current line
         fscanf(psd_fp,"%lf %lf %lf",&rchrg,&fchrg,&qchrg);
-        if (fabs(fchrg) > 1e-12) {
+        
+        pSPARC->psd[ityp].fchrg = fchrg; // save for nonlinear core correction
+        if (fabs(fchrg) > TEMP_TOL) {
             printf("\nfchrg = %.8f > 0.0 (icmod != 0)\n", fchrg);
-            printf("This pseudopotential contains non-linear core correction. \n"
-                   "It is not supported by current version! Exiting ...\n");
-            exit(EXIT_FAILURE);
+            printf("This pseudopotential contains non-linear core correction. \n");
         }
 
         lmax = pSPARC->psd[ityp].lmax;
@@ -1189,6 +1189,18 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         } else {
             fseek (psd_fp, -1*4, SEEK_CUR ); // move back 4 columns
         }  
+
+        // read model core charge for NLCC
+        pSPARC->psd[ityp].rho_c_table = (double *)calloc(pSPARC->psd[ityp].size, sizeof(double));
+        if (fchrg > TEMP_TOL) {
+            printf("\nfchrg = %f, READING MODEL CORE CHARGE!\n\n", fchrg);
+            for (jj = 0; jj < pSPARC->psd[ityp].size;jj++) {
+                fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);              
+                fscanf(psd_fp,"%lf",&vtemp);
+                pSPARC->psd[ityp].rho_c_table[jj] = vtemp / (4.0 * M_PI);
+                fscanf(psd_fp, "%*[^\n]\n"); // skip current line
+            }
+        }
 
         // read isolated atom electron density (the 3rd number of each line)
         for (jj = 0; jj < pSPARC->psd[ityp].size;jj++) {

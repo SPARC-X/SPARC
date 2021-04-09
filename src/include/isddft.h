@@ -82,8 +82,11 @@ typedef struct _PSD_OBJ {
     double *SplinerVlocD;  // stores derivative of rVloc from Spline
     double *SplineFitUdV; // derivative of UdV from Spline
     double *SplineFitIsoAtomDen;
+    double *SplineRhocD; // derivative of rho_c_table for spline
     double *rc;     // component pseudopotential cutoff
     double *Gamma;
+    double *rho_c_table;  // model core charge for nonlinear core correction
+    double fchrg;   // fchrg value for nonlinear core correction
     double Vloc_0;  // stores Vloc(r = 0)
     int is_r_uniform; // flag to check if RadialGrid is uniform
     int pspxc;      // ixc, 2 - LDA_PZ, 7 - LDA_PW, 11 - GGA_PBE
@@ -397,6 +400,7 @@ typedef struct _SPARC_OBJ{
     double *Vc;                   // difference between reference pseudopotential V_ref and pseudopotential V, Vc = V_ref - V (LOCAL)
     double *electronDens;         // electron density, "rho" (LOCAL)
     double *electronDens_at;      // electron density guess by summing atomic charge densities (LOCAL)
+    double *electronDens_core;    // model core electron density for Non-Linear Core Correction (NLCC)
     double *elecstPotential;      // electrostatic potential, "phi" (LOCAL)
     double *XCPotential;          // exchange-correlation potential, "Vxc" (LOCAL)
     double *e_xc;                 // exchange-correlation energy per particle (LOCAL)
@@ -496,7 +500,7 @@ typedef struct _SPARC_OBJ{
     char XC[32];        // exchange correlation name
     /////////////////////////////////////////////////////////
     int is_default_psd;     // flag for reading pseudopotential
-
+    int NLCC_flag;          // flag for Non-Linear Core Correction (NLCC)
     int n_atom;             // total number of atoms
     int *localPsd;          // respective local component of pseudopotential for 
                             // each type of atom. 0 for s, 1 for p, 2 for d, 3 for f                  

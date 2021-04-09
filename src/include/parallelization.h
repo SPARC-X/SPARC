@@ -110,6 +110,132 @@ void ScaLAPACK_Dims_2D_BLCYC(int nproc, int *gridsizes, int *dims);
 
 
 /**
+ * @brief  Caluclate a division of processors in a 2D Cartesian grid.
+ *
+ *         For a given number of processors, choose np1 and np2 so that the maximum 
+ *         work assigned to each process is the smallest, i.e., choose x * y <= np, 
+ *         s.t., ceil(N1/x) * ceil(N2/y) is minimum.
+ *
+ *         Here we assume the parallelization of the two properties are the same,
+ *         therefore there's no preference to use more or less processes in any
+ *         dimension. 
+ *         
+ *         The objective function and the constraint are both quadratic, which 
+ *         makes this a very hard problem in general.
+ *         
+ *         In this func, we try to find a reasonably good solution using the following 
+ *         strategy: note that if x0 | N1 and y0 | N2 ( "|" means divides), then 
+ *         (x0,y0) is a solution to the problem with a weaker constraint x*y <= x0*y0.
+ *         We can then keep reducing the constraint from np down until we find a 
+ *         solution for the subproblem, and choose the best of all the searched combo. 
+ *
+ * @param N1   Number of properties to parallelize on the grid in the 1st dimension.
+ * @param N2   Number of properties to parallelize on the grid in the 2nd dimension.
+ * @param np   Number of processors available.
+ *
+ **/
+void dims_divide_2d(const int N1, const int N2, const int np, int *np1, int *np2);
+
+
+/**
+ * @brief  For the given parallelization params, find how many count of 
+ *         work load each process is assigned, we take the ceiling since
+ *         at least one process would have that many columns and will
+ *         dominate the cost.
+ *         
+ **/
+int workload_assigned(const int Nk, const int Ns, 
+    const int np1, const int np2);
+
+
+/**
+ * @brief  Caluclate the efficiency for a given set of parameters.
+ *         This is derived based on the assumption that there are
+ *         infinite grid points (Nd) so that np can not be larger
+ *         than Nk*Ns*Nd in any case. In practice, Nd ~ O(1e6), so
+ *         this assumption is quite reasonable.
+ *         1. Ideal load: Nk*Ns*Nd/np
+ *         2. Actual load: ceil(Nk/np1)*ceil(Ns/np2)*ceil(Nd/np3) 
+ *                      ~= ceil(Nk/np1)*ceil(Ns/np2)* (Nd/np3) #since Nd is large
+ *         3. efficiency = Ideal load / Actual load
+ *                      ~= Nk*Ns*np3/ (ceil(Nk/np1)*ceil(Ns/np2)*np)
+ * @param Nk   Number of kpoints (after symmetry reduction).
+ * @param Ns   Number of states/bands.
+ * @param np   Number of processors available.
+ * @param np1  Number of kpoint groups for kpoint parallelization.
+ * @param np2  Number of band groups for band parallelization.
+ * @param np3  Number of domain groups for domain parallelization.
+ *
+ **/
+double work_load_efficiency(
+    const int Nk, const int Ns, const int np, 
+    const int np1, const int np2, const int np3
+);
+
+
+
+/**
+ * @brief  Caluclate a division of processors in for kpoint, band, domain (KBD) 
+ *         parallelization.
+ *
+ *         For a given number of processors, choose npkpt, npband, and npdomain so 
+ *         that the maximum work assigned to each process is the smallest, i.e., 
+ *         choose x * y * z <= np, s.t., 
+ *         ceil(Nk/x) * ceil(Ns/y) * ceil(Nd/z) is minimum.
+ *
+ *         Here we assume the parallelization of the two properties are the same,
+ *         therefore there's no preference to use more or less processes in any
+ *         dimension. 
+ *         
+ *         The objective function and the constraint are both nonlinear, which 
+ *         makes this a very hard problem in general.
+ *         
+ *         In this func, we try to find a reasonably good solution using the following 
+ *         strategy: since the parallelization over kpoint and band are both very 
+ *         efficient, we try to parallel over kpoint and band first, then we consider
+ *         parallelization over domain. There are two cases: np <=  or > Nk * Ns.
+ *         Case 1: np <= Nk * Ns. Then we try to fix npdomain = 1:10, and find the best
+ *         parameters for the given npdomain, we always prefer to use less npdomain if
+ *         possible.
+ *         Case 2: np > Nk * Ns. Then we try to provide Nk*Ns ./ [1:10] for kpoint and
+ *         band parallelization, and pick the best combination. Again we prefer to use
+ *         as less npdomain (more for K & B) if work load is the similar.
+ *
+ * @param Nk        Number of kpoints (after symmetry reduction).
+ * @param Ns        Number of states.
+ * @param gridsizes Number of grid points in all three directions.
+ * @param np        Number of processors available.
+ * @param np1 (OUT) Number of kpoint groups.
+ * @param np2 (OUT) Number of band groups.
+ * @param np3 (OUT) Number of domain groups.
+ **/
+void dims_divide_kbd(
+    const int Nk, const int Ns, const int *gridsizes,
+    const int np, int *np1, int *np2, int *np3);
+
+
+/**
+ * @brief  Caluclate a division of processors in for spin, kpoint, band, 
+ *         domain (SKBD). 
+ *         parallelization.
+ *
+ * @param Nspin     Number of spin, 1 or 2.
+ * @param Nk        Number of kpoints (after symmetry reduction).
+ * @param Ns        Number of states.
+ * @param gridsizes Number of grid points in all three directions.
+ * @param np        Number of processors available.
+ * @param nps (OUT) Number of spin groups.
+ * @param npk (OUT) Number of kpoint groups.
+ * @param npp (OUT) Number of band groups.
+ * @param npd (OUT) Number of domain groups.
+ **/
+void dims_divide_skbd(
+    const int Nspin, const int Nk, const int Ns, 
+    const int *gridsizes, const int np, 
+    int *nps, int *npk, int *npb, int *npd);
+
+
+/**
  * @brief   Transfer data from one 3-d Domain Decomposition to another.
  *
  *          In this function we assume Domain Decomposition is quasi-uniform, i.e., each
