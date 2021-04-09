@@ -45,7 +45,7 @@ LDLIBS   = -lrt -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
 
 ifeq ($(USE_GPU), 1)
 
-LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native
+LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native,-fopenmp
 CPPFLAGS += -I $(CUDA_ROOT)/include
 LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
 ifeq ($(USE_MKL), 1)
