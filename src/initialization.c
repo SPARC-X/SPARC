@@ -625,7 +625,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         nproj_sum += nproj;
         nprojsize_sum += nproj * sizev[i];
     }
-    l_buff = (2*Ntypes + 3*n_atom + 3*size_sum + lmax_sum + nproj_sum + nprojsize_sum + n_atom) * sizeof(double)
+    l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + n_atom) * sizeof(double)
              + (5*Ntypes + 3*n_atom) * sizeof(int)
              + Ntypes * (L_PSD + L_ATMTYPE) * sizeof(char)
              + 0*(Ntypes+3*n_atom) *16; // last term is spare memory in case
@@ -654,10 +654,12 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             MPI_Pack(pSPARC->psd[i].RadialGrid, sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].UdV, nproj*sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(&pSPARC->psd[i].Vloc_0, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+            MPI_Pack(&pSPARC->psd[i].fchrg, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].rVloc, sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].rhoIsoAtom, sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].rc, lmaxv[i]+1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].Gamma, nproj, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+            MPI_Pack(pSPARC->psd[i].rho_c_table, sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
         }
         // broadcast the packed buffer
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
@@ -699,10 +701,12 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             pSPARC->psd[i].rhoIsoAtom = (double *)malloc(sizev[i] * sizeof(double));
             pSPARC->psd[i].rc = (double *)malloc((lmaxv[i]+1) * sizeof(double));
             pSPARC->psd[i].Gamma = (double *)malloc(nproj * sizeof(double));
+            pSPARC->psd[i].rho_c_table = (double *)malloc(sizev[i] * sizeof(double));
             // check if memory is allocated successfully!
             if (pSPARC->psd[i].RadialGrid == NULL || pSPARC->psd[i].UdV == NULL ||
                 pSPARC->psd[i].rVloc == NULL || pSPARC->psd[i].rhoIsoAtom == NULL ||
-                pSPARC->psd[i].rc == NULL || pSPARC->psd[i].Gamma == NULL)
+                pSPARC->psd[i].rc == NULL || pSPARC->psd[i].Gamma == NULL || 
+                pSPARC->psd[i].rho_c_table == NULL)
             {
                 printf("\nmemory cannot be allocated5\n");
                 exit(EXIT_FAILURE);
@@ -738,10 +742,12 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].RadialGrid,  sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].UdV,  nproj*sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, &pSPARC->psd[i].Vloc_0,  1, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Unpack(buff, l_buff, &position, &pSPARC->psd[i].fchrg, 1, MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rVloc,  sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rhoIsoAtom,  sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rc,  lmaxv[i]+1, MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].Gamma,  nproj, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rho_c_table, sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
         }
     }
 
@@ -935,6 +941,16 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->Nelectron += pSPARC->Znucl[i] * pSPARC->nAtomv[i];
     }
     pSPARC->Nelectron -= pSPARC->NetCharge;
+
+    // check if NLCC is present
+    int NLCC_flag = 0;
+    for (int ityp = 0; ityp < Ntypes; ityp++) {
+        if (pSPARC->psd[ityp].fchrg > TEMP_TOL) {
+            NLCC_flag = 1;
+            break;
+        }
+    }
+    pSPARC->NLCC_flag = NLCC_flag;
 
     // initialize energy values
     pSPARC->Esc = 0.0;
@@ -2023,12 +2039,13 @@ void Calculate_SplineDerivRadFun(SPARC_OBJ *pSPARC) {
         psd_len = pSPARC->psd[ityp].size;
         pSPARC->psd[ityp].SplinerVlocD = (double *)malloc(sizeof(double)*psd_len);
         pSPARC->psd[ityp].SplineFitIsoAtomDen = (double *)malloc(sizeof(double)*psd_len);
-        if(pSPARC->psd[ityp].SplinerVlocD == NULL || pSPARC->psd[ityp].SplineFitIsoAtomDen == NULL) {
-            printf("Memory allocation failed!\n");
-            exit(EXIT_FAILURE);
-        }
+        pSPARC->psd[ityp].SplineRhocD = (double *)malloc(sizeof(double)*psd_len);
+        assert(pSPARC->psd[ityp].SplinerVlocD != NULL);
+        assert(pSPARC->psd[ityp].SplineFitIsoAtomDen != NULL);
+        assert(pSPARC->psd[ityp].SplineRhocD != NULL);
         getYD_gen(pSPARC->psd[ityp].RadialGrid,pSPARC->psd[ityp].rVloc,pSPARC->psd[ityp].SplinerVlocD,psd_len);
         getYD_gen(pSPARC->psd[ityp].RadialGrid,pSPARC->psd[ityp].rhoIsoAtom,pSPARC->psd[ityp].SplineFitIsoAtomDen,psd_len);
+        getYD_gen(pSPARC->psd[ityp].RadialGrid,pSPARC->psd[ityp].rho_c_table,pSPARC->psd[ityp].SplineRhocD,psd_len);
         // note we neglect lloc
         ppl_sum = 0;
         for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
@@ -2247,7 +2264,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 21, 2020)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Apr 05, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

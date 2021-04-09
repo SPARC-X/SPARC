@@ -87,6 +87,13 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             rho[i] = pSPARC->electronDens[i];
     }
 
+    // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+    if (pSPARC->NLCC_flag) {
+        for (i = 0; i < sz_rho; i++){
+            rho[i] += pSPARC->electronDens_core[i];
+        }
+    }
+
     if (pSPARC->spin_typ != 0) {
         for(i = 0; i < pSPARC->Nd_d; i++)
             rho[i] = rho[pSPARC->Nd_d + i] + rho[2*pSPARC->Nd_d + i];
@@ -986,6 +993,13 @@ void Calculate_Exc(SPARC_OBJ *pSPARC, double *electronDens)
             rho[i] = pSPARC->xc_rhotol;
         else
             rho[i] = electronDens[i];
+    }
+    
+    // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+    if (pSPARC->NLCC_flag) {
+        for (i = 0; i < sz_rho; i++){
+            rho[i] += pSPARC->electronDens_core[i];
+        }
     }
 
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0)

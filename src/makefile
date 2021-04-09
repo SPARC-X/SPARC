@@ -64,7 +64,7 @@ endif
 ifeq ($(USE_MKL), 1)
 CPPFLAGS += -m64 -I${MKLROOT}/include -DUSE_MKL
 LDFLAGS   = -L${MKLROOT}/lib/intel64
-LDLIBS   += -Wl,--no-as-needed -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
+LDLIBS   += -Wl,-rpath=${MKLROOT}/lib/intel64,--no-as-needed -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
 else ifeq ($(USE_SCALAPACK), 1)
 CPPFLAGS += -DUSE_SCALAPACK
 LDLIBS   += -lscalapack
@@ -129,5 +129,5 @@ sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
-test: ../.ci/run_tests.py
-	cd $(TESTBASE); ./run_tests.py
+test1: ../tests/test.py
+	cd ../tests; python test.py 

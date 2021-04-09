@@ -67,6 +67,23 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     if (rank == 0) printf("Set up communicators.\n");
 #endif
 
+    // in the case user doesn't set any parallelization parameters, search for a good
+    // combination in advance
+    gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
+    npNd = pSPARC->npNdx * pSPARC->npNdy * pSPARC->npNdz;
+    minsize = pSPARC->order/2;
+    if (pSPARC->npspin == 0 && pSPARC->npkpt == 0 && 
+        pSPARC->npband == 0 && npNd == 0) 
+    {
+        dims_divide_skbd(pSPARC->Nspin, pSPARC->Nkpts_sym, pSPARC->Nstates, 
+            gridsizes, nproc, &pSPARC->npspin, &pSPARC->npkpt, &pSPARC->npband, &npNd);
+        SPARC_Dims_create(npNd, 3, gridsizes, minsize, dims, &ierr);
+        pSPARC->npNdx = dims[0];
+        pSPARC->npNdy = dims[1];
+        pSPARC->npNdz = dims[2];
+    }
+
+
     //------------------------------------------------//
     //                 set up spincomm                //
     //------------------------------------------------//
@@ -1046,9 +1063,11 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         DMnd = DMnx * DMny * DMnz;
         // allocate memory for electron density (sum of atom potential) and charge density
         pSPARC->electronDens_at = (double *)malloc( DMnd * (2*pSPARC->Nspin-1) * sizeof(double) );
+        pSPARC->electronDens_core = (double *)calloc( DMnd * (2*pSPARC->Nspin-1), sizeof(double) );
         pSPARC->psdChrgDens = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->psdChrgDens_ref = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->Vc = (double *)malloc( DMnd * sizeof(double) );
+        assert(pSPARC->electronDens_core != NULL);
         assert(pSPARC->electronDens_at != NULL && pSPARC->psdChrgDens != NULL &&
                pSPARC->psdChrgDens_ref != NULL && pSPARC->Vc != NULL);
         // allocate memory for electron density
@@ -1471,6 +1490,339 @@ void ScaLAPACK_Dims_2D_BLCYC(int nproc, int *gridsizes, int *dims)
 
     free(ftors.list);
 }
+
+
+
+
+/**
+ * @brief  For the given parallelization params, find how many count of 
+ *         work load each process is assigned, we take the ceiling since
+ *         at least one process would have that many columns and will
+ *         dominate the cost.
+ *         
+ **/
+int workload_assigned(const int Nk, const int Ns, 
+    const int np1, const int np2)
+{
+    return ceil_div(Nk,np1) * ceil_div(Ns,np2);
+}
+
+
+/**
+ * @brief  Caluclate the efficiency for a given set of parameters.
+ *         This is derived based on the assumption that there are
+ *         infinite grid points (Nd) so that np can not be larger
+ *         than Nk*Ns*Nd in any case. In practice, Nd ~ O(1e6), so
+ *         this assumption is quite reasonable.
+ *         1. Ideal load: Nk*Ns*Nd/np
+ *         2. Actual load: ceil(Nk/np1)*ceil(Ns/np2)*ceil(Nd/np3) 
+ *                      ~= ceil(Nk/np1)*ceil(Ns/np2)* (Nd/np3) #since Nd is large
+ *         3. efficiency = Ideal load / Actual load
+ *                      ~= Nk*Ns*np3/ (ceil(Nk/np1)*ceil(Ns/np2)*np)
+ * @param Nk   Number of kpoints (after symmetry reduction).
+ * @param Ns   Number of states/bands.
+ * @param np   Number of processors available.
+ * @param np1  Number of kpoint groups for kpoint parallelization.
+ * @param np2  Number of band groups for band parallelization.
+ * @param np3  Number of domain groups for domain parallelization.
+ *
+ **/
+double work_load_efficiency(
+    const int Nk, const int Ns, const int np, 
+    const int np1, const int np2, const int np3
+)
+{
+    int ncols = workload_assigned(Nk, Ns, np1, np2);
+    return Nk * Ns * np3 / (double)(ncols * np);
+}
+
+
+/**
+ * @brief  Caluclate a division of processors in a 2D Cartesian grid.
+ *
+ *         For a given number of processors, choose np1 and np2 so that the maximum 
+ *         work assigned to each process is the smallest, i.e., choose x * y <= np, 
+ *         s.t., ceil(N1/x) * ceil(N2/y) is minimum.
+ *
+ *         Here we assume the parallelization of the two properties are the same,
+ *         therefore there's no preference to use more or less processes in any
+ *         dimension. 
+ *         
+ *         The objective function and the constraint are both quadratic, which 
+ *         makes this a very hard problem in general.
+ *         
+ *         In this func, we try to find a reasonably good solution using the following 
+ *         strategy: note that if x0 | N1 and y0 | N2 ( "|" means divides), then 
+ *         (x0,y0) is a solution to the problem with a weaker constraint x*y <= x0*y0.
+ *         We can then keep reducing the constraint from np down until we find a 
+ *         solution for the subproblem, and choose the best of all the searched combo. 
+ *
+ * @param N1   Number of properties to parallelize on the grid in the 1st dimension.
+ * @param N2   Number of properties to parallelize on the grid in the 2nd dimension.
+ * @param np   Number of processors available.
+ *
+ **/
+void dims_divide_2d(const int N1, const int N2, const int np, int *np1, int *np2)
+{
+    int search_count = 0;
+    
+    // initialize with the naive way, parallelize as much as possible for N1 first
+    int cur1 = min(np, N1);
+    int cur2 = min(np/cur1, N2);
+    int best = workload_assigned(N1,N2,cur1,cur2); 
+
+    int np_up = np > N1*N2 ? N1*N2 : np; // upper bound of np that can be used
+    for (int p = np_up; p > 0; p--) {
+        // find factors of p
+        Factors facs = {NULL, 0};
+        sorted_factor(p, &facs);
+        int nfacs = facs.count; // total number of factors
+        for (int i = 0; i < nfacs; i++) {
+            int fac1 = facs.list[i]; // small to large
+            int fac2 = p / fac1; // large to small
+            // use larger factor for the first dim from the beginning
+            int load = workload_assigned(N1,N2,fac2,fac1);
+            if (load < best) {
+                best = load;
+                cur1 = fac2;
+                cur2 = fac1;
+            }
+            if ((N1 % fac2 == 0 && N2 % fac1 == 0) || search_count > 1e5) {
+                *np1 = cur1;
+                *np2 = cur2;
+                free(facs.list);
+                return;
+            }
+        }
+        free(facs.list);
+    }
+}
+
+
+
+/**
+ * @brief  Caluclate a division of processors in for kpoint, band, domain (KBD) 
+ *         parallelization.
+ *
+ *         For a given number of processors, choose npkpt, npband, and npdomain so 
+ *         that the maximum work assigned to each process is the smallest, i.e., 
+ *         choose x * y * z <= np, s.t., 
+ *         ceil(Nk/x) * ceil(Ns/y) * ceil(Nd/z) is minimum.
+ *
+ *         Here we assume the parallelization of the two properties are the same,
+ *         therefore there's no preference to use more or less processes in any
+ *         dimension. 
+ *         
+ *         The objective function and the constraint are both nonlinear, which 
+ *         makes this a very hard problem in general.
+ *         
+ *         In this func, we try to find a reasonably good solution using the following 
+ *         strategy: since the parallelization over kpoint and band are both very 
+ *         efficient, we try to parallel over kpoint and band first, then we consider
+ *         parallelization over domain. There are two cases: np <=  or > Nk * Ns.
+ *         Case 1: np <= Nk * Ns. Then we try to fix npdomain = 1:10, and find the best
+ *         parameters for the given npdomain, we always prefer to use less npdomain if
+ *         possible.
+ *         Case 2: np > Nk * Ns. Then we try to provide Nk*Ns ./ [1:10] for kpoint and
+ *         band parallelization, and pick the best combination. Again we prefer to use
+ *         as less npdomain (more for K & B) if work load is the similar.
+ *
+ * @param Nk        Number of kpoints (after symmetry reduction).
+ * @param Ns        Number of states.
+ * @param gridsizes Number of grid points in all three directions.
+ * @param np        Number of processors available.
+ * @param np1 (OUT) Number of kpoint groups.
+ * @param np2 (OUT) Number of band groups.
+ * @param np3 (OUT) Number of domain groups.
+ **/
+void dims_divide_kbd(
+    const int Nk, const int Ns, const int *gridsizes,
+    const int np, int *np1, int *np2, int *np3)
+{
+#define LEN_NPDM 8
+
+    // SPARC_Dims_create(nproc, ndims, gridsizes, minsize, int *dims, int *ierr); 
+    int cur1 = min(np,Nk);
+    int cur2 = min(np/cur1,Ns);
+    int cur3 = np / (cur1 * cur2);
+    double best_weight = work_load_efficiency(Nk,Ns,np,cur1,cur2,cur3);
+    if (best_weight > 0.97) { // prefer kpoint to band
+        *np1 = cur1; *np2 = cur2; *np3 = cur3;
+        return;
+    }
+
+    int npkpt, npband, npdm;
+    double weight;
+
+    int npdm_list[LEN_NPDM];
+    int npdm_count = LEN_NPDM;
+    if (np > Nk * Ns) {
+        int npdm_base = np / (Nk * Ns);
+        int count = 0;
+        for (int i = 1; i <= LEN_NPDM; i++) {
+            if (npdm_base * i <= np) {
+                npdm_list[count] = npdm_base * i;
+                count++;
+            }
+        }
+        npdm_count = count;
+    } else {
+        int count = 0;
+        for (int i = 1; i <= LEN_NPDM; i++) {
+            npdm_list[count] = i;
+            count++;
+        }
+        npdm_count = count;
+    }
+
+    for (int i = 0; i < npdm_count; i++) {
+        // # TODO: check domain parallelization first
+        // # npNx,npNy,npNz = domain_paral(Nx,Ny,Nz,npdomain)
+        // # if npNx*npNy*npNz != npdomain:
+        // #     continue
+        npdm = npdm_list[i];
+        int np_2d = np / npdm;
+        if (np_2d < 1) continue;
+        
+        dims_divide_2d(Nk, Ns, np_2d, &npkpt, &npband);
+        npdm = np / (npkpt * npband);
+        weight = work_load_efficiency(Nk,Ns,np,npkpt,npband,npdm);
+        if (weight > best_weight) {
+            cur1 = npkpt;
+            cur2 = npband;
+            cur3 = npdm; 
+            best_weight = weight;
+        }
+        if (weight > 0.95) break;
+    }
+
+    *np1 = cur1;
+    *np2 = cur2;
+    *np3 = cur3;
+}
+
+
+double skbd_band_efficiency(const int x) {
+    double eff = 1.00;
+    double x_table[5] = {1,   8,   27,  125, 512};
+    double y_table[5] = {1.00,0.95,0.75,0.55,0.45};
+    int len = 5;
+    for (int i = 0; i < len - 1; i++) {
+        if (x >= x_table[i] && x < x_table[i+1]) {
+            double slope = (y_table[i+1]-y_table[i])/(x_table[i+1]-x_table[i]);
+            eff = y_table[i] + (x - x_table[i]) * slope;
+        }
+    }
+
+    if (x > x_table[len-1]) eff = 0.44;
+    return eff;
+}
+
+
+double skbd_domain_efficiency(const int x) {
+    double eff = 1.00;
+    double x_table[7] = {1,   2,   8,   20,  27  ,120 ,200 };
+    double y_table[7] = {1.00,0.80,0.75,0.65,0.60,0.40,0.30};
+    int len = 7;
+    for (int i = 0; i < len - 1; i++) {
+        if (x >= x_table[i] && x < x_table[i+1]) {
+            double slope = (y_table[i+1]-y_table[i])/(x_table[i+1]-x_table[i]);
+            eff = y_table[i] + (x - x_table[i]) * slope;
+        }
+    }
+
+    if (x > x_table[len-1]) eff = 0.29;
+    return eff;
+}
+
+
+
+double skbd_weighted_efficiency(
+    const int Nspin, const int Nk, const int Ns, 
+    const int *gridsizes, const int np, 
+    const int nps, const int npk, const int npb, const int npd)
+{
+    int ncols = workload_assigned(Nspin*Nk, Ns, nps*npk, npb);
+    double eff = Nspin * Nk * Ns * npd / (double)(ncols * np);
+    // apply weight for band
+    eff *= skbd_band_efficiency(npb);
+    // apply weight for domain
+    eff *= skbd_domain_efficiency(npd);
+    return eff;
+}
+
+
+/**
+ * @brief  Caluclate a division of processors in for spin, kpoint, band, 
+ *         domain (SKBD). 
+ *         parallelization.
+ *
+ * @param Nspin     Number of spin, 1 or 2.
+ * @param Nk        Number of kpoints (after symmetry reduction).
+ * @param Ns        Number of states.
+ * @param gridsizes Number of grid points in all three directions.
+ * @param np        Number of processors available.
+ * @param nps (OUT) Number of spin groups.
+ * @param npk (OUT) Number of kpoint groups.
+ * @param npp (OUT) Number of band groups.
+ * @param npd (OUT) Number of domain groups.
+ **/
+void dims_divide_skbd(
+    const int Nspin, const int Nk, const int Ns, 
+    const int *gridsizes, const int np, 
+    int *nps, int *npk, int *npb, int *npd)
+{
+    if (Nspin != 1 && Nspin != 2) 
+        exit(1);
+
+    int nps_cur, npk_cur, npb_cur, npd_cur;
+    double weight_cur;
+    // first set naive way
+    nps_cur = min(Nspin,np);
+    npk_cur = min(Nk,np/nps_cur);
+    npb_cur = min(Ns,np/(nps_cur*npk_cur));
+    npd_cur = np/(nps_cur*npk_cur*npb_cur);
+    weight_cur = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_cur,npk_cur,npb_cur,npd_cur);
+
+
+    // try with both Nspin = 1 
+    int nps_1, npk_1, npb_1, npd_1;
+    nps_1 = 1;
+    dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1);
+    // double weight_1 = work_load_efficiency(Nspin*Nk,Ns,np,nps_1*npk_1,npb_1,npd_1);
+    double weight_1;
+    weight_1 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_1,npk_1,npb_1,npd_1);
+    if (weight_1 > weight_cur) {
+        nps_cur = nps_1;
+        npk_cur = npk_1;
+        npb_cur = npb_1;
+        npd_cur = npd_1;
+        weight_cur = weight_1;
+    }
+
+    // if there's spin, also try npspin = 2, and see if gives a better result
+    if (Nspin > 1 && np > 1) {
+        int nps_2, npk_2, npb_2, npd_2;
+        nps_2 = 2;
+        dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2);
+        double weight_2;
+        weight_2 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_2,npk_2,npb_2,npd_2);
+        if (weight_2 >= weight_cur) {
+            nps_cur = nps_2;
+            npk_cur = npk_2;
+            npb_cur = npb_2;
+            npd_cur = npd_2;
+            weight_cur = weight_2;
+        }
+    }
+
+    *nps = nps_cur;
+    *npk = npk_cur;
+    *npb = npb_cur;
+    *npd = npd_cur;
+}
+
+
 
 
 

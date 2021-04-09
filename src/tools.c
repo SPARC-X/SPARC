@@ -290,6 +290,39 @@ Factors *factor( int num, Factors *fctrs)
 
 
 
+void sorted_factor( int num, Factors *fctrs) {
+    // call factors to do the calculation
+    factor(num, fctrs);
+
+    short len = fctrs->count;
+    int *new_list = (int *)malloc(len * sizeof(int));
+
+    // the returned list comes in pairs, f1xf2, f3xf4, ...
+    // sort the list in ascending order
+    // copy the 1st half
+    for (int i = 0; i < (len+1)/2; i++) {
+        new_list[i] = fctrs->list[2*i];
+    }
+
+    short ind = len-1;
+    // copy the 2nd half
+    for (int i = 1; i < len; i+=2) {
+        new_list[ind--] = fctrs->list[i];
+    }   
+
+    free(fctrs->list);
+    fctrs->list = new_list;
+
+}
+
+
+// Equivalent to ceil(x / (double)y), where x, y are positive integers
+int ceil_div(const unsigned int x, const unsigned int y)
+{
+    return (x + y - 1) / y;
+}
+
+
 /**
  * @brief   Calculates derivatives of a tabulated function required for spline interpolation.
  */
@@ -593,6 +626,18 @@ int binary_interval_search(const double *list, const int len, const double x)
 	return first;
 }
 
+
+/**
+ * @brief   The main funciton for Cubic spline evaluation from precalculated
+ *          data. This function calls the appropriate uniform or non-uniform
+ *          routines.         
+ */
+void SplineInterpMain(double *X1,double *Y1,int len1,
+    double *X2,double *Y2,int len2,double *YD,int isUniform) 
+{
+    if (isUniform) SplineInterpUniform(X1,Y1,len1,X2,Y2,len2,YD);
+    else SplineInterpNonuniform(X1,Y1,len1,X2,Y2,len2,YD);
+}
 
 
 /**

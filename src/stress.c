@@ -14,6 +14,7 @@
 #include <string.h>
 #include <math.h>
 #include <mpi.h>
+#include <assert.h>
 
 #ifdef USE_MKL
     #include <mkl.h>
@@ -175,13 +176,294 @@ void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
 
 /*
 * @brief: find stress contributions from exchange-correlation
+*         due to non-linear core correction (NLCC).
+*/
+void Calculate_XC_stress_nlcc(SPARC_OBJ *pSPARC, double *stress_xc_nlcc) {
+    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
+    int rank;
+    MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
+    int rank_comm_world;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_comm_world);
+#ifdef DEBUG
+    if (!rank_comm_world) 
+        printf("Start calculating NLCC exchange-correlation components of stress ...\n");
+#endif
+
+    int ityp, iat, i, j, k, p, ip, jp, kp, ip2, jp2, kp2, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
+        DMnx, DMny, DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
+        icor, jcor, kcor, *pshifty, *pshiftz, *pshifty_ex, *pshiftz_ex, *ind_interp;
+    double x0_i, y0_i, z0_i, x0_i_shift, y0_i_shift, z0_i_shift, x, y, z, *R,
+           *VJ, *VJ_ref, *bJ, *bJ_ref, 
+           DbJ_x_val, DbJ_ref_x_val, DbJ_y_val, DbJ_ref_y_val, DbJ_z_val, DbJ_ref_z_val, 
+           DVJ_x_val, DVJ_y_val, DVJ_z_val, DVJ_ref_x_val, DVJ_ref_y_val, DVJ_ref_z_val,
+           *R_interp, *VJ_interp;
+    double inv_4PI = 0.25 / M_PI, w2_diag, rchrg;
+    double temp1, temp2, temp3, temp_x, temp_y, temp_z;
+    double x1_R1, x2_R2, x3_R3;
+    double t1, t2, t_sort = 0.0;
+
+    FDn = pSPARC->order / 2;
+    
+    DMnx = pSPARC->Nx_d;
+    DMny = pSPARC->Ny_d;
+    // DMnz = pSPARC->Nz_d;
+    // DMnd = pSPARC->Nd_d;
+    DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
+
+    // Create indices for laplacian
+    pshifty = (int *)malloc( (FDn+1) * sizeof(int));
+    pshiftz = (int *)malloc( (FDn+1) * sizeof(int));
+    pshifty_ex = (int *)malloc( (FDn+1) * sizeof(int));
+    pshiftz_ex = (int *)malloc( (FDn+1) * sizeof(int));
+    if (pshifty == NULL || pshiftz == NULL || 
+        pshifty_ex == NULL || pshiftz_ex == NULL) {
+        printf("\nMemory allocation failed in local forces!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    double *Drho_x, *Drho_y, *Drho_z, *v_xc_nloc;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        rchrg = pSPARC->psd[ityp].RadialGrid[pSPARC->psd[ityp].size-1];
+        for (iat = 0; iat < pSPARC->Atom_Influence_local[ityp].n_atom; iat++) {
+            // coordinates of the image atom
+            x0_i = pSPARC->Atom_Influence_local[ityp].coords[iat * 3];
+            y0_i = pSPARC->Atom_Influence_local[ityp].coords[iat * 3 + 1];
+            z0_i = pSPARC->Atom_Influence_local[ityp].coords[iat * 3 + 2];
+
+            // original atom index this image atom corresponds to
+            int atom_index = pSPARC->Atom_Influence_local[ityp].atom_index[iat];
+            
+            // number of finite-difference nodes in each direction of overlap rb region
+            nx = pSPARC->Atom_Influence_local[ityp].xe[iat] - pSPARC->Atom_Influence_local[ityp].xs[iat] + 1;
+            ny = pSPARC->Atom_Influence_local[ityp].ye[iat] - pSPARC->Atom_Influence_local[ityp].ys[iat] + 1;
+            nz = pSPARC->Atom_Influence_local[ityp].ze[iat] - pSPARC->Atom_Influence_local[ityp].zs[iat] + 1;
+            nd = nx * ny * nz;
+            // number of finite-difference nodes in each direction of extended_rb (rb + order/2) region
+            nxp = nx + pSPARC->order;
+            nyp = ny + pSPARC->order;
+            nzp = nz + pSPARC->order;
+            nd_ex = nxp * nyp * nzp; // total number of nodes
+            // number of finite-difference nodes in each direction of extended_extended_rb (rb + order) region
+            nx2p = nxp + pSPARC->order;
+            ny2p = nyp + pSPARC->order;
+            nz2p = nzp + pSPARC->order;
+            nd_2ex = nx2p * ny2p * nz2p; // total number of nodes
+            
+            // radii^2 of the finite difference grids of the extended_extended_rb region
+            R  = (double *)malloc(sizeof(double) * nd_2ex);
+            assert(R != NULL);
+            
+            // left corner of the 2FDn-extended-rb-region
+            icor = pSPARC->Atom_Influence_local[ityp].xs[iat] - pSPARC->order;
+            jcor = pSPARC->Atom_Influence_local[ityp].ys[iat] - pSPARC->order;
+            kcor = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->order;
+                        
+            // relative coordinate of image atoms
+            x0_i_shift =  x0_i - pSPARC->delta_x * icor; 
+            y0_i_shift =  y0_i - pSPARC->delta_y * jcor;
+            z0_i_shift =  z0_i - pSPARC->delta_z * kcor;
+            
+            // find distance between atom and finite-difference grids
+            count = 0; count_interp = 0;
+            if(pSPARC->cell_typ == 0) {    
+                for (k = 0; k < nz2p; k++) {
+                    z = k * pSPARC->delta_z - z0_i_shift; 
+                    for (j = 0; j < ny2p; j++) {
+                        y = j * pSPARC->delta_y - y0_i_shift;
+                        for (i = 0; i < nx2p; i++) {
+                            x = i * pSPARC->delta_x - x0_i_shift;
+                            R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
+                            if (R[count] <= rchrg) count_interp++;
+                            count++;
+                        }
+                    }
+                }
+            } else {
+                for (k = 0; k < nz2p; k++) {
+                    z = k * pSPARC->delta_z - z0_i_shift; 
+                    for (j = 0; j < ny2p; j++) {
+                        y = j * pSPARC->delta_y - y0_i_shift;
+                        for (i = 0; i < nx2p; i++) {
+                            x = i * pSPARC->delta_x - x0_i_shift;
+                            R[count] = sqrt(pSPARC->metricT[0] * (x*x) + pSPARC->metricT[1] * (x*y) + pSPARC->metricT[2] * (x*z) 
+                                          + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z) );
+                            //R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
+                            if (R[count] <= rchrg) count_interp++;
+                            count++;
+                        }
+                    }
+                }
+            } 
+
+            // VJ = (double *)malloc( nd_2ex * sizeof(double) );
+            double *rhocJ = (double *)calloc( nd_2ex,sizeof(double) );
+            assert(rhocJ != NULL);
+            
+            // avoid interpolating positions larger than rchrg
+            R_interp = (double *)malloc( count_interp * sizeof(double) );
+            ind_interp = (int *)malloc( count_interp * sizeof(int) );
+            double *rhocJ_interp = (double *)calloc(count_interp, sizeof(double));
+            count = 0;
+            for (i = 0; i < nd_2ex; i++) {
+                if (R[i] <= rchrg) {
+                    ind_interp[count] = i; // store index
+                    R_interp[count] = R[i]; // store radius value
+                    count++;
+                }
+            }
+            
+            t1 = MPI_Wtime();
+            SplineInterpMain(pSPARC->psd[ityp].RadialGrid,pSPARC->psd[ityp].rho_c_table, pSPARC->psd[ityp].size, 
+                         R_interp, rhocJ_interp, count_interp, pSPARC->psd[ityp].SplineRhocD,pSPARC->psd[ityp].is_r_uniform);
+            t2 = MPI_Wtime();
+            t_sort += t2 - t1;
+
+            for (i = 0; i < count_interp; i++) {
+                rhocJ[ind_interp[i]] = rhocJ_interp[i];
+            }
+
+            free(rhocJ_interp); rhocJ_interp = NULL;
+            free(R_interp); R_interp = NULL;
+            free(ind_interp); ind_interp = NULL;
+            free(R); R = NULL;
+            
+            // shift vectors initialized
+            pshifty[0] = pshiftz[0] = pshifty_ex[0] = pshiftz_ex[0] = 0;
+            for (p = 1; p <= FDn; p++) {
+                pshifty[p] = p * nxp;
+                pshiftz[p] = pshifty[p] * nyp;
+                pshifty_ex[p] = p * nx2p;
+                pshiftz_ex[p] = pshifty_ex[p] *ny2p;
+            }
+            
+            double xin = pSPARC->xin + pSPARC->Atom_Influence_local[ityp].xs[iat] * pSPARC->delta_x;       
+
+            // calculate gradient of bJ, bJ_ref, VJ, VJ_ref in the rb-domain
+            dk = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->DMVertices[4];
+            dj = pSPARC->Atom_Influence_local[ityp].ys[iat] - pSPARC->DMVertices[2];
+            di = pSPARC->Atom_Influence_local[ityp].xs[iat] - pSPARC->DMVertices[0];
+
+            // calculate drhocJ, 3 components
+            double *drhocJ_x = malloc(nd_ex * sizeof(double));
+            double *drhocJ_y = malloc(nd_ex * sizeof(double));
+            double *drhocJ_z = malloc(nd_ex * sizeof(double));
+            assert(drhocJ_x != NULL && drhocJ_y != NULL && drhocJ_z != NULL);
+            for (int k2p = FDn, kp = 0; k2p < nz2p-FDn; k2p++,kp++) {
+                int kshift_2p = k2p * nx2p * ny2p;
+                int kshift_p = kp * nxp * nyp;
+                for (int j2p = FDn, jp = 0; j2p < ny2p-FDn; j2p++,jp++) {
+                    int jshift_2p = kshift_2p + j2p * nx2p;
+                    int jshift_p = kshift_p + jp * nxp;
+                    for (int i2p = FDn, ip = 0; i2p < nx2p-FDn; i2p++,ip++) {
+                        int ishift_2p = jshift_2p + i2p;
+                        int ishift_p = jshift_p + ip;
+                        double drhocJ_x_val, drhocJ_y_val, drhocJ_z_val;
+                        drhocJ_x_val = drhocJ_y_val = drhocJ_z_val = 0.0;
+                        for (p = 1; p <= FDn; p++) {
+                            drhocJ_x_val += (rhocJ[ishift_2p+p] - rhocJ[ishift_2p-p]) * pSPARC->D1_stencil_coeffs_x[p];
+                            drhocJ_y_val += (rhocJ[ishift_2p+pshifty_ex[p]] - rhocJ[ishift_2p-pshifty_ex[p]]) * pSPARC->D1_stencil_coeffs_y[p];
+                            drhocJ_z_val += (rhocJ[ishift_2p+pshiftz_ex[p]] - rhocJ[ishift_2p-pshiftz_ex[p]]) * pSPARC->D1_stencil_coeffs_z[p];
+                        }
+                        drhocJ_x[ishift_p] = drhocJ_x_val;
+                        drhocJ_y[ishift_p] = drhocJ_y_val;
+                        drhocJ_z[ishift_p] = drhocJ_z_val;
+                    }
+                }
+            }
+
+            // // find int Vxc(x) * drhocJ(x) dx
+            double *Vxc = pSPARC->XCPotential;
+            for (k = 0, kp = FDn, k_DM = dk; k < nz; k++, kp++, k_DM++) {
+                int kshift_DM = k_DM * DMnx * DMny;
+                int kshift_p = kp * nxp * nyp;
+                int kshift = k * nx * ny;  
+                for (j = 0, jp = FDn, j_DM = dj; j < ny; j++, jp++, j_DM++) {
+                    int jshift_DM = kshift_DM + j_DM * DMnx;
+                    int jshift_p = kshift_p + jp * nxp;
+                    int jshift = kshift + j * nx;
+                    for (i = 0, ip = FDn, i_DM = di; i < nx; i++, ip++, i_DM++) {
+                        int ishift_DM = jshift_DM + i_DM;
+                        int ishift_p = jshift_p + ip;
+                        int ishift = jshift + i;
+                        x1_R1 = (i_DM + pSPARC->DMVertices[0]) * pSPARC->delta_x - x0_i;
+                        x2_R2 = (j_DM + pSPARC->DMVertices[2]) * pSPARC->delta_y - y0_i;
+                        x3_R3 = (k_DM + pSPARC->DMVertices[4]) * pSPARC->delta_z - z0_i;
+                        if (pSPARC->cell_typ != 0)
+                            nonCart2Cart_coord(pSPARC, &x1_R1, &x2_R2, &x3_R3);
+                        double drhocJ_x_val = drhocJ_x[ishift_p];
+                        double drhocJ_y_val = drhocJ_y[ishift_p];
+                        double drhocJ_z_val = drhocJ_z[ishift_p];
+                        if (pSPARC->cell_typ != 0)
+                            nonCart2Cart_grad(pSPARC, &drhocJ_x_val, &drhocJ_y_val, &drhocJ_z_val);
+                        double Vxc_val;
+                        if (pSPARC->Nspin == 1)
+                            Vxc_val = Vxc[ishift_DM];
+                        else
+                            Vxc_val = 0.5 * (Vxc[ishift_DM] + Vxc[pSPARC->Nd_d+ishift_DM]);
+                        stress_xc_nlcc[0] += drhocJ_x_val * x1_R1 * Vxc_val;
+                        stress_xc_nlcc[1] += drhocJ_x_val * x2_R2 * Vxc_val;
+                        stress_xc_nlcc[2] += drhocJ_x_val * x3_R3 * Vxc_val;
+                        stress_xc_nlcc[3] += drhocJ_y_val * x2_R2 * Vxc_val;
+                        stress_xc_nlcc[4] += drhocJ_y_val * x3_R3 * Vxc_val;
+                        stress_xc_nlcc[5] += drhocJ_z_val * x3_R3 * Vxc_val;
+                    }
+                }
+            }
+            free(rhocJ);
+            free(drhocJ_x);
+            free(drhocJ_y);
+            free(drhocJ_z);
+        }
+    }
+
+    for(i = 0; i < 6; i++)
+        stress_xc_nlcc[i] *= pSPARC->dV;
+    t1 = MPI_Wtime();
+    // sum over all domains
+    MPI_Allreduce(MPI_IN_PLACE, stress_xc_nlcc, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+    t2 = MPI_Wtime();
+
+    if (!rank) {
+        // Define measure of unit cell
+        double cell_measure = pSPARC->Jacbdet;
+        if(pSPARC->BCx == 0)
+            cell_measure *= pSPARC->range_x;
+        if(pSPARC->BCy == 0)
+            cell_measure *= pSPARC->range_y;
+        if(pSPARC->BCz == 0)
+            cell_measure *= pSPARC->range_z;
+       for(int i = 0; i < 6; i++)
+            stress_xc_nlcc[i] /= cell_measure; 
+    }
+
+#ifdef DEBUG
+    if (!rank_comm_world) { 
+        printf("time for sorting and interpolate pseudopotential: %.3f ms, time for Allreduce/Reduce: %.3f ms \n", t_sort*1e3, (t2-t1)*1e3);
+        printf("NLCC XC contribution to stress");
+        PrintStress(pSPARC, stress_xc_nlcc, NULL); 
+    }
+#endif
+
+    free(pshifty);
+    free(pshiftz);
+    free(pshifty_ex);
+    free(pshiftz_ex);
+}
+
+
+/*
+* @brief: find stress contributions from exchange-correlation
 */
 void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
     int rank;
     MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
+
 #ifdef DEBUG
-    if (!rank) printf("Start calculating exchange-correlation components of stress ...\n");
+    int rank_comm_world;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_comm_world);
+    if (!rank_comm_world) printf("Start calculating exchange-correlation components of stress ...\n");
 #endif
 
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
@@ -199,11 +481,24 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
         Drho_x = (double *)malloc( DMnd * sizeof(double));
         Drho_y = (double *)malloc( DMnd * sizeof(double));
         Drho_z = (double *)malloc( DMnd * sizeof(double));
-    
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, pSPARC->electronDens, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, pSPARC->electronDens, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, pSPARC->electronDens, Drho_z, 2, pSPARC->dmcomm_phi);
+        assert(Drho_x != NULL && Drho_y != NULL && Drho_z != NULL);
+
+        double *rho;
+        if (pSPARC->NLCC_flag) {
+            rho = (double *)malloc(DMnd * sizeof(double) );
+            assert(rho != NULL);
+            for (i = 0; i < DMnd; i++)
+                rho[i] = pSPARC->electronDens[i] + pSPARC->electronDens_core[i];
+        } else {
+            rho = pSPARC->electronDens;
+        }
+
+        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
         
+        if (pSPARC->NLCC_flag) free(rho);
+
         if(pSPARC->cell_typ == 0){
             for(i = 0; i < DMnd; i++){
                 stress_xc[0] += Drho_x[i] * Drho_x[i] * pSPARC->Dxcdgrho[i];
@@ -258,9 +553,18 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
 
     }
 
+    if (pSPARC->NLCC_flag) {
+        // double stress_xc_nlcc[6] = {0,0,0,0,0,0};
+        double *stress_xc_nlcc = (double *)calloc(6,sizeof(double));
+        assert(stress_xc_nlcc != NULL);
+        Calculate_XC_stress_nlcc(pSPARC, stress_xc_nlcc);
+        for(int i = 0; i < 6; i++)
+            pSPARC->stress_xc[i] += stress_xc_nlcc[i];
+        free(stress_xc_nlcc);
+    }
 
 #ifdef DEBUG    
-    if (!rank) {
+    if (!rank_comm_world) {
         printf("\nXC contribution to stress");
         PrintStress(pSPARC, pSPARC->stress_xc, NULL); 
     }
@@ -859,10 +1163,6 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[3] += dpsi2_dpsi2 * g_nk;
                 }
                 
-                stress_k[0] *= -(2.0/pSPARC->Nspin);
-                stress_k[1] *= -(2.0/pSPARC->Nspin);
-                stress_k[3] *= -(2.0/pSPARC->Nspin);
-
                 Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 2, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_1
@@ -876,8 +1176,6 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[2] += dpsi1_dpsi3 * g_nk;
                     stress_k[5] += dpsi3_dpsi3 * g_nk;
                 }
-                stress_k[2] *= -(2.0/pSPARC->Nspin);
-                stress_k[5] *= -(2.0/pSPARC->Nspin);
             } else if(dim == 1){
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_2
@@ -888,11 +1186,17 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     }
                     stress_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                 }
-                stress_k[4] *= -(2.0/pSPARC->Nspin);
             }
             count++;
         }    
     }
+    
+    stress_k[0] *= -(2.0/pSPARC->Nspin);
+    stress_k[1] *= -(2.0/pSPARC->Nspin);
+    stress_k[2] *= -(2.0/pSPARC->Nspin);
+    stress_k[3] *= -(2.0/pSPARC->Nspin);
+    stress_k[4] *= -(2.0/pSPARC->Nspin);
+    stress_k[5] *= -(2.0/pSPARC->Nspin);
     
     free(dpsi_full);
 
