@@ -150,7 +150,7 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
   const double nl_end = MPI_Wtime();
 
   if((PCE_Internal_debug_level() <= DEBUG_VERBOSE) && (rank==0)) {
-    printf("NL time: %f\n", nl_end - nl_start);
+    printf("NonLocal time: %f\n", nl_end - nl_start);
   }
 
 #if DEBUG
