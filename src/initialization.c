@@ -35,7 +35,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 117
+#define N_MEMBR 121
 
 
 
@@ -436,6 +436,10 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->range_x = -1.0;
     pSPARC_Input->range_y = -1.0;
     pSPARC_Input->range_z = -1.0;
+    pSPARC_Input->Flag_latvec_scale = 0;
+    pSPARC_Input->latvec_scale_x = -1.0;
+    pSPARC_Input->latvec_scale_y = -1.0;
+    pSPARC_Input->latvec_scale_z = -1.0;
     pSPARC_Input->BC = -1;                    // default BC will be set up after reading input
 	pSPARC_Input->BCx = -1;
 	pSPARC_Input->BCy = -1;
@@ -794,6 +798,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->MDFlag = pSPARC_Input->MDFlag;
     pSPARC->RelaxFlag = pSPARC_Input->RelaxFlag;
     pSPARC->RestartFlag = pSPARC_Input->RestartFlag;
+    pSPARC->Flag_latvec_scale = pSPARC_Input->Flag_latvec_scale;
     pSPARC->numIntervals_x = pSPARC_Input->numIntervals_x;
     pSPARC->numIntervals_y = pSPARC_Input->numIntervals_y;
     pSPARC->numIntervals_z = pSPARC_Input->numIntervals_z;
@@ -856,6 +861,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         if (!rank) printf("\nError: Please specify valid CELL dimensions!\n");
         exit(EXIT_FAILURE);
     }
+    pSPARC->latvec_scale_x = pSPARC_Input->latvec_scale_x;
+    pSPARC->latvec_scale_y = pSPARC_Input->latvec_scale_y;
+    pSPARC->latvec_scale_z = pSPARC_Input->latvec_scale_z;
     // allocate the memory for lattice vector array
     for(i = 0; i < 9; i++)
         pSPARC->LatVec[i] = pSPARC_Input->LatVec[i];
@@ -2264,14 +2272,18 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 14, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Apr 19, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Input parameters                                \n");
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+    if (pSPARC->Flag_latvec_scale == 0) {
+        fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+    } else {
+        fprintf(output_fp,"LATVEC_SCALE: %.15g %.15g %.15g \n",pSPARC->latvec_scale_x,pSPARC->latvec_scale_y,pSPARC->latvec_scale_z);
+    }
     fprintf(output_fp,"LATVEC:\n");
     fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
     fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
@@ -2592,7 +2604,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
 
 /**
  * @brief Create MPI struct type SPARC_INPUT_MPI for broadcasting.
- */
+*/
 void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     SPARC_INPUT_OBJ sparc_input_tmp;
 
@@ -2610,7 +2622,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2618,7 +2630,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -2635,15 +2648,16 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1,       /* int */ 
-                          1, 1, 1, 9, 1,
-                          1, 3, 1, 1, 1,
+                          1, 1, 1, 1,    /* int */ 
+                          1, 1, 1, 1, 1, 
+                          1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1,         /* double */
+                          1, 1, 1, 1, 1, 
+                          1,             /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -2670,6 +2684,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.spin_typ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RestartFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.Flag_latvec_scale, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_y, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_z, addr + i++);
@@ -2729,6 +2744,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_z, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_x, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_y, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_z, addr + i++);
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mesh_spacing, addr + i++);
     MPI_Get_address(&sparc_input_tmp.ecut, addr + i++);
