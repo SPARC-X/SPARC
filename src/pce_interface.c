@@ -1,7 +1,6 @@
 #include <string.h>
 #include "isddft.h"
 #include <libpce.h>
-#include <memory.h>
 
 #if USE_GPU
 #include <vnl_gpu.h>
@@ -21,13 +20,10 @@ void NONLOCAL_GPU(min_SPARC_OBJ *pSPARC,  ATOM_NLOC_INFLUENCE_OBJ *Atom_Influenc
     //TODO: GARBAGE COLLECTION
     cudaMalloc((void **)d_SPARC,                sizeof(min_SPARC_OBJ));
     cudaMalloc((void **)d_Atom_Influence_nloc,  sizeof(ATOM_NLOC_INFLUENCE_OBJ) * pSPARC->Ntypes);
-
-
     *d_locProj = (NLOC_PROJ_OBJ*) malloc(sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes);
     interface_gpu(pSPARC,              *d_SPARC,
                                Atom_Influence_nloc, *d_Atom_Influence_nloc,
                                nlocProj,            *d_locProj);  
-
 }
 #endif
 
@@ -79,16 +75,7 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl, device
   if(device == DEVICE_TYPE_DEVICE) {
 //TODO Garbage collection
     printf("GPUUUUUUUU\n");
-
-
     NONLOCAL_GPU(min_SPARC, nl->Atom_Influence_nloc, nl->nlocProj, &(nl->d_SPARC), &(nl->d_Atom_Influence_nloc), &(nl->d_locProj));
-
-    nl->pSPARC->d_xrc = OUR_MALLOC(nl->pSPARC->Ntypes, double**, DEVICE_TYPE_HOST);
-    //printf("ALLOCED d_xrc\n");
-
-    for(int i = 0; i < nl->pSPARC->Ntypes; i++) {
-        nl->pSPARC->d_xrc[i] = NULL;
-    }
 }
 #endif
 

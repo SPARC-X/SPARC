@@ -556,12 +556,8 @@ void scf(SPARC_OBJ *pSPARC)
 
     // TODO: Add this line back in
     SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
-#if USE_GPU
-    if(compute_device == DEVICE_TYPE_DEVICE) {
-        PCE_NL_GPU_MD_Step_Alloc(&hd, &nl);
     }
-#endif
-    }
+
 
     // START OF SCF LOOP
 
@@ -832,13 +828,7 @@ void scf(SPARC_OBJ *pSPARC)
       PCE_Psi_Destroy(&Psi3);
       PCE_Veff_Destroy(&veff_info);
       PCE_Eig_Destroy(&Eigvals);
-#if USE_GPU
-        if(compute_device == DEVICE_TYPE_DEVICE) {
-        PCE_NL_GPU_MD_Step_Free(&hd, &nl);
-        }
-#endif
       PCE_Internal_NonLocal_Destroy(&nl, compute_device);
-
     }
 
     PCE_FD_Destroy(&fd_raw);
