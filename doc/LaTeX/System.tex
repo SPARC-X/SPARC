@@ -37,9 +37,49 @@ Bohr
 A set of three whitespace delimited values specifying the cell lengths in the lattice vector (\hyperlink{LATVEC}{\texttt{LATVEC}}) directions, respectively.
 \end{block}
 
+\begin{block}{Remark}
+    Note that \hyperlink{CELL}{\texttt{CELL}} ignores the lengths of the lattice vectors specified in the \texttt{.inpt} file and only treats them as unit vectors. \hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} and \hyperlink{CELL}{\texttt{CELL}} cannot be specified simultaneously.
+\end{block}
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{LATVEC\_SCALE}} \label{LATVEC_SCALE}
+\vspace*{-15pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+    
+\begin{block}{Example}
+\texttt{LATVEC\_SCALE}: 10.20 11.21 7.58
+\end{block}
+\end{columns}
+
+\vspace*{-2pt}
+\begin{block}{Description}
+A set of three whitespace delimited values specifying the scaling factors in the lattice vectors (\hyperlink{LATVEC}{\texttt{LATVEC}}), respectively.
+\end{block}
+\vspace*{-4pt}
+\begin{block}{Remark}
+    The difference between \hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} and \hyperlink{CELL}{\texttt{CELL}} is that \hyperlink{CELL}{\texttt{CELL}} treats the lattice vectors as unit vectors, whereas \hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} scales the lattice vectors directly as specified by the user. \hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} and \hyperlink{CELL}{\texttt{CELL}} cannot be specified simultaneously.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

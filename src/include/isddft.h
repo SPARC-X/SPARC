@@ -241,6 +241,7 @@ typedef struct _SPARC_OBJ{
     
     /* Domain description */
     int cell_typ; // Flag for cell shape (orthogonal/nonorthogonal/helical)
+    int Flag_latvec_scale; // Flag indicating wether LATVEC_SCALE is specified
     int numIntervals_x; // number of intervals in x direction
     int numIntervals_y; // number of intervals in y direction
     int numIntervals_z; // number of intervals in z direction  
@@ -252,6 +253,9 @@ typedef struct _SPARC_OBJ{
     double range_x;
     double range_y;
     double range_z;
+    double latvec_scale_x; // scaling factor for the 1st latvec
+    double latvec_scale_y; // scaling factor for the 2nd latvec
+    double latvec_scale_z; // scaling factor for the 3rd latvec
     double LatVec[9];
     double delta_x;     // mesh size in x-direction
     double delta_y;     // mesh size in y-direction
@@ -704,6 +708,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int MDFlag;
     int RelaxFlag;
     int RestartFlag;
+    int Flag_latvec_scale; // Flag indicating wether LATVEC_SCALE is specified
     int numIntervals_x; // number of intervals in x direction
     int numIntervals_y; // number of intervals in y direction
     int numIntervals_z; // number of intervals in z direction  
@@ -793,6 +798,9 @@ typedef struct _SPARC_INPUT_OBJ{
     double range_x;
     double range_y;
     double range_z;
+    double latvec_scale_x; // scaling factor for the 1st latvec
+    double latvec_scale_y; // scaling factor for the 2nd latvec
+    double latvec_scale_z; // scaling factor for the 3rd latvec
     double LatVec[9];
     
     /* discretization */
