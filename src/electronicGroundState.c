@@ -465,23 +465,14 @@ void scf(SPARC_OBJ *pSPARC)
             //       struc energy). This is done once SCF is converged. Therefore
             //       the final reported energy is variational.
             if(pSPARC->spin_typ != 0) {
-                for (i = 0; i < NspinDMnd; i++){
-                    temp = pSPARC->electronDens[DMnd + i];
-                    pSPARC->electronDens[DMnd + i] = pSPARC->mixing_hist_xk[i];
-                    pSPARC->mixing_hist_xk[i] = temp;
+                double *rho_in = (double *)malloc(3 * DMnd * sizeof(double));
+                for (int i = 0; i < DMnd; i++) {
+                    rho_in[i] = pSPARC->mixing_hist_xk[i] + pSPARC->mixing_hist_xk[DMnd+i];
+                    rho_in[DMnd+i] = pSPARC->mixing_hist_xk[i];
+                    rho_in[2*DMnd+i] = pSPARC->mixing_hist_xk[DMnd+i];
                 }
-                for (i = 0; i < DMnd; i++)
-                    pSPARC->electronDens[i] = pSPARC->electronDens[DMnd + i] + pSPARC->electronDens[2*DMnd + i];
-
-                Calculate_Free_Energy(pSPARC, pSPARC->electronDens);
-
-                for (i = 0; i < DMnd; i++){
-                    temp = pSPARC->mixing_hist_xk[i];
-                    pSPARC->mixing_hist_xk[i] = pSPARC->electronDens[DMnd + i];
-                    pSPARC->electronDens[DMnd + i] = temp;
-                }
-                for (i = 0; i < DMnd; i++)
-                    pSPARC->electronDens[i] = pSPARC->electronDens[DMnd + i] + pSPARC->electronDens[2*DMnd + i];
+                Calculate_Free_Energy(pSPARC, rho_in);
+                free(rho_in);
             } else
                 Calculate_Free_Energy(pSPARC, pSPARC->mixing_hist_xk);
             
