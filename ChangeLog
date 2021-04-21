@@ -4,6 +4,14 @@
 -changes
 
 --------------
+Apr 20, 2021
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Fix bug in mixing history vectors for spin-polarized tests which seriously affects the SCF convergence.
+2. Modify the mixing function so that it's consistent with M-SPARC.
+
+
+--------------
 Apr 19, 2021
 Name: Qimen Xu
 Changes: (readfiles.c, initialization.c, isddft.h)
