@@ -1137,10 +1137,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
             assert(pSPARC->phi_dmcomm_phi_in != NULL);
         }
 
-        if (pSPARC->MixingPrecond != 0) {
-            pSPARC->mixing_hist_Pfk = (double *)calloc(DMnd * pSPARC->Nspin, sizeof(double));
-            assert(pSPARC->mixing_hist_Pfk != NULL);
-        }
+        pSPARC->mixing_hist_Pfk = (double *)calloc(DMnd * pSPARC->Nspin, sizeof(double));
 
         // initialize electrostatic potential as random guess vector
         if (pSPARC->FixRandSeed == 1) {

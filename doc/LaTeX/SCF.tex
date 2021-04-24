@@ -461,6 +461,73 @@ The value of the relaxation parameter used in the simple mixing step in the peri
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PARAMETER\_MAG}} \label{MIXING_PARAMETER_MAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Automatically set to the same as \hyperlink{MIXING_PARAMETER}{\texttt{MIXING\_PARAMETER}}.
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PARAMETER\_MAG}: 4.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The mixing parameter for the magnetization density in Pulay mixing for spin-polarized calculations.
+\end{block}
+
+\begin{block}{Remark}
+    For spin-polarized calculations, when SCF has difficulty to converge, increasing the mixing parameter to magnetization density might help. For example, setting it to 4.0, while turning off the preconditioner applied to the magnetization density (by setting \hyperlink{MIXING_PRECOND_MAG}{\texttt{MIXING\_PRECOND\_MAG}} to `\texttt{none}') is a good choice.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PARAMETER\_SIMPLE\_MAG}} \label{MIXING_PARAMETER_SIMPLE_MAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Automatically set to the same as \hyperlink{MIXING_PARAMETER_MAG}{\texttt{MIXING\_PARAMETER\_MAG}}
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PARAMETER\_SIMPLE\_MAG}: 4.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The value of the relaxation parameter for the magnetization density used in the simple mixing step in the periodic Pulay scheme for spin-polarized calculations.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks]{\texttt{PULAY\_FREQUENCY}} \label{PULAY_FREQUENCY}
 \vspace*{-12pt}
 \begin{columns}
@@ -558,6 +625,38 @@ This specifies the preconditioner used in the SCF iteration. Available options a
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MIXING\_PRECOND\_MAG}} \label{MIXING_PRECOND_MAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+\texttt{none}
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MIXING\_PRECOND\_MAG}: \texttt{kerker}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+This specifies the preconditioner used for the magnetization density in the SCF iteration for spin-polarized calculations. Available options are: \texttt{none}, \texttt{kerker}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -661,6 +760,75 @@ This threshold will be scaled by the \hyperlink{MIXING_PARAMETER}{\texttt{MIXING
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRECOND\_KERKER\_KTF\_MAG}} \label{PRECOND_KERKER_KTF_MAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+$\textrm{Bohr}^{-1}$
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRECOND\_KERKER\_KTF\_MAG}: 0.8
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The Thomas-Fermi screening length appearing in the \texttt{kerker} preconditioner for the magnetization density (\hyperlink{MIXING_PRECOND_MAG}{\texttt{MIXING\_PRECOND\_MAG}}). 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRECOND\_KERKER\_THRESH\_MAG}} \label{PRECOND_KERKER_THRESH_MAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.1
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRECOND\_KERKER\_THRESH\_MAG}: 0.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The threshold for the \texttt{kerker} preconditioner the magnetization density (\hyperlink{MIXING_PRECOND_MAG}{\texttt{MIXING\_PRECOND\_MAG}}). 
+\end{block}
+
+\begin{block}{Remark}
+This threshold will be scaled by the \hyperlink{MIXING_PARAMETER_MAG}{\texttt{MIXING\_PARAMETER\_MAG}}. If the threshold is set to 0, the original \texttt{kerker} preconditioner is recovered.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 
 

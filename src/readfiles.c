@@ -363,6 +363,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"PRECOND_KERKER_THRESH:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_thresh);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"PRECOND_KERKER_KTF_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_kTF_mag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"PRECOND_KERKER_THRESH_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_thresh_mag);
+            fscanf(input_fp, "%*[^\n]\n");
         } /*else if (strcmpi(str,"PRECOND_RESTA_Q0:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->precond_resta_q0);
             fscanf(input_fp, "%*[^\n]\n");
@@ -399,6 +405,18 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PRECOND_MAG:") == 0) {
+            fscanf(input_fp,"%s",temp); // read mixing preconditioner
+            if (strcmpi(temp,"none") == 0) {
+                pSPARC_Input->MixingPrecondMag = 0;
+            } else if (strcmpi(temp,"kerker") == 0) {
+                pSPARC_Input->MixingPrecondMag = 1;
+            } else {
+                printf("\nCannot recognize mixing preconditioner for magnetization: \"%s\"\n",temp);
+                printf("Available options: \"none\" and \"kerker\" (case insensitive) \n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MIXING_HISTORY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->MixingHistory);
             fscanf(input_fp, "%*[^\n]\n");
@@ -407,6 +425,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MIXING_PARAMETER_SIMPLE:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterSimple);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PARAMETER_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterMag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PARAMETER_SIMPLE_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterSimpleMag);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"PULAY_FREQUENCY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PulayFrequency);
