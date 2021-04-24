@@ -793,6 +793,18 @@ void VectorShift(double *Vec, const int len, const double c, MPI_Comm comm)
 
 
 /**
+ * @brief   Scale a vector, x = x * c.
+ */
+void VectorScale(double *Vec, const int len, const double c, MPI_Comm comm)
+{
+    if (comm == MPI_COMM_NULL) return;
+    for (int k = 0; k < len; k++)
+        Vec[k] *= c;
+}
+
+
+
+/**
  * @brief   Create a random matrix with each entry a random number within given range. 
  * 
  *          Note that each process within comm will have different random entries.
