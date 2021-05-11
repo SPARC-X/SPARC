@@ -39,8 +39,9 @@ LIBPCE_DIR=../Hamiltonian/
 CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
 
 ELPA_DIR = $(ELPA_ROOT)
-ELPA_LIB = elpa_openmp
+#This may need to be changed depending on the installed elpa
 #ELPA_LIB = elpa
+ELPA_LIB = elpa_openmp
 
 # Uses gcc
 LIBPCE_MAKEFILE=Makefile.pace.icc
