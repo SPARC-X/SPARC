@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Mar 30, 2021)                      *
+*                       SPARC (version Apr 23, 2021)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Mar 31 11:51:40 2021                  *
+*                   Start time: Mon May 10 00:33:06 2021                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -34,10 +34,12 @@ TOL_LANCZOS: 1.00E-02
 TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
+MIXING_PRECOND_MAG: none
 TOL_PRECOND: 6.35E-06
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
+MIXING_PARAMETER_MAG: 0.3
 MIXING_HISTORY: 7
 PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
@@ -49,7 +51,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: Fe_spin/temp_run/Fe_spin
+OUTPUT_FILE: Fe_spin
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -65,12 +67,12 @@ EIG_SERIAL_MAXNS: 2000
 Number of processors               :  24
 Mesh spacing                       :  0.0797059 (Bohr)
 Number of symmetry adapted k-points:  4
-Output printed to                  :  Fe_spin/temp_run/Fe_spin.out
+Output printed to                  :  Fe_spin.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
-Pseudopotential                    :  Fe_spin/temp_run/FeGGA.psp8
+Pseudopotential                    :  FeGGA.psp8
 Pseudocharge radii of atom type 1  :  6.38 6.38 6.38 (x, y, z dir)
 Number of atoms of type 1          :  2
 Estimated total memory usage       :  7.99 GB
@@ -79,27 +81,27 @@ Estimated memory per processor     :  341.05 MB
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.9664151219E+02         3.2352E+00        3.653E-01        85.528
-2            -1.9640045929E+02         1.0742E+00        2.088E-01        21.347
-3            -1.9647826769E+02         7.5522E-01        1.260E-01        21.303
-4            -1.9638457526E+02         7.9692E-02        6.893E-02        21.338
-5            -1.9645896538E+02        -6.2242E-03        1.418E-01        21.330
-6            -1.9638948303E+02        -1.7181E-02        4.889E-02        21.339
-7            -1.9638623580E+02         2.7456E-03        1.870E-02        21.398
-8            -1.9638421534E+02         4.2311E-03        5.811E-03        21.383
-9            -1.9638405065E+02         8.9426E-04        2.442E-03        21.287
-10           -1.9638400619E+02         4.8212E-04        1.041E-03        21.304
-11           -1.9638400560E+02         4.7964E-04        3.069E-04        21.254
-12           -1.9638400586E+02         6.2493E-05        2.515E-04        21.265
-13           -1.9638400597E+02         2.7162E-05        3.048E-04        21.249
-14           -1.9638400597E+02         2.0222E-05        2.962E-04        21.239
-15           -1.9638400616E+02         1.1321E-05        3.811E-04        21.263
-16           -1.9638400582E+02         9.7633E-06        2.328E-04        21.258
-17           -1.9638400563E+02         5.3078E-06        9.992E-05        21.289
-18           -1.9638400559E+02        -5.8177E-06        2.778E-05        21.630
-19           -1.9638400558E+02        -1.9298E-06        6.286E-06        21.213
-20           -1.9638400559E+02        -4.8455E-07        3.693E-06        21.223
-21           -1.9638400560E+02         1.2927E-07        6.470E-07        24.465
+1            -1.9664151219E+02         3.2352E+00        3.349E-01        85.085
+2            -1.9649306490E+02         5.9054E-01        2.611E-01        21.083
+3            -1.9632852596E+02        -3.7563E-02        8.151E-02        21.143
+4            -1.9637949383E+02         2.3627E-02        3.260E-02        21.175
+5            -1.9638588001E+02         4.4494E-02        3.862E-02        21.276
+6            -1.9638280776E+02         4.3195E-02        1.871E-02        21.154
+7            -1.9638334232E+02         2.9242E-02        1.313E-02        21.107
+8            -1.9638396213E+02         7.9030E-03        3.241E-03        21.098
+9            -1.9638400846E+02         1.5606E-03        9.599E-04        21.205
+10           -1.9638400593E+02         2.9332E-04        2.379E-04        21.172
+11           -1.9638400555E+02         1.7220E-05        7.613E-05        21.172
+12           -1.9638400561E+02        -4.7040E-06        1.880E-05        21.179
+13           -1.9638400559E+02        -3.6565E-06        1.771E-05        21.183
+14           -1.9638400561E+02        -4.0461E-06        1.672E-05        21.131
+15           -1.9638400559E+02        -2.7627E-06        1.691E-05        20.997
+16           -1.9638400561E+02        -7.5471E-06        1.618E-05        21.213
+17           -1.9638400560E+02        -7.5123E-06        1.312E-05        21.067
+18           -1.9638400560E+02        -2.0382E-06        7.237E-06        21.152
+19           -1.9638400558E+02         2.3345E-06        3.933E-06        21.102
+20           -1.9638400558E+02         1.6057E-06        2.374E-06        21.192
+21           -1.9638400558E+02         4.8799E-07        6.657E-07        20.976
 Total number of SCF: 21    
 
 k = [0.250, 0.250, 0.250]
@@ -110,21 +112,21 @@ Occupation of state 35 = 0.000000000000000.
 ====================================================================
 Free energy per atom               : -1.9638400559E+02 (Ha/atom)
 Total free energy                  : -3.9276801118E+02 (Ha)
-Band structure energy              : -1.8139794889E+02 (Ha)
-Exchange correlation energy        : -2.5405560690E+01 (Ha)
+Band structure energy              : -1.8139793665E+02 (Ha)
+Exchange correlation energy        : -2.5405562646E+01 (Ha)
 Self and correction energy         : -2.4243751270E+02 (Ha)
-Entropy*kb*T                       : -4.1603305961E-03 (Ha)
-Fermi level                        :  2.5987150803E-01 (Ha)
-RMS force                          :  9.4857817002E-08 (Ha/Bohr)
-Maximum force                      :  9.4857817002E-08 (Ha/Bohr)
-Time for force calculation         :  0.486 (sec)
-Pressure                           : -4.2074257205E+01 (GPa)
-Maximum stress                     :  4.2074301430E+01 (GPa)
-Time for stress calculation        :  1.133 (sec)
+Entropy*kb*T                       : -4.1603167219E-03 (Ha)
+Fermi level                        :  2.5987178097E-01 (Ha)
+RMS force                          :  8.2387778170E-07 (Ha/Bohr)
+Maximum force                      :  8.2387778170E-07 (Ha/Bohr)
+Time for force calculation         :  0.493 (sec)
+Pressure                           : -4.2074615401E+01 (GPa)
+Maximum stress                     :  4.2075029357E+01 (GPa)
+Time for stress calculation        :  1.025 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  519.219 sec
+Total walltime                     :  509.958 sec
 ___________________________________________________________________________
 
 ***************************************************************************
