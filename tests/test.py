@@ -20,7 +20,7 @@ tols = {"F_tol": 1e-5, # Ha/Bohr
 	"wall_tol": 10, # in percent
 	"CELL_tol": 0.01, # Bohr
 	"scfpos_tol": 0.01, # Bohr
-	"scfno_tol": 1,
+	"scfno_tol": 2,
 	"spin_tol": 0.001, # a.u.
 	"memused_tol": 10}# percent}
 
@@ -600,264 +600,6 @@ def isfinishedJobsID(JobID):
 	else:
 		return True
 
-def getInfoAbinit(syst,singlept,Type,isspin,ifVHQ):
-	#""" Reads the Energy, Forces, Stress etc from ABINIT reference output """
-	os.chdir(syst)
-	if (singlept == True):
-		with open(syst+".refabinitout",'r') as f_out:
-			f_out_content = [ line.strip() for line in f_out ]
-			Ener = []
-			force = []
-			stress = []
-			magnetization = 0
-			for lines in f_out_content:
-				if re.findall(r'natom', lines) == ['natom']:
-					temp = re.findall(r'\d+',lines)
-					natoms = int(float(temp[0]))
-					break
-			for lines in f_out_content:
-				if re.findall(r'Etotal', lines) == ['Etotal']:
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
-					Ener.append(float(temp[0]) /natoms)
-					break
-			for lines in f_out_content:
-				if re.findall(r'cartesian forces \(hartree/bohr\)', lines) == ['cartesian forces (hartree/bohr)']:
-					index_force =  f_out_content.index(lines)
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+',f_out_content[index_force+i+1])
-						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						force.append(ftemp)
-					break
-			for lines in f_out_content:
-				if re.findall(r'Cartesian components of stress tensor \(GPa\)', lines) == ['Cartesian components of stress tensor (GPa)']:
-					index_stress =  f_out_content.index(lines)
-					for i in range(3):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
-						stemp = [float(temp[0]),float(temp[1])]
-						stress.append(stemp)
-					stress = [[stress[0][0], stress[2][1],  stress[1][1]], [stress[2][1], stress[1][0],  stress[0][1]], [stress[1][1], stress[0][1],  stress[2][0]]]
-					break
-
-			for lines in f_out_content:				
-				if isspin ==  True:
-					if re.findall(r'up - dn',lines) == ['up - dn']:
-						temp_m = re.findall(r'\d+\.\d+',lines)
-						magnetization = float(temp_m[0])
-						break
-
-		Info = {"Type": "singlepnt",
-		"energy": Ener,
-		"force": force,
-		"stress": stress,
-		"magnetization": magnetization}
-		os.chdir("./..")
-		return(Info)
-
-	elif ((singlept == False) and (Type == "relax_atom")):
-		with open(syst+".refabinitout",'r') as f_out:
-			f_out_content = [ line.strip() for line in f_out ]
-
-		Ener = []
-		force = []
-		scfpos = []
-		magnetization = 0
-		for lines in f_out_content:
-				if re.findall(r'natom', lines) == ['natom']:
-					temp = re.findall(r'\d+',lines)
-					natoms = int(float(temp[0]))
-					break
-		for lines in f_out_content:
-				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
-					Ener.append(float(temp[0]) / natoms)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
-					index_force =  f_out_content.index(lines)
-					ftemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
-						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						ftemp1.append(ftemp)
-					force.append(ftemp1)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
-					index_scfpos =  f_out_content.index(lines)
-					spostemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
-						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						spostemp1.append(ftemp)
-					scfpos.append(spostemp1)
-
-		for lines in f_out_content:
-			if isspin ==  True:
-				if re.findall(r'up - dn',lines) == ['up - dn']:
-					temp_m = re.findall(r'\d+\.\d+',lines)
-					magnetization.append(float(temp_m[0]))
-
-		Info = {"Type": "relax_atom",
-		"energy": Ener,
-		"force": force,
-		"scfpos": scfpos,
-		"magnetization": magnetization}
-		os.chdir("./..")
-		return(Info)
-
-	elif ((singlept == False) and (Type == "relax_total")):
-		with open(syst+".refabinitout",'r') as f_out:
-			f_out_content = [ line.strip() for line in f_out ]
-
-		Ener = []
-		force = []
-		scfpos = []
-		stress = []
-		cell = []
-		magnetization = 0
-
-		for lines in f_out_content:
-				if re.findall(r'natom', lines) == ['natom']:
-					temp = re.findall(r'\d+',lines)
-					natoms = int(float(temp[0]))
-					break
-		for lines in f_out_content:
-				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
-					Ener.append(float(temp[0]) / natoms)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
-					index_force =  f_out_content.index(lines)
-					ftemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
-						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						ftemp1.append(ftemp)
-					force.append(ftemp1)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
-					index_scfpos =  f_out_content.index(lines)
-					spostemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
-						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						spostemp1.append(ftemp)
-					scfpos.append(spostemp1)
-
-		for lines in f_out_content:
-				if re.findall(r'Lengths \[Bohr\]', lines) == ['Lengths [Bohr]']:
-					index_cell =  f_out_content.index(lines)
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_cell+1])
-					cell.append([float(temp[0]), float(temp[1]), float(temp[2])])
-
-		for lines in f_out_content:
-				if re.findall(r'Stress tensor in cartesian coordinates', lines) == ['Stress tensor in cartesian coordinates']:
-					index_stress =  f_out_content.index(lines)
-					stresstemp1=[]
-					for i in range(3):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
-						strtemp = [float(temp[0])*29421.02648438959,float(temp[1])*29421.02648438959,float(temp[2])*29421.02648438959]
-						stresstemp1.append(strtemp)
-					stress.append(stresstemp1)
-
-
-		for lines in f_out_content:
-			if isspin ==  True:
-				if re.findall(r'up - dn',lines) == ['up - dn']:
-					temp_m = re.findall(r'\d+\.\d+',lines)
-					magnetization.append(float(temp_m[0]))
-
-		Info = {"Type": "relax_atom",
-		"energy": Ener,
-		"force": force,
-		"scfpos": scfpos,
-		"stress": stress,
-		"cell": cell,
-		"magnetization": magnetization}
-		os.chdir("./..")
-		return(Info)
-
-	elif ((singlept == False) and (Type == "MD")):
-		with open(syst+".refabinitout",'r') as f_out:
-			f_out_content = [ line.strip() for line in f_out ]
-
-		Ener = []
-		force = []
-		scfpos = []
-		stress = []
-		KEN = []
-		magnetization = 0
-		cell=[]
-		for lines in f_out_content:
-				if re.findall(r'natom', lines) == ['natom']:
-					temp = re.findall(r'\d+',lines)
-					natoms = int(float(temp[0]))
-					break
-
-		for lines in f_out_content:
-				if re.findall(r'Kinetic energy of ions \(ekin\)', lines) == ['Kinetic energy of ions (ekin)']:
-					temp = re.findall(r'\d+',lines)
-					KEN.append(int(float(temp[0]) / natoms))
-					
-
-		for lines in f_out_content:
-				if re.findall(r'Total energy \(etotal\)', lines) == ['Total energy (etotal)']:
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',lines)
-					Ener.append(float(temp[0]) / natoms)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian forces \(fcart\)', lines) == ['Cartesian forces (fcart)']:
-					index_force =  f_out_content.index(lines)
-					ftemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_force+i+1])
-						ftemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						ftemp1.append(ftemp)
-					force.append(ftemp1)
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian coordinates \(xcart\)', lines) == ['Cartesian coordinates (xcart)']:
-					index_scfpos =  f_out_content.index(lines)
-					spostemp1=[]
-					for i in range(natoms):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_scfpos+i+1])
-						spostemp = [float(temp[0]),float(temp[1]),float(temp[2])]
-						spostemp1.append(ftemp)
-					scfpos.append(spostemp1)
-
-		for lines in f_out_content:
-				if re.findall(r'Lengths \[Bohr\]', lines) == ['Lengths [Bohr]']:
-					index_cell =  f_out_content.index(lines)
-					temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_cell+1])
-					cell.append([float(temp[0]), float(temp[1]), float(temp[2])])
-
-		for lines in f_out_content:
-				if re.findall(r'Cartesian components of stress tensor', lines) == ['Cartesian components of stress tensor']:
-					index_stress =  f_out_content.index(lines)
-					stresstemp1=[]
-					for i in range(3):
-						temp = re.findall(r'[+-]?\d+\.\d+[E][+-]?\d+',f_out_content[index_stress+i+1])
-						strtemp = [float(temp[0])*29421.02648438959,float(temp[1])*29421.02648438959]
-						stresstemp1.append(strtemp)
-					stress.append([[stresstemp1[0][0], stresstemp1[2][1],  stresstemp1[1][1]], [stresstemp1[2][1], stresstemp1[1][0],  stresstemp1[0][1]], [stresstemp1[1][1], stresstemp1[0][1],  stresstemp1[2][0]]])
-
-		for lines in f_out_content:
-			if isspin ==  True:
-				if re.findall(r'up - dn',lines) == ['up - dn']:
-					temp_m = re.findall(r'\d+\.\d+',lines)
-					magnetization.append(float(temp_m[0]))
-		
-		Info = {"Type": "relax_atom",
-		"energy": Ener,
-		"force": force,
-		"scfpos": scfpos,
-		"stress": stress,
-		"KEN": KEN,
-		"magnetization": magnetization}
-		os.chdir("./..")
-		return(Info)
 
 def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 	#""" Reads .out file from SPARC runs and reference """
@@ -876,6 +618,7 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 	magnetization = []
 	pressure = []
 	index=0
+
 
 	for lines in f_out_content:
 		if re.findall(r"PRINT_FORCES",lines) == ['PRINT_FORCES']:
@@ -938,6 +681,17 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 					temp_spin = re.findall(r'\b[+-]?\d+\.\d+E[+-]\d+\b',f_out_content[index-1])
 					magnetization=float(temp_spin[1])
 		index=index+1
+	if isMD == None and geopt_typ ==  None:
+		for lines in f_out_content:
+			if re.findall("Total number of SCF",lines):
+				SCF_no = float(re.findall("\d+",lines)[0])
+	else:
+		SCF_no=[]
+		for lines in f_out_content:
+			if re.findall("Total number of SCF",lines):
+				SCF_no.append(float(re.findall("\d+",lines)[0]))
+
+
 	if geopt_typ ==  "cell_relax":
 		isPrintF = False
 		isPrintCell = True
@@ -965,7 +719,8 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 		"E": E,
 		"pressure": pressure,
 		"walltime": walltime,
-		"isPrintCell": isPrintCell}
+		"isPrintCell": isPrintCell,
+		"SCF_no": SCF_no}
 	return(Info)
 
 def ReadStaticFile(filepath, info_out):
@@ -1221,11 +976,11 @@ def ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ):
 		if ismempbs == True:
 			ismemused=True
 			if ifref == False:
-				with open("./../temp_run1/output.sparc",'r') as f_sparc1:
+				with open("./temp_run1/output.sparc",'r') as f_sparc1:
 					f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
-				with open("./../temp_run2/output.sparc",'r') as f_sparc2:
+				with open("./temp_run2/output.sparc",'r') as f_sparc2:
 					f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
-				with open("./../temp_run3/output.sparc",'r') as f_sparc3:
+				with open("./temp_run3/output.sparc",'r') as f_sparc3:
 					f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
 			else:
 				if ifVHQ == True:
@@ -1260,6 +1015,8 @@ def ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ):
 					temp1=re.findall(r'\d+',lines)
 					memused.append(float(temp1[-2]))
 					break
+			if ifref == True:
+				memused=memused[0]
 	return ismemused,memused
 
 
@@ -1363,6 +1120,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 		if isorientsys == False or ifref == True:
 			E = infout["E"]
 			walltime = infout["walltime"]
+			SCF_no = infout["SCF_no"]
 			force = []
 			pressure = []
 			stress=[]
@@ -1376,6 +1134,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			no_atoms = infout["no_atoms"]
 		else:
 			E=[ infout1["E"], infout2["E"], infout3["E"]]
+			SCF_no = infout1["SCF_no"]
 			walltime = infout1["walltime"]#[infout1["walltime"],infout2["walltime"],infout3["walltime"]]
 			force = []
 			pressure = []
@@ -1403,7 +1162,8 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"pressure": pressure,
 			"no_atoms": no_atoms,
 			"isorient": isorientsys,
-			"tolerance": tolerance}
+			"tolerance": tolerance,
+			"SCF_no": SCF_no}
 
 		os.chdir("./..")
 		return(Info)
@@ -1447,6 +1207,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 					infgeopt = ReadGeoptFile("./low_accuracy_orientation1/"+syst+".refgeopt", infout)
 		if isorientsys == False or ifref == True:
 			E = infout["E"]
+			SCF_no = infout["SCF_no"]
 			walltime = infout["walltime"]
 			scfpos = infgeopt["scfpos"]
 			force = []
@@ -1457,6 +1218,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			no_atoms = infout["no_atoms"]
 		else:
 			E = [infout1["E"],infout2["E"],infout3["E"]]
+			SCF_no = infout1["SCF_no"]
 			walltime = infout1["walltime"]#[infout1["walltime"],infout2["walltime"],infout3["walltime"]]
 			scfpos = infgeopt1["scfpos"]#[infgeopt1["scfpos"],infgeopt2["scfpos"],infgeopt3["scfpos"]]
 			force = []
@@ -1480,7 +1242,8 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"pressure": pressure,
 			"no_atoms": no_atoms,
 			"isorient": isorientsys,
-			"tolerance": tolerance}
+			"tolerance": tolerance,
+			"SCF_no": SCF_no}
 
 		os.chdir("./..")
 		return(Info)
@@ -1524,6 +1287,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 
 		if isorientsys == False or ifref == False:
 			E = infout["E"]
+			SCF_no = infout["SCF_no"]
 			walltime = infout["walltime"]
 			scfpos = infgeopt["scfpos"]
 			cell = infgeopt["cell"]
@@ -1537,6 +1301,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			no_atoms = infout["no_atoms"]
 		else:
 			E = [infout1["E"],infout2["E"],infout3["E"]]
+			SCF_no = infout1["SCF_no"]
 			walltime = infout1["walltime"]#[infout1["walltime"],infout2["walltime"],infout3["walltime"]]
 			scfpos = infgeopt1["scfpos"]#[infgeopt1["scfpos"],infgeopt2["scfpos"],infgeopt3["scfpos"]]
 			cell = infgeopt1["cell"]#[infgeopt1["cell"],infgeopt2["cell"],infgeopt3["cell"]]
@@ -1562,7 +1327,8 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"pressure": pressure,
 			"no_atoms": no_atoms,
 			"isorient": isorientsys,
-			"tolerance": tolerance}
+			"tolerance": tolerance,
+			"SCF_no": SCF_no}
 
 
 
@@ -1609,6 +1375,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 					infgeopt = ReadGeoptFile("./low_accuracy_orientation1/"+syst+".refgeopt", infout)
 		if isorientsys == False or ifref == True:
 			E = infout["E"]
+			SCF_no = infout["SCF_no"]
 			walltime = infout["walltime"]
 			scfpos = infgeopt["scfpos"]
 			cell = infgeopt["cell"]
@@ -1623,6 +1390,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			no_atoms = infout["no_atoms"]
 		else:
 			E = [infout1["E"],infout2["E"],infout3["E"]]
+			SCF_no = infout1["SCF_no"]
 			walltime = infout1["walltime"]#[infout1["walltime"],infout2["walltime"],infout3["walltime"]]
 			scfpos = infgeopt1["scfpos"]#[infgeopt1["scfpos"],infgeopt2["scfpos"],infgeopt3["scfpos"]]
 			cell = infgeopt1["cell"]#[infgeopt1["cell"],infgeopt2["cell"],infgeopt3["cell"]]
@@ -1651,7 +1419,8 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"no_atoms": no_atoms,
 			"scfpos": scfpos,
 			"isorient": isorientsys,
-			"tolerance": tolerance}
+			"tolerance": tolerance,
+			"SCF_no": SCF_no}
 
 
 		os.chdir("./..")
@@ -1695,6 +1464,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 					infaimd = ReadAimdFile("./low_accuracy_orientation1/"+syst+".refaimd", infout)
 		if isorientsys == False or ifref == True:
 			E = infout["E"]
+			SCF_no = infout["SCF_no"]
 			walltime = infout["walltime"]
 			KEN = infaimd["KEN"]
 			pressure=infout["pressure"]
@@ -1711,6 +1481,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			no_atoms = infout["no_atoms"]
 		else:
 			E = [infout1["E"],infout2["E"],infout3["E"]]
+			SCF_no = infout1["SCF_no"]
 			walltime = infout1["walltime"]#[infout1["walltime"],infout2["walltime"],infout3["walltime"]]
 			KEN = infaimd1["KEN"]#[infaimd1["KEN"],infaimd2["KEN"],infaimd3["KEN"]]
 			pressure=infout["pressure"]
@@ -1741,7 +1512,8 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"magnetization": magnetization,
 			"no_atoms": no_atoms,
 			"isorient": isorientsys,
-			"tolerance": tolerance}
+			"tolerance": tolerance,
+			"SCF_no": SCF_no}
 			
 
 		os.chdir("./..")
@@ -1770,6 +1542,8 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 	Ener_error = []
 	test_status=[]
 	texttoprint=[]
+	Error_message_global  = []
+	Warning_message_global = []
 	Wall_error = []
 	for i in range(len(systems)):
 		info_temp = data_info[i]
@@ -1790,6 +1564,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			text2=''
 			errspin = 0
 			text3=''
+			warning_message = ""
 			no_atoms = info_run["no_atoms"]
 			if info_run["isspin"] == True:
 				if info_run["isorient"] == False:
@@ -1852,6 +1627,16 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			F_ref = info_ref["force"]
 			F_run = info_run["force"]
 
+			SCF_no_ref = info_ref["SCF_no"]
+			SCF_no_run = info_run["SCF_no"]
+
+			Error_SCF_no = SCF_no_run - SCF_no_ref;
+			if Error_SCF_no < 0:
+				warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
+			elif Error_SCF_no > 0:
+				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
+				
+
 			if isabinit == True:
 				F_abinit = info_run["force"]
 			force_error=[]
@@ -1912,11 +1697,16 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
 			#scfno_error = abs(info_run["scfno"][0]-info_ref["scfno"][0])
 			Wall_error.append(walltime_error)
+			if walltime_error < 0:
+				warning_message=warning_message+" Walltime is smaller than the reference"
+			if walltime_error > wall_tol:
+				warning_message=warning_message+" Walltime exceeded by "+ str(walltime_error)+"%"
 
 			text="System name: "+systems[i]+"\n"+"Single Point Calculation \nEnergy error (Ha/atom): "+ str(E_sys_err)+"\nForce error (Ha/Bohr): "+'{0:1.2e}'.format(force_error)+"\n"
 			#for j in range(no_atoms):
 				#text = text+'{0:1.2e}'.format(force_error[j][0])+" "+'{0:1.2e}'.format(force_error[j][1])+" "+'{0:1.2e}'.format(force_error[j][2])+"\n"
 			text = text+"Stress (%) error: "+ '{0:1.2e}'.format(stress_error)+"\n"
+			text = text+"Number of SCF iteration error: "+ str(Error_SCF_no)+"\n"
 			#for j in range(3):
 				#text = text+'{0:1.2e}'.format(stress_error[j][0])+" "+'{0:1.2e}'.format(stress_error[j][1])+" "+'{0:1.2e}'.format(stress_error[j][2])+"\n"
 			if isparallel == True and info_run["ismemcheck"] == False:
@@ -1932,10 +1722,26 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					#text = text+'{0:1.2e}'.format(stress_error_abinit[j][0])+" "+'{0:1.2e}'.format(stress_error_abinit[j][1])+" "+'{0:1.2e}'.format(stress_error_abinit[j][2])+"\n"
 			
 			text=text+text1+text2+text3
-			if (errspin <= spin_tol  and E_sys_err <= E_tol and force_error <= F_tol and stress_error <= stress_tol  and memlost == 0):
+			Failure_text=""
+			if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol and force_error <= F_tol and stress_error <= stress_tol  and memlost == 0):
 				test_status.append("passed")
 				text="Test Result: Passed \n"+text
 			else:
+				Failure_text = Failure_text+"Test for this system "+" failed in: "
+				if (errspin > spin_tol):
+					Failure_text =  Failure_text + "Spin polarization, "
+				if (E_sys_err > E_tol):
+					Failure_text =  Failure_text + "Energy, "
+				if (force_error > F_tol):
+					Failure_text =  Failure_text + "Force, "
+				if (stress_error > stress_tol):
+					Failure_text =  Failure_text + "Stress, "
+				if (memlost > 0):
+					Failure_text =  Failure_text + "Memory leak, "
+				if (Error_SCF_no >  scfno_tol):
+					Failure_text =  Failure_text + "Number of SCF iterations, "
+				Error_message_global.append(Failure_text)
+
 				test_status.append("failed")
 				text="Test Result: Failed \n"+text
 				#print(len(texttoprint))
@@ -1945,6 +1751,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text = text + "Warning: Memory used exceeded"
 
 			texttoprint.append(text)
+			Warning_message_global.append(warning_message)
 
 
 		elif info_run["Type"]=="relax_atom":
@@ -1953,6 +1760,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			err_memused = 0
 			text2=''
 			errspin = 0
+			warning_message = ""
 			text3=''
 			E_run = info_run["energy"]
 			no_atoms = info_run["no_atoms"]
@@ -2010,6 +1818,24 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text = "System name: "+systems[i]+"\n"+"Warning: different relaxation iterations for the convergence!"
 			E_ref = info_ref["energy"]
 			E_run = info_run["energy"]
+
+			SCF_no_ref = info_ref["SCF_no"]
+			SCF_no_run = info_run["SCF_no"]
+			Error_SCF_no=0
+			if len(SCF_no_ref)!=len(SCF_no_run):
+				warning_message = "Number of electronic steps for atom position relaxation for system "+systems[i]+" is different from the reference"
+			else:
+				Error_SCF_no = []
+				for scfno in range(len(SCF_no_run)):
+					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
+				Error_SCF_no = max(Error_SCF_no)
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				
+
 			if isabinit == True:
 				E_abinit =  info_abinit["energy"]
 				scfpos_abinit = info_abinit["scfpos"]
@@ -2054,20 +1880,39 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if isparallel == False or info_run["ismemcheck"] == True:
 				walltime_error = 0
 			Wall_error.append(walltime_error)
+			if walltime_error < 0:
+				warning_message=warning_message+" Walltime is smaller than the reference"
+			if walltime_error > wall_tol:
+				warning_message=warning_message+" Walltime exceeded by "+ str(walltime_error)+"%"
 
 			text = "System name: "+systems[i]+"\n"+"Atom position relaxation\n"
 			text = text+ "Error in energy in the final relaxed position (Ha/atom): "+ '{0:1.2e}'.format(E_err) +"  \n"
 			text = text+ "Error in the final relaxed atom position (Bohr): "+ '{0:1.2e}'.format(scfpos_err) +"  \n"
+			text = text+"Number of SCF iteration error: "+ str(Error_SCF_no)+"\n"
 			if isparallel == True and info_run["ismemcheck"] == False:
 				text = text+"walltime error (%): "+'{0:1.2e}'.format(walltime_error)+"\n"
 			if isabinit == True:
 				text = text+"Corresponding error from ABINIT reference: \n"+"Energy error (Ha/atom): "+ '{0:1.2e}'.format(E_err_abinit)+"\n"
 				text = text+"Atom position error (Bohr): "+'{0:1.2e}'.format(scfpos_err_abinit) +"  \n"
 			text = text+text1+text2+text3
-			if (errspin <= spin_tol  and E_sys_err <= E_tol and scfpos_err <= scfpos_tol  and memlost == 0):
+			Failure_text=""
+			if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol and scfpos_err <= scfpos_tol  and memlost == 0):
 				test_status.append("passed")
 				text="Test Result: Passed \n"+text
 			else:
+				Failure_text = Failure_text+"Test for this system "+" failed in: "
+				if (errspin > spin_tol):
+					Failure_text =  Failure_text + "Spin polarization, "
+				if (E_sys_err > E_tol):
+					Failure_text =  Failure_text + "Energy, "
+				if (scfpos_err > scfpos_tol):
+					Failure_text =  Failure_text + "Relaxed position, "
+				if (Error_SCF_no >  scfno_tol):
+					Failure_text =  Failure_text + "Number of SCF iterations, "
+				if (memlost > 0):
+					Failure_text =  Failure_text + "Memory leak, "
+				Error_message_global.append(Failure_text)
+
 				test_status.append("failed")
 				text="Test Result: Failed\n"+text
 			if walltime_error > wall_tol:
@@ -2075,6 +1920,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if err_memused > memused_tol:
 				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
+			Warning_message_global.append(warning_message)
 
 
 		elif info_run["Type"]=="relax_cell":
@@ -2083,6 +1929,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			err_memused = 0
 			text2=''
 			errspin = 0
+			warning_message = ""
 			text3=''
 			if info_run["isspin"] == True:
 				if info_run["isorient"] == False:
@@ -2136,6 +1983,25 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text = "System name: "+systems[i]+"\n"+"different relaxation iterations for the convergence hence failed!"
 			E_ref = info_ref["energy"]
 			E_run = info_run["energy"]
+			SCF_no_ref = info_ref["SCF_no"]
+			SCF_no_run = info_run["SCF_no"]
+			Error_SCF_no=0
+			if len(SCF_no_ref)!=len(SCF_no_run):
+				warning_message = warning_message+"Number of electronic steps for atom position relaxation for system "+systems[i]+" is different from the reference"
+			else:
+				Error_SCF_no = []
+				for scfno in range(len(SCF_no_run)):
+					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])	
+				Error_SCF_no1=Error_SCF_no
+				Error_SCF_no = max(Error_SCF_no)
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				
+			if Error_SCF_no < 0:
+				warning_message=warning_message+" Number of SCF iterations are smaller than the reference"
+
 			# E_err_relax=[]
 			# for j in range(len(info_run["energy"])):
 			# 	E_err_relax.append(abs(E_ref[j]-E_run[j]))
@@ -2180,21 +2046,39 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if isparallel == False or info_run["ismemcheck"] == True:
 				walltime_error = 0
 			Wall_error.append(walltime_error)
-
+			if walltime_error < 0:
+				warning_message=warning_message+" Walltime is smaller than the reference"
+			if walltime_error > wall_tol:
+				warning_message=warning_message+" Walltime exceeded by "+ str(walltime_error)+"%"
 
 
 			text = "System name: "+systems[i]+"\n"+"CELL relaxation\n"#+"Relaxation step    "+"Energy Error (Ha/atom)    "+"Stress Error (GPa)    "+"Error in cell dimesions (Bohr)\n"
 			text = text + "Error in energy in the final relaxed position (Ha/atom): "+ '{0:1.2e}'.format(E_sys_err) +"  \n"
 			text = text+ "Error in the final relaxed Cell (Bohr): "+ '{0:1.2e}'.format(cell_error) +"  \n"
+			text = text+"Number of SCF iteration error: "+ str(Error_SCF_no)+"\n"
 			if isparallel == True and info_run["ismemcheck"] == False :
 				text = text+"walltime error (%): "+'{0:1.2e}'.format(walltime_error)+"\n"
 			#text = text+"Error in stress "
 			#text = text+"Error in number of SCF iterations for convergence: "+'{0:1.2e}'.format(cell_error)+"\n"
 			text = text+text1+text2+text3
-			if (errspin <= spin_tol  and E_sys_err <= E_tol  and cell_error <= CELL_tol  and  memlost == 0):
+			Failure_text=""
+			if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol  and cell_error <= CELL_tol  and  memlost == 0):
 				test_status.append("passed")
 				text="Test Result: Passed \n"+text
 			else:
+				Failure_text = Failure_text+"Test for this system "+" failed in: "
+				if (errspin > spin_tol):
+					Failure_text =  Failure_text + "Spin polarization, "
+				if (E_sys_err > E_tol):
+					Failure_text =  Failure_text + "Energy, "
+				if (cell_error > CELL_tol):
+					Failure_text =  Failure_text + "Relaxed Cell length, "
+				if (Error_SCF_no >  scfno_tol):
+					Failure_text =  Failure_text + "Number of SCF iterations, "
+				if (memlost > 0):
+					Failure_text =  Failure_text + "Memory leak, "
+				Error_message_global.append(Failure_text)
+
 				test_status.append("failed")
 				text="Test Result: Failed \n"+text
 			if walltime_error > wall_tol:
@@ -2202,6 +2086,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if err_memused > memused_tol:
 				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
+			Warning_message_global.append(warning_message)
 
 
 		elif info_run["Type"]=="relax_total":
@@ -2210,6 +2095,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			err_memused = 0
 			text2=''
 			errspin = 0
+			warning_message = ""
 			text3=''
 			E_run = info_run["energy"]
 			no_atoms = info_run["no_atoms"]
@@ -2282,7 +2168,22 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					E_err_abinit = max([abs(E_abinit[-1]/no_atoms-E_run[0][-1]),abs(E_abinit[-1]/no_atoms-E_run[1][-1]),abs(E_abinit[-1]/no_atoms-E_run[2][-1])])
 			E_sys_err = E_err
 			Ener_error.append(E_sys_err)
+			SCF_no_ref = info_ref["SCF_no"]
+			SCF_no_run = info_run["SCF_no"]
 
+			if len(SCF_no_ref)!=len(SCF_no_run):
+				warning_message = warning_message+"Number of electronic steps for atom position relaxation for system "+systems[i]+" is different from the reference"
+			else:
+				Error_SCF_no = []
+				for scfno in range(len(SCF_no_run)):
+					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
+				Error_SCF_no = max(Error_SCF_no)
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				
 			# F_run = info_run["force"]
 			# F_ref = info_ref["force"]
 			# relax_steps = len(F_run)
@@ -2345,10 +2246,16 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				walltime_error = 0
 			Wall_error.append(walltime_error)
 
+			if walltime_error < 0:
+				warning_message=warning_message+" Walltime is smaller than the reference"
+			if walltime_error > wall_tol:
+				warning_message=warning_message+" Walltime exceeded by "+ str(walltime_error)+"%"
+
 			text = "System name: "+systems[i]+"\n"+"Total relaxation\n"
 			text = text+"Error in energy in the final relaxed structure (Ha/atom): "+'{0:1.2e}'.format(E_err)+"\n"
 			text = text+ "Error in the final relaxed Cell (Bohr): "+ '{0:1.2e}'.format(cell_error) +"  \n"
 			text = text+ "Error in the final relaxed atom position (Bohr): "+ '{0:1.2e}'.format(scfpos_err) +"  \n"
+			text = text+"Number of SCF iteration) error: "+ str(Error_SCF_no)+"\n"
 			if isabinit == True:
 				text = text+"Corresponding error from ABINIT reference: \n"+"Energy error (Ha/atom): "+ str(E_err_abinit)+"\n"
 				text = text+"Atom position error (Bohr): "+'{0:1.2e}'.format(scfpos_err_abinit) +"  \n"
@@ -2357,10 +2264,26 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text = text+"walltime error (%): "+'{0:1.2e}'.format(walltime_error)+"\n"
 			#text = text+"Error in number of SCF iterations for convergence: "+str(scfno_error)+"\n"
 			text = text+text1+text2+text3
-			if (errspin <= spin_tol  and E_err <= E_tol and cell_error <= CELL_tol  and scfpos_err <= scfpos_tol and memlost == 0):
+			Failure_text = ""
+			if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_err <= E_tol and cell_error <= CELL_tol  and scfpos_err <= scfpos_tol and memlost == 0):
 				test_status.append("passed")
 				text="Test Result: Passed \n"+text
 			else:
+				Failure_text = Failure_text+"Test for this system "+" failed in: "
+				if (errspin > spin_tol):
+					Failure_text =  Failure_text + "Spin polarization, "
+				if (E_sys_err > E_tol):
+					Failure_text =  Failure_text + "Energy, "
+				if (cell_error > CELL_tol):
+					Failure_text =  Failure_text + "Relaxed Cell length, "
+				if (scfpos_err > scfpos_tol):
+					Failure_text =  Failure_text + "Relaxed position, "
+				if (Error_SCF_no >  scfno_tol):
+					Failure_text =  Failure_text + "Number of SCF iterations, "
+				if (memlost > 0):
+					Failure_text =  Failure_text + "Memory leak, "
+				Error_message_global.append(Failure_text)
+
 				test_status.append("failed")
 				text="Test Result: Failed \n"+text
 			if walltime_error > wall_tol:
@@ -2368,11 +2291,13 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if err_memused > memused_tol:
 				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
+			Warning_message_global.append(warning_message)
 
 
 		elif info_run["Type"]=="MD":
 
 			memlost=0
+			warning_message = ""
 			text1=''
 			err_memused = 0
 			text2=''
@@ -2434,6 +2359,18 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			else:
 				E_ref = info_ref["energy"]
 				E_run = info_run["energy"]
+
+				SCF_no_ref = info_ref["SCF_no"]
+				SCF_no_run = info_run["SCF_no"]
+				Error_SCF_no = []
+				for scfno in range(len(SCF_no_run)):
+					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
+				Error_SCF_no = max(Error_SCF_no)
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 				if isabinit == True:
 					E_abinit = info_abinit["energy"]
 				E_err_relax=[]
@@ -2572,7 +2509,13 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				if isparallel == False or info_run["ismemcheck"] == True:
 					walltime_error = 0
 				Wall_error.append(walltime_error)
+				if walltime_error < 0:
+					warning_message=warning_message+" Walltime is smaller than the reference"
+				if walltime_error > wall_tol:
+					warning_message=warning_message+" Walltime exceeded by "+ str(walltime_error)+"%"
+
 				text = "System name: "+systems[i]+"\n"+"MD Simulation\n"+"MD step    "+"Energy Error (Ha/atom)   "+"Ionic KE error (Ha/atom)     Force Error (Ha/Bohr)      Stress error (%)\n"
+				text = text+"Number of SCF iteration) error: "+ str(Error_SCF_no)+"\n"
 				for j in range(MD_iter):
 					text = text+str(j)+"   	     "+'{0:1.2e}'.format(E_err_relax[j])+"   			     "+'{0:1.2e}'.format(ken_error[j])+ "   			     " + '{0:1.2e}'.format(F_error_relax[j])+ "	   	 		   "+'{0:1.2e}'.format(stress_error_relax[j])+"\n"
 				if isparallel == True and info_run["ismemcheck"] == False:
@@ -2584,10 +2527,25 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					for j in range(MD_iter):
 						text = text+str(j)+"   	     "+'{0:1.2e}'.format(E_err_abinit[j])+"   	     "+'{0:1.2e}'.format(ken_error_abinit[j])+"\n"
 				text = text+text1+text2+text3
-				if (errspin <= spin_tol  and E_sys_err <= E_tol   and max_KENerror <= KEN_tol and memlost == 0 and maxF_err <= F_tol):
+				Failure_text=""
+				if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol   and max_KENerror <= KEN_tol and memlost == 0 and maxF_err <= F_tol):
 					test_status.append("passed")
 					text="Test Result: Passed \n"+text
 				else:
+					Failure_text = Failure_text+"Test for this system "+" failed in: "
+					if (errspin > spin_tol):
+						Failure_text =  Failure_text + "Spin polarization, "
+					if (E_sys_err > E_tol):
+						Failure_text =  Failure_text + "Energy, "
+					if (max_KENerror > KEN_tol):
+						Failure_text =  Failure_text + "Ionic KE, "
+					if (maxF_err > F_tol):
+						Failure_text =  Failure_text + "Force, "
+					if (Error_SCF_no >  scfno_tol):
+						Failure_text =  Failure_text + "Number of SCF iterations, "
+					if (memlost > 0):
+						Failure_text =  Failure_text + "Memory leak, "
+					Error_message_global.append(Failure_text)
 					test_status.append("failed")
 					text="Test Result: Failed \n"+text
 				if walltime_error > wall_tol:
@@ -2595,6 +2553,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				if err_memused > memused_tol:
 					text = text + "Warning: Memory used exceeded"
 				texttoprint.append(text)
+				Warning_message_global.append(warning_message)
 
 
 
@@ -2609,7 +2568,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 06 April 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 10 May 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -2644,7 +2603,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 	f_report.write("                    End for the Failed systems               \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.close()
-	return(test_status)
+	return(test_status, Warning_message_global, Error_message_global)
 
 # Main python file for the testing framework
 # written by Shashikant Kumar, PhD
@@ -2659,7 +2618,16 @@ isparallel = True
 ismempbs =False
 ifVHQ = False
 isAuto = False
+is_valgrind_all = False
 no_concurrency=6 # number of jobs running concurrently on github server
+if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
+	systems=SYSTEMS['systemname']
+	tags_sys=SYSTEMS['Tags']
+	tols_sys=SYSTEMS['Tols']
+	isAuto =  True
+	ifVHQ = False
+	isparallel = False
+
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
 	indx_test = int(indx_test_temp[0])
@@ -2711,6 +2679,11 @@ if len(args) >= 2:
 			systems=SYSTEMS['systemname']
 			tags_sys=SYSTEMS['Tags']
 			tols_sys=SYSTEMS['Tols']
+		if tags == ['valgrind_all']:
+			is_valgrind_all = True
+			systems=SYSTEMS['systemname']
+			tags_sys=SYSTEMS['Tags']
+			tols_sys=SYSTEMS['Tols']
 
 		elif tags == ['serial','memused']:
 			isparallel = False
@@ -2736,12 +2709,20 @@ if len(args) >= 2:
 			if "serial" in tags:
 				isparallel = False
 				tags.remove('serial')
+			if "valgrind_all" in tags:
+				is_valgrind_all = True;
+				tags.remove('valgrind_all')
 			if "memused" in tags:
 				ismempbs = True
 				tags.remove('memused')
 			if "VHQ" in tags:
 				ifVHQ = True
 				tags.remove('VHQ')
+			if "run_local" in tags:
+				isAuto =  True
+				ifVHQ = False
+				isparallel = False
+				tags.remove('run_local')
 			if tags == []:
 				tags_sys=SYSTEMS['Tags']
 				systems=SYSTEMS['systemname']
@@ -2780,13 +2761,25 @@ if len(args) >= 2:
 					if systems[i] == SYSTEMS["systemname"][j]:
 						tags_sys.append(SYSTEMS["Tags"][j])
 						tols_sys.append(SYSTEMS["Tols"][j])
-			
-		elif 'serial' in  args[1:]:
-			isparallel = False
-			ismempbs = True
+
+		elif ('valgrind_all' in  args[1:]):
+			is_valgrind_all = True;
 			systems = args[1:]
-			systems.remove('serial')
-			
+			systems.remove('valgrind_all')
+			tags_sys = []
+			tols_sys = []
+			for i in range(len(systems)):
+				for j in range(len(SYSTEMS["systemname"])):
+					if systems[i] == SYSTEMS["systemname"][j]:
+						tags_sys.append(SYSTEMS["Tags"][j])
+						tols_sys.append(SYSTEMS["Tols"][j])
+
+		elif 'run_local' in  args[1:]:
+			isAuto =  True
+			ifVHQ = False
+			isparallel = False
+			systems = args[1:]
+			systems.remove('run_local')
 			tags_sys = []
 			tols_sys = []
 			for i in range(len(systems)):
@@ -2826,7 +2819,7 @@ for i in range(len(systems)):
 		isspin.append(True)
 	else:
 		isspin.append(False)
-	if ("memcheck" in tags_sys[i]):
+	if ("memcheck" in tags_sys[i]) or (is_valgrind_all == True):
 		memcheck.append(True)
 	else:
 		memcheck.append(False)
@@ -2996,7 +2989,7 @@ for i in range(len(systems)):
 	if i>0:
 		try:
 			os.chdir(home_directory)
-			temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
+			temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
 			temp1=getInfo(systems[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
 			# if os.path.exists('./'+systems[i]+"/"+systems[i]+".refabinitout"):
 			# 	temp2 = getInfoAbinit(systems[i],singlept[i],Type[i],isspin[i],ifVHQ)
@@ -3008,6 +3001,7 @@ for i in range(len(systems)):
 			data_info[count_run] = temp_dict
 			sys_which_ran_idx.append(count_run)
 			count_run=count_run+1
+
 		except:
 			print("Warning: system named '"+systems[i]+"' has some issues: please check and rerun this system again \n")
 
@@ -3025,7 +3019,7 @@ for i in range(len(systems)):
 		isorient_which_ran.append(isorient[i])
 
 os.chdir(home_directory)
-test_status = WriteReport(data_info, sys_which_ran, isparallel, ifVHQ, isorient_which_ran)
+test_status, Warning_message_global, Error_message_global = WriteReport(data_info, sys_which_ran, isparallel, ifVHQ, isorient_which_ran)
 passtests = 0;
 failtests = 0;
 for pp in range(len(test_status)):
@@ -3038,11 +3032,31 @@ for pp in range(len(test_status)):
 CGREEN='\033[92m'
 CRED = '\033[91m'
 CWHITE='\33[0m'
+CBLUE='\033[94m'
+print('--------------------------------------------------------------\n')
 print("Total systems: "+str(passtests+failtests)+"\n")
 print(CGREEN+"Tests passed: "+str(passtests)+CWHITE+"\n")
 print(CRED+"Tests failed: "+str(failtests)+CWHITE+"\n")
 print("Detailed report available in Report.txt file \n")
 
+count_fail=0
+print('--------------------------------------------------------------\n')
+if failtests > 0:
+	print(CRED+'\033[1m'+'Failed test summary: '+CWHITE+ '\033[0m'+'\n')
+	for pp in range(len(test_status)):
+		if test_status[pp]!="passed":
+			print(CRED+str(count_fail+1)+". "+sys_which_ran[pp]+": "+Error_message_global[count_fail]+CWHITE+"\n")
+			count_fail=count_fail+1
+print('--------------------------------------------------------------\n')
+
+print('--------------------------------------------------------------\n')
+count_warn=0;
+print(CBLUE+'\033[1m'+'Warning summary: '+CWHITE+'\033[0m'+'\n')
+for pp in range(len(Warning_message_global)):
+	if Warning_message_global[pp]!="":
+		print(CBLUE+str(count_warn+1)+". "+sys_which_ran[pp]+": "+Warning_message_global[pp]+CWHITE+"\n")
+		count_warn=count_warn+1
+print('--------------------------------------------------------------\n')
 os.chdir(home_directory)
 if os.path.exists("launch_1.pbs"):
 	os.system("rm *.pbs")
