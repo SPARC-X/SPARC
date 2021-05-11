@@ -14,6 +14,7 @@ USE_DP_SUBEIG = 1
 DEBUG_MODE    = 1
 
 USE_GPU    := 0
+USE_ELPA := 0
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -36,6 +37,10 @@ ENABLE_SIMD_COMPLEX = 0
 #CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
 LIBPCE_DIR=../Hamiltonian/
 CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
+
+ELPA_DIR = $(ELPA_ROOT)
+ELPA_LIB = elpa_openmp
+#ELPA_LIB = elpa
 
 # Uses gcc
 LIBPCE_MAKEFILE=Makefile.pace.icc
@@ -72,6 +77,12 @@ endif
 
 ifeq ($(USE_GPU), 1)
 CPPFLAGS += -DUSE_GPU=1
+endif
+
+ifeq ($(USE_ELPA), 1)
+LDLIBS += -L $(ELPA_ROOT)/lib -l$(ELPA_LIB)
+LFLAGS_GPU += -L $(ELPA_ROOT)/lib -l$(ELPA_LIB)
+LDFLAGS += -I $(ELPA_DIR)
 endif
 
 # if MKL is not used, link BLAS and LAPACK directly
