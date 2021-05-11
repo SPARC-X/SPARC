@@ -1632,9 +1632,9 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
 			Error_SCF_no = SCF_no_run - SCF_no_ref;
 			if Error_SCF_no < 0:
-				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
 			elif Error_SCF_no > 0:
-				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
 				
 
 			if isabinit == True:
