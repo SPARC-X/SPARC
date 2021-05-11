@@ -20,7 +20,7 @@ tols = {"F_tol": 1e-5, # Ha/Bohr
 	"wall_tol": 10, # in percent
 	"CELL_tol": 0.01, # Bohr
 	"scfpos_tol": 0.01, # Bohr
-	"scfno_tol": 0,
+	"scfno_tol": 2,
 	"spin_tol": 0.001, # a.u.
 	"memused_tol": 10}# percent}
 
@@ -1632,7 +1632,10 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
 			Error_SCF_no = SCF_no_run - SCF_no_ref;
 			if Error_SCF_no < 0:
-				warning_message=warning_message+"Number of SCF iterations are smaller than the reference"
+				warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
+			elif Error_SCF_no > 0:
+				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
+
 
 			if isabinit == True:
 				F_abinit = info_run["force"]
@@ -1825,9 +1828,12 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				Error_SCF_no = []
 				for scfno in range(len(SCF_no_run)):
 					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
 				Error_SCF_no = max(Error_SCF_no)
-			if Error_SCF_no < 0:
-				warning_message=warning_message+"Number of SCF iterations are smaller than the reference"
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 
 
 			if isabinit == True:
@@ -1985,8 +1991,14 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			else:
 				Error_SCF_no = []
 				for scfno in range(len(SCF_no_run)):
-					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])	
+				Error_SCF_no1=Error_SCF_no
 				Error_SCF_no = max(Error_SCF_no)
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				
 			if Error_SCF_no < 0:
 				warning_message=warning_message+" Number of SCF iterations are smaller than the reference"
 
@@ -2165,10 +2177,13 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				Error_SCF_no = []
 				for scfno in range(len(SCF_no_run)):
 					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
 				Error_SCF_no = max(Error_SCF_no)
-			if Error_SCF_no < 0:
-				warning_message=warning_message+ " Number of SCF iterations are smaller than the reference"
-
+				if Error_SCF_no < 0:
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				
 			# F_run = info_run["force"]
 			# F_ref = info_ref["force"]
 			# relax_steps = len(F_run)
@@ -2350,11 +2365,12 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				Error_SCF_no = []
 				for scfno in range(len(SCF_no_run)):
 					Error_SCF_no.append(SCF_no_run[scfno] - SCF_no_ref[scfno])
+				Error_SCF_no1=Error_SCF_no
 				Error_SCF_no = max(Error_SCF_no)
 				if Error_SCF_no < 0:
-					warning_message=warning_message+ " Number of SCF iterations are smaller than the reference"
-
-
+					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
+				elif Error_SCF_no > 0:
+					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[scfno][Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 				if isabinit == True:
 					E_abinit = info_abinit["energy"]
 				E_err_relax=[]
@@ -2552,7 +2568,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 11 May 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 10 May 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
