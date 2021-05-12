@@ -1,0 +1,21 @@
+#PBS -N testing_suite
+#PBS -o output.sparc
+#PBS -j oe
+#PBS -q hive-interact
+#PBS -l nodes=1:ppn=24
+#PBS -l pmem=7gb
+#PBS -l walltime=1:00:00
+
+MYPROCS=`wc -l < ${PBS_NODEFILE}`
+module purge all
+module load intel/19.0.3
+module load mvapich2/2.3.1
+module load gcc-compatibility/8.3.0
+
+ulimit -s unlimited
+export MV2_USE_RDMA_CM=1
+
+cd ${PBS_O_WORKDIR}
+echo $PWD
+module load valgrind
+mpirun -np 24 valgrind --leak-check=full --track-origins=yes --suppressions=./../inplace_reduce.supp --log-file=valgrind_out ./../../sparc -name Si8_kpt_valgrind -log_summary > Si8_kpt_valgrind.log

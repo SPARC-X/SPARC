@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Mar 30, 2021)                      *
+*                       SPARC (version Apr 23, 2021)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Mar 31 12:00:19 2021                  *
+*                   Start time: Mon May 10 00:35:10 2021                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -46,7 +46,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: H2O_sheet/temp_run1/H2O_sheet
+OUTPUT_FILE: H2O_sheet
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -64,16 +64,16 @@ Mesh spacing in x-direction        :  0.0994737 (Bohr)
 Mesh spacing in y-direction        :  0.0994737 (Bohr)
 Mesh spacing in z direction        :  0.1 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  H2O_sheet/temp_run1/H2O_sheet.out
+Output printed to                  :  H2O_sheet.out
 Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  H 1
-Pseudopotential                    :  H2O_sheet/temp_run1/H_GGA.psp8
+Pseudopotential                    :  H_GGA.psp8
 Pseudocharge radii of atom type 1  :  6.27 6.27 6.30 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  O 6
-Pseudopotential                    :  H2O_sheet/temp_run1/O_GGA.psp8
+Pseudopotential                    :  O_GGA.psp8
 Pseudocharge radii of atom type 2  :  6.37 6.37 6.40 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  489.86 MB
@@ -82,23 +82,23 @@ Estimated memory per processor     :  489.86 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.6245312271E+00        5.525E-01        78.162
-2            -5.6851019982E+00        1.174E-01        54.486
-3            -5.6880750889E+00        7.617E-02        49.364
-4            -5.6883106171E+00        4.831E-02        44.021
-5            -5.6883537313E+00        2.862E-02        41.085
-6            -5.6883885628E+00        2.028E-02        41.931
-7            -5.6884038863E+00        5.720E-03        43.079
-8            -5.6884087795E+00        3.583E-03        37.988
-9            -5.6884089766E+00        1.934E-03        31.537
-10           -5.6884090125E+00        1.392E-03        31.101
-11           -5.6884090498E+00        9.909E-04        24.695
-12           -5.6884090207E+00        5.996E-04        15.654
-13           -5.6884090316E+00        5.330E-05        19.207
-14           -5.6884090406E+00        1.591E-05        17.541
-15           -5.6884090282E+00        5.694E-06        14.391
-16           -5.6884090199E+00        1.984E-06        11.747
-17           -5.6884090252E+00        6.415E-07        11.187
+1            -5.6245312271E+00        5.525E-01        80.077
+2            -5.6851019982E+00        1.174E-01        57.775
+3            -5.6880750889E+00        7.617E-02        52.028
+4            -5.6883106171E+00        4.831E-02        47.002
+5            -5.6883537313E+00        2.862E-02        43.794
+6            -5.6883885628E+00        2.028E-02        44.847
+7            -5.6884038863E+00        5.720E-03        46.947
+8            -5.6884087795E+00        3.583E-03        41.283
+9            -5.6884089766E+00        1.934E-03        34.340
+10           -5.6884090125E+00        1.392E-03        34.318
+11           -5.6884090498E+00        9.909E-04        27.140
+12           -5.6884090207E+00        5.996E-04        17.096
+13           -5.6884090316E+00        5.330E-05        21.032
+14           -5.6884090406E+00        1.591E-05        19.222
+15           -5.6884090282E+00        5.694E-06        15.915
+16           -5.6884090199E+00        1.984E-06        12.935
+17           -5.6884090252E+00        6.415E-07        12.388
 Total number of SCF: 17    
 
 k = [0.000, 0.000, 0.000]
@@ -116,13 +116,13 @@ Entropy*kb*T                       : -1.5283354540E-07 (Ha)
 Fermi level                        : -1.8908641178E-01 (Ha)
 RMS force                          :  2.1433118326E-02 (Ha/Bohr)
 Maximum force                      :  2.6655255023E-02 (Ha/Bohr)
-Time for force calculation         :  0.648 (sec)
-Maximum stress                     :  6.1371598898E-03 (a.u.)
-Time for stress calculation        :  1.625 (sec)
+Time for force calculation         :  0.706 (sec)
+Maximum stress                     :  6.1371598897E-03 (a.u.)
+Time for stress calculation        :  1.778 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  622.250 sec
+Total walltime                     :  664.862 sec
 ___________________________________________________________________________
 
 ***************************************************************************
