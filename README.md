@@ -155,3 +155,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 - `.restart` file  
 
   Information necessary to perform a restarted QMD calculation. 
+  
+  ### (6) Acknowledgement:
+  
+The work was supported by the grant DE-SC0019410 funded by the U.S. Department of Energy, Office of Science. Initial development efforts were supported by the grants 1333500 and 1553212 funded by the U.S. National Science Foundation.
