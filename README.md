@@ -12,8 +12,6 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 
 SPARC is straightforward to install/use and highly competitive with state-of-the-art planewave codes, demonstrating comparable performance on a small number of processors and order-of-magnitude advantages as the number of processors increases. Notably, the current version of SPARC brings solution times down to a few seconds for systems with O(100-500) atoms on large-scale parallel computers, outperforming planewave counterparts by an order of magnitude and more. Additional details regarding the formulation and implementation of SPARC can be found in the paper referenced below. Future versions will target similar solution times for large-scale systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
 
-**Users of SPARC are expected to cite the following publication: Q. Xu, A. Sharma, B. Comer, H. Huang, E. Chow, A.J. Medford, J.E. Pask, and P. Suryanarayana, 2020. SPARC: Simulation Package for Ab-initio Real-space Calculations. arXiv preprint arXiv:2005.10431.**
-
 ### (2) Installation:
 
 Prerequisite: C compiler, MPI.
@@ -156,7 +154,16 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
   Information necessary to perform a restarted QMD calculation. 
   
-  ### (6) Acknowledgement:
+### (6) Acknowledgement:
   
 * U.S. Department of Energy, Office of Science: DE-SC0019410 
 * U.S. National Science Foundation: 1333500 and 1553212
+
+### (7) Citation:
+
+* **General**: https://doi.org/10.1016/j.softx.2021.100709, https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
+* **Non-orthogonal systems**: https://doi.org/10.1016/j.cplett.2018.04.018
+* **Linear solvers**: https://doi.org/10.1016/j.cpc.2018.07.007, https://doi.org/10.1016/j.jcp.2015.11.018
+* **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
+* **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
+* **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
