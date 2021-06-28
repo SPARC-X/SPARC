@@ -161,6 +161,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
 ### (7) Citation:
 
+If you publish work using/regarding SPARC, please cite some of the following articles, particularly those that are most relevant to your work:
 * **General**: https://doi.org/10.1016/j.softx.2021.100709, https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
 * **Non-orthogonal systems**: https://doi.org/10.1016/j.cplett.2018.04.018
 * **Linear solvers**: https://doi.org/10.1016/j.cpc.2018.07.007, https://doi.org/10.1016/j.jcp.2015.11.018
