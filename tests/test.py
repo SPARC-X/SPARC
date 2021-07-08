@@ -2628,6 +2628,8 @@ if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
 	ifVHQ = False
 	isparallel = False
 
+
+
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
 	indx_test = int(indx_test_temp[0])
