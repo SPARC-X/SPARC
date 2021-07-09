@@ -88,29 +88,31 @@ In addition, SPARC requires pseudopotential files of psp8 format which can be ge
 SPARC can be executed in parallel using the `mpirun` command. Sample PBS script files are available in "SPARC/tests" folder. It is required that the ".inpt" and ".ion" files are located in the same directory and share the same name. For example, to run a simulation with 8 processes with input files as "filename.inpt" and "filename.ion" in the root directory (`SPARC/`), use the following command:
 
 ```shell
-$ mpirun -np 8 ./lib/sparc -name filename
+$ mpirun -np 24 ./lib/sparc -name filename
 ```
 
-As an example, one can run a test located in `SPARC/tests`. First go to `SPARC/tests/MeshConvergence/Si8` directory:
+As an example, one can run one of the tests located in `SPARC/tests/`. First go to `SPARC/tests/Example_tests/` directory:
 
 ```shell
-$ cd tests/MeshConvergence/Si8
+$ cd tests/Example_tests/
 ```
 
-There are a few input files available. Run a DC silicon system with mesh = $0.4$ Bohr by
+The input file is available inside the folder. Run a DC silicon system by
 
 ```shell
-$ mpirun -np 8 ../../../lib/sparc -name Si8-ONCV-0.4
+$ mpirun -np 24 ../../../lib/sparc -name Si8_kpt
 ```
 
-The result is printed to output file "Si8-ONCV-0.4.out", located in the same directory as the input files. If the file "Si8-ONCV-0.4.out" is already present, the result will be printed to "Si8-ONCV-0.4.out\_1" instead. The max number of ".out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the "Si8-ONCV-0.4.out" file. One can compare the result with the reference out file named "Si8-ONCV-0.4.refout".
+The result is printed to output file "Si8_kpt.out", located in the same directory as the input files. If the file "Si8_kpt.out" is already present, the result will be printed to "Si8_kpt.out\_1" instead. The max number of ".out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the "Si8_kpt.out" file. One can compare the result with the reference out file named "Si8_kpt.refout".
 
-In the `tests/quick/` directory, we also provide a sample script file `quickrun.sh`, which launches four quick tests one by one. To run these quick tests, simply change directory to `tests/quick/` directory, and run: 
+
+In the `tests/` directory, we also provide a suite of tests which are arranged in a hierarchy of folders. Each test system has its own directory. A python script is also provided which launches the suite of test systems. To run these tests locally on the CPU, simply run: 
 
 ```shell
-$ chmod +x ./quickrun.sh
-$ ./quickrun.sh
+$ python test.py run_local
 ```
+
+The result is stored in the coresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.
 
 ### (5) Output
 
