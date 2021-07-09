@@ -112,7 +112,7 @@ In the `tests/` directory, we also provide a suite of tests which are arranged i
 $ python test.py quick_run
 ```
 
-The result is stored in the corresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.
+The result is stored in the coresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.
 
 ### (5) Output
 
