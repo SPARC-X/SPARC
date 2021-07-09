@@ -311,12 +311,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
-            pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb + spn_i*size_s
+            pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb
         );
     } else {
     #endif
         ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-                           pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
+                           pSPARC->Yorb, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
                            pSPARC->dmcomm, &t_temp);
     #ifdef USE_EVA_MODULE
@@ -333,11 +333,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
     DP_Project_Hamiltonian(
-        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
+        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
         pSPARC->Hp, pSPARC->Mp, spn_i
     );
     #else
-    Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
+    Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
     #endif
     t2 = MPI_Wtime();
@@ -897,7 +897,7 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
             double *Hp_local = DP_CheFSI->Hp_local;
             double *Mp_local = DP_CheFSI->Mp_local; 
             double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
-            LAPACKE_dsygv(
+            LAPACKE_dsygvd(
                 LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
                 Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
             );
@@ -907,7 +907,7 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
         MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
         double et1 = MPI_Wtime();
         #ifdef DEBUG
-        if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, LAPACKE_dsygv used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
+        if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, LAPACKE_dsygvd used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
         #endif
     } else {
         #if defined(USE_MKL) || defined(USE_SCALAPACK)
@@ -1216,7 +1216,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
         t1 = MPI_Wtime();
         if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
             (pSPARC->is_domain_uniform && !rank_kptcomm)) {
-            info = LAPACKE_dsygv(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
+            info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
                           pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
                           pSPARC->lambda + spn_i*pSPARC->Nstates);
         }
@@ -1224,7 +1224,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
         #ifdef DEBUG
         if(!rank_spincomm && spn_i == 0) {
             printf("==generalized eigenproblem: "
-                   "info = %d, solving generalized eigenproblem using LAPACK_dsygv: %.3f ms\n", 
+                   "info = %d, solving generalized eigenproblem using LAPACKE_dsygvd: %.3f ms\n", 
                    info, (t2 - t1)*1e3);
         }
         #endif

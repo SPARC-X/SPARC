@@ -280,13 +280,13 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt],
-            pSPARC->dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s
+            pSPARC->dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Yorb_kpt
         );
         */
     } else {
     #endif
         ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
-                           pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Nband_bandcomm, 
+                           pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
                            pSPARC->dmcomm, &t_temp);
     #ifdef USE_EVA_MODULE
@@ -303,11 +303,11 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
     DP_Project_Hamiltonian_kpt(
-        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, 
+        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
         pSPARC->Hp_kpt, pSPARC->Mp_kpt, spn_i, kpt
     );
     #else
-    Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, 
+    Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
                         pSPARC->Hp_kpt, pSPARC->Mp_kpt, kpt, spn_i, pSPARC->dmcomm);
     #endif
     t2 = MPI_Wtime();
@@ -828,7 +828,7 @@ void DP_Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i
             double _Complex *Hp_local = DP_CheFSI_kpt->Hp_local;
             double _Complex *Mp_local = DP_CheFSI_kpt->Mp_local;
             double *eig_val = pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates;
-            LAPACKE_zhegv(
+            LAPACKE_zhegvd(
                 LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
                 Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
             );
@@ -838,7 +838,7 @@ void DP_Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i
         MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_C_DOUBLE_COMPLEX, 0, DP_CheFSI_kpt->kpt_comm);
         double et1 = MPI_Wtime();
         #ifdef DEBUG
-        if (rank_kpt == 0) printf("Rank 0, DP_Solve_Generalized_EigenProblem_kpt used %.3lf ms, LAPACKE_zhegv used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
+        if (rank_kpt == 0) printf("Rank 0, DP_Solve_Generalized_EigenProblem_kpt used %.3lf ms, LAPACKE_zhegvd used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
         #endif
     } else {
         #if defined(USE_MKL) || defined(USE_SCALAPACK)
@@ -1141,7 +1141,7 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         t1 = MPI_Wtime();
         if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
             (pSPARC->is_domain_uniform && !rank_kptcomm)) {
-            info = LAPACKE_zhegv(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
+            info = LAPACKE_zhegvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
                           pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
                           pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates);
         }
@@ -1149,7 +1149,7 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         #ifdef DEBUG
         if(!rank_spincomm && spn_i == 0 && kpt == 0) {
             printf("==generalized eigenproblem: "
-                   "info = %d, solving generalized eigenproblem using LAPACKE_zhegv: %.3f ms\n", 
+                   "info = %d, solving generalized eigenproblem using LAPACKE_zhegvd: %.3f ms\n", 
                    info, (t2 - t1)*1e3);
         }
         #endif
