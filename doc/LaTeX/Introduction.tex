@@ -89,23 +89,25 @@ SPARC can be executed in parallel using the \texttt{mpirun} command. Sample PBS 
 \begin{verbatim}
 $ mpirun -np 8 ./lib/sparc -name filename
 \end{verbatim} 
-As an example, one can run a test located in \texttt{SPARC/tests}. First go to \texttt{SPARC/tests/MeshConvergence/Si8} directory:
+As an example, one can run one of the tests located in `SPARC/tests/`. First go to `SPARC/tests/Example_tests/` directory:
 \begin{verbatim}
-$ cd tests/MeshConvergence/Si8
+$ $ cd tests/Example_tests/
 \end{verbatim} 
-There are a few input files available. Run a DC silicon system with mesh = $0.4$ Bohr by
+There are a few input files available. Run a DC silicon system by
 \begin{verbatim}
-$ mpirun -np 8 ../../../lib/sparc -name Si8-ONCV-0.4
-\end{verbatim} 
-
-The result is printed to output file ``Si8-ONCV-0.4.out", located in the same directory as the input files. If the file ``Si8-ONCV-0.4.out" is already present, the result will be printed to ``Si8-ONCV-0.4.out\_1" instead. The max number of ``.out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the ``Si8-ONCV-0.4.out" file. One can compare the result with the reference out file named ``Si8-ONCV-0.4.refout".\\%\\~\\
-
-\hspace{3mm}In the \texttt{tests/quick/} directory, we also provide a sample script file \texttt{quickrun.sh}, which launches four quick tests one by one. To run these quick tests, simply change directory to \texttt{tests/quick/} directory, and run: 
-\begin{verbatim}
-$ chmod +x ./quickrun.sh
-$ ./quickrun.sh
+$ mpirun -np 24 ../../../lib/sparc -name Si8_kpt
 \end{verbatim} 
 
+The result is printed to output file "Si8_kpt.out", located in the same directory as the input files. If the file ``Si8_kpt.out" is already present, the result will be printed to ``Si8_kpt.out\_1" instead. The max number of ``.out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the ``Si8_kpt.out" file. One can compare the result with the reference out file named ``Si8_kpt.refout".\\%\\~\\
+
+% The result is printed to output file ``Si8-ONCV-0.4.out", located in the same directory as the input files. If the file ``Si8-ONCV-0.4.out" is already present, the result will be printed to ``Si8-ONCV-0.4.out\_1" instead. The max number of ``.out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the ``Si8-ONCV-0.4.out" file. One can compare the result with the reference out file named ``Si8-ONCV-0.4.refout".\\%\\~\\
+
+\hspace{3mm} In the \texttt{tests/} directory, we also provide a suite of tests which are arranged in a hierarchy of folders. Each test system has its own directory. A python script is also provided which launches the suite of test systems. To run a set of four quick tests locally on the CPU, simply run: 
+\begin{verbatim}
+$ python test.py quick_run
+\end{verbatim} 
+
+The result is stored in the coresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.
 \end{frame}
 
 
