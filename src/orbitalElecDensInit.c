@@ -186,125 +186,115 @@ void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
  */
 void Init_orbital(SPARC_OBJ *pSPARC)
 {
+    if (pSPARC->dmcomm == MPI_COMM_NULL) return;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #ifdef DEBUG
     if (rank == 0) printf("Initializing Kohn-Sham orbitals ... \n");
 #endif
-    if (pSPARC->dmcomm != MPI_COMM_NULL) {
-        int k, n, i, DMnd, size_k, len_tot, size_s, spn_i;
-#ifdef DEBUG
-        double t1, t2;
-#endif
-        DMnd = pSPARC->Nd_d_dmcomm;
-        size_k = DMnd * pSPARC->Nband_bandcomm;
-        // notice that in processors not for orbital calculations len_tot = 0
-        size_s = size_k * pSPARC->Nkpts_kptcomm;
-        
-        // Multiply a factor for a spin polarized calculation
-        len_tot = size_s * pSPARC->Nspin_spincomm;
-        
-        // for 1st Relax step, set electron density to be sum of atomic potentials
-        if((pSPARC->elecgs_Count) == 0){
-            if (pSPARC->isGammaPoint){
-                // allocate memory in the very first relax/MD step
-                pSPARC->Xorb = (double *)malloc( len_tot * sizeof(double) );
-                // Note: later when we calculate rho in psi domain, 
-                //       we will use the first column to store rho temporarily,
-                //       in some cases, Nband_bandcomm = 0, so we need to at
-                //       least assign memory for 1 band for 1 kpoint to Yorb
-                pSPARC->Yorb = (double *)malloc( max(len_tot,DMnd) * sizeof(double) ); 
-                //pSPARC->Yorb = (double *)malloc( len_tot * sizeof(double) ); 
-                if (pSPARC->Xorb == NULL || pSPARC->Yorb == NULL) {
-                    printf("\nMemory allocation failed!\n");
-                    exit(EXIT_FAILURE);
-                }
 
-                // set random initial orbitals
-                // notes: 1. process not in dmcomm will have 0 row of bands, hence no orbitals assigned
-                //        2. Xorb in different kptcomms will have the same random matrix if the comm sizes are identical
-                //        3. we're also forcing all kpoints to have the same initial orbitals
-#ifdef DEBUG            
-                t1 = MPI_Wtime();
+    int k, n, i, DMnd, size_k, len_tot, size_s, spn_i;
+#ifdef DEBUG
+    double t1, t2;
 #endif
-                if (pSPARC->FixRandSeed == 1) {
-                	int gridsizes[3];
-                	gridsizes[0] = pSPARC->Nx;
-                	gridsizes[1] = pSPARC->Ny;
-                	gridsizes[2] = pSPARC->Nz;
-                	//int size_kg = pSPARC->Nd * pSPARC->Nstates;
-                	int size_sg = pSPARC->Nd * pSPARC->Nstates;
-                	for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-				        //int kg  = pSPARC->kpt_start_indx; // global kpt index
-				        int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
-				        for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
-					        int ng = pSPARC->band_start_indx + n; // global band index
-					        int shift_g = sg * size_sg + ng * pSPARC->Nd; // global shift
-					        int shift   = spn_i * size_s + n  * DMnd; // local shift
-					        double *Psi_kn = pSPARC->Xorb + shift;
-					        SeededRandVec(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
-				        }
-				    }
-		        } else {
-		            for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-		        	    SetRandMat(pSPARC->Xorb + spn_i*size_s , DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
-		        	}
-		        }
+    DMnd = pSPARC->Nd_d_dmcomm;
+    size_k = DMnd * pSPARC->Nband_bandcomm;
+    // notice that in processors not for orbital calculations len_tot = 0
+    size_s = size_k * pSPARC->Nkpts_kptcomm;
+    
+    // Multiply a factor for a spin polarized calculation
+    len_tot = size_s * pSPARC->Nspin_spincomm;
+    
+    // for 1st Relax step, set electron density to be sum of atomic potentials
+    if((pSPARC->elecgs_Count) == 0){
+        if (pSPARC->isGammaPoint){
+            // allocate memory in the very first relax/MD step
+            pSPARC->Xorb = (double *)malloc( len_tot * sizeof(double) );
+            pSPARC->Yorb = (double *)malloc( size_k * sizeof(double) );
+            if (pSPARC->Xorb == NULL || pSPARC->Yorb == NULL) {
+                printf("\nMemory allocation failed!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            // set random initial orbitals
+            // notes: 1. process not in dmcomm will have 0 row of bands, hence no orbitals assigned
+            //        2. Xorb in different kptcomms will have the same random matrix if the comm sizes are identical
+            //        3. we're also forcing all kpoints to have the same initial orbitals
+#ifdef DEBUG            
+            t1 = MPI_Wtime();
+#endif
+            if (pSPARC->FixRandSeed == 1) {
+                int gridsizes[3];
+                gridsizes[0] = pSPARC->Nx;
+                gridsizes[1] = pSPARC->Ny;
+                gridsizes[2] = pSPARC->Nz;
+                //int size_kg = pSPARC->Nd * pSPARC->Nstates;
+                int size_sg = pSPARC->Nd * pSPARC->Nstates;
+                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                    //int kg  = pSPARC->kpt_start_indx; // global kpt index
+                    int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
+                    for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
+                        int ng = pSPARC->band_start_indx + n; // global band index
+                        int shift_g = sg * size_sg + ng * pSPARC->Nd; // global shift
+                        int shift   = spn_i * size_s + n  * DMnd; // local shift
+                        double *Psi_kn = pSPARC->Xorb + shift;
+                        SeededRandVec(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
+                    }
+                }
             } else {
-                // allocate memory in the very first relax/MD step
-                pSPARC->Xorb_kpt = (double complex *) malloc( len_tot * sizeof(double complex) );
-                // Note: later when we calculate rho in psi domain, 
-                //       we will use the first column to store rho temporarily,
-                //       in some cases, Nband_bandcomm = 0, so we need to at
-                //       least assign memory for 1 band for 1 kpoint to Yorb
-                pSPARC->Yorb_kpt = (double complex *) malloc( max(len_tot,DMnd) * sizeof(double complex) ); 
-                //pSPARC->Yorb = (double *)malloc( len_tot * sizeof(double) ); 
-                if (pSPARC->Xorb_kpt == NULL || pSPARC->Yorb_kpt == NULL) {
-                    printf("\nMemory allocation failed!\n");
-                    exit(EXIT_FAILURE);
+                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                    SetRandMat(pSPARC->Xorb + spn_i*size_s , DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
                 }
-
-                // set random initial orbitals
-                // notes: 1. process not in dmcomm will have 0 row of bands, hence no orbitals assigned
-                //        2. Xorb in different kptcomms will have the same random matrix if the comm sizes are identical
-                //        3. we're also forcing all kpoints to have the same initial orbitals
-#ifdef DEBUG            
-                t1 = MPI_Wtime();
-#endif                
-                if (pSPARC->FixRandSeed == 1) {
-                	int gridsizes[3];
-                	gridsizes[0] = pSPARC->Nx;
-                	gridsizes[1] = pSPARC->Ny;
-                	gridsizes[2] = pSPARC->Nz;
-                	int size_kg = pSPARC->Nd * pSPARC->Nstates;
-                	int size_sg = size_kg * pSPARC->Nkpts_sym;
-                	for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                        int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
-                    	for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
-					        int kg  = pSPARC->kpt_start_indx + k; // global kpt index
-					        for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
-						        int ng = pSPARC->band_start_indx + n; // global band index
-						        int shift_g = sg * size_sg + kg * size_kg + ng * pSPARC->Nd; // global shift
-						        int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
-						        double complex *Psi_kn = pSPARC->Xorb_kpt + shift;
-						        SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
-					        }
-				        }
-				    }    
-		        } else {
-		            for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                        for (i = 0; i < pSPARC->Nkpts_kptcomm; i++) {
-                            SetRandMat_complex(pSPARC->Xorb_kpt + i*size_k + spn_i*size_s, DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
-                        }
-                    }    
-                }
-            }        
-#ifdef DEBUG
-            t2 = MPI_Wtime();
-            if(!rank) printf("Finished setting random orbitals. Time taken: %.3f ms\n",(t2-t1)*1e3);
-#endif
+            }
         } else {
-            // TODO: implement Kohn-Sham orbital extrapolation here!
-        }
+            // allocate memory in the very first relax/MD step
+            pSPARC->Xorb_kpt = (double complex *) malloc( len_tot * sizeof(double complex) );
+            pSPARC->Yorb_kpt = (double complex *) malloc( size_k * sizeof(double complex) );
+            if (pSPARC->Xorb_kpt == NULL || pSPARC->Yorb_kpt == NULL) {
+                printf("\nMemory allocation failed!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            // set random initial orbitals
+            // notes: 1. process not in dmcomm will have 0 row of bands, hence no orbitals assigned
+            //        2. Xorb in different kptcomms will have the same random matrix if the comm sizes are identical
+            //        3. we're also forcing all kpoints to have the same initial orbitals
+#ifdef DEBUG            
+            t1 = MPI_Wtime();
+#endif                
+            if (pSPARC->FixRandSeed == 1) {
+                int gridsizes[3];
+                gridsizes[0] = pSPARC->Nx;
+                gridsizes[1] = pSPARC->Ny;
+                gridsizes[2] = pSPARC->Nz;
+                int size_kg = pSPARC->Nd * pSPARC->Nstates;
+                int size_sg = size_kg * pSPARC->Nkpts_sym;
+                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                    int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
+                    for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
+                        int kg  = pSPARC->kpt_start_indx + k; // global kpt index
+                        for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
+                            int ng = pSPARC->band_start_indx + n; // global band index
+                            int shift_g = sg * size_sg + kg * size_kg + ng * pSPARC->Nd; // global shift
+                            int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
+                            double complex *Psi_kn = pSPARC->Xorb_kpt + shift;
+                            SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
+                        }
+                    }
+                }    
+            } else {
+                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                    for (i = 0; i < pSPARC->Nkpts_kptcomm; i++) {
+                        SetRandMat_complex(pSPARC->Xorb_kpt + i*size_k + spn_i*size_s, DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
+                    }
+                }    
+            }
+        }        
+#ifdef DEBUG
+        t2 = MPI_Wtime();
+        if(!rank) printf("Finished setting random orbitals. Time taken: %.3f ms\n",(t2-t1)*1e3);
+#endif
+    } else {
+        // TODO: implement Kohn-Sham orbital extrapolation here!
     }
 }

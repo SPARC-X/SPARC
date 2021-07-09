@@ -1052,8 +1052,8 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
     temp_s = (double*) malloc(9 * sizeof(double));
     temp2_s = (double*) malloc(9 * sizeof(double));
     
-    int len_psi = DMnd * ncol * nspin;
-    dpsi_full = (double *)malloc( len_psi * sizeof(double) );
+    // int len_psi = DMnd * ncol * nspin;
+    dpsi_full = (double *)malloc( size_s * sizeof(double) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
@@ -1095,7 +1095,7 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
         count = 0;
         for(spn_i = 0; spn_i < nspin; spn_i++) {
             // find dPsi in direction dim
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb+spn_i*size_s, dim, pSPARC->dmcomm);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, dim, pSPARC->dmcomm);
             beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+1) + count);
             beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+2) + count);
             beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+3) + count);
@@ -1111,7 +1111,7 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     dpsi_x3_rc = (double *)malloc( ndc * ncol * sizeof(double));
                     atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                     for (n = 0; n < ncol; n++) {
-                        dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd;
+                        dpsi_ptr = pSPARC->Yorb + n * DMnd;
                         dpsi_x1_rc_ptr = dpsi_x1_rc + n * ndc;
                         dpsi_x2_rc_ptr = dpsi_x2_rc + n * ndc;
                         dpsi_x3_rc_ptr = dpsi_x3_rc + n * ndc;
@@ -1147,10 +1147,10 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
             
             // Kinetic stress
             if(dim == 0){
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 1, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 1, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_2
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
                     dpsi1_dpsi1 = dpsi1_dpsi2 = dpsi2_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi1 += *(dpsi_ptr + i) * *(dpsi_ptr + i);
@@ -1163,10 +1163,10 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[3] += dpsi2_dpsi2 * g_nk;
                 }
                 
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 2, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 2, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_3
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                     dpsi1_dpsi3 = dpsi3_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi3 += *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
@@ -1178,8 +1178,8 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                 }
             } else if(dim == 1){
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + spn_i * size_s + n * DMnd; // dpsi_2
-                    dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_3
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_2
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                     dpsi2_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi2_dpsi3 += *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
@@ -1421,7 +1421,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     temp_s = (double*) malloc(9 * sizeof(double));
     temp2_s = (double*) malloc(9 * sizeof(double));
     
-    dpsi_full = (double complex *)malloc( size_s * nspin * sizeof(double complex) );
+    // dpsi_full = (double complex *)malloc( size_s * nspin * sizeof(double complex) );
+    dpsi_full = (double complex *)malloc( size_k * sizeof(double complex) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
@@ -1485,7 +1486,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                 k2 = pSPARC->k2_loc[kpt];
                 k3 = pSPARC->k3_loc[kpt];
                 // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt+spn_i*size_s+kpt*size_k, dim, kpt, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt, pSPARC->dmcomm);
                 beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 1) + count);
                 beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 2) + count);
                 beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 3) + count);
@@ -1505,7 +1506,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                         dpsi_x3_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
                         atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                         for (n = 0; n < ncol; n++) {
-                            dpsi_ptr = pSPARC->Yorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd;
+                            dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd;
                             dpsi_x1_rc_ptr = dpsi_x1_rc + n * ndc;
                             dpsi_x2_rc_ptr = dpsi_x2_rc + n * ndc;
                             dpsi_x3_rc_ptr = dpsi_x3_rc + n * ndc;
@@ -1540,12 +1541,12 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                 }
                 // Kinetic stress
                 if(dim == 0){
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full+spn_i*size_s+kpt*size_k, 1, kpt, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, kpt, pSPARC->dmcomm);
                     //ts = MPI_Wtime();
                     temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
                     for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_1
-                        dpsi_ptr2 = dpsi_full + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_2
+                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
+                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
                         dpsi1_dpsi1 = dpsi1_dpsi2 = dpsi2_dpsi2 = 0.0;
                         for(i = 0; i < DMnd; i++){
                             dpsi1_dpsi1 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i));
@@ -1561,11 +1562,11 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                     stress_k[1] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[1];
                     stress_k[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
 
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full+spn_i*size_s+kpt*size_k, 2, kpt, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, kpt, pSPARC->dmcomm);
                     temp_k[2] = temp_k[5] = 0.0;
                     for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_1
-                        dpsi_ptr2 = dpsi_full + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_3
+                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
+                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                         dpsi1_dpsi3 = dpsi3_dpsi3 = 0.0;
                         for(i = 0; i < DMnd; i++){
                             dpsi1_dpsi3 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i));
@@ -1580,8 +1581,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                 } else if(dim == 1){
                     temp_k[4] = 0.0;
                     for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_2
-                        dpsi_ptr2 = dpsi_full + spn_i * size_s + kpt * size_k + n * DMnd; // dpsi_3
+                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_2
+                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                         dpsi2_dpsi3 = 0.0;
                         for(i = 0; i < DMnd; i++){
                             dpsi2_dpsi3 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i));
@@ -1749,13 +1750,15 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
 
     // sum over all kpoints
     if (pSPARC->npkpt > 1) {    
-        if (pSPARC->kptcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        } else{
-            MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-            MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        }
+        // if (pSPARC->kptcomm_index == 0){
+        //     MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        //     MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        // } else{
+        //     MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        //     MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        // }
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
     // sum over all bands

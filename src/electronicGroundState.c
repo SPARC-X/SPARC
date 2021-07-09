@@ -140,7 +140,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     }
     
     // Calculate Stress and pressure
-    if(pSPARC->Calc_stress == 1){
+    if(pSPARC->Calc_stress == 1 || pSPARC->Calc_pres == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_stress(pSPARC);
         t2 = MPI_Wtime();
@@ -175,7 +175,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"Time for stress calculation        :  %.3f (sec)\n",t2-t1);
             fclose(output_fp);
         }
-    } else if(pSPARC->Calc_pres == 1){
+    } else if(pSPARC->Calc_pres == 1){ // obsolete, will calculate stress tensor instead
         t1 = MPI_Wtime();
         Calculate_electronic_pressure(pSPARC);
         t2 = MPI_Wtime();

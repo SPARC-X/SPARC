@@ -5,6 +5,15 @@
 
 
 --------------
+Jul 09, 2021
+Name: Qimen Xu
+Changes: (eigenSolver*.c, orbitalElecDensInit.c, forces.c, stress.c)
+1. Reduce memory required for simulations with k-points.
+2. Calculate the stress tensor instead when CALC_PRES is turned on.
+3. Bug fix: MPI_Allreduce instead of MPI_Reduce for calculating nloc stress over kpoints.
+
+
+--------------
 May 11, 2021
 Name: Shashikant Kumar
 Changes: (tests)

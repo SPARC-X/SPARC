@@ -311,12 +311,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
-            pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb + spn_i*size_s
+            pSPARC->dmcomm, pSPARC->Xorb + spn_i*size_s, pSPARC->Yorb
         );
     } else {
     #endif
         ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-                           pSPARC->Yorb + spn_i*size_s, pSPARC->Nband_bandcomm, 
+                           pSPARC->Yorb, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
                            pSPARC->dmcomm, &t_temp);
     #ifdef USE_EVA_MODULE
@@ -333,11 +333,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
     DP_Project_Hamiltonian(
-        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
+        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
         pSPARC->Hp, pSPARC->Mp, spn_i
     );
     #else
-    Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
+    Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
     #endif
     t2 = MPI_Wtime();

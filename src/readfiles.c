@@ -538,6 +538,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"CALC_PRES:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Calc_pres);  
             fscanf(input_fp, "%*[^\n]\n");
+            printf("WARNING: \"CALC_PRES\" is obsolete, use \"CALC_STRESS\" instead!\n");
         } else if(strcmpi(str,"VERBOSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Verbosity);
             fscanf(input_fp, "%*[^\n]\n");

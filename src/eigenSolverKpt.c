@@ -280,13 +280,13 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt],
-            pSPARC->dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s
+            pSPARC->dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Yorb_kpt
         );
         */
     } else {
     #endif
         ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
-                           pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Nband_bandcomm, 
+                           pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
                            pSPARC->dmcomm, &t_temp);
     #ifdef USE_EVA_MODULE
@@ -303,11 +303,11 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
     DP_Project_Hamiltonian_kpt(
-        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, 
+        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
         pSPARC->Hp_kpt, pSPARC->Mp_kpt, spn_i, kpt
     );
     #else
-    Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt + kpt*size_k + spn_i*size_s, 
+    Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
                         pSPARC->Hp_kpt, pSPARC->Mp_kpt, kpt, spn_i, pSPARC->dmcomm);
     #endif
     t2 = MPI_Wtime();
