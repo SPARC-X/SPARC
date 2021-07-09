@@ -352,7 +352,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->npNdx_phi = 0;      // number of processes for calculating phi in paral. over domain in x-dir
     pSPARC_Input->npNdy_phi = 0;      // number of processes for calculating phi in paral. over domain in y-dir
     pSPARC_Input->npNdz_phi = 0;      // number of processes for calculating phi in paral. over domain in z-dir
-    pSPARC_Input->eig_serial_maxns = 2000;// maximum Nstates for solving the subspace eigenproblem in serial by default,
+    pSPARC_Input->eig_serial_maxns = 10000;// maximum Nstates for solving the subspace eigenproblem in serial by default,
                                       // for Nstates greater than this value, a parallel methods will be used instead, unless 
                                       // ScaLAPACK is not compiled or useLAPACK is turned off.
     pSPARC_Input->eig_paral_blksz = 128; // block size for distributing the subspace eigenproblem

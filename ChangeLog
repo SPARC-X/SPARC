@@ -11,7 +11,7 @@ Changes: (eigenSolver*.c, orbitalElecDensInit.c, forces.c, stress.c)
 1. Reduce memory required for simulations with k-points.
 2. Calculate the stress tensor instead when CALC_PRES is turned on.
 3. Bug fix: MPI_Allreduce instead of MPI_Reduce for calculating nloc stress over kpoints.
-
+4. Use divide-and-conquer eigensolvers from LAPACK for the subspace eigenproblem. Increase default `EIG_SERIAL_MAXNS` to 10000.
 
 --------------
 May 11, 2021
