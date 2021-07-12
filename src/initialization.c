@@ -1817,10 +1817,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
         && fabs(pSPARC->k2[0]) < TEMP_TOL 
         && fabs(pSPARC->k3[0]) < TEMP_TOL);
-
-    // estimate memory usage
-    double memory_usage = estimate_memory(pSPARC);
-    pSPARC->memory_usage = memory_usage;
 }
 
 
@@ -2614,6 +2610,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         //     }
         // }
     }
+
+    // estimate memory usage
+    double memory_usage = estimate_memory(pSPARC);
+    pSPARC->memory_usage = memory_usage;
 
     char mem_str[32];
     formatBytes(pSPARC->memory_usage,32,mem_str);
