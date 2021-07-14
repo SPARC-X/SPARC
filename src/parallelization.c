@@ -762,25 +762,6 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
             pSPARC->desc_orb_BLCYC[i] = 0;
     }
 
-    // allocate memory for block cyclic distribution of orbitals
-    if (pSPARC->isGammaPoint){
-        if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
-            pSPARC->Xorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-            pSPARC->Yorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-        } else {
-            pSPARC->Xorb_BLCYC = (double *)malloc(1 * sizeof(double));
-            pSPARC->Yorb_BLCYC = (double *)malloc(1 * sizeof(double));
-        }
-    } else{
-        if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
-            pSPARC->Xorb_BLCYC_kpt = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
-            pSPARC->Yorb_BLCYC_kpt = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
-        } else {
-            pSPARC->Xorb_BLCYC_kpt = (double complex *)malloc(1 * sizeof(double complex));
-            pSPARC->Yorb_BLCYC_kpt = (double complex *)malloc(1 * sizeof(double complex));
-        }
-    }
-
     // set up distribution of projected Hamiltonian and the corresponding overlap matrix
     // TODO: Find optimal distribution of the projected Hamiltonian and mass matrix!
     //       For now Hp and Mp are distributed as follows: we distribute them in the same
@@ -1029,6 +1010,9 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     assert(pSPARC->occ != NULL);
 
     pSPARC->occ_sorted = pSPARC->occ;
+
+    pSPARC->eigmin = (double *) calloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm, sizeof (double));
+    pSPARC->eigmax = (double *) calloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm, sizeof (double));
 
     /* allocate memory for storing atomic forces*/
     pSPARC->forces = (double *)malloc( 3 * pSPARC->n_atom * sizeof(double) );

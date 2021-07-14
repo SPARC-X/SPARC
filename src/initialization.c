@@ -1835,6 +1835,7 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     int m = pSPARC->MixingHistory;
     int npspin = pSPARC->npspin;
     int npkpt = pSPARC->npkpt;
+    int npNd = pSPARC->npNd;
 
     int type_size;
     if (pSPARC->isGammaPoint) {
@@ -1844,15 +1845,39 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     }
 
     // orbitals (dominant)
-    int ncpy_orbitals = 4; // extra copies required during CheFSI 
+    int ncpy_orbitals; // extra copies required during CheFSI 
+    if (pSPARC->npband > 1) {
+        // MKL pdgemr2d internally creates ~2.5 copies during pdgemr2d in projection + Yorb, Yorb_BLCYC, HY_BLCYC
+        ncpy_orbitals = 5.5; 
+    } else {
+        // when there's no band parallelization (domain only), then pdgemr2d is not needed for projection
+        // moreover, the block cyclic formats Yorb_BLCYC, HY_BLCYC (also YQ_BLCYC during rotation) are not needed
+        // so the necessary copies are: Yorb, Ynew (during Chebyshev filtering)
+        // sometimes dgemm (MKL) also might internally create ~0.5 copy of the orbital, we add 0.5 for safety
+        ncpy_orbitals = 2.5; 
+    }
+    #ifdef USE_DP_SUBEIG
+        ncpy_orbitals = 6; // DP requires 4 extra copies, Yorb, and a temp copy (Chebyshev filtering and Projection)
+    #endif
     double memory_orbitals = (double) Nd * Ns * (ncpy_orbitals*npspin*npkpt + Nspin * Nkpts_sym) * type_size;
 
     // vectors: rho, phi, Veff, mixing history vectors, etc.
     int ncpy_vectors = 6 + 4 * Nspin + 2 * m * Nspin + 3 * (2*Nspin-1) + 1;
     double memory_vectors = (double) ncpy_vectors * Nd * sizeof(double);
 
+    // subspace matrix: Hs, Ms, Q
+    int ncpy_matrices = 3 * npNd;
+    #ifdef USE_DP_SUBEIG
+        ncpy_matrices = 3 * nproc; // DP stores Hp_local,Mp_local,eigvecs in (almost) every process
+    #endif
+    double memory_matrices = (double) ncpy_matrices * Ns * Ns * sizeof(double);
+
     // total memory
-    double memory_usage = memory_orbitals + memory_vectors;
+    double memory_usage = memory_orbitals + memory_vectors + memory_matrices;
+
+    // add some buffer for other memory
+    const double buf_rat = 0.10; // add 10% more memory
+    memory_usage *= (1.0 + buf_rat); 
 
     #ifdef DEBUG
     if (rank == 0) {
@@ -1865,6 +1890,10 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
         printf("orbitals             : %s\n", mem_str);
         formatBytes(memory_vectors, 32, mem_str);
         printf("global sized vectors : %s\n", mem_str);
+        formatBytes(memory_matrices, 32, mem_str);
+        printf("subspace matrices : %s\n", mem_str);
+        formatBytes(memory_usage*buf_rat/(1.0+buf_rat), 32, mem_str);
+        printf("others : %s\n", mem_str);
         printf("----------------------------------------------\n");
         formatBytes(memory_usage/nproc,32,mem_str);
         printf("Estimated memory usage per processor: %s\n",mem_str);
@@ -2295,7 +2324,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jul 09, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Jul 14, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

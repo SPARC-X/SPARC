@@ -150,14 +150,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
 
     #if defined(USE_MKL) || defined(USE_SCALAPACK)
     if (pSPARC->isGammaPoint) {
-        free(pSPARC->Xorb_BLCYC);
-        free(pSPARC->Yorb_BLCYC);
         free(pSPARC->Hp);
         free(pSPARC->Mp);
         free(pSPARC->Q);
     } else {
-        free(pSPARC->Xorb_BLCYC_kpt);
-        free(pSPARC->Yorb_BLCYC_kpt);
         free(pSPARC->Hp_kpt);
         free(pSPARC->Mp_kpt);
         free(pSPARC->Q_kpt);
@@ -167,10 +163,8 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     free(pSPARC->forces);
     free(pSPARC->lambda);
     free(pSPARC->occ);
-    if(pSPARC->spincomm_index != -1 && pSPARC->kptcomm_index != -1){
-        free(pSPARC->eigmin);
-        free(pSPARC->eigmax);
-    }  
+    free(pSPARC->eigmin);
+    free(pSPARC->eigmax);
     free(pSPARC->FDweights_D1);
     free(pSPARC->FDweights_D2);
     free(pSPARC->localPsd);
