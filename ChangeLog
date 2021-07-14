@@ -3,6 +3,16 @@
 -Name
 -changes
 
+
+--------------
+Jul 14, 2021
+Name: Qimen Xu
+Changes: (eigenSolver*.c, parallelization.c, initialization.c)
+1. Modify memory estimate (include extra memory used by MKL).
+2. Reduce memory usage due to MKL for domain-only parallelization (NP_BAND_PARAL: 1): skip data transfer through p?gemr2d and explicitly call BLAS ?gemm instead of ScaLAPACK p?gemm for projection.
+3. Move memory allocation of eigmin/eigmax arrays to initialization stage.
+
+
 --------------
 Jul 13, 2021
 Name: Shashikant Kumar
