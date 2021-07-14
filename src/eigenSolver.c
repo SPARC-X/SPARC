@@ -79,8 +79,8 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
     
     // TODO: Change to (ForceCount > 0) once the previous electron density is used during restart
     if(pSPARC->elecgs_Count == 0 && SCFcount == 0){
-        pSPARC->eigmin = (double *) malloc(pSPARC->Nspin_spincomm * sizeof(double));
-        pSPARC->eigmax = (double *) malloc(pSPARC->Nspin_spincomm * sizeof(double));
+        // pSPARC->eigmin = (double *) malloc(pSPARC->Nspin_spincomm * sizeof(double));
+        // pSPARC->eigmax = (double *) malloc(pSPARC->Nspin_spincomm * sizeof(double));
     }
 
     if(pSPARC->elecgs_Count > 0)
@@ -337,6 +337,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         pSPARC->Hp, pSPARC->Mp, spn_i
     );
     #else
+    // allocate memory for block cyclic format of the wavefunction
+    if (pSPARC->npband > 1) {
+        pSPARC->Yorb_BLCYC = (double *)malloc(
+            pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        assert(pSPARC->Yorb_BLCYC != NULL);
+    }
     Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
     #endif
@@ -388,9 +394,23 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
     #else
-	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
-	Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
-	                  pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*size_s, k, spn_i);
+    double *YQ_BLCYC;
+    if (pSPARC->npband > 1) {
+        // find Y * Q, store the result in Xorb (band+domain) and YQ_BLCYC (block cyclic format)
+        YQ_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        assert(YQ_BLCYC != NULL);
+    } else {
+        YQ_BLCYC = pSPARC->Xorb + spn_i*size_s;
+    }
+
+    Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
+                      YQ_BLCYC, pSPARC->Xorb + spn_i*size_s, k, spn_i);
+    
+    if (pSPARC->npband > 1) {
+        free(YQ_BLCYC);
+        free(pSPARC->Yorb_BLCYC);
+        pSPARC->Yorb_BLCYC = NULL;
+    }
     #endif
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -1072,9 +1092,13 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
     t3 = MPI_Wtime();
 
     t1 = MPI_Wtime();
-    // distribute orbitals into block cyclic format
-    pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
-              pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
+    if (pSPARC->npband > 1) {
+        // distribute orbitals into block cyclic format
+        pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
+                  pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
+    } else {
+        pSPARC->Yorb_BLCYC = Y;
+    }
     t2 = MPI_Wtime();  
     #ifdef DEBUG  
     if(!rank && spn_i == 0) 
@@ -1082,14 +1106,26 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
                 rank, (t2 - t1)*1e3);          
     #endif
     t1 = MPI_Wtime();
-    #ifdef DEBUG    
-    if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
-    #endif    
-    // perform matrix multiplication using ScaLAPACK routines
-    pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
-            pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
-            pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
-            &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+    if (pSPARC->npband > 1) { 
+        #ifdef DEBUG    
+        if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
+        #endif   
+        // perform matrix multiplication using ScaLAPACK routines
+        pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
+                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
+                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
+                &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+    } else {
+        #ifdef DEBUG    
+        if (!rank && spn_i == 0) printf("rank = %d, STARTING DGEMM ...\n",rank);
+        #endif   
+        cblas_dgemm(
+            CblasColMajor, CblasTrans, CblasNoTrans,
+            pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
+            1.0, pSPARC->Yorb_BLCYC, Nd_blacscomm, pSPARC->Yorb_BLCYC, Nd_blacscomm, 
+            0.0, Mp, pSPARC->Nstates
+        );
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0) 
@@ -1119,35 +1155,26 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
     
     // save HY in Xorb
     int size_s = pSPARC->Nd_d_dmcomm * pSPARC->Nband_bandcomm;
-    #ifdef USE_EVA_MODULE
-    if (CheFSI_use_EVA == 1)
-    {
-        EVA_Hamil_MatVec(
-            pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, 
-            pSPARC->Nband_bandcomm, 0.0, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm,
-            pSPARC->Atom_Influence_nloc, pSPARC->nlocProj,
-            Y, pSPARC->Xorb + spn_i*size_s, pSPARC->dmcomm
-        );
-    } else {
-    #endif
-        Hamiltonian_vectors_mult(
-            pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
-            pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb + spn_i*size_s, pSPARC->dmcomm
-        );
-    #ifdef USE_EVA_MODULE
-    }
-    #endif
+    Hamiltonian_vectors_mult(
+        pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
+        pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb + spn_i*size_s, pSPARC->dmcomm
+    );
+
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0) printf("rank = %2d, finding HY took %.3f ms\n", rank, (t2 - t1)*1e3);   
     #endif
     
     t1 = MPI_Wtime();
-    // distribute HY
-    HY_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-    pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, pSPARC->Xorb + spn_i*size_s, &ONE, &ONE, 
-              pSPARC->desc_orbitals, HY_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, 
-              &pSPARC->ictxt_blacs);
+    if (pSPARC->npband > 1) {
+        // distribute HY
+        HY_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, pSPARC->Xorb + spn_i*size_s, &ONE, &ONE, 
+                  pSPARC->desc_orbitals, HY_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, 
+                  &pSPARC->ictxt_blacs);
+    } else {
+        HY_BLCYC = pSPARC->Xorb + spn_i*size_s;
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0) printf("rank = %2d, distributing HY into block cyclic form took %.3f ms\n", 
@@ -1155,12 +1182,22 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
     #endif
     
     t1 = MPI_Wtime();
-    // perform matrix multiplication Y' * HY using ScaLAPACK routines
-    pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
-            pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, HY_BLCYC, 
-            &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Hp, &ONE, &ONE, 
-            pSPARC->desc_Hp_BLCYC);
     
+    if (pSPARC->npband > 1) {
+        // perform matrix multiplication Y' * HY using ScaLAPACK routines
+        pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
+                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, HY_BLCYC, 
+                &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Hp, &ONE, &ONE, 
+                pSPARC->desc_Hp_BLCYC);
+    } else {
+        cblas_dgemm(
+            CblasColMajor, CblasTrans, CblasNoTrans,
+            pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
+            1.0, pSPARC->Yorb_BLCYC, Nd_blacscomm, HY_BLCYC, Nd_blacscomm, 
+            0.0, Hp, pSPARC->Nstates
+        );
+    }
+
     if (nproc_dmcomm > 1 && !pSPARC->is_domain_uniform) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Hp, pSPARC->nr_Hp_BLCYC*pSPARC->nc_Hp_BLCYC, 
@@ -1171,7 +1208,9 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
     #ifdef DEBUG
     if(!rank && spn_i == 0) printf("rank = %2d, finding Y'*HY took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
-    free(HY_BLCYC);
+    if (pSPARC->npband > 1) {
+        free(HY_BLCYC);
+    }
     
     #ifdef DEBUG
     et = MPI_Wtime();
@@ -1384,22 +1423,32 @@ void Subspace_Rotation(SPARC_OBJ *pSPARC, double *Psi, double *Q, double *PsiQ, 
     double t1, t2;
 
     t1 = MPI_Wtime();
-    // perform matrix multiplication Psi * Q using ScaLAPACK routines
-    pdgemm_("N", "N", &Nd_blacscomm, &pSPARC->Nstates, &pSPARC->Nstates, &alpha, 
-            Psi, &ONE, &ONE, pSPARC->desc_orb_BLCYC, Q, &ONE, &ONE, 
-            pSPARC->desc_Q_BLCYC, &beta, PsiQ, &ONE, &ONE, pSPARC->desc_orb_BLCYC);
-    
+    if (pSPARC->npband > 1) {
+        // perform matrix multiplication Psi * Q using ScaLAPACK routines
+        pdgemm_("N", "N", &Nd_blacscomm, &pSPARC->Nstates, &pSPARC->Nstates, &alpha, 
+                Psi, &ONE, &ONE, pSPARC->desc_orb_BLCYC, Q, &ONE, &ONE, 
+                pSPARC->desc_Q_BLCYC, &beta, PsiQ, &ONE, &ONE, pSPARC->desc_orb_BLCYC);
+    } else {
+        cblas_dgemm(
+            CblasColMajor, CblasNoTrans, CblasNoTrans,
+            Nd_blacscomm, pSPARC->Nstates, pSPARC->Nstates, 
+            1.0, Psi, Nd_blacscomm, Q, pSPARC->Nstates,
+            0.0, PsiQ, Nd_blacscomm
+        );
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0) printf("rank = %2d, subspace rotation using ScaLAPACK took %.3f ms\n", 
                      rank, (t2 - t1)*1e3); 
     #endif
     t1 = MPI_Wtime();
-    // distribute rotated orbitals from block cyclic format back into 
-    // original format (band + domain)
-    pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, PsiQ, &ONE, &ONE, 
-              pSPARC->desc_orb_BLCYC, Psi_rot, &ONE, &ONE, 
-              pSPARC->desc_orbitals, &pSPARC->ictxt_blacs);
+    if (pSPARC->npband > 1) {
+        // distribute rotated orbitals from block cyclic format back into 
+        // original format (band + domain)
+        pdgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, PsiQ, &ONE, &ONE, 
+                  pSPARC->desc_orb_BLCYC, Psi_rot, &ONE, &ONE, 
+                  pSPARC->desc_orbitals, &pSPARC->ictxt_blacs);
+    }
     t2 = MPI_Wtime();    
     #ifdef DEBUG
     if(!rank && spn_i == 0) 
