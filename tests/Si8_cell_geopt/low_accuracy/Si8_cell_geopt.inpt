@@ -1,6 +1,10 @@
 # nprocs: 24
 # Test: Si8 #
-CELL: 10.26 10.26 10.26   ## test comment
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
+LATVEC_SCALE: 10.26 10.26 10.26   
 FD_GRID: 26 26 26         # FD grid
 FD_ORDER: 12
 BC: P P P

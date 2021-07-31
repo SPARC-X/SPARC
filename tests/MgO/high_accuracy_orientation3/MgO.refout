@@ -1,0 +1,135 @@
+***************************************************************************
+*                       SPARC (version Jul 23, 2021)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sat Jul 31 04:51:13 2021                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 9.46 6.3251 6.3251 
+LATVEC:
+0 0 1 
+1 0 0 
+-0.5 0.866 0 
+FD_GRID: 95 63 63
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.0009999935878
+CHEB_DEGREE: 52
+NSTATES: 24
+EXCHANGE_CORRELATION: GGA_PBE
+CALC_STRESS: 1
+CHEFSI_BOUND_FLAG: 0
+MAXIT_SCF: 100
+MINIT_SCF: 3
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 0
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: MgO
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 24
+NP_DOMAIN_PARAL: 1 1 1
+NP_DOMAIN_PHI_PARAL: 4 2 3
+EIG_SERIAL_MAXNS: 10000
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  24
+Mesh spacing in x-direction        :  0.0995789 (Bohr)
+Mesh spacing in y-direction        :  0.100398 (Bohr)
+Mesh spacing in z direction        :  0.100396 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  MgO.out
+Total number of atom types         :  2
+Total number of atoms              :  4
+Total number of electrons          :  32
+Atom type 1  (valence electrons)   :  Mg 10
+Pseudopotential                    :  Mg.psp8
+Pseudocharge radii of atom type 1  :  4.98 5.02 5.02 (x, y, z dir)
+Number of atoms of type 1          :  2
+Atom type 2  (valence electrons)   :  O 6
+Pseudopotential                    :  O.psp8
+Pseudocharge radii of atom type 2  :  6.57 6.53 6.53 (x, y, z dir)
+Number of atoms of type 2          :  2
+Estimated total memory usage       :  620.56 MB
+Estimated memory per processor     :  25.86 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -3.3910254407E+01        2.678E+00        4.046
+2            -3.6546323548E+01        1.571E+00        1.321
+3            -3.7428532690E+01        4.001E-01        1.348
+4            -3.7938021073E+01        2.347E-01        1.340
+5            -3.7959450104E+01        8.440E-02        1.274
+6            -3.7970699846E+01        4.378E-02        1.266
+7            -3.7973180888E+01        8.626E-03        1.251
+8            -3.7973200411E+01        4.325E-03        1.229
+9            -3.7973214004E+01        1.341E-03        1.214
+10           -3.7973215912E+01        3.875E-04        1.145
+11           -3.7973215886E+01        2.189E-04        1.137
+12           -3.7973215985E+01        4.367E-05        1.112
+13           -3.7973215975E+01        1.459E-05        1.077
+14           -3.7973215981E+01        5.904E-06        1.069
+15           -3.7973215978E+01        1.315E-06        0.993
+16           -3.7973215971E+01        5.294E-07        0.962
+Total number of SCF: 16    
+
+k = [0.000, 0.000, 0.000]
+Occupation of state 22 = 0.000000000000000.
+Occupation of state 24 = 0.000000000000000.
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.7973215971E+01 (Ha/atom)
+Total free energy                  : -1.5189286389E+02 (Ha)
+Band structure energy              : -2.7377056017E+01 (Ha)
+Exchange correlation energy        : -2.4572061605E+01 (Ha)
+Self and correction energy         : -1.9321953907E+02 (Ha)
+Entropy*kb*T                       : -8.7097021306E-08 (Ha)
+Fermi level                        :  2.1847377632E-01 (Ha)
+RMS force                          :  2.0324129400E-02 (Ha/Bohr)
+Maximum force                      :  2.3776935895E-02 (Ha/Bohr)
+Time for force calculation         :  0.116 (sec)
+Pressure                           :  8.1922488086E+00 (GPa)
+Maximum stress                     :  1.1398454507E+01 (GPa)
+Time for stress calculation        :  0.215 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  22.878 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           
