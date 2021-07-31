@@ -1,6 +1,10 @@
 # nprocs: 1
 # Test: H2O sheet in x,y plane #
-CELL: 24 5.67 5.67 
+LATVEC_SCALE: 24 5.67 5.67 
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
 MESH_SPACING: 0.2
 FD_ORDER: 12
 BC: D P P

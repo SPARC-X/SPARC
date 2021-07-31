@@ -1,6 +1,10 @@
 # nprocs: 1
 # Test: H2O wire in z direction #
-CELL: 14.00 14.00 6.00
+LATVEC_SCALE: 14.00 14.00 6.00
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
 MESH_SPACING: 0.2
 FD_ORDER: 12
 BC: D D P

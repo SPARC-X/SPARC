@@ -1,6 +1,10 @@
 # nprocs: 24
 # Test: SiH4 #
-CELL: 23 23 23
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
+LATVEC_SCALE: 23 23 23
 MESH_SPACING: 0.25
 FD_ORDER: 12
 BC: d d d
