@@ -57,5 +57,8 @@ Follow following steps:
 
 	sed -n '/Details for the Passed systems/,/End for the Passed systems/p' Report.txt > Pass_file
 
-	5) To clean all the tesm_run files use the following command:
+5) To clean all the tesm_run files use the following command:
 	$ python test.py clean_temp
+
+6) If the testing framework has run once, to only run the check against the reference output files
+	$ python test.py temp_present
