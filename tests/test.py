@@ -46,6 +46,10 @@ SYSTEMS["systemname"].append('Fe_spin')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'kpt', 'spin','orth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
+SYSTEMS["systemname"].append('Fe_spin_nlcc')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'kpt', 'spin','orth','smear_fd','nlcc'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 SYSTEMS["systemname"].append('H2O_sheet')
 SYSTEMS["Tags"].append(['surface', 'gga', 'potmix','orth','smear_fd','orient'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
@@ -2738,7 +2742,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 31 July 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 19 September 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -2789,7 +2793,13 @@ ismempbs =False
 ifVHQ = False
 isAuto = False
 is_valgrind_all = False
+temp_result =  False
 no_concurrency=6 # number of jobs running concurrently on github server
+
+if 'temp_present' in args:
+	temp_result =  True 
+	args.remove('temp_present')
+
 if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
 	systems=SYSTEMS['systemname']
 	tags_sys=SYSTEMS['Tags']
@@ -3065,7 +3075,7 @@ else:
 ######################### Launching the jobs ######################################################################
 # launch in a batch of 5 systems in a single pbs file in case of "mempbscheck == False" and in a batch of 1 otherwise
 # Input to the launch function should be  - (i) systems (ii) ifmempbs (iii) numberofprocs
-if isAuto == False:
+if isAuto == False and temp_result == False:
 	jobID = launchsystems(systems,memcheck,procs_sys,ismempbs, ifVHQ, isorient, not isparallel)
 
 ############################### Monitoring #########################################################################
@@ -3095,7 +3105,7 @@ if isAuto == False:
 			time.sleep(.3)
 
 	print('\n')
-else:
+elif isAuto == True and temp_result == False:
 	countrun=0
 	for systs in systems:
 		print(str(countrun)+": "+systs+" started running")
