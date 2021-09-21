@@ -159,7 +159,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 ### (6) Acknowledgement:
   
 * U.S. Department of Energy, Office of Science: DE-SC0019410 
-* U.S. National Science Foundation: 1333500 and 1553212
+* U.S. National Science Foundation: 1553212, 1663244, and 1333500 
 
 ### (7) Citation:
 
