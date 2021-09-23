@@ -940,6 +940,10 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // allocate the size of the Isspin vector which stores the spin value of each atom type
     pSPARC->IsSpin = (int *)calloc( pSPARC->Ntypes, sizeof(int) );
     
+    // variables for checking number of inputs in a row
+    int nums_read, array_read_int[10];
+    double array_read_double[10];
+
     while (fscanf(ion_fp,"%s",str) != EOF) {
         // enable commenting with '#'
         if (str[0] == '#' || str[0] == '\n') {
@@ -953,43 +957,79 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str, "N_TYPE_ATOM:") == 0) {
             fscanf(ion_fp, "%*[^\n]\n"); // skip current line
         } else if (strcmpi(str, "COORD:") == 0) {
-            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            // fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            check_below_entries(ion_fp, "COORD");
             for (i = 0; i < pSPARC->nAtomv[typcnt]; i++) {
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord);
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord+1);
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord+2);
-                fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+                nums_read = check_num_input(ion_fp, (void *) array_read_double, 'D');
+                if (nums_read == -1) { i --; continue; }   // This is comment
+                if (nums_read == 0) {
+                    printf(RED "ERROR: Number of atom coordinates is less than number of atoms for atom type %d.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                } else if (nums_read != 3)  { 
+                    printf(RED "ERROR: please provide 3 coordinates on x y z for each atom of atom type %d in a row.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                }
+                pSPARC->atom_pos[3*atmcnt_coord] = array_read_double[0];
+                pSPARC->atom_pos[3*atmcnt_coord+1] = array_read_double[1];
+                pSPARC->atom_pos[3*atmcnt_coord+2] = array_read_double[2];
                 atmcnt_coord++;  
             }
         } else if (strcmpi(str, "COORD_FRAC:") == 0) {
-            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            // fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            check_below_entries(ion_fp, "COORD_FRAC");
             for (i = 0; i < pSPARC->nAtomv[typcnt]; i++) {
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord);
+                nums_read = check_num_input(ion_fp, (void *) array_read_double, 'D');
+                if (nums_read == -1) { i --; continue; }   // This is comment
+                if (nums_read == 0) {
+                    printf(RED "ERROR: Number of atom coordinates is less than number of atoms for atom type %d.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                } else if (nums_read != 3)  { 
+                    printf(RED "ERROR: please provide 3 coordinates on x y z for each atom of atom type %d in a row.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                }
+                pSPARC->atom_pos[3*atmcnt_coord] = array_read_double[0];
+                pSPARC->atom_pos[3*atmcnt_coord+1] = array_read_double[1];
+                pSPARC->atom_pos[3*atmcnt_coord+2] = array_read_double[2];
                 pSPARC->atom_pos[3*atmcnt_coord] *= pSPARC_Input->range_x;
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord+1);
                 pSPARC->atom_pos[3*atmcnt_coord+1] *= pSPARC_Input->range_y;
-                fscanf(ion_fp,"%lf", pSPARC->atom_pos+3*atmcnt_coord+2);
                 pSPARC->atom_pos[3*atmcnt_coord+2] *= pSPARC_Input->range_z;
-                fscanf(ion_fp, "%*[^\n]\n"); // skip current line
                 atmcnt_coord++;  
             }
             pSPARC->IsFrac[typcnt] = 1;
         } else if (strcmpi(str, "RELAX:") == 0) {
-            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            // fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            check_below_entries(ion_fp, "RELAX");
             atmcnt_relax = atmcnt_cum[typcnt];
             for (i = 0; i < pSPARC->nAtomv[typcnt]; i++) {
-                fscanf(ion_fp,"%d", pSPARC->mvAtmConstraint+3*atmcnt_relax);
-                fscanf(ion_fp,"%d", pSPARC->mvAtmConstraint+3*atmcnt_relax+1);
-                fscanf(ion_fp,"%d", pSPARC->mvAtmConstraint+3*atmcnt_relax+2);
-                fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+                nums_read = check_num_input(ion_fp, (void *) array_read_int, 'I');
+                if (nums_read == -1) { i --; continue; }   // This is comment
+                if (nums_read == 0) {
+                    printf(RED "ERROR: Number of relaxation flag is less than number of atoms for atom type %d.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                } else if (nums_read != 3)  { 
+                    printf(RED "ERROR: please provide 3 relaxation flag on x y z directions for each atom of atom type %d in a row.\n"RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                }
+                pSPARC->mvAtmConstraint[3*atmcnt_relax] = array_read_int[0];
+                pSPARC->mvAtmConstraint[3*atmcnt_relax+1] = array_read_int[1];
+                pSPARC->mvAtmConstraint[3*atmcnt_relax+2] = array_read_int[2];
                 atmcnt_relax++;
             }
         } else if (strcmpi(str, "SPIN:") == 0) {
-            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            // fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            check_below_entries(ion_fp, "SPIN");
             atmcnt_spin = atmcnt_cum[typcnt];
             for (i = 0; i < pSPARC->nAtomv[typcnt]; i++) {
-                fscanf(ion_fp,"%lf", pSPARC->atom_spin + atmcnt_spin);
-                fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+                nums_read = check_num_input(ion_fp, (void *) array_read_double, 'D');
+                if (nums_read == -1) { i --; continue; }   // This is comment
+                if (nums_read == 0) {
+                    printf(RED "ERROR: Number of initial spin is less than number of atoms for atom type %d.\n" RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                } else if (nums_read != 1)  { 
+                    printf(RED "ERROR: please provide 1 initial spin for each atom of atom type %d in a row.\n"RESET, typcnt+1);
+                    exit(EXIT_FAILURE);
+                }
+                pSPARC->atom_spin[atmcnt_spin] = array_read_double[0];
                 atmcnt_spin++;
             }
             pSPARC->IsSpin[typcnt] = 1;

@@ -1011,7 +1011,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         i = 0;
         while ( (access( temp_outfname, F_OK ) != -1) && i <= MAX_OUTPUT ) {
             i++;
-            snprintf(temp_outfname, L_STRING, "%s_%d", pSPARC->OutFilename, i);
+            snprintf(temp_outfname, L_STRING, "%s_%02d", pSPARC->OutFilename, i);
         }
         pSPARC->suffixNum = i; // note that this is only known to rank 0!
 
@@ -1035,19 +1035,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         } else if (i > 0) {
             char tempchar[L_STRING];
             snprintf(tempchar, L_STRING, "%s", pSPARC->OutFilename);
-            snprintf(pSPARC->OutFilename,   L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->OutFilename,   L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->StaticFilename);
-            snprintf(pSPARC->StaticFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->StaticFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->AtomFilename);
-            snprintf(pSPARC->AtomFilename,  L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->AtomFilename,  L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->DensFilename);
-            snprintf(pSPARC->DensFilename,  L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->DensFilename,  L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->EigenFilename);
-            snprintf(pSPARC->EigenFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->EigenFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->MDFilename);
-            snprintf(pSPARC->MDFilename,    L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->MDFilename,    L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->RelaxFilename);
-            snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%02d", tempchar, i);
         }
     }
     // Initialize MD/relax variables

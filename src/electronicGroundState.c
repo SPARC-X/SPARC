@@ -1526,7 +1526,8 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, pSPARC->dmcomm_phi, recv_comm);
-        
+        if (rank_dmcomm_phi == 0) 
+            MPI_Comm_free(&recv_comm);
     } else {
         rho_at = pSPARC->electronDens_at;
         rho    = pSPARC->electronDens;
