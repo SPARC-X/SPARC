@@ -408,4 +408,16 @@ void print_vec(
     char *fname, MPI_Comm comm
 );
 
+
+/**
+ * @brief   Function to check the below-tag format
+ *          Note: used in readfiles.c for readion function
+ */
+void check_below_entries(FILE *ion_fp, char *tag);
+
+/**
+ * @brief   Check the input options in ion file
+ */
+int check_num_input(FILE *fp, void *array, char TYPE);
+
 #endif // TOOL_H
