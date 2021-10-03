@@ -3,6 +3,15 @@
 -Name
 -changes
 
+
+--------------
+Oct 03, 2021
+Name: Qimen Xu
+Changes: (main.c, initialization.c, md.c, relax.c)
+1. Explicitly flush the standard output right before MPI_Finalization to prevent Finalize hang.
+2. In DEBUG mode, make sure all standard output are printed by rank 0.
+
+
 --------------
 Sep 22, 2021
 Name: Xin Jing
