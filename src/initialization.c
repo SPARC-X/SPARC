@@ -174,7 +174,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         MPI_Bcast(&SPARC_Input, 1, SPARC_INPUT_MPI, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
+        if (rank == 0) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
 #endif
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
@@ -581,7 +581,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("Bcast pre-info. took %.3f ms\n", (t2-t1)*1000);
+        if (rank == 0) printf("Bcast pre-info. took %.3f ms\n", (t2-t1)*1000);
 #endif
         // unpack info.
         pSPARC->n_atom = tempbuff[0];
@@ -727,7 +727,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("MPI_Bcast packed buff of length %d took %.3f ms\n", l_buff,(t2-t1)*1000);
+        if (rank == 0) printf("MPI_Bcast packed buff of length %d took %.3f ms\n", l_buff,(t2-t1)*1000);
 #endif
         // unpack the variables
         position = 0;
@@ -2324,7 +2324,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Sep 22, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Oct 03, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
