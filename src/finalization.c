@@ -262,10 +262,9 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
                    pSPARC->dmcomm : MPI_COMM_NULL);
                    
     // free D2D targets between psi comm and kptcomm_topo comm
-    //if(pSPARC->chefsibound_flag == 1 && pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 && (pSPARC->spin_typ != 0 || pSPARC->Nkpts > 1))
-    if ((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) && 
-        pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 && 
-        (pSPARC->spin_typ != 0 || pSPARC->Nkpts > 1) ) 
+    if ((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
+        pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 &&
+        (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint) )
     {
         Free_D2D_Target(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo,
                        pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL, pSPARC->kptcomm_topo);

@@ -450,7 +450,7 @@ void Chebyshevfilter_constants(
         
         if (pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) { // 0 - default, 1 - always call Lanczos on H
             // estimate the min and max eigenval of H using Lanczos
-            if (pSPARC->spin_typ == 0) {
+            if (pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo) {
                 Lanczos(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_dmcomm_phi, 
                         pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->nlocProj_kptcomm, 
                         eigmin, eigmax, x0, pSPARC->TOL_LANCZOS, pSPARC->TOL_LANCZOS, 1000, k, spn_i,
@@ -503,7 +503,7 @@ void Chebyshevfilter_constants(
         
         if (pSPARC->chefsibound_flag == 1) { // 1 - always call Lanczos on H
             // estimate both max eigenval of H using Lanczos
-            if (pSPARC->spin_typ == 0) {
+            if (pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo) {
                 Lanczos(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_dmcomm_phi, 
                         pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->nlocProj_kptcomm, 
                         &temp, eigmax, x0, 1e10, pSPARC->TOL_LANCZOS, 1000, k, spn_i,
