@@ -5,6 +5,13 @@
 
 
 --------------
+Oct 07, 2021
+Name: Qimen Xu
+Changes: (parallelization.c, eigenSolver.c, finalization.c, isddft.h)
+1. Fix bug in Lanczos: in the case user specifies `NP_DOMAIN_PHI_PARAL`, check if dmcomm_phi is the same as kptcomm_topo before using dmcomm_phi for Lanczos.
+
+
+--------------
 Oct 03, 2021
 Name: Qimen Xu
 Changes: (main.c, initialization.c, md.c, relax.c)
