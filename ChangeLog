@@ -4,6 +4,13 @@
 -changes
 
 --------------
+Oct 11, 2021
+Name: Xin Jing
+Changes: (parallelization.c)
+1. Fix bug in is_phi_eq_kpt_topo when there are MPI_COMM_NULL and dmcomm_phi is actually equal to kptcomm_topo
+
+
+--------------
 Oct 07, 2021
 Name: Xin Jing
 Changes: (readfiles.c)

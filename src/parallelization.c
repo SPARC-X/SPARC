@@ -1153,26 +1153,15 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
                    sdims, (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, rdims, MPI_COMM_WORLD);
 
     // Set up D2D target objects between psi comm and kptcomm_topo comm
-    #ifdef DEBUG
-    t1 = MPI_Wtime();
-    #endif
-    int comm_compare = MPI_UNEQUAL;
-    if (pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-            MPI_Comm_compare(pSPARC->kptcomm_topo, pSPARC->dmcomm_phi, &comm_compare);
-        }
-    }
-    int is_phi_eq_kpt_topo = 0;
-    if (comm_compare == MPI_IDENT || comm_compare == MPI_CONGRUENT) {
-        is_phi_eq_kpt_topo = 1;
-    }
-    pSPARC->is_phi_eq_kpt_topo = is_phi_eq_kpt_topo;
-    #ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (rank == 0)
-        printf("rank = %d, is_phi_eq_kpt_topo = %d, time for MPI_Comm_compare: %.3f ms\n",
-            rank, is_phi_eq_kpt_topo, (t2-t1)*1e3);
-    #endif
+    // check if kptcomm_topo is the same as dmcomm_phi
+    // If found rank order in the cartesian topology is different for dmcomm_phi and 
+    // kptcomm_topo, consider to add MPI_Bcast for is_phi_eq_kpt_topo
+    if ((pSPARC->npNdx_phi == pSPARC->npNdx_kptcomm) && 
+        (pSPARC->npNdy_phi == pSPARC->npNdy_kptcomm) && 
+        (pSPARC->npNdz_phi == pSPARC->npNdz_kptcomm))
+        pSPARC->is_phi_eq_kpt_topo = 1;
+    else
+        pSPARC->is_phi_eq_kpt_topo = 0;
 
     if ((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
         pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 &&
