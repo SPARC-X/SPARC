@@ -153,17 +153,21 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 SYSTEMS["systemname"].append('H2O_sheet_quick')
 SYSTEMS["Tags"].append(['surface', 'gga', 'potmix', 'orth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################						# < Uncomment 3 lines below and fill in the details for the new systems>
+##################################################################################################################						
 SYSTEMS["systemname"].append('H2O_wire_quick')
 SYSTEMS["Tags"].append(['wire', 'lda', 'denmix', 'orth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-################################################################################################################### SYSTEMS["systemname"].append('??type the system name??')
+################################################################################################################### 
 SYSTEMS["systemname"].append('SiH4_quick')
 SYSTEMS["Tags"].append(['molecule', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-################################################################################################################### SYSTEMS["Tags"].append([??type the tags for the system as strings separated by comma??])
-# SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 
+##################################################################################################################
+# < Uncomment 3 lines below and fill in the details for the new systems>
+# SYSTEMS["systemname"].append('??type the system name??')
+# SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+# SYSTEMS["Tags"].append([??type the tags for the system as strings separated by comma??])
 
 
 ####################################################################################################################
@@ -281,20 +285,28 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
+					# if syst == "Si8_vdWDF":
+					# 	os.system("cp *.txt temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
+					# if syst == "Si8_vdWDF":
+					# 	os.system("cp *.txt temp_run")
 			else:
 				os.mkdir("temp_run")
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
+					# if syst == "Si8_vdWDF":
+					# 	os.system("cp *.txt temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
+		# 			if syst == "Si8_vdWDF":
+		# 				os.system("cp *.txt temp_run")
 		else:
 			if os.path.isdir("temp_run1"):
 				files = glob.glob("temp_run1/*")
@@ -636,6 +648,7 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 	pressure = []
 	index=0
 	isbandgap = False
+	nstates=0
 
 
 	for lines in f_out_content:
@@ -708,14 +721,21 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 					magnetization=float(temp_spin[1])
 		index=index+1
 	if isMD == None and geopt_typ ==  None:
+		SCF_no = 0
 		for lines in f_out_content:
 			if re.findall("Total number of SCF",lines):
 				SCF_no = float(re.findall("\d+",lines)[0])
 	else:
+		MD_iter = len(E)
 		SCF_no=[]
+		for n_md in range(MD_iter):
+			SCF_no.append(0)
+		count1 = 0
 		for lines in f_out_content:
 			if re.findall("Total number of SCF",lines):
-				SCF_no.append(float(re.findall("\d+",lines)[0]))
+				# SCF_no.append(float(re.findall("\d+",lines)[0]))
+				SCF_no[count1] = float(re.findall("\d+",lines)[0])
+				count1=count1+1
 
 
 	if geopt_typ ==  "cell_relax":
@@ -732,7 +752,6 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 		isPrintCell = True
 		isPrintAtoms  = True
 		isPrintStress = True
-
 	assert (no_atoms>0 and E != [] and walltime != []),"Problem in out file for system "+filepath
 
 	Info = {"isPrintF": isPrintF,
@@ -1579,6 +1598,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			scfpos = []
 			stress = []
 			force = []
+			ionic_stress = []
 			magnetization = infout["magnetization"]
 			if infout["isPrintStress"] == True:
 				stress = infaimd["stress"]
@@ -2742,7 +2762,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 19 September 2020)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 28 October 2021)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -3041,7 +3061,7 @@ for i in range(len(systems)):
 	elif ("relax_total_nlcg" in tags_sys[i]) or ("relax_total_lbfgs" in tags_sys[i]) or ("relax_total_fire" in tags_sys[i]):
 		singlept.append(False)
 		Type.append("relax_total")
-	elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]):
+	elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]) or ("md_nptnh" in tags_sys[i]) or ("md_nptnp" in tags_sys[i]):
 		singlept.append(False)
 		Type.append("MD")
 	else:
@@ -3199,13 +3219,7 @@ for i in range(len(systems)):
 			os.chdir(home_directory)
 			temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
 			temp1=getInfo(systems[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
-			# if os.path.exists('./'+systems[i]+"/"+systems[i]+".refabinitout"):
-			# 	temp2 = getInfoAbinit(systems[i],singlept[i],Type[i],isspin[i],ifVHQ)
-			# 	temp_dict = {'a': temp, 'b': temp1, 'c': temp2}
-			# 	data_info[i] = temp_dict
-			# else:
 			temp_dict = {'a': temp, 'b': temp1}
-				#data_info[i] = temp_dict
 			data_info[count_run] = temp_dict
 			sys_which_ran_idx.append(i)
 			count_run=count_run+1
