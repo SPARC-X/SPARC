@@ -11,23 +11,8 @@
 extern "C" {
 #endif
 
-#if USE_GPU
 
-void NONLOCAL_GPU(min_SPARC_OBJ *pSPARC,  ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,   NLOC_PROJ_OBJ *nlocProj,
-    min_SPARC_OBJ **d_SPARC, ATOM_NLOC_INFLUENCE_OBJ **d_Atom_Influence_nloc, NLOC_PROJ_OBJ **d_locProj)
-{
-    double t1 = MPI_Wtime();
-    //TODO: GARBAGE COLLECTION
-    cudaMalloc((void **)d_SPARC,                sizeof(min_SPARC_OBJ));
-    cudaMalloc((void **)d_Atom_Influence_nloc,  sizeof(ATOM_NLOC_INFLUENCE_OBJ) * pSPARC->Ntypes);
-    *d_locProj = (NLOC_PROJ_OBJ*) malloc(sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes);
-    interface_gpu(pSPARC,              *d_SPARC,
-                               Atom_Influence_nloc, *d_Atom_Influence_nloc,
-                               nlocProj,            *d_locProj);  
-}
-#endif
-
-void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl, device_type device)
+void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, const Hybrid_Decomp* hd, NonLocal_Info *nl, device_type device)
 {
     nl->pSPARC = (min_SPARC_OBJ*) malloc( sizeof(min_SPARC_OBJ) );
     min_SPARC_OBJ *min_SPARC = nl->pSPARC;
@@ -75,7 +60,10 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, NonLocal_Info *nl, device
   if(device == DEVICE_TYPE_DEVICE) {
 //TODO Garbage collection
     printf("GPUUUUUUUU\n");
-    NONLOCAL_GPU(min_SPARC, nl->Atom_Influence_nloc, nl->nlocProj, &(nl->d_SPARC), &(nl->d_Atom_Influence_nloc), &(nl->d_locProj));
+     
+    nl->gpu_vnl = (vnl_info*) malloc(sizeof(vnl_info));
+    interface_gpu(min_SPARC, nl->Atom_Influence_nloc, nl->nlocProj, nl->gpu_vnl, hd->local_num_cols, hd->local_num_fd);
+     
 }
 #endif
 
