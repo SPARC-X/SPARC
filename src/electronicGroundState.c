@@ -555,8 +555,7 @@ void scf(SPARC_OBJ *pSPARC)
     PCE_Veff_Init(&veff_info);
 
     // TODO: Add this line back in
-    //SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
-    SPARC2NONLOCAL_interface(pSPARC, &hd, &nl, compute_device);
+    SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
     }
 
 

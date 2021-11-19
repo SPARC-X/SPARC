@@ -2,7 +2,7 @@
 # Warning: don't turn on USE_MKL and USE_SCALAPACK simultaneously
 # Set USE_MKL = 1 to compile with MKL BLAS, LAPACK, and ScaLAPACK
 # Set USE_MKL = 0 otherwise
-USE_MKL       = 1
+USE_MKL       = 0
 # Set USE_SCALAPACK = 1 to compile with non-MKL BLAS, LAPACK, and ScaLAPACK
 # Set USE_SCALAPACK = 0 to compile with non-MKL BLAS and LAPACK only
 USE_SCALAPACK = 0
@@ -13,8 +13,8 @@ USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
-USE_GPU    := 1
-USE_ELPA := 1
+USE_GPU    := 0
+USE_ELPA := 0
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -53,7 +53,7 @@ ifeq ($(USE_GPU), 1)
 
 LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native,-fopenmp
 CPPFLAGS += -I $(CUDA_ROOT)/include
-LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcusparse -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
+LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
 ifeq ($(USE_MKL), 1)
 LFLAGS_GPU_HOST:=$(LFLAGS_GPU_HOST)
 LFLAGS_GPU   += -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
