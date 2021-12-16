@@ -453,7 +453,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       }
 #endif
 
-      ca3dmm_engine_free(&mult_ptp);
+      //ca3dmm_engine_free(&mult_ptp);
 
       // Perform Psi^T*HPsi
       ca3dmm_engine_p mult_pthp;
@@ -472,7 +472,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       }
 #endif
 
-      ca3dmm_engine_free(&mult_pthp);
+      //ca3dmm_engine_free(&mult_pthp);
 
       double a_PsiTPsi = MPI_Wtime();
     #ifdef DEBUG
@@ -532,7 +532,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //       }
     //     }
     // }
-    PCE_Mat_Destroy(&M_s);
+    //PCE_Mat_Destroy(&M_s);
 
     //PCE_Eig_Get(&Eigvals, &hd, pSPARC->lambda);
     #else
@@ -577,11 +577,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
 
       ca3dmm_engine_p mult_subsp;
-      PCE_Subspace_Rotation_Scalapack(hd, &mult_subsp, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
+      PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
                             ham_struct->compute_device, kptcomm, dmcomm);
-      PCE_Mat_Destroy(&H_s);
+      //PCE_Mat_Destroy(&H_s);
       printf("ABCD\n");
-      ca3dmm_engine_free(&mult_subsp);
+      //ca3dmm_engine_free(&mult_subsp);
     #else
       exit(-1);
 	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
