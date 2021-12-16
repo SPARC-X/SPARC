@@ -478,7 +478,7 @@ void scf(SPARC_OBJ *pSPARC)
     }
 
     //Assume CAM. TODO: FIX
-    device_type communication_device = compute_device;
+    device_type communication_device = DEVICE_TYPE_HOST;
 
 #else
     device_type communication_device = DEVICE_TYPE_HOST;
