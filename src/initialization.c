@@ -7,6 +7,7 @@
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  *          Hua Huang <huangh223@gatech.edu>
  *          Edmond Chow <echow@cc.gatech.edu>
+ *          Alfredo Metere (GPU support), Lawrence Livermore National Laboratory <metere1@llnl.gov>, <alfredo.metere@xsilico.com>
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -227,6 +228,23 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         pSPARC->useLAPACK = 1;
     }
     #endif
+
+    // SPARCX_ACCEL_NOTE Need to add this. Make sure it is always within "#ifdef USE_DP_SUBEIG" branch
+	// --- BEGIN. Alfredo Metere
+	#ifdef ACCEL // Activating flag for using hardware acceleration at compile time.
+	pSPARC->useACCEL = 1;
+//	#else
+//	pSPARC->useACCEL = 0;
+	
+
+	if (rank == 0) 
+	{	
+		char *hwaccel[2] = { "DISABLED", "ENABLED" };
+		printf ("[INFO] Hardware acceleration is %s\n", hwaccel[pSPARC->useACCEL]);
+	}
+	#endif // ACCEL
+	// --- END. Alfredo Metere
+
     pSPARC->DP_CheFSI     = NULL;
     pSPARC->DP_CheFSI_kpt = NULL;
     if (pSPARC->isGammaPoint) init_DP_CheFSI(pSPARC);
@@ -2324,7 +2342,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Nov 19, 2021)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Dec 21, 2021)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
