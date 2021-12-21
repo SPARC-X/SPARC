@@ -645,6 +645,31 @@ typedef struct _SPARC_OBJ{
     double max_dilatation;
     double TOL_RELAX_CELL;
 
+    // DFT-D3 correction
+    double d3Energy[4]; // total d3 energy, e6, e8, e63
+    double *d3Grads;   // atomic forces caused by d3 (-grad)
+    double d3Stress[9]; // stress of cell caused by d3
+
+    int d3Flag;
+    double d3Rthr;        // cutoff radius for calculating d3 energy correction
+    double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
+
+    int *atomicNumbers;  // atomic numbers of atoms
+    double *atomScaledR2R4;
+    double *atomScaledRcov;
+    double *atomCN;
+    int *atomMaxci;
+    int nImageCN[3]; // largest amount of image cells on 3 directions needed to consider for computing CN
+    int nImageEG[3]; // largest amount of image cells on 3 directions needed to consider for computing d3 energy
+    double *****c6ab; // pointer of C6 sample results
+    double lattice[9];
+    int BCtype[3];
+    int periodicBCFlag;
+    double d3Rs6;
+    double d3S18;
+    FILE *d3Output;
+    double d3Sigma[9]; // stress of cell caused by d3
+
     // Extrapolation options
     double *delectronDens;
     double *delectronDens_0dt;
@@ -879,6 +904,11 @@ typedef struct _SPARC_INPUT_OBJ{
     char RelaxMeth[32];
     
     char XC[32];        // exchage-correlation approx. name
+
+    /* DFT-D3 options */
+    int d3Flag;
+    double d3Rthr;        // cutoff radius for calculating d3 energy correction
+    double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
     
     /* File names */
     char filename[L_STRING]; 

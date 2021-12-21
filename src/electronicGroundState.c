@@ -37,6 +37,8 @@
 #include "stress.h"
 #include "pressure.h"
 
+#include "vdW/d3/d3Correction.h"
+
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
 #endif
@@ -89,6 +91,16 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     
     Calculate_EGS_elecDensEnergy(pSPARC);
 
+    // DFT-D3 correction
+    if (pSPARC->d3Flag == 1) {
+        t1 = MPI_Wtime();
+        d3_energy_gradient(pSPARC);
+        t2 = MPI_Wtime();
+        #ifdef DEBUG
+            if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
+        #endif
+    }
+
     // write energies into output file   
     if (!rank && pSPARC->Verbosity) {
         output_fp = fopen(pSPARC->OutFilename,"a");
@@ -106,6 +118,9 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
         fprintf(output_fp,"Entropy*kb*T                       :%18.10E (Ha)\n", pSPARC->Entropy);
         fprintf(output_fp,"Fermi level                        :%18.10E (Ha)\n", pSPARC->Efermi);
+        if (pSPARC->d3Flag == 1) {
+        	fprintf(output_fp,"DFT-D3 correction                  :%18.10E (Ha)\n", pSPARC->d3Energy[0]);
+        }
         fclose(output_fp);
         // for static calculation, print energy to .static file
         if (pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
@@ -124,6 +139,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
     // calculate forces
     Calculate_EGS_Forces(pSPARC);
+    if (pSPARC->d3Flag == 1) add_d3_forces(pSPARC);
     t2 = MPI_Wtime();
     
     // write forces into .static file if required
@@ -166,6 +182,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     if(pSPARC->Calc_stress == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_stress(pSPARC);
+        if (pSPARC->d3Flag == 1) d3_grad_cell_stress(pSPARC);
         t2 = MPI_Wtime();
         if(!rank && pSPARC->Verbosity) {
             // write stress to .static file
@@ -201,6 +218,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     } else if(pSPARC->Calc_pres == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_pressure(pSPARC);
+        if (pSPARC->d3Flag == 1) d3_grad_cell_stress(pSPARC); // add the D3 contribution on pressure to total pressure
         t2 = MPI_Wtime();
         if(!rank && pSPARC->Verbosity) {
         	output_fp = fopen(pSPARC->OutFilename,"a");
