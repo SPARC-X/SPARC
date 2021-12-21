@@ -439,6 +439,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       ca3dmm_engine_p mult_ptp;
       scalapack_engine se;
       Mat_Info        M_s;
+      PCE_Scalapack_Init(&se);
       PCE_Mat_Init(&M_s);
 
       // M_s= Psi^T Psi
