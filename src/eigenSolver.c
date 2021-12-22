@@ -602,8 +602,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 
       ca3dmm_engine_p mult_subsp;
     if(libpce_use_scalapack_matmats) {
-      PCE_Subspace_Rotation_Scalapack(hd, mult_subsp, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
+      PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
                             ham_struct->compute_device, kptcomm, dmcomm);
+      MPI_Barrier(kptcomm);
       PCE_Scalapack_Destroy(&se);
     } else {
       PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
