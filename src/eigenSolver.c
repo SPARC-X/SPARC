@@ -383,6 +383,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #endif
     
       printf("spn_i: %i, size_s: %i\n", spn_i, size_s);
+      const char* s_libpce_use_scalapack_matmats = getenv("LIBPCE_USE_SCALAPACK_MATMATS");
+      int libpce_use_scalapack_matmats = 0;
+      if(s_libpce_use_scalapack_matmats != NULL) {
+          libpce_use_scalapack_matmats = atoi(s_libpce_use_scalapack_matmats);
+      }
+      printf("LIBPCE USE SCALAPACK MATMATS: %i\n", libpce_use_scalapack_matmats);
 
          // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
          //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
@@ -444,9 +450,14 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 
       // M_s= Psi^T Psi
       //TODO: Fix comm
-      //PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
-      PCE_Internal_Calculate_Eigval_Dist(hd, &se, ham_struct->compute_device, kptcomm, dmcomm);
-      PCE_PsiTPsi_Scalapack(hd, Psi2, &se, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+      if(libpce_use_scalapack_matmats) {
+        PCE_Internal_Calculate_Eigval_Dist(hd, &se, ham_struct->compute_device, kptcomm, dmcomm);
+        PCE_PsiTPsi_Scalapack(hd, Psi2, &se, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+      } else {
+      PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+      }
+
+
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
         gpuErrchk( cudaPeekAtLastError() );
@@ -454,7 +465,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       }
 #endif
 
-      //ca3dmm_engine_free(&mult_ptp);
+      if(!libpce_use_scalapack_matmats) {
+        ca3dmm_engine_free(&mult_ptp);
+      }
 
       // Perform Psi^T*HPsi
       ca3dmm_engine_p mult_pthp;
@@ -462,10 +475,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       PCE_Mat_Init(&H_s);
 
       // H_s= Psi^T Psi
-      //PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, ham_struct->communication_device, ham_struct->compute_device,
-      //             kptcomm, dmcomm);
+      if(libpce_use_scalapack_matmats) {
       PCE_PsiTHPsi_Scalapack(hd, Psi2, Psi1, &H_s, &se, ham_struct->communication_device, ham_struct->compute_device,
                    kptcomm, dmcomm);
+      } else {
+      PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, ham_struct->communication_device, ham_struct->compute_device,
+                   kptcomm, dmcomm);
+      }
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
         gpuErrchk( cudaPeekAtLastError() );
@@ -473,7 +489,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       }
 #endif
 
-      //ca3dmm_engine_free(&mult_pthp);
+      if(!libpce_use_scalapack_matmats) {
+        ca3dmm_engine_free(&mult_pthp);
+      }
 
       double a_PsiTPsi = MPI_Wtime();
     #ifdef DEBUG
@@ -510,8 +528,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
-    //PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+    if(libpce_use_scalapack_matmats) {
     PCE_Eigensolve_Scalapack(Eigvals, hd, &H_s, &M_s, &se,  ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+    } else {
+    PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+    }
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
         gpuErrchk( cudaPeekAtLastError() );
@@ -533,7 +554,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //       }
     //     }
     // }
-    //PCE_Mat_Destroy(&M_s);
+    if(!libpce_use_scalapack_matmats) {
+      PCE_Mat_Destroy(&M_s);
+    }
 
     //PCE_Eig_Get(&Eigvals, &hd, pSPARC->lambda);
     #else
@@ -578,12 +601,16 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
 
       ca3dmm_engine_p mult_subsp;
-      PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
+    if(libpce_use_scalapack_matmats) {
+      PCE_Subspace_Rotation_Scalapack(hd, mult_subsp, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
                             ham_struct->compute_device, kptcomm, dmcomm);
-    PCE_Scalapack_Destroy(&se);
-      //PCE_Mat_Destroy(&H_s);
+      PCE_Scalapack_Destroy(&se);
+    } else {
+      PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+      PCE_Mat_Destroy(&H_s);
+      ca3dmm_engine_free(&mult_subsp);
+    }
       printf("ABCD\n");
-      //ca3dmm_engine_free(&mult_subsp);
     #else
       exit(-1);
 	// find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
