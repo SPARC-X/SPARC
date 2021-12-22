@@ -445,7 +445,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // M_s= Psi^T Psi
       //TODO: Fix comm
       //PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
-      PCE_Internal_Calculate_Eigval_Dist(hd, &se, kptcomm);
+      PCE_Internal_Calculate_Eigval_Dist(hd, &se, ham_struct->compute_device, kptcomm, dmcomm);
       PCE_PsiTPsi_Scalapack(hd, Psi2, &se, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
@@ -580,6 +580,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       ca3dmm_engine_p mult_subsp;
       PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
                             ham_struct->compute_device, kptcomm, dmcomm);
+    PCE_Scalapack_Destroy(&se);
       //PCE_Mat_Destroy(&H_s);
       printf("ABCD\n");
       //ca3dmm_engine_free(&mult_subsp);
