@@ -21,4 +21,13 @@
  */
 void atomdata_mass(char *element, double *mass);
 
+/**
+ * @brief   Find atomic number info. for given element type.
+ *
+ *
+ * @param element   Element name. (OUTPUT)
+ * @param Z pointer of atomic number of the element
+ */
+void atomdata_number(char *element, int *Z);
+
 #endif //ATOMDATA_H

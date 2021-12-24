@@ -31,12 +31,14 @@
 #include "parallelization.h"
 #include "isddft.h"
 
+#include "vdW/d3/d3Correction.h"
+
 #define TEMP_TOL 1e-12
 
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 126
+#define N_MEMBR 129
 
 
 
@@ -275,6 +277,17 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     if (rank == 0) printf("\nCalculating rb for all atom types took %.3f ms\n",(t2-t1)*1000);
 #endif
 
+    // initialize DFT-D3
+    if (pSPARC->d3Flag == 1) {
+        if ((strcmpi(pSPARC->XC, "GGA_PBE") != 0) && (strcmpi(pSPARC->XC, "GGA_PBEsol") != 0) && (strcmpi(pSPARC->XC, "GGA_RPBE") != 0)) {
+            if (rank == 0) printf("WARNING: Cannot find D3 coefficients for this functional. DFT-D3 correction calculation canceled!\n");
+            pSPARC->d3Flag = 0;
+        }
+        else {
+            set_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
+        }
+    }
+
     // write initialized parameters into output file
     if (rank == 0) {
         write_output_init(pSPARC);
@@ -511,6 +524,11 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     /* Default cell relaxation parameters*/
     pSPARC_Input->max_dilatation = 1.06;      // maximum lattice dilatation
     pSPARC_Input->TOL_RELAX_CELL = 1e-2;      // in GPa (all periodic)
+
+    /* Default DFT-D3 correction */
+    pSPARC_Input->d3Flag = 0;
+    pSPARC_Input->d3Rthr = 1600.0;
+    pSPARC_Input->d3Cn_thr = 625.0;
 
     /* Default stress flags*/
     pSPARC_Input->Calc_stress = 0;
@@ -876,6 +894,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->L_lineopt = pSPARC_Input->L_lineopt;
     pSPARC->Calc_stress = pSPARC_Input->Calc_stress;
     pSPARC->Calc_pres = pSPARC_Input->Calc_pres;
+    pSPARC->d3Flag = pSPARC_Input->d3Flag;
     // double type values
     pSPARC->range_x = pSPARC_Input->range_x;
     pSPARC->range_y = pSPARC_Input->range_y;
@@ -931,6 +950,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->FIRE_maxmov = pSPARC_Input->FIRE_maxmov;
     pSPARC->max_dilatation = pSPARC_Input->max_dilatation;
     pSPARC->TOL_RELAX_CELL = pSPARC_Input->TOL_RELAX_CELL;
+    pSPARC->d3Rthr = pSPARC_Input->d3Rthr;
+    pSPARC->d3Cn_thr = pSPARC_Input->d3Cn_thr;
     // char type values
     strncpy(pSPARC->MDMeth , pSPARC_Input->MDMeth,sizeof(pSPARC->MDMeth));
     strncpy(pSPARC->RelaxMeth , pSPARC_Input->RelaxMeth,sizeof(pSPARC->RelaxMeth));
@@ -2342,7 +2363,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Dec 21, 2021)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Dec 23, 2021)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2575,6 +2596,11 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"RELAX_MAXDILAT: %.2E\n",pSPARC->max_dilatation); 
         fprintf(output_fp,"PRINT_RELAXOUT: %d\n",pSPARC->PrintRelaxout);
     }
+    if (pSPARC->d3Flag == 1) {
+        fprintf(output_fp,"D3_FLAG: %d\n",pSPARC->d3Flag);
+        fprintf(output_fp,"D3_RTHR: %.15G\n",pSPARC->d3Rthr);   
+        fprintf(output_fp,"D3_CN_THR: %.15G\n",pSPARC->d3Cn_thr);
+    }
     fprintf(output_fp,"OUTPUT_FILE: %s\n",pSPARC->filename_out);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                                Cell                                       \n");
@@ -2730,6 +2756,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2739,6 +2766,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
+                                         MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -2755,7 +2783,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1, 1, 1, /* int */ 
+                          1, 1, 1, 1, 1,
+                          1, /* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -2764,7 +2793,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, 1, 1, /* double */
+                          1, 1, 1, 1, 1,
+                          1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -2848,6 +2878,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.Calc_stress, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Calc_pres, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Poisson_solver, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.d3Flag, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
@@ -2894,6 +2925,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.FIRE_maxmov, addr + i++);
     MPI_Get_address(&sparc_input_tmp.max_dilatation, addr + i++);
     MPI_Get_address(&sparc_input_tmp.TOL_RELAX_CELL, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.d3Rthr, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.d3Cn_thr, addr + i++);
     // char type
     MPI_Get_address(&sparc_input_tmp.MDMeth, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxMeth, addr + i++);
