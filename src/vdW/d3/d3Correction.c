@@ -834,6 +834,7 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
         pSPARC->stress[1] += pSPARC->d3Stress[1];
         pSPARC->stress[2] += pSPARC->d3Stress[2];
         pSPARC->stress[4] += pSPARC->d3Stress[5];
+        pSPARC->pres -= (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8])/3;
     }
     else if (pSPARC->Calc_pres == 1) {
         pSPARC->pres -= (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8])/3;
