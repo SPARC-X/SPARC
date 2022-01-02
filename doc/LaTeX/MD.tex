@@ -72,7 +72,7 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), and NVK\_G (isokinetic ensemble with Gaussian thermostat) are supported.
+Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), NVK\_G (isokinetic ensemble with Gaussian thermostat), NPT\_NH (isothermal-isobaric ensemble with Nose-Hoover thermostat) and NPT\_NP (isothermal-isobaric ensemble with Nose-Poincare thermostat) are supported.are supported.
 \end{block}
 
 \end{frame}
@@ -178,7 +178,7 @@ Starting ionic temperature in QMD, used to generate initial velocity distributio
 \end{block}
 
 \begin{block}{Remark}
-Must be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$.
+Must be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$. It is the target temperature in NPT\_NH and NPT\_NP.
 \end{block}
 
 \end{frame}
@@ -214,7 +214,7 @@ Specifies the final temperature of the thermostat. Thermostat temperature is var
 \end{block}
 
 \begin{block}{Remark}
-Available for NVT\_NH quantum molecular dynamics only.
+Available for NVT\_NH quantum molecular dynamics only. Not supported in NPT\_NH and NPT\_NP.
 \end{block}
 
 \end{frame}
@@ -356,6 +356,226 @@ Gives the inertia factor for Nose Hoover thermostat.
 
 \begin{block}{Remark}
 Applicable to NVT\_NH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_NH\_QMASS}} \label{NPT_NH_QMASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+First number int; other double
+\end{block}
+
+\begin{block}{Default}
+No default value
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+atomic unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_NH\_QMASS}: 3\;700\;700\;700
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the amount (first number) and inertia masses (other numbers) of Nose Hoover thermostats in NPT\_NH.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NPT\_NH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+Program will exit if NPT\_NH is selected but NPT\_NH\_QMASS is not input
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_NH\_BMASS}} \label{NPT_NH_BMASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+No default value
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+atomic unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_NH\_BMASS}: 5000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the inertia mass for the barostat variable in NPT\_NH.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NPT\_NH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+Program will exit if NPT\_NH is selected but NPT\_NH\_BMASS is not input
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_NP\_QMASS}} \label{NPT_NP_QMASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+No default value
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+atomic unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_NP\_QMASS}: 100
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the inertia mass for the thermostat variable in NPT\_NP.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+Program will exit if NPT\_NP is selected but NPT\_NP\_BMASS is not input
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_NP\_BMASS}} \label{NPT_NP_BMASS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+No default value
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+atomic unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_NP\_BMASS}: 20
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the inertia mass for the barostat variable in NPT\_NP.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+Program will exit if NPT\_NP is selected but NPT\_NP\_BMASS is not input
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_SCALE\_VECS}} \label{NPT_SCALE_VECS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Int
+\end{block}
+
+\begin{block}{Default}
+1 2 3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_SCALE\_VECS}: 2
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Specify which lattice vectors can be rescaled in NPT-NH. The cell will only expand or shrink in the specified directions.
+\end{block}
+
+\begin{block}{Remark}
+Only three numbers 1, 2 and 3 can be accepted. For example, if " 2 3" is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3. Only NPT-NH can specify the rescaled vector.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TARGET\_PRESSURE}} \label{TARGET_PRESSURE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+GPa
+\end{block}
+
+\begin{block}{Example}
+\texttt{TARGET\_PRESSURE}: 40.9611
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Gives the outer pressure in NPT\_NH and NPT\_NP.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to NPT\_NH and NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
 \end{block}
 
 \end{frame}

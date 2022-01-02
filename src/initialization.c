@@ -38,7 +38,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 129
+#define N_MEMBR 136
 
 
 
@@ -508,6 +508,18 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->ion_vel_dstr_rand = 0;      // default initial velocity are fixed (different runs give the same answer)
     pSPARC_Input->qmass = 40.0 * CONST_FS2ATU; // default values of thermostat parameter mass (a.u.)
     pSPARC_Input->TWtime = 1000000000;        // default value of walltime in min
+    pSPARC_Input->NPTscaleVecs[0] = 1; 
+    pSPARC_Input->NPTscaleVecs[1] = 1; 
+    pSPARC_Input->NPTscaleVecs[2] = 1;        // default lattice vectors to be rescaled in NPT
+    pSPARC_Input->NPT_NHnnos = 0;                   // default amount of thermo variable for NPT_NH. If MDMeth is this but nnos is 0, program will stop
+    for (int subscript_NPTNH_qmass = 0; subscript_NPTNH_qmass < L_QMASS; subscript_NPTNH_qmass++){
+        pSPARC_Input->NPT_NHqmass[subscript_NPTNH_qmass] = 0.0;
+    }                                         // default mass of thermo variables for NPT_NH. If MDMeth is this but one of qmass is 0, program will stop
+    pSPARC_Input->NPT_NHbmass = 0.0;          // default mass of baro variable for NPT_NH. If MDMeth is this but bmass is 0, program will stop
+    pSPARC_Input->prtarget = 0.0;             // default target pressure for NPT_NH.
+
+    pSPARC_Input->NPT_NP_qmass = 0.0;         // default mass of thermo variables for NPT_NP. If MDMeth is this but qmass is 0, program will stop
+    pSPARC_Input->NPT_NP_bmass = 0.0;         // default mass of thermo variables for NPT_NP. If MDMeth is this but bmass is 0, program will stop
 
     /* Default Relax parameters */
     pSPARC_Input->NLCG_sigma = 0.5;
@@ -886,6 +898,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Printrestart_fq = pSPARC_Input->Printrestart_fq;
     pSPARC->elec_T_type = pSPARC_Input->elec_T_type;
     pSPARC->MD_Nstep = pSPARC_Input->MD_Nstep;
+    pSPARC->NPTscaleVecs[0] = pSPARC_Input->NPTscaleVecs[0];
+    pSPARC->NPTscaleVecs[1] = pSPARC_Input->NPTscaleVecs[1];
+    pSPARC->NPTscaleVecs[2] = pSPARC_Input->NPTscaleVecs[2];
+    pSPARC->NPT_NHnnos = pSPARC_Input->NPT_NHnnos;
     pSPARC->ion_elec_eqT = pSPARC_Input->ion_elec_eqT;
     pSPARC->ion_vel_dstr = pSPARC_Input->ion_vel_dstr;
     pSPARC->ion_vel_dstr_rand = pSPARC_Input->ion_vel_dstr_rand;
@@ -941,6 +957,13 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->thermos_Tf = pSPARC_Input->thermos_Tf;
     pSPARC->qmass = pSPARC_Input->qmass;
     pSPARC->TWtime = pSPARC_Input->TWtime;// buffer time
+    for (i = 0; i < pSPARC->NPT_NHnnos; i++) {
+        pSPARC->NPT_NHqmass[i] = pSPARC_Input->NPT_NHqmass[i];
+    }
+    pSPARC->NPT_NHbmass = pSPARC_Input->NPT_NHbmass;
+    pSPARC->prtarget = pSPARC_Input->prtarget;
+    pSPARC->NPT_NP_bmass = pSPARC_Input->NPT_NP_bmass;
+    pSPARC->NPT_NP_qmass = pSPARC_Input->NPT_NP_qmass;
     pSPARC->NLCG_sigma = pSPARC_Input->NLCG_sigma;
     pSPARC->L_finit_stp = pSPARC_Input->L_finit_stp;
     pSPARC->L_maxmov = pSPARC_Input->L_maxmov;
@@ -2363,7 +2386,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Dec 23, 2021)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jan 04, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2451,6 +2474,31 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0)
             fprintf(output_fp,"ION_TEMP_END: %.15g\n",pSPARC->thermos_Tf);
             fprintf(output_fp,"QMASS: %.15g\n",pSPARC->qmass);
+        if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0) {
+            //fprintf(output_fp,"AMOUNT_THERMO_VARIABLE: %d\n",pSPARC->NPT_NHnnos);
+            fprintf(output_fp,"NPT_SCALE_VECS:");
+            if (pSPARC->NPTscaleVecs[0] == 1) fprintf(output_fp," 1");
+            if (pSPARC->NPTscaleVecs[1] == 1) fprintf(output_fp," 2");
+            if (pSPARC->NPTscaleVecs[2] == 1) fprintf(output_fp," 3");
+            fprintf(output_fp,"\n");
+            fprintf(output_fp,"NPT_NH_QMASS:");
+            fprintf(output_fp," %d",pSPARC->NPT_NHnnos);
+            for (i = 0; i < pSPARC->NPT_NHnnos; i++){
+                if (i%5 == 0){
+                    fprintf(output_fp,"\n");
+                }
+                fprintf(output_fp," %.15g",pSPARC->NPT_NHqmass[i]);
+            }
+            fprintf(output_fp,"\n");
+            fprintf(output_fp,"NPT_NH_BMASS: %.15g\n",pSPARC->NPT_NHbmass);
+            fprintf(output_fp,"TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget);
+        }
+        if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0) {
+            //fprintf(output_fp,"AMOUNT_THERMO_VARIABLE: %d\n",pSPARC->NPT_NHnnos);
+            fprintf(output_fp,"NPT_NP_QMASS: %.15g\n",pSPARC->NPT_NP_qmass);
+            fprintf(output_fp,"NPT_NP_BMASS: %.15g\n",pSPARC->NPT_NP_bmass);
+            fprintf(output_fp,"TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget);
+        }
     }
 
     if (pSPARC->RestartFlag == 1) {
@@ -2756,7 +2804,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2765,6 +2813,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
@@ -2784,7 +2833,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, /* int */ 
+                          1, 1, 3, /* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -2794,6 +2843,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
+                          1, 1, L_QMASS, 1, 1,
                           1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
@@ -2879,6 +2929,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.Calc_pres, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Poisson_solver, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NHnnos, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPTscaleVecs, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
@@ -2927,6 +2979,11 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.TOL_RELAX_CELL, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Rthr, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Cn_thr, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NHqmass, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NHbmass, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.prtarget, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NP_qmass, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NP_bmass, addr + i++);
     // char type
     MPI_Get_address(&sparc_input_tmp.MDMeth, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxMeth, addr + i++);

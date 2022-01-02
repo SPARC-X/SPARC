@@ -27,6 +27,7 @@
 // max length of input strings
 #define L_STRING 512
 #define L_ATMTYPE 8
+#define L_QMASS  60
 
 
 // TO PRINT IN COLOR
@@ -612,6 +613,37 @@ typedef struct _SPARC_OBJ{
     double qmass;          // mass parameter
     double amu2au;         // conversion factor for atomic mass unit -> atomic unit of mass
     double fs2atu;         // conversion factor for femto second -> atomic unit of time (Jiffy) 
+    // NPT
+    int NPTscaleVecs[3];    // which lattice vector can be rescaled?
+    int NPTisotropicFlag;   // whether it is an isotropic cell expansion
+    double prtarget;       // Target pressure of barostatic system, used in both NPT_NH and NPT_NP
+    double scale;          // length ratio of the size of cell in NPT, used in both NPT_NH and NPT_NP
+    double volumeCell;  // volume of the cell, used in both NPT_NH and NPT_NP
+    // NPT-NH
+    int NPT_NHnnos;              // amount of thermostat variables in the Nose-Hoover chain, it should be smaller than 100
+    double NPT_NHqmass[L_QMASS];    // qmass in NPT, the largest number of thermostat variable is 60 //ORIGINAL VARIABLES! DON'T CHANGE IT!
+    double NPT_NHbmass;          // bmass in NPT
+    double glogs[L_QMASS];       // Accelerations of virtual thermal variables
+    double vlogs[L_QMASS];       // Velocities of virtual thermal variables
+    double vlogv;          // Velocity of virtual baro variables
+    double xlogs[L_QMASS];       // Positions of virtual thermal variables
+    // NPT-NP
+    int maxTimeIter;     // largest allowed amount of iteration
+    double NPT_NP_qmass; // qmass used in NPT_NP
+    double NPT_NP_bmass; // bmass used in NPT_NP
+    double range_x_velo; // velocity of x sidelength
+    double range_y_velo; // velocity of y sidelength
+    double range_z_velo; // velocity of z sidelength
+    double G_NPT_NP[3]; // G tensor, for barostat control
+    double Pm_NPT_NP[3]; // Pm tensor
+    double Kbaro; // kinetic energy of barostat variables
+    double Ubaro; // potential energy of barostat variables
+    double S_NPT_NP; // S, for thermostat control
+    double Sv_NPT_NP; // velocity of S
+    double Kther; // kinetic energy of thermostat variable
+    double Uther; // potential energy of thermostat variable
+    double Hamiltonian_NPT_NP; // Hamiltonian of the NPT-NP system
+    double init_Hamil_NPT_NP; // initial Hamiltonian of the system
     // Relaxation
     double Relax_fac;      // Relaxation factor
     int elecgs_Count;      // To count the number of times electronic ground state is calculated
@@ -882,6 +914,14 @@ typedef struct _SPARC_INPUT_OBJ{
     double ion_T;        // Ionic temperature in Kelvin = initial temp of thermostat in NVT_NH
     double thermos_Tf;   // Final temperature of the thermostat
     double qmass;        // mass parameter of Nose Hoover thermostat
+
+    int NPT_NHnnos;            // number of thermostat variables in NPT_NH
+    int NPTscaleVecs[3];       // which lattice vector can be rescaled?
+    double NPT_NHqmass[L_QMASS];// qmass used in NPT_NH
+    double NPT_NHbmass;        // Bmass used in NPT_NH
+    double prtarget;     // Target pressure of barostatic system, UNIT on input file is GPa
+    double NPT_NP_qmass; // qmass used in NPT_NP
+    double NPT_NP_bmass; // Bmass used in NPT_NP
     
     /* Walltime */
     double TWtime;
