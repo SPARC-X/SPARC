@@ -72,7 +72,7 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), NVK\_G (isokinetic ensemble with Gaussian thermostat), NPT\_NH (isothermal-isobaric ensemble with Nose-Hoover thermostat) and NPT\_NP (isothermal-isobaric ensemble with Nose-Poincare thermostat) are supported.are supported.
+Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), NVK\_G (isokinetic ensemble with Gaussian thermostat), NPT\_NH (isothermal-isobaric ensemble with Nose-Hoover thermostat) and NPT\_NP (isothermal-isobaric ensemble with Nose-Poincare thermostat) are supported
 \end{block}
 
 \end{frame}
@@ -178,7 +178,7 @@ Starting ionic temperature in QMD, used to generate initial velocity distributio
 \end{block}
 
 \begin{block}{Remark}
-Must be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$. It is the target temperature in NPT\_NH and NPT\_NP.
+Must be specified if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} is set to $1$. It is also the target temperature in \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} NPT\_NH and NPT\_NP.
 \end{block}
 
 \end{frame}
@@ -369,7 +369,7 @@ Applicable to NVT\_NH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
 \begin{columns}
 \column{0.4\linewidth}
 \begin{block}{Type}
-First number int; other double
+1st number int; others double
 \end{block}
 
 \begin{block}{Default}
@@ -382,12 +382,12 @@ atomic unit
 \end{block}
 
 \begin{block}{Example}
-\texttt{NPT\_NH\_QMASS}: 3\;700\;700\;700
+\texttt{NPT\_NH\_QMASS}: 2\;700.0\;700.0
 \end{block}
 \end{columns}
 
 \begin{block}{Description}
-Gives the amount (first number) and inertia masses (other numbers) of Nose Hoover thermostats in NPT\_NH.
+Gives the amount (first number) and inertia masses (others) of thermostats in NPT\_NH. The maximum amount of thermostat variables of the Nose-Hoover chain is 60
 \end{block}
 
 \begin{block}{Remark}
@@ -517,7 +517,7 @@ Program will exit if NPT\_NP is selected but NPT\_NP\_BMASS is not input
 \begin{columns}
 \column{0.4\linewidth}
 \begin{block}{Type}
-Int
+Permutation of 1, 2, 3
 \end{block}
 
 \begin{block}{Default}
@@ -535,11 +535,11 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Specify which lattice vectors can be rescaled in NPT-NH. The cell will only expand or shrink in the specified directions.
+Specify which lattice vectors can be rescaled in NPT-NH
 \end{block}
 
 \begin{block}{Remark}
-Only three numbers 1, 2 and 3 can be accepted. For example, if " 2 3" is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3. Only NPT-NH can specify the rescaled vector.
+Only numbers 1, 2 and 3 can be accepted. For example, if `` 2 3" is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3. Only NPT-NH can specify the rescaled vector
 \end{block}
 
 \end{frame}

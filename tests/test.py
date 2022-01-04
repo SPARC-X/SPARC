@@ -182,6 +182,26 @@ SYSTEMS["systemname"].append('Si8_cell_geopt_d3')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_cell','gamma','smear_fd','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
+SYSTEMS["systemname"].append('Al18Si18_NPTNH')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Al16Si16_NPTNH')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Al18Si18_NPTNH_lat23')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Al18Si18_NPTNP')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Al16Si16_NPTNP')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
@@ -3081,7 +3101,7 @@ for i in range(len(systems)):
 	elif ("relax_total_nlcg" in tags_sys[i]) or ("relax_total_lbfgs" in tags_sys[i]) or ("relax_total_fire" in tags_sys[i]):
 		singlept.append(False)
 		Type.append("relax_total")
-	elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]) or ("md_nptnh" in tags_sys[i]) or ("md_nptnp" in tags_sys[i]):
+	elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]) or ("md_npt" in tags_sys[i]):
 		singlept.append(False)
 		Type.append("MD")
 	else:

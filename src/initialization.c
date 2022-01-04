@@ -2471,9 +2471,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"ION_VEL_DSTR: %d\n",pSPARC->ion_vel_dstr);
         fprintf(output_fp,"ION_VEL_DSTR_RAND: %d\n",pSPARC->ion_vel_dstr_rand);
         fprintf(output_fp,"ION_TEMP: %.15g\n",pSPARC->ion_T);
-        if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0)
+        if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0) {
             fprintf(output_fp,"ION_TEMP_END: %.15g\n",pSPARC->thermos_Tf);
             fprintf(output_fp,"QMASS: %.15g\n",pSPARC->qmass);
+        }
         if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0) {
             //fprintf(output_fp,"AMOUNT_THERMO_VARIABLE: %d\n",pSPARC->NPT_NHnnos);
             fprintf(output_fp,"NPT_SCALE_VECS:");
