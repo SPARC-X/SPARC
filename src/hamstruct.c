@@ -61,7 +61,7 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
     printf("hd: %i x %i\n", ohs->hd->local_num_fd, ohs->hd->local_num_cols);
     double loc_psi = PCE_Internal_sum_abs(psi_out->data,  ohs->hd->local_num_fd,ohs->hd->local_num_cols, ohs->compute_device);
     double glob_psi = 0;
-    printf("%i post lap Loc psi : %f\n", rank, loc_psi);
+    //printf("%i post lap Loc psi : %f\n", rank, loc_psi);
 
     MPI_Allreduce(&loc_psi, &glob_psi, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     if(rank == 0) {
@@ -74,12 +74,12 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
     printf("Laplacian time: %f\n", lap_end - lap_start);
   }
 
-#if DEBUG
-  if(PCE_Internal_debug_level() <= DEBUG_TRACE) {
-    printf("Post Lap psi out: %f\n",
-        PCE_Internal_sum_abs(psi_out->data,  ohs->hd->local_num_fd,ohs->hd->local_num_cols, ohs->compute_device));
-  }
-#endif
+//#if DEBUG
+//  if(PCE_Internal_debug_level() <= DEBUG_TRACE) {
+//    printf("Post Lap psi out: %f\n",
+//        PCE_Internal_sum_abs(psi_out->data,  ohs->hd->local_num_fd,ohs->hd->local_num_cols, ohs->compute_device));
+//  }
+//#endif
 
   const double veff_start = MPI_Wtime();
 
@@ -110,7 +110,7 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
     double glob_psi = 0;
     MPI_Allreduce(&loc_psi, &glob_psi, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     if(rank == 0) {
-    printf("Post Veff psi out: %f\n",glob_psi);
+    printf("Post Veff global psi out: %f\n",glob_psi);
     }
   }
 #endif
@@ -155,8 +155,12 @@ if(ohs->compute_device == DEVICE_TYPE_DEVICE) {
 
 #if DEBUG
   if(PCE_Internal_debug_level() <= DEBUG_TRACE) {
-    printf("Post nonlocal out: %f\n",
-        PCE_Internal_sum_abs(psi_out->data,  ohs->hd->local_num_fd,ohs->hd->local_num_cols, ohs->compute_device));
+      double post_nonlocal_loc = PCE_Internal_sum_abs(psi_out->data,  ohs->hd->local_num_fd,ohs->hd->local_num_cols, ohs->compute_device);
+      double glob_nonlocal = 0;
+      MPI_Allreduce(&post_nonlocal_loc, &glob_nonlocal, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      if(rank == 0) {
+          printf("Post global nonlocal out: %f\n",glob_nonlocal);
+      }
   }
 #endif
 
