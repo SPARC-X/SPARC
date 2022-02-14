@@ -503,6 +503,13 @@ void scf(SPARC_OBJ *pSPARC)
     double veff_scaling = 1.0;
     int do_nonlocal = 1;
 
+    const char* s_do_nonlocal = getenv("LIBPCE_DO_NONLOCAL");
+    if (s_do_nonlocal != NULL)
+    {
+      do_nonlocal = atoi(s_do_nonlocal);
+    }
+    printf("TO DO NONLOCAL: %i\n", do_nonlocal);
+
     int pxyz[3];
     int temp_cart1[3];
     int temp_cart2[3];
