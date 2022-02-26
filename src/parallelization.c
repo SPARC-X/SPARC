@@ -1089,7 +1089,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         assert(pSPARC->e_xc != NULL);
 
         // if GGA then allocate for xc energy per particle for each grid point and der. wrt. grho
-        if(strcmp(pSPARC->XC,"GGA_PBE") == 0 || strcmp(pSPARC->XC,"GGA_RPBE") == 0 || strcmp(pSPARC->XC,"GGA_PBEsol") == 0){
+        if(strcmp(pSPARC->XC,"GGA_PBE") == 0 || strcmp(pSPARC->XC,"GGA_RPBE") == 0 || strcmp(pSPARC->XC,"GGA_PBEsol") == 0
+        || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             pSPARC->Dxcdgrho = (double *)malloc( DMnd * (2*pSPARC->Nspin - 1) * sizeof(double) );
             assert(pSPARC->Dxcdgrho != NULL);
         }

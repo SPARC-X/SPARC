@@ -32,6 +32,8 @@
 #include "initialization.h"
 #include "electrostatics.h"
 
+#include "vdW/vdWDF/vdWDF.h"
+
 #define TEMP_TOL 1e-12
 
 
@@ -469,7 +471,7 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
         pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
-    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0){
+    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
         pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
         int DMnd, i;
@@ -561,6 +563,10 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
         for(int i = 0; i < 6; i++)
             pSPARC->stress_xc[i] += stress_xc_nlcc[i];
         free(stress_xc_nlcc);
+    }
+
+    if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2
+        Calculate_XC_stress_vdWDF(pSPARC); // the function is in file vdW/vdWDF/vdWDF.c
     }
 
 #ifdef DEBUG    

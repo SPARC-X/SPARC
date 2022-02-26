@@ -270,6 +270,9 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
 		pSPARC->scale = 1.0;
 
 	    pSPARC->volumeCell = pSPARC->Jacbdet*pSPARC->range_x * pSPARC->range_y * pSPARC->range_z;
+		pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+		pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+		pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
 	}
 	else if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0) { // restart
 		if ((pSPARC->NPTscaleVecs[0] == 1) && (pSPARC->NPTscaleVecs[1] == 1) && (pSPARC->NPTscaleVecs[2] == 1)) pSPARC->NPTisotropicFlag = 1;
@@ -284,6 +287,10 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
 		pSPARC->prtarget /= 29421.02648438959; // transfer from GPa to Ha/Bohr^3
 
 		pSPARC->volumeCell = pSPARC->Jacbdet*pSPARC->range_x * pSPARC->range_y * pSPARC->range_z;
+		pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+		pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+		pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
+		Calculate_ionic_stress(pSPARC);
 	}
 	// Variables for NPT_NP
 	if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0 && pSPARC->RestartFlag != 1){
@@ -292,6 +299,9 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
         pSPARC->volumeCell = pSPARC->Jacbdet*pSPARC->range_x*pSPARC->range_y*pSPARC->range_z;
+		pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+		pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+		pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
         pSPARC->maxTimeIter = 30;
 
         if(pSPARC->NPT_NP_bmass == 0.0) {
@@ -340,6 +350,9 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
         pSPARC->volumeCell = pSPARC->Jacbdet*pSPARC->range_x*pSPARC->range_y*pSPARC->range_z;
+		pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+		pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+		pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
         pSPARC->maxTimeIter = 30;
         pSPARC->G_NPT_NP[0] = pSPARC->range_x * pSPARC->range_x;
         pSPARC->G_NPT_NP[1] = pSPARC->range_y * pSPARC->range_y;
@@ -348,6 +361,7 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
         pSPARC->thermos_Ti = pSPARC->elec_T;
 		pSPARC->thermos_T  = pSPARC->thermos_Ti;
         pSPARC->prtarget /= 29421.02648438959; // transfer from GPa to Ha/Bohr^3
+		Calculate_ionic_stress(pSPARC);
     }
 
 	if(pSPARC->RestartFlag == 0){
@@ -1723,6 +1737,12 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
     	if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
     		fprintf(output_md,":Desc_TENX: Total energy of extended system. Unit=Ha/atom \n");
     	}
+		if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
+			if (pSPARC->Flag_latvec_scale == 0)
+				fprintf(output_md,":Desc_CELL: lengths of three lattice vectors. Unit = Bohr \n");
+			else
+				fprintf(output_md,":Desc_LATVEC_SCALE: ratio of cell lattice vectors over input lattice vector. Unit = 1 \n");
+		}
     	if(pSPARC->Calc_stress == 1){
 	    	fprintf(output_md,":Desc_STRESS: Stress, excluding ion-kinetic contribution. Unit=GPa(all periodic),Ha/Bohr**2(surface),Ha/Bohr(wire) \n");
 	    	fprintf(output_md,":Desc_STRIO: Ion-kinetic stress in cartesian coordinate. Unit=GPa(all periodic),Ha/Bohr**2(surface),Ha/Bohr(wire) \n");
@@ -1781,6 +1801,14 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 		    for(atm = 0; atm < pSPARC->n_atom; atm++){
 		    	fprintf(output_md,"%18.10E %18.10E %18.10E\n", pSPARC->forces[3 * atm], pSPARC->forces[3 * atm + 1], pSPARC->forces[3 * atm + 2]);
 		    }
+		}
+
+		// Print length of lattice vectors
+		if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
+			if (pSPARC->Flag_latvec_scale == 0)
+				fprintf(output_md,":CELL: %18.10E %18.10E %18.10E\n", pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+			else
+				fprintf(output_md,":LATVEC_SCALE: %18.10E %18.10E %18.10E\n", pSPARC->range_x/pSPARC->initialLatVecLength[0], pSPARC->range_y/pSPARC->initialLatVecLength[1], pSPARC->range_z/pSPARC->initialLatVecLength[2]);
 		}
 
 	    // Print stress

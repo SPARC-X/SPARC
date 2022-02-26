@@ -186,7 +186,7 @@ SYSTEMS["systemname"].append('Al18Si18_NPTNH')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
-SYSTEMS["systemname"].append('Al16Si16_NPTNH')
+SYSTEMS["systemname"].append('Al16Si16_NPTNH_restart')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
@@ -198,8 +198,24 @@ SYSTEMS["systemname"].append('Al18Si18_NPTNP')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
-SYSTEMS["systemname"].append('Al16Si16_NPTNP')
+SYSTEMS["systemname"].append('Al16Si16_NPTNP_restart')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('BaTiO3_vdWDF1')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('BaTiO3_vdWDF2')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Si4_kpt_vdWDF1')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Si4_kpt_vdWDF2')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 
@@ -325,28 +341,28 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
-					# if syst == "Si8_vdWDF":
-					# 	os.system("cp *.txt temp_run")
+					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
+						os.system("cp ./low_accuracy/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
-					# if syst == "Si8_vdWDF":
-					# 	os.system("cp *.txt temp_run")
+					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
+						os.system("cp ./low_accuracy/*.restart ./temp_run")
 			else:
 				os.mkdir("temp_run")
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
-					# if syst == "Si8_vdWDF":
-					# 	os.system("cp *.txt temp_run")
+					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
+						os.system("cp ./low_accuracy/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
 					os.system("cp *.psp8 temp_run")
-		# 			if syst == "Si8_vdWDF":
-		# 				os.system("cp *.txt temp_run")
+					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
+						os.system("cp ./low_accuracy/*.restart ./temp_run")
 		else:
 			if os.path.isdir("temp_run1"):
 				files = glob.glob("temp_run1/*")
@@ -430,7 +446,12 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 			for lines in samplePBS_content_orj:
 				samplePBS_content.append(lines)
 			if memcheck[count] == True:
-				samplePBS_content.append("module load valgrind")
+				samplePBS_content.append("module purge")
+				samplePBS_content.append("module load gcc/8.3.0")
+				samplePBS_content.append("module load mvapich2/2.3.2")
+				samplePBS_content.append("module load mkl/19.0.5")
+				samplePBS_content.append("module load valgrind/3.16.1")
+				# samplePBS_content.append("module load valgrind")
 				#samplePBS_content.append("export MV2_USE_RDMA_CM=1")
 			for lines in samplePBS_content:
 				if re.findall(r'nodes',lines) == ['nodes']:
@@ -567,7 +588,12 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 
 			index1=0
 			if True in memcheck_grp:
-				samplePBS_content.append("module load valgrind")
+				samplePBS_content.append("module purge")
+				samplePBS_content.append("module load gcc/8.3.0")
+				samplePBS_content.append("module load mvapich2/2.3.2")
+				samplePBS_content.append("module load mkl/19.0.5")
+				samplePBS_content.append("module load valgrind/3.16.1")
+				# samplePBS_content.append("module load valgrind")
 				#samplePBS_content.append("export MV2_USE_RDMA_CM=1")
 			for lines in samplePBS_content:
 				if re.findall(r'nodes',lines) == ['nodes']:

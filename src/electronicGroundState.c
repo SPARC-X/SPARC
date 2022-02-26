@@ -121,6 +121,9 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         if (pSPARC->d3Flag == 1) {
         	fprintf(output_fp,"DFT-D3 correction                  :%18.10E (Ha)\n", pSPARC->d3Energy[0]);
         }
+        if (pSPARC->vdWDFFlag != 0) {
+            fprintf(output_fp,"vdWDF energy                       :%18.10E (Ha)\n", pSPARC->vdWDFenergy);
+        }
         fclose(output_fp);
         // for static calculation, print energy to .static file
         if (pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
