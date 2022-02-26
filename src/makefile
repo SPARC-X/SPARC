@@ -10,6 +10,8 @@ USE_SCALAPACK = 0
 # (USE_DP_SUBEIG = 1 is required if both USE_MKL = 0 and USE_SCALAPACK = 0)
 # Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
 USE_DP_SUBEIG = 0
+# Set USE_FFTW = 1 to use FFTW for fast Fourier transform in vdWDF. Don't open it together with USE_MKL
+USE_FFTW      = 0
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
@@ -37,7 +39,7 @@ LDLIBS   = -lrt
 ifeq ($(USE_MKL), 1)
 CPPFLAGS += -m64 -I${MKLROOT}/include -DUSE_MKL
 LDFLAGS   = -L${MKLROOT}/lib/intel64
-LDLIBS   += -Wl,-rpath=${MKLROOT}/lib/intel64,--no-as-needed -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
+LDLIBS   += -Wl,-rpath=${MKLROOT}/lib/intel64,--no-as-needed -lmkl_scalapack_lp64 -lmkl_cdft_core -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
 else ifeq ($(USE_SCALAPACK), 1)
 CPPFLAGS += -DUSE_SCALAPACK
 LDLIBS   += -lscalapack
@@ -49,6 +51,12 @@ ifeq ($(USE_MKL), 0)
 # and move it to after -llapack
 LDLIBS += -lopenblas -lm
 #LDLIBS += -llapacke -llapack -lblas -lm
+endif
+
+# if FFTW is used, link fftw
+ifeq ($(USE_FFTW), 1)
+CPPFLAGS += -DUSE_FFTW
+LDLIBS += -lfftw3_mpi -lfftw3 # fftw needs to be loaded before compile
 endif
 
 # To use domain parallelization + LAPACK for solving sobspace eigen problem
@@ -75,6 +83,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
         vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o \
+        vdW/vdWDF/vdWDFGenerateKernelSpline.o vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o\
         forces.o stress.o pressure.o finalization.o
 
 LIBBASE = ../lib/sparc

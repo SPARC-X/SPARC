@@ -326,11 +326,12 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids).
+Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids), \texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al).
 \end{block}
 
 \begin{block}{Remark}
-For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ} is not available.
+For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ, \texttt{vdWDF1}, \texttt{vdWDF2}} are not available.
+Before using \texttt{vdWDF1} or \texttt{vdWDF2}, please read the description and remark of \hyperlink{VDWDF_GEN_KERNEL}{\texttt{VDWDF\_GEN\_KERNEL}} to see the requirements.
 \end{block}
 
 \end{frame}
@@ -694,6 +695,38 @@ Square of cut-off radius for calculating CN value of every atom and DFT-D3 corre
 Only applicable when DFT-D3 correction \hyperlink{D3_FLAG}{\texttt{D3\_FLAG}} is used.
 \end{block}
 
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{VDWDF\_GEN\_KERNEL}} \label{VDWDF_GEN_KERNEL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+\texttt{1}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No Unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{VDWDF\_GEN\_KERNEL}: \texttt{1}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for computing the kernel functions, its 2nd derivatives and the 2nd derivative of spline functions. If 0 is set, the program will read the files (kernel\_d2.txt; spline\_d2.txt in the folder saving input files) directly; if 1 is set, the program will generate these files before computation.
+\end{block}
+\begin{block}{Remark}
+If this is the first time to use \texttt{vdWDF1} or \texttt{vdWDF2} as \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}}, setting the flag as 1 is necessary, which is also the default setting. After the two files are generated, you can use the two generated files by copying them into the folders saving input files of other vdWDF tasks, and \texttt{VDWDF\_GEN\_KERNEL} flag can be closed to save the time of generating the two files.
+\end{block}
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
