@@ -531,6 +531,49 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         }
     }
 
+    char *env_NP_BAND_PARAL = getenv("NP_BAND_PARAL");
+    if(env_NP_BAND_PARAL != NULL) {
+      printf("USING NP_BAND?g_PARAL: %s from env\n", env_NP_BAND_PARAL);
+      sscanf(env_NP_BAND_PARAL,"%d", &pSPARC_Input->npband);
+    }
+
+    char *env_NP_DOMAIN_PARAL = getenv("NP_DOMAIN_PARAL");
+    if(env_NP_DOMAIN_PARAL != NULL) {
+      printf("USING NP_DOMAIN_PARAL: %s from env\n", env_NP_DOMAIN_PARAL);
+      sscanf(env_NP_DOMAIN_PARAL,"%d", &pSPARC_Input->npNdx);
+      sscanf(env_NP_DOMAIN_PARAL,"%d", &pSPARC_Input->npNdy);
+      sscanf(env_NP_DOMAIN_PARAL,"%d", &pSPARC_Input->npNdz);
+    }
+
+
+    char *env_EIG_SERIAL_MAXNS = getenv("EIG_SERIAL_MAXNS");
+    if(env_EIG_SERIAL_MAXNS != NULL) {
+      printf("USING EIG_SERIAL_MAXNS: %s from env\n", env_EIG_SERIAL_MAXNS);
+      sscanf(env_EIG_SERIAL_MAXNS,"%d", &pSPARC_Input->eig_serial_maxns);
+    }
+    char *env_MAXIT_SCF = getenv("MAXIT_SCF");
+    if(env_MAXIT_SCF != NULL) {
+      printf("USING MAXIT_SCF: %s from env\n", env_MAXIT_SCF);
+      sscanf(env_MAXIT_SCF,"%d", &pSPARC_Input->MAXIT_SCF);
+    }
+    char *env_RHO_TRIGGER = getenv("RHO_TRIGGER");
+    if(env_RHO_TRIGGER != NULL) {
+      printf("USING RHO_TRIGGER: %s from env\n", env_RHO_TRIGGER);
+      sscanf(env_RHO_TRIGGER,"%d", &pSPARC_Input->rhoTrigger);
+    }
+
+    char *env_NSTATES = getenv("NSTATES");
+    if(env_NSTATES != NULL) {
+      printf("USING NSTATES: %s from env\n", env_NSTATES);
+      sscanf(env_NSTATES,"%d", &pSPARC_Input->Nstates);
+    }
+
+    char *env_PRINT_EIGEN = getenv("PRINT_EIGEN");
+    if(env_PRINT_EIGEN != NULL) {
+      printf("USING PRINT_EIGEN: %s from env\n", env_PRINT_EIGEN);
+      sscanf(env_PRINT_EIGEN,"%d", &pSPARC_Input->PrintEigenFlag);
+    }
+
     // copy filename into pSPARC struct
     snprintf(pSPARC->filename, L_STRING, "%s", pSPARC_Input->filename);
     

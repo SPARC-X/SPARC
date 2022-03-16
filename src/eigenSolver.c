@@ -467,7 +467,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       }
 #endif
 
+      if(mult_pthp != NULL) {
       ca3dmm_engine_free(&mult_pthp);
+      }
 
       double a_PsiTPsi = MPI_Wtime();
     #ifdef DEBUG
