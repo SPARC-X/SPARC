@@ -1065,6 +1065,41 @@ void PositionParticleCell(SPARC_OBJ *pSPARC) {
     #endif
 }
 
+/**
+ * @brief   Write the re-initialized parameters into the output file.
+ */
+void write_output_reinit_NPT(SPARC_OBJ *pSPARC) {
+    int nproc;
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+
+    FILE *output_fp = fopen(pSPARC->OutFilename,"a");
+    if (output_fp == NULL) {
+        printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(output_fp,"***************************************************************************\n");
+    fprintf(output_fp,"                         Reinitialized parameters                          \n");
+    fprintf(output_fp,"***************************************************************************\n");
+	if (pSPARC->Flag_latvec_scale == 0)
+		fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+	else
+		fprintf(output_fp,"LATVEC_SCALE: %.15g %.15g %.15g \n",pSPARC->range_x/pSPARC->initialLatVecLength[0],pSPARC->range_y/pSPARC->initialLatVecLength[1],pSPARC->range_z/pSPARC->initialLatVecLength[2]);
+    fprintf(output_fp,"CHEB_DEGREE: %d\n",pSPARC->ChebDegree);
+    fprintf(output_fp,"***************************************************************************\n");
+    fprintf(output_fp,"                             Reinitialization                              \n");
+    fprintf(output_fp,"***************************************************************************\n");
+    if ( (fabs(pSPARC->delta_x-pSPARC->delta_y) <=1e-12) && (fabs(pSPARC->delta_x-pSPARC->delta_z) <=1e-12)
+        && (fabs(pSPARC->delta_y-pSPARC->delta_z) <=1e-12) ) {
+        fprintf(output_fp,"Mesh spacing                       :  %.6g (Bohr)\n",pSPARC->delta_x);
+    } else {
+        fprintf(output_fp,"Mesh spacing in x-direction        :  %.6g (Bohr)\n",pSPARC->delta_x);
+        fprintf(output_fp,"Mesh spacing in y-direction        :  %.6g (Bohr)\n",pSPARC->delta_y);
+        fprintf(output_fp,"Mesh spacing in z direction        :  %.6g (Bohr)\n",pSPARC->delta_z);
+    }
+
+    fclose(output_fp);
+}
+
 /*
 @ brief reinitialize related variables after the size changing of cell.
 */
@@ -1086,17 +1121,10 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
     	printf("scal: %12.6f\n", scal);
     }
 #endif
-    // update mesh size
-	if (strcmpi(pSPARC->MDMeth,"NPT_NH") == 0) {
-		if (pSPARC->NPTscaleVecs[0] == 1) pSPARC->delta_x *= scal; //if (pSPARC->cellrelax_dims[0] == 1) Dirichlet boundary condition
-    	if (pSPARC->NPTscaleVecs[1] == 1) pSPARC->delta_y *= scal; //if (pSPARC->cellrelax_dims[1] == 1) 
-    	if (pSPARC->NPTscaleVecs[2] == 1) pSPARC->delta_z *= scal; //if (pSPARC->cellrelax_dims[2] == 1) 
-	}
-	else {
-		pSPARC->delta_x *= scal; //if (pSPARC->cellrelax_dims[0] == 1) Dirichlet boundary condition
-    	pSPARC->delta_y *= scal; //if (pSPARC->cellrelax_dims[1] == 1) 
-    	pSPARC->delta_z *= scal; //if (pSPARC->cellrelax_dims[2] == 1) 
-	}
+    
+	pSPARC->delta_x = pSPARC->range_x/(pSPARC->numIntervals_x);
+	pSPARC->delta_y = pSPARC->range_y/(pSPARC->numIntervals_y);
+	pSPARC->delta_z = pSPARC->range_z/(pSPARC->numIntervals_z);
     
 
     pSPARC->dV = pSPARC->delta_x * pSPARC->delta_y * pSPARC->delta_z * pSPARC->Jacbdet;
@@ -1233,7 +1261,7 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
 
     // write reinitialized parameters into output file
     if (rank == 0) {
-        write_output_reinit(pSPARC);
+        write_output_reinit_NPT(pSPARC);
     }
 
 }
@@ -2046,7 +2074,10 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
                     fprintf(mdout," %.15g", pSPARC->xlogs[thenos]);
     		}
     		fprintf(mdout,"\n");
-    		fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z); //(no variable for position of barostat variable)
+    		if (pSPARC->Flag_latvec_scale == 0)
+    			fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z); //(no variable for position of barostat variable)
+			else 
+				fprintf(mdout,":LATVEC_SCALE: %.15g %.15g %.15g\n",pSPARC->range_x/pSPARC->initialLatVecLength[0],pSPARC->range_y/pSPARC->initialLatVecLength[1],pSPARC->range_z/pSPARC->initialLatVecLength[2]);
     		fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
     	}
     	// Print extended system parameters in case of NPT-NP
@@ -2059,7 +2090,10 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
     		fprintf(mdout,":NPT_NP_range_x_velo: %.15g\n", pSPARC->range_x_velo); // velocity of virtual x baro parameter
     		fprintf(mdout,":NPT_NP_range_y_velo: %.15g\n", pSPARC->range_y_velo); // velocity of virtual y baro parameter
     		fprintf(mdout,":NPT_NP_range_z_velo: %.15g\n", pSPARC->range_z_velo); // velocity of virtual z baro parameter
-    		fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+    		if (pSPARC->Flag_latvec_scale == 0)
+    			fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z); //(no variable for position of barostat variable)
+			else 
+				fprintf(mdout,":LATVEC_SCALE: %.15g %.15g %.15g\n",pSPARC->range_x/pSPARC->initialLatVecLength[0],pSPARC->range_y/pSPARC->initialLatVecLength[1],pSPARC->range_z/pSPARC->initialLatVecLength[2]);
     		fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
     		fprintf(mdout,":NPT_NP_ini_Hamiltonian: %.15g\n", pSPARC->init_Hamil_NPT_NP);
     	}
@@ -2188,6 +2222,27 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		    pSPARC->range_y = nowRange_y;
         		    pSPARC->range_z = nowRange_z;
         		}
+				else if (strcmpi(str,":LATVEC_SCALE:") == 0) {
+					double nowLatScale_x, nowLatScale_y, nowLatScale_z;
+					fscanf(rst_fp,"%lf", &nowLatScale_x); fscanf(rst_fp,"%lf", &nowLatScale_y); fscanf(rst_fp,"%lf", &nowLatScale_z);
+					fscanf(rst_fp, "%*[^\n]\n");
+
+					double nowRange_x, nowRange_y, nowRange_z;
+					pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+					pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+					pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
+					nowRange_x = pSPARC->initialLatVecLength[0]*nowLatScale_x;
+					nowRange_y = pSPARC->initialLatVecLength[1]*nowLatScale_y;
+					nowRange_z = pSPARC->initialLatVecLength[2]*nowLatScale_z;
+
+					if (pSPARC->NPTscaleVecs[0] == 1) pSPARC->scale = nowRange_x / pSPARC->range_x; // now NPT_NH only support expanding with a constant ratio
+					else if (pSPARC->NPTscaleVecs[1] == 1) pSPARC->scale = nowRange_y / pSPARC->range_y; 
+					else pSPARC->scale = nowRange_z / pSPARC->range_z;
+        		    
+        		    pSPARC->range_x = nowRange_x;
+        		    pSPARC->range_y = nowRange_y;
+        		    pSPARC->range_z = nowRange_z;
+				}
         		else if (strcmpi(str,":TARGET_PRESSURE:") == 0)
             		fscanf(rst_fp,"%lf", &pSPARC->prtarget);
 			}
@@ -2211,12 +2266,30 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		    fscanf(rst_fp,"%lf", &nowRange_x); fscanf(rst_fp,"%lf", &nowRange_y); fscanf(rst_fp,"%lf", &nowRange_z);
         		    fscanf(rst_fp, "%*[^\n]\n");
 
-        		    pSPARC->scale = nowRange_x / pSPARC->range_x; // now NPT_NH only support homogeneous expansion,
+        		    pSPARC->scale = nowRange_x / pSPARC->range_x; // now NPT_NP only support homogeneous expansion,
         		    // compute scale from x is enough
         		    pSPARC->range_x = nowRange_x;
         		    pSPARC->range_y = nowRange_y;
         		    pSPARC->range_z = nowRange_z;
             	}
+				else if (strcmpi(str,":LATVEC_SCALE:") == 0) {
+					double nowLatScale_x, nowLatScale_y, nowLatScale_z;
+					fscanf(rst_fp,"%lf", &nowLatScale_x); fscanf(rst_fp,"%lf", &nowLatScale_y); fscanf(rst_fp,"%lf", &nowLatScale_z);
+					fscanf(rst_fp, "%*[^\n]\n");
+
+					double nowRange_x, nowRange_y, nowRange_z;
+					pSPARC->initialLatVecLength[0] = sqrt(pSPARC->LatVec[0]*pSPARC->LatVec[0] + pSPARC->LatVec[1]*pSPARC->LatVec[1] + pSPARC->LatVec[2]*pSPARC->LatVec[2]);
+					pSPARC->initialLatVecLength[1] = sqrt(pSPARC->LatVec[3]*pSPARC->LatVec[3] + pSPARC->LatVec[4]*pSPARC->LatVec[4] + pSPARC->LatVec[5]*pSPARC->LatVec[5]);
+					pSPARC->initialLatVecLength[2] = sqrt(pSPARC->LatVec[6]*pSPARC->LatVec[6] + pSPARC->LatVec[7]*pSPARC->LatVec[7] + pSPARC->LatVec[8]*pSPARC->LatVec[8]);
+					nowRange_x = pSPARC->initialLatVecLength[0]*nowLatScale_x;
+					nowRange_y = pSPARC->initialLatVecLength[1]*nowLatScale_y;
+					nowRange_z = pSPARC->initialLatVecLength[2]*nowLatScale_z;
+					pSPARC->scale = nowRange_x / pSPARC->range_x; // now NPT_NP only support homogeneous expansion,
+        		    // compute scale from x is enough
+        		    pSPARC->range_x = nowRange_x;
+        		    pSPARC->range_y = nowRange_y;
+        		    pSPARC->range_z = nowRange_z;
+				}
             	else if (strcmpi(str,":TARGET_PRESSURE:") == 0)
             		fscanf(rst_fp,"%lf", &pSPARC->prtarget);
             	else if (strcmpi(str,":NPT_NP_ini_Hamiltonian:") == 0)

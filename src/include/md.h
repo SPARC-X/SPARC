@@ -127,6 +127,11 @@ void VelocityParticle (SPARC_OBJ *pSPARC);
 */
 void PositionParticleCell(SPARC_OBJ *pSPARC);
 
+/**
+ * @brief   Write the re-initialized parameters into the output file.
+ */
+void write_output_reinit_NPT(SPARC_OBJ *pSPARC);
+
 /* 
 @ brief: reinitialize related variables after the size changing of cell.
 */
