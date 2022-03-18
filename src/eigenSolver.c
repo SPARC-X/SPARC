@@ -442,7 +442,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 
       // M_s= Psi^T Psi
       //TODO: Fix comm
-      PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+
+      eigensolve_engine ee;
+      PCE_Calc_eigenvalue_dist(hd, &ee, kptcomm);
+
+      PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
         gpuErrchk( cudaPeekAtLastError() );
@@ -458,7 +462,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       PCE_Mat_Init(&H_s);
 
       // H_s= Psi^T Psi
-      PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, ham_struct->communication_device, ham_struct->compute_device,
+      PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, &ee, ham_struct->communication_device, ham_struct->compute_device,
                    kptcomm, dmcomm);
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
@@ -506,7 +510,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
-    PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+    PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
 #if USE_GPU
       if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
         gpuErrchk( cudaPeekAtLastError() );
@@ -573,7 +577,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       // DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
 
       ca3dmm_engine_p mult_subsp;
-      PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, ham_struct->communication_device,
+      PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, &ee, ham_struct->communication_device,
                             ham_struct->compute_device, kptcomm, dmcomm);
       PCE_Mat_Destroy(&H_s);
       printf("ABCD\n");
