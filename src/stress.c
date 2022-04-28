@@ -1097,9 +1097,9 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
     }    
     
     /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    for (dim = 0; dim < 3; dim++) {
-        count = 0;
-        for(spn_i = 0; spn_i < nspin; spn_i++) {
+    count = 0;
+    for(spn_i = 0; spn_i < nspin; spn_i++) {
+        for (dim = 0; dim < 3; dim++) {
             // find dPsi in direction dim
             Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, dim, pSPARC->dmcomm);
             beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+1) + count);
@@ -1193,8 +1193,8 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
                     stress_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                 }
             }
-            count++;
         }    
+        count++;
     }
     
     stress_k[0] *= -(2.0/pSPARC->Nspin);
@@ -1484,13 +1484,13 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     }       
     
     /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    for (dim = 0; dim < 3; dim++) {
-        count = 0;
-        for(spn_i = 0; spn_i < nspin; spn_i++) {
-            for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
-                k1 = pSPARC->k1_loc[kpt];
-                k2 = pSPARC->k2_loc[kpt];
-                k3 = pSPARC->k3_loc[kpt];
+    count = 0;
+    for(spn_i = 0; spn_i < nspin; spn_i++) {
+        for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
+            k1 = pSPARC->k1_loc[kpt];
+            k2 = pSPARC->k2_loc[kpt];
+            k3 = pSPARC->k3_loc[kpt];
+            for (dim = 0; dim < 3; dim++) {
                 // find dPsi in direction dim
                 Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt, pSPARC->dmcomm);
                 beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 1) + count);
@@ -1597,8 +1597,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                     }
                     stress_k[4] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[4];
                 }
-                count++;
             }
+            count++;
         }    
     }
     
