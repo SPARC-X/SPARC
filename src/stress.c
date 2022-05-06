@@ -135,10 +135,22 @@ void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
     if(!rank) printf("Time for calculating nonlocal+kinetic stress components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
 
+    if (pSPARC->usefock > 0) {
+        // find exact exchange stress components
+        t1 = MPI_Wtime();
+        Calculate_exact_exchange_stress(pSPARC);
+        t2 = MPI_Wtime();
+    #ifdef DEBUG
+        if(!rank) printf("Time for calculating exact exchange stress components: %.3f ms\n", (t2 - t1)*1e3);
+    #endif
+    }    
+
     // find stress
  	if(!rank){ 	    
         for(i = 0; i < 6; i++){
             pSPARC->stress[i] = (pSPARC->stress_k[i] + pSPARC->stress_xc[i] + pSPARC->stress_nl[i] + pSPARC->stress_el[i]);
+            if (pSPARC->usefock > 0) 
+                pSPARC->stress[i] += pSPARC->stress_exx[i];
         }
         
         if (pSPARC->BC == 2) {
@@ -471,7 +483,9 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
         pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
-    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
+    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 
+            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
         pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
         int DMnd, i;
@@ -1438,7 +1452,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta;
+    double k1, k2, k3, theta, kpt_vec;
     double complex bloch_fac, a, b;
 #ifdef DEBUG 
     if (!rank) printf("Start calculating stress contributions from kinetic and nonlocal psp. \n");
@@ -1492,7 +1506,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
             k3 = pSPARC->k3_loc[kpt];
             for (dim = 0; dim < 3; dim++) {
                 // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt, pSPARC->dmcomm);
+                kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
                 beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 1) + count);
                 beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 2) + count);
                 beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 3) + count);
@@ -1547,7 +1562,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                 }
                 // Kinetic stress
                 if(dim == 0){
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, kpt, pSPARC->dmcomm);
+                    kpt_vec = k2;
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, kpt_vec, pSPARC->dmcomm);
                     //ts = MPI_Wtime();
                     temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
                     for(n = 0; n < ncol; n++){
@@ -1568,7 +1584,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                     stress_k[1] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[1];
                     stress_k[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
 
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, kpt, pSPARC->dmcomm);
+                    kpt_vec = k3;
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, kpt_vec, pSPARC->dmcomm);
                     temp_k[2] = temp_k[5] = 0.0;
                     for(n = 0; n < ncol; n++){
                         dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1

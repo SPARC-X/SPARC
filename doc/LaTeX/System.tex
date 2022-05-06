@@ -326,7 +326,10 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids), \texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al).
+Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), 
+\texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids), 
+\texttt{PBE0}, \texttt{HF} (Hartree-Fock), \texttt{HSE},
+\texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al).
 \end{block}
 
 \begin{block}{Remark}
@@ -729,6 +732,76 @@ If this is the first time to use \texttt{vdWDF1} or \texttt{vdWDF2} as \hyperlin
 \end{block}
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_RANGE\_FOCK}} \label{EXX_RANGE_FOCK}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.35\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.1587
+\end{block}
+
+\column{0.55\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_RANGE\_FOCK}: \texttt{0.106}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Short range screen parameter of hartree-fock operator in HSE functional. 
+\end{block}
+
+\begin{block}{Remark}
+Default is using VASP's value. Different code has different parameters. Be careful with the results. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_RANGE\_PBE}} \label{EXX_RANGE_PBE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.35\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.1587
+\end{block}
+
+\column{0.55\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_RANGE\_PBE}: \texttt{0.106}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Short range screen parameter of PBE in HSE functional. 
+\end{block}
+
+\begin{block}{Remark}
+Default is using VASP's value. Different code has different parameters. Be careful with the results. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks,c]{} \label{System:ion}

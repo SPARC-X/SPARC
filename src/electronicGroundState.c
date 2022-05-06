@@ -36,7 +36,7 @@
 #include "forces.h"
 #include "stress.h"
 #include "pressure.h"
-
+#include "exactExchange.h"
 #include "vdW/d3/d3Correction.h"
 
 #ifdef USE_EVA_MODULE
@@ -448,6 +448,7 @@ void scf(SPARC_OBJ *pSPARC)
             veff_mean /= ((double) (pSPARC->Nd * pSPARC->Nspin));
         }
     }
+    pSPARC->veff_mean = veff_mean;
 
     // initialize mixing_hist_xk (and mixing_hist_xkm1)
     Update_mixing_hist_xk(pSPARC, veff_mean);
@@ -463,10 +464,46 @@ void scf(SPARC_OBJ *pSPARC)
     }
 	#endif
 
-    double error, dEtot, dEband, temp;
+    if (pSPARC->usefock <= 1) {
+        scf_loop(pSPARC);
+        if (pSPARC->usefock == 1) {
+            // usefock >=2 scf with exact exchange
+            pSPARC->usefock ++;
+            Exact_Exchange_loop(pSPARC);
+        }
+    } else {
+        // usefock >=2 scf with exact exchange
+        pSPARC->usefock ++;
+        Exact_Exchange_loop(pSPARC);
+    }
+}
+
+/**
+ * @brief   KS-DFT self-consistent field (SCF) calculations.
+ */
+void scf_loop(SPARC_OBJ *pSPARC) {
+    int rank, nproc;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+    
+    int DMnd = pSPARC->Nd_d;
+    int NspinDMnd = pSPARC->Nspin * DMnd;
+    int sindx_rho = (pSPARC->Nspin == 2) ? DMnd : 0;
+    int i, k, SCFcount, spn_i;
+    int Nk = pSPARC->Nkpts_kptcomm;
+    int Ns = pSPARC->Nstates;
+
+    double error, dEtot, dEband, temp, veff_mean;
+    double t1, t2, t_scf_s, t_scf_e, t_cum_scf;
+    
+    FILE *output_fp;
+
+    t_cum_scf = 0.0;
     error = pSPARC->TOL_SCF + 1.0;
     dEtot = dEband = pSPARC->TOL_SCF + 1.0;
-    
+    veff_mean = pSPARC->veff_mean;
+    if (pSPARC->usefock > 1) pSPARC->MINIT_SCF = 1;
+
     // 1st SCF will perform Chebyshev filtering several times, "count" keeps track 
     // of number of Chebyshev filtering calls, while SCFcount keeps track of # of
     // electron density updates
@@ -609,6 +646,7 @@ void scf(SPARC_OBJ *pSPARC)
             veff_mean /= ((double) (pSPARC->Nd * pSPARC->Nspin));
             // shift Veff by -mean(Veff) before mixing and calculating scf error
             VectorShift(pSPARC->Veff_loc_dmcomm_phi, NspinDMnd, -veff_mean, pSPARC->dmcomm_phi);
+            pSPARC->veff_mean = veff_mean;
         }
 
         // scf convergence flag
@@ -764,88 +802,11 @@ void scf(SPARC_OBJ *pSPARC)
 	// check occupation (if Nstates is large enough)
     for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++){
         for (k = 0; k < Nk; k++) {
-            // int ind = round(pSPARC->Nstates * 0.90) - 1;
-            // ind = max(ind,0);
-            // double g_ind = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind];
-            // if (fabs((3.0-pSPARC->Nspin) * g_ind) > 1e-6) {
-            //     if(!rank) {
-            //         // find at which state occ(Nocc) <= 1e-6
-            //         int Nocc; char isSmall = 'N';
-            //         for (Nocc = ind+1; Nocc < pSPARC->Nstates; Nocc++) {
-            //             double occ_Nocc = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + Nocc];
-            //             if (occ_Nocc <= 1e-6) { 
-            //                 isSmall = 'Y'; break; 
-            //             }
-            //         }
-            //         int Ns_suggest;
-            //         if (isSmall == 'Y') {
-            //             Ns_suggest = round((Nocc+1.5)/0.90)+5; // add 5 to be safe
-            //         } else {
-            //             // increase Ns by 15% or use the default Ns, whichever is larger
-            //             Ns_suggest = max((int)((pSPARC->Nelectron/2)*1.2)+5, round(pSPARC->Nstates*1.15));
-            //         }
-
-            //         double k1_red, k2_red, k3_red;
-            //         if (pSPARC->BC != 1) {
-            //             k1_red = pSPARC->k1_loc[k]*pSPARC->range_x/(2.0*M_PI);
-            //             k2_red = pSPARC->k2_loc[k]*pSPARC->range_y/(2.0*M_PI);
-            //             k3_red = pSPARC->k3_loc[k]*pSPARC->range_z/(2.0*M_PI);
-            //         } else {
-            //             k1_red = k2_red = k3_red = 0.0;
-            //         }
-            //         printf("\nWARNING: Electronic occupation suggests NSTATES >= %d may improve performance.\n"
-            //                "  k = [%.3f, %.3f, %.3f]  occ(%d) = %.15f\n",
-            //                Ns_suggest,
-            //                k1_red, k2_red, k3_red,
-            //                ind+1, (3.0-pSPARC->Nspin) * g_ind);
-            //         printf("%s\n", );
-            //         // write to .out file
-            //         output_fp = fopen(pSPARC->OutFilename,"a");
-            //         if (output_fp == NULL) {
-            //             printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
-            //             exit(EXIT_FAILURE);
-            //         }
-            //         fprintf(output_fp,
-            //                "\nWARNING: Electronic occupation suggests NSTATES >= %d may improve performance.\n"
-            //                "  k = [%.3f, %.3f, %.3f]  occ(%d) = %.15f\n",
-            //                Ns_suggest,
-            //                k1_red, k2_red, k3_red,
-            //                ind+1, (3.0-pSPARC->Nspin) * g_ind);
-            //         fclose(output_fp);
-            //     }
-            // }
+            
             int ind = pSPARC->Nstates-1;
             ind = max(ind,0);
             double g_ind = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind];
-            // if (fabs((3.0-pSPARC->Nspin) * g_ind) > 1e-5) {
-            //     if(!rank) {
-            //         double k1_red, k2_red, k3_red;
-            //         if (pSPARC->BC != 1) {
-            //             k1_red = pSPARC->k1_loc[k]*pSPARC->range_x/(2.0*M_PI);
-            //             k2_red = pSPARC->k2_loc[k]*pSPARC->range_y/(2.0*M_PI);
-            //             k3_red = pSPARC->k3_loc[k]*pSPARC->range_z/(2.0*M_PI);
-            //         } else {
-            //             k1_red = k2_red = k3_red = 0.0;
-            //         }
-            //         printf("\nWARNING: The last electronic occupation is greater than 1e-5.\n"
-            //                "  k = [%.3f, %.3f, %.3f]  occ(%d) = %.15f\n",
-            //                k1_red, k2_red, k3_red,
-            //                ind+1, (3.0-pSPARC->Nspin) * g_ind);
-            //         printf("%s\n", );
-            //         // write to .out file
-            //         output_fp = fopen(pSPARC->OutFilename,"a");
-            //         if (output_fp == NULL) {
-            //             printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
-            //             exit(EXIT_FAILURE);
-            //         }
-            //         fprintf(output_fp,
-            //                "\nWARNING: The last electronic occupation is greater than 1e-5.\n"
-            //                "  k = [%.3f, %.3f, %.3f]  occ(%d) = %.15f\n",
-            //                k1_red, k2_red, k3_red,
-            //                ind+1, (3.0-pSPARC->Nspin) * g_ind);
-            //         fclose(output_fp);
-            //     }
-            // }
+            
             if (g_ind > maxocc) {
                 maxocc = g_ind;
                 spin_maxocc = spn_i;
@@ -885,12 +846,6 @@ void scf(SPARC_OBJ *pSPARC)
         int ind_100percent = pSPARC->Nstates - 1;
         double g_ind_90percent = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind_90percent];
         double g_ind_100percent = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind_100percent];
-        // printf("\nk = [%.3f, %.3f, %.3f]\n"
-        //        "Occupation of state %d = %.15f.\n"
-        //        "Occupation of state %d = %.15f.\n",
-        //        k1_red, k2_red, k3_red,
-        //        ind_90percent+1, (3.0-pSPARC->Nspin) * g_ind_90percent,
-        //        ind_100percent+1, (3.0-pSPARC->Nspin) * g_ind_100percent);
         // write to .out file
         output_fp = fopen(pSPARC->OutFilename,"a");
         if (output_fp == NULL) {
@@ -908,7 +863,8 @@ void scf(SPARC_OBJ *pSPARC)
     }
 
     // check if scf is converged
-    if (error > pSPARC->TOL_SCF) {
+    double TOL = (pSPARC->usefock == 1) ? pSPARC->TOL_SCF_INIT : pSPARC->TOL_SCF;
+    if (error > TOL) {
     	if(!rank) {
             printf("WARNING: SCF#%d did not converge to desired accuracy!\n",
             		pSPARC->MDFlag ? pSPARC->MDCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0) : pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
@@ -923,9 +879,7 @@ void scf(SPARC_OBJ *pSPARC)
             fclose(output_fp);
         }
     }
-    
 }
-
 
 
 /**
@@ -981,7 +935,8 @@ void Evaluate_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv) {
 
     // output
     *scf_error = error;
-    *scf_conv  = (int) (error < pSPARC->TOL_SCF);
+    *scf_conv  = (pSPARC->usefock == 1) 
+                ? ((int) (error < pSPARC->TOL_SCF_INIT)) : ((int) (error < pSPARC->TOL_SCF));
 }
 
 
@@ -1028,7 +983,8 @@ void Evaluate_QE_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv)
     MPI_Bcast(&error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);   
     // output
     *scf_error = error;
-    *scf_conv  = (int) (error < pSPARC->TOL_SCF);
+    *scf_conv  = (pSPARC->usefock == 1) 
+                ? ((int) (error < pSPARC->TOL_SCF_INIT)) : ((int) (error < pSPARC->TOL_SCF));
 }
 
 
