@@ -20,7 +20,7 @@
 #include "tools.h"
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
-
+#include "exactExchange.h"
 #include "vdW/d3/d3Correction.h"
 #include "vdW/vdWDF/vdWDF.h"
 /* ScaLAPACK routines */
@@ -103,6 +103,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->XCPotential);
         free(pSPARC->e_xc);
         if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
+            || strcmp(pSPARC->XC,"PBE0") == 0 || strcmp(pSPARC->XC,"HF") == 0 || strcmp(pSPARC->XC,"HSE") == 0
             || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             free(pSPARC->Dxcdgrho);
         }    
@@ -219,6 +220,21 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
             free(pSPARC->k3);
         // }
     // }
+
+    if (pSPARC->usefock > 0) {
+        free(pSPARC->k1_hf);
+        free(pSPARC->k2_hf);
+        free(pSPARC->k3_hf);
+        free(pSPARC->kpthf_ind);
+        free(pSPARC->kpthf_ind_red);
+        free(pSPARC->kpthf_pn);
+        free(pSPARC->kpts_hf_red_list);
+        free(pSPARC->k1_shift);
+        free(pSPARC->k2_shift);
+        free(pSPARC->k3_shift);
+        free(pSPARC->Kptshift_map);
+        free_exx(pSPARC);
+    }
     
     if (pSPARC->Nkpts >= 1 && pSPARC->kptcomm_index != -1) {
         //if (pSPARC->BC != 1) {
@@ -266,9 +282,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
                    pSPARC->dmcomm : MPI_COMM_NULL);
                    
     // free D2D targets between psi comm and kptcomm_topo comm
-    if ((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
-        pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 &&
-        (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint) )
+    if (((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
+            pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0
+            && (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint))
+            || (pSPARC->usefock != 0) )
     {
         Free_D2D_Target(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo,
                        pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL, pSPARC->kptcomm_topo);
@@ -335,7 +352,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
 
     // free the memory allocated by the Intel MKL memory management software
     #ifdef USE_MKL
-    // mkl_thread_free_buffers();
+    mkl_thread_free_buffers();
     mkl_free_buffers();
     #endif
 }

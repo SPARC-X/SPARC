@@ -45,6 +45,17 @@ void AAR_complex(
     int max_iter, MPI_Comm comm
 );
 
+/**
+ * @brief   Conjugate Gradient (CG) method for solving a general linear system Ax = b. 
+ *
+ *          CG() assumes that x and  b is distributed among the given communicator. 
+ *          Ax is calculated by calling function Ax().
+ */
+void CG(SPARC_OBJ *pSPARC, 
+    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, double *, MPI_Comm),
+    int N, int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
+);
+
 #endif //LINEARSOLVER_H
 
 
