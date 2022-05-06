@@ -218,6 +218,26 @@ SYSTEMS["systemname"].append('Si4_kpt_vdWDF2')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
+SYSTEMS["systemname"].append('Si2_kpt_PBE0')
+SYSTEMS["Tags"].append(['bulk', 'PBE0','kpt' 'nonorth','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('C_HSE_aux')
+SYSTEMS["Tags"].append(['bulk', 'HSE','gamma' 'nonorth','smear_fd','potmix'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('H2O_sheet_PBE0')
+SYSTEMS["Tags"].append(['surface', 'PBE0','kpt' 'orth','smear_fd','potmix'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('H2O_wire_PBE0')
+SYSTEMS["Tags"].append(['wire', 'PBE0','kpt' 'orth','smear_fd','potmix'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('O2_spin_HSE')
+SYSTEMS["Tags"].append(['molecule', 'spin', 'HSE', 'denmix', 'kerker', 'orth','smear_gauss'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>

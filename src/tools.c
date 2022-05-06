@@ -15,6 +15,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <float.h>
+#include <assert.h>
 
 #include "tools.h"
 #include "parallelization.h"
@@ -1799,4 +1801,253 @@ int check_num_input(FILE *fp, void *array, char TYPE)
     
     free(str);
     return nums_read;
+}
+
+/*
+ @ brief: function to calculate a 3x3 matrix times a vector
+*/
+void matrixTimesVec_3d(double *A, double *b, double *c) {
+#define A(i,j) A[i+j*3]
+    int i, j;
+    for (i = 0;  i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            c[i] += A(i,j) * b[j];
+        }
+    }
+#undef A
+}
+
+/*
+ @ brief: function to calculate a 3x3 matrix times a vector
+*/
+void matrixTimesVec_3d_complex(double *A, double _Complex *b, double _Complex *c) {
+#define A(i,j) A[i+j*3]
+    int i, j;
+    for (i = 0;  i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            c[i] += A(i,j) * b[j];
+        }
+    }
+#undef A
+}
+
+
+#if defined(USE_MKL)
+/**
+ * @brief   MKL multi-dimension FFT interface, real to complex, following conjugate even distribution. 
+ */
+void MKL_MDFFT_real(double *r2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_out, double _Complex *r2c_3doutput) {
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_REAL, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeForward(my_desc_handle, r2c_3dinput, r2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+}
+
+/**
+ * @brief   MKL multi-dimension FFT interface, complex to complex
+ */
+void MKL_MDFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_out, double _Complex *c2c_3doutput)
+{
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeForward(my_desc_handle, c2c_3dinput, c2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+}
+
+
+/**
+ * @brief   MKL multi-dimension iFFT interface, complex to real, following conjugate even distribution. 
+ */
+void MKL_MDiFFT_real(double _Complex *c2r_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_in, double *c2r_3doutput) {
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_REAL, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeBackward(my_desc_handle, c2r_3dinput, c2r_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    // scale the result to make it the same as definition of IFFT
+    int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];
+    for (int i = 0; i < N; i++) {
+        c2r_3doutput[i] /= N;
+    }
+}
+
+/**
+ * @brief   MKL multi-dimension iFFT interface, complex to complex. 
+ */
+void MKL_MDiFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_out, double _Complex *c2c_3doutput)
+{
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+    
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeBackward(my_desc_handle, c2c_3dinput, c2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    // scale the result to make it the same as definition of IFFT
+    int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];
+    for (int i = 0; i < N; i++) {
+        c2c_3doutput[i] /= N;
+    }
+}
+#endif
+
+
+#if defined(USE_FFTW)
+/**
+ * @brief   FFTW multi-dimension FFT interface, complex to complex. 
+ */
+void FFTW_MDFFT(int *dim_sizes, double _Complex *c2c_3dinput, double _Complex *c2c_3doutput) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2];
+    p = fftw_plan_dft(3, dim_sizes, c2c_3dinput, c2c_3doutput, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+}
+
+/**
+ * @brief   FFTW multi-dimension iFFT interface, complex to complex. 
+ */
+void FFTW_MDiFFT(int *dim_sizes, double _Complex *c2c_3dinput, double _Complex *c2c_3doutput) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2], i;
+    p = fftw_plan_dft(3, dim_sizes, c2c_3dinput, c2c_3doutput, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+    for (i = 0; i < N; i++)
+        c2c_3doutput[i] /= N;
+}
+
+/**
+ * @brief   FFTW multi-dimension FFT interface, real to complex. 
+ */
+void FFTW_MDFFT_real(int *dim_sizes, double *r2c_3dinput, double _Complex *r2c_3doutput) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2];
+    p = fftw_plan_dft_r2c(3, dim_sizes, r2c_3dinput, r2c_3doutput, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+}
+
+/**
+ * @brief   FFTW multi-dimension FFT interface, complex to real. 
+ */
+void FFTW_MDiFFT_real(int *dim_sizes, double _Complex *c2r_3dinput, double *c2r_3doutput) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2], i;
+    p = fftw_plan_dft_c2r(3, dim_sizes, c2r_3dinput, c2r_3doutput, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+    for (i = 0; i < N; i++)
+        c2r_3doutput[i] /= N;
+}
+#endif
+
+
+/**
+ * @brief   Function to compute exponential integral E_n(x)
+ *          From Numerical Recipes
+ */
+double expint(const int n, const double x)
+{
+    static const int MAXIT = 200;
+    static const double EULER = 0.577215664901533;
+    double EPS, BIG;
+    EPS = DBL_EPSILON;
+    BIG = DBL_MAX * EPS;
+    
+    int i, ii, nm1;
+    double a, b, c, d, del, fact, h, psi, ans;
+
+    nm1 = n - 1;
+    if (n < 0 || x < 0.0 || (x==0.0 && (n==0 || n==1))) {
+        printf("ERROR: bad arguments in expint\n");
+        exit(-1);
+    }
+    
+    if (n == 0) 
+        ans = exp(-x)/x;
+    else if (x == 0.0)
+        ans = 1./nm1;
+    else {
+        if (x > 1.0) {
+            b = x+n;
+            c = BIG;
+            d = 1.0/b;
+            h = d;
+            for (i = 1; i <= MAXIT; i++) {
+                a = -i*(nm1+i);
+                b += 2.0;
+                d = 1.0/(a*d+b);
+                c = b+a/c;
+                del = c*d;
+                h *= del;
+                if (fabs(del-1.0) <= EPS) {
+                    ans=h*exp(-x);
+                    return ans; 
+                }
+            }
+            printf("ERROR: Continued fraction failed in expint\n");
+            exit(-1);
+        } else {
+            ans = (nm1!=0 ? 1.0/nm1 : -log(x)-EULER);
+            fact=1.0;
+            for (i=1; i <= MAXIT; i++) {
+                fact *= -x/i;
+                if (i != nm1) 
+                    del = -fact/(i-nm1);
+                else {
+                    psi = -EULER;
+                    for (ii=1;ii<=nm1;ii++) 
+                        psi += 1.0/ii;
+                    del = fact*(-log(x)+psi);
+                }
+                ans += del;
+                if (fabs(del) < fabs(ans)*EPS) return ans;
+            }
+            printf("ERROR: Series failed in expint\n");
+            exit(-1);
+        }
+    }
+    return ans;
 }

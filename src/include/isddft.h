@@ -389,6 +389,7 @@ typedef struct _SPARC_OBJ{
     double *Veff_loc_dmcomm_phi;  // effective local potential distributed in phi-domain (LOCAL)
     double *Veff_loc_dmcomm_phi_in; // input effective local potential at each SCF distributed in phi-domain (LOCAL)
     double *Veff_loc_kptcomm_topo;// effective local potential distributed in each kptcomm_topo (LOCAL), only used if npkpt > 1
+    double veff_mean;             //  mean value of Veff
 
     double *mixing_hist_xk;      // previous effective local potential distributed in phi-domain (LOCAL)
     double *mixing_hist_xkm1;    // residual of mixed Veff_loc (between new mixed and previous mixed) in phi-domain (LOCAL)
@@ -566,11 +567,13 @@ typedef struct _SPARC_OBJ{
     double stress_el[6];   // Electrostatics contr. to ST
     double stress_nl[6];   // Nonlocal psp. contr. to ST
     double stress_i[6];    // Ionic contr. to ST
+    double stress_exx[6];  // Exact Exchange contr. to ST
     double pres;           // Full pressure
     double pres_xc;        // Exchange correlation contr. to pres
     double pres_el;        // Electrostatics contr. to pres
     double pres_nl;        // Nonlocal psp. contr. to pres
     double pres_i;         // Ionic contr. to pres
+    double pres_exx;       // Exact Exchange contr. to pres
 
     /* MD/relax options */
     double *ion_vel;       // Ionic velocity 
@@ -742,6 +745,69 @@ typedef struct _SPARC_OBJ{
 
     int countSCF; // for helping output variables in 1st step, to be deleted in the future
 
+    /* Exact Exchange */
+    int usefock;                    // Flag for if using Hartree-Fock operator 
+    double TOL_FOCK;                // Exact exchange potential option
+    double TOL_SCF_INIT;            // Exact exchange potential option
+    int MAXIT_FOCK;                 // Maximum number of iterations for Hartree-Fock outer loop
+    int MINIT_FOCK;                 // Minimum number of iterations for Hartree-Fock outer loop
+    double hyb_mixing;              // hybrid mixing coefficient
+    double hyb_range_fock;          // hybrid short range for fock operator 
+    double hyb_range_pbe;           // hybrid short range for exchange correlation 
+    int EXXMeth_Flag;               // Method to solve Poisson's equation, in Real space or Fourier space
+    double Eexx;                    // Exact Exchange energy
+    double *psi_outer;              // outer orbitals to construct Hartree-Fock operator 
+    double *occ_outer;              // outer occupations to construct Hartree-Fock operator 
+    double *psi_outer_kptcomm_topo; // outer orbitals in kptcomm for Lanczos 
+    double complex *psi_outer_kpt;  // outer orbitals to construct Hartree-Fock operator 
+    double complex *psi_outer_kptcomm_topo_kpt; // outer orbitals in kptcomm for Lanczos 
+    double *Xi;                     // ACE operator
+    double *Xi_kptcomm_topo;        // ACE operator in kptcomm_topo
+    double complex *Xi_kpt;                 // ACE operator
+    double complex *Xi_kptcomm_topo_kpt;    // ACE operator in kptcomm_topo
+    // k-points variables for hybrid calculation
+    int Nkpts_hf;                   // number of k-points for hybrid calculation
+    int Kx_hf;                      // number of k-points for hybrid calculation in x direction
+    int Ky_hf;                      // number of k-points for hybrid calculation in y direction
+    int Kz_hf;                      // number of k-points for hybrid calculation in z direction
+    int Nkpts_hf_red;               // actual number of k-points for hybrid calculation after downsampling
+    double *k1_hf;                  // list of x-coordinates of k-points for hybrid calculation
+    double *k2_hf;                  // list of y-coordinates of k-points for hybrid calculation
+    double *k3_hf;                  // list of z-coordinates of k-points for hybrid calculation
+    double kptWts_hf;               // k-point weights for hybrid calculation
+    int *kpthf_ind;                 // mapping from global k-point list to k-point list for hyrbid 
+    int *kpthf_ind_red;             // index w.r.t. Nkpts_hf_red
+    int *kpthf_pn;                  // indication of whether it's a +k or -k
+    double *k1_shift;               // list of x-coordinates of unique Bloch vector shifts (k-q)
+    double *k2_shift;               // list of y-coordinates of unique Bloch vector shifts (k-q)
+    double *k3_shift;               // list of z-coordinates of unique Bloch vector shifts (k-q)
+    int Nkpts_shift;                // number of unique Bloch vector shifts (k-q)
+    int *Kptshift_map;              // mapping from given 2 kpoints to a Block vector shift
+    int Nkpts_hf_kptcomm;           // number of k-points in kptcomm for hybrid calculation
+    int *kpthf_flag_kptcomm;        // flags for whether the k-point used or not for hybrid calculation
+    int *Nkpts_hf_list;             // Number of k-point orbitals gathered from each k-point processes
+    int kpthf_start_indx;           // starting index for k-point for hybrid calculation
+    int *kpts_hf_red_list;          // list of reduced k-point for hybrid calculation 
+    double complex *neg_phase;      // exp(-i*r*k_shift)
+    double complex *pos_phase;      // exp(i*r*k_shift)
+    // tool variables for hybrid calculation
+    double ACEtime;                 // Time for creating ace operator
+    double Exxtime;                 // Time for applying Vexx operator
+    double *pois_FFT_const;         // Constants for FFT solver in Poisson's equation
+    double *pois_FFT_const_stress;  // Constants for FFT solver in Poisson's equation in stress
+    double *pois_FFT_const_stress2; // Constants for FFT solver in Poisson's equation in stress
+    double *pois_FFT_const_press;   // Constants for FFT solver in Poisson's equation in press
+    int ACEFlag;                    // Flag for ACE operator 
+    int Nstates_occ[2];             // Number of occupied states 
+    int EXXMem_batch;            // Option for speed or memory efficiency when using ACE operator
+    int EXXACEVal_state;            // Number of extra unoccupied states in constructing ACE operator
+    int EXXDownsampling[3];         // Downsampling info
+    double const_aux;               // constant for auxlliary function
+    int EXXDiv_Flag;                // Method for integrable singularity 
+    int flag_kpttopo_dm;            // flag of whether the dmcomm and kpttopo are the same
+    int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
+    MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
+    
     // Extrapolation options
     double *delectronDens;
     double *delectronDens_0dt;
@@ -993,6 +1059,20 @@ typedef struct _SPARC_INPUT_OBJ{
     /* vdW-DF options */
     int vdWDFKernelGenFlag; // generate the kernel functions or read kernel functions from files
     
+    /* Exact Exchange */
+    double TOL_FOCK;        // Exact exchange potential option
+    double TOL_SCF_INIT;    // Exact exchange potential option
+    int MAXIT_FOCK;         // Maximum number of iterations for Hartree-Fock outer loop
+    int MINIT_FOCK;         // Minimum number of iterations for Hartree-Fock outer loop
+    int EXXMeth_Flag;       // Method to solve Poisson's equation, in Real space or Fourier space
+    int ACEFlag;            // Flag for ACE operator 
+    int EXXMem_batch;       // Option for speed or memory efficiency when using ACE operator
+    int EXXACEVal_state;    // Number of extra unoccupied states in constructing ACE operator
+    int EXXDownsampling[3]; // Downsampling info 
+    int EXXDiv_Flag;        // Method for integrable singularity 
+    double hyb_range_fock;  // hybrid short range for fock operator 
+    double hyb_range_pbe;   // hybrid short range for exchange correlation 
+
     /* File names */
     char filename[L_STRING]; 
     char filename_out[L_STRING];

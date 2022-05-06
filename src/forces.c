@@ -394,7 +394,7 @@ void Calculate_nonlocal_forces_kpt_linear(SPARC_OBJ *pSPARC)
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, x0_i, y0_i, z0_i;
+    double k1, k2, k3, theta, kpt_vec, x0_i, y0_i, z0_i;
     double complex bloch_fac, a, b;
     
 #ifdef DEBUG 
@@ -450,8 +450,9 @@ void Calculate_nonlocal_forces_kpt_linear(SPARC_OBJ *pSPARC)
                 k1 = pSPARC->k1_loc[kpt];
                 k2 = pSPARC->k2_loc[kpt];
                 k3 = pSPARC->k3_loc[kpt];
+                kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
                 // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
                 beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (dim + 1) + count);
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
                     //lmax = pSPARC->psd[ityp].lmax;

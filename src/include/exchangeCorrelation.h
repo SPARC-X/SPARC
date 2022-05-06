@@ -183,6 +183,17 @@ void Calculate_Exc_GGA_PBE(SPARC_OBJ *pSPARC, double *electronDens);
  */
 void Calculate_Exc_GSGA_PBE(SPARC_OBJ *pSPARC, double *electronDens);
 
+/**
+ * @brief   Calculate PBE short ranged exchange
+ *          Taken from Quantum Espresson
+ */
+void pbexsr(double rho, double grho, double omega, double *e_xc_sr, double *XCPotential_sr, double *Dxcdgrho_sr);
+
+/**
+ * @brief   Calculate PBE short ranged enhancement factor
+ *          Taken from Quantum Espresson
+ */
+void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_wpbe, double *d1rfx, double *d1sfx);
 
 #endif // XC_H
 

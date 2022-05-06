@@ -28,7 +28,7 @@
  */
 void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                               const int ncol, const double c, const double complex *x, 
-                              double complex *Dx, const int dir, const int kpt, MPI_Comm comm);
+                              double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm);
 
 
 
@@ -39,7 +39,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  */
 void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                       const int ncol, const double c, const double complex *x,
-                      double complex *Dx, const int dir, const int kpt, MPI_Comm comm, const int* dims);
+                      double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm, const int* dims);
 
 
 

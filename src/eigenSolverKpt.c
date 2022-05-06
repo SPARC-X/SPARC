@@ -89,7 +89,7 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
         // pSPARC->eigmin = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
         // pSPARC->eigmax = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
     }
-    if(pSPARC->elecgs_Count > 0) 
+    if(pSPARC->elecgs_Count > 0 || pSPARC->usefock > 1) 
         pSPARC->rhoTrigger = 1;
     
     double t1, t2;
@@ -468,7 +468,7 @@ void ChebyshevFiltering_kpt(
     int sg  = pSPARC->spin_start_indx + spn_i;
     Hamiltonian_vectors_mult_kpt(
         pSPARC, DMnd, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
-        pSPARC->Atom_Influence_nloc, pSPARC->nlocProj, ncol, -c, X, Y, kpt, comm
+        pSPARC->Atom_Influence_nloc, pSPARC->nlocProj, ncol, -c, X, Y, spn_i, kpt, comm
     );
     t2 = MPI_Wtime();
     *time_info += t2 - t1;
@@ -486,7 +486,7 @@ void ChebyshevFiltering_kpt(
         // Ynew = (H - c*I)Y
         Hamiltonian_vectors_mult_kpt(
             pSPARC, DMnd, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
-            pSPARC->Atom_Influence_nloc, pSPARC->nlocProj, ncol, -c, Y, Ynew, kpt, comm
+            pSPARC->Atom_Influence_nloc, pSPARC->nlocProj, ncol, -c, Y, Ynew, spn_i, kpt, comm
         );
         t2 = MPI_Wtime();
         *time_info += t2 - t1;
@@ -697,7 +697,7 @@ void DP_Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double compl
         pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, 
         Veff_loc_sg, pSPARC->Atom_Influence_nloc, 
         pSPARC->nlocProj, pSPARC->Nband_bandcomm, 
-        0.0, Y, HY, kpt, pSPARC->dmcomm
+        0.0, Y, HY, spn_i, kpt, pSPARC->dmcomm
     );
     
     et = MPI_Wtime();
@@ -1057,7 +1057,7 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     int size_s = size_k * pSPARC->Nkpts_kptcomm;
     Hamiltonian_vectors_mult_kpt(
         pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
-        pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, pSPARC->dmcomm
+        pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, spn_i, kpt, pSPARC->dmcomm
     );
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -1439,7 +1439,7 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
     t1 = MPI_Wtime();
     Hamiltonian_vectors_mult_kpt(
         pSPARC, DMnd, DMVertices, Veff_loc, Atom_Influence_nloc, 
-        nlocProj, 1, 0.0, V_jm1, V_j, kpt, comm
+        nlocProj, 1, 0.0, V_jm1, V_j, spn_i, kpt, comm
     );
     t2 = MPI_Wtime();
 #ifdef DEBUG
@@ -1485,7 +1485,7 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
         // V_{j+1} = H * V_j
         Hamiltonian_vectors_mult_kpt(
             pSPARC, DMnd, DMVertices, Veff_loc, Atom_Influence_nloc, 
-            nlocProj, 1, 0.0, V_j, V_jp1, kpt, comm
+            nlocProj, 1, 0.0, V_j, V_jp1, spn_i, kpt, comm
         );
 
         // a[j+1] = <V_j, V_{j+1}>

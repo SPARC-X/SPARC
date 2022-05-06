@@ -25,6 +25,8 @@
 #include "lapVecNonOrthKpt.h"
 #include "nlocVecRoutines.h"
 #include "isddft.h"
+#include "exactExchange.h"
+#include "exactExchangeKpt.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -42,7 +44,7 @@
 void Hamiltonian_vectors_mult(
     const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-    int ncol, double c, double *x, double *Hx, MPI_Comm comm
+    int ncol, double c, double *x, double *Hx, int spin, MPI_Comm comm
 )
 {
     unsigned i;
@@ -83,6 +85,11 @@ void Hamiltonian_vectors_mult(
         }
     }
 
+    // adding Exact Exchange potential  
+    if (pSPARC->usefock > 1){
+        exact_exchange_potential((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, comm);
+    }
+
     // apply nonlocal projectors
     #ifdef USE_EVA_MODULE
     t1 = MPI_Wtime();
@@ -107,7 +114,7 @@ void Hamiltonian_vectors_mult(
 void Hamiltonian_vectors_mult_kpt(
     const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-    int ncol, double c, double complex *x, double complex *Hx, int kpt, MPI_Comm comm
+    int ncol, double c, double complex *x, double complex *Hx, int spin, int kpt, MPI_Comm comm
 )
 {
     unsigned i;
@@ -146,6 +153,11 @@ void Hamiltonian_vectors_mult_kpt(
                 x+i*(unsigned)DMnd, Hx+i*(unsigned)DMnd, comm, comm2, dims, kpt
             );
         }
+    }
+
+    // adding Exact Exchange potential  
+    if (pSPARC->usefock > 1){
+        exact_exchange_potential_kpt((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, kpt, comm);
     }
 
     // apply nonlocal projectors

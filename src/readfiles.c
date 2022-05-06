@@ -605,6 +605,66 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"OUTPUT_FILE:") == 0) {    
             fscanf(input_fp,"%s",pSPARC_Input->filename_out);
             fscanf(input_fp, "%*[^\n]\n");
+        
+        // exact exchange input options
+        } else if (strcmpi(str,"TOL_FOCK:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->TOL_FOCK);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"TOL_SCF_INIT:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->TOL_SCF_INIT);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MAXIT_FOCK:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->MAXIT_FOCK);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_METHOD:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"FOURIER_SPACE") == 0 || strcmpi(temp,"fourier_space") == 0) {
+                pSPARC_Input->EXXMeth_Flag = 0;
+            } else if (strcmpi(temp,"REAL_SPACE") == 0 || strcmpi(temp,"real_space") == 0) {
+                pSPARC_Input->EXXMeth_Flag = 1;
+            } else {
+                printf("\nCannot recognize the method to solve Poisson's equation in Exact Exchange: \"%s\"\n",temp);
+                printf("Please use FOURIER_SPACE or REAL_SPACE.\n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"ACE_FLAG:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->ACEFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_MEM:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->EXXMem_batch);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_ACE_VALENCE_STATES:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->EXXACEVal_state);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_DOWNSAMPLING:") == 0) {
+            fscanf(input_fp,"%d %d %d",&pSPARC_Input->EXXDownsampling[0],
+                    &pSPARC_Input->EXXDownsampling[1],&pSPARC_Input->EXXDownsampling[2]);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_DIVERGENCE:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"SPHERICAL") == 0 || strcmpi(temp,"spherical") == 0) {
+                pSPARC_Input->EXXDiv_Flag = 0;
+            } else if (strcmpi(temp,"AUXILIARY") == 0 || strcmpi(temp,"auxiliary") == 0) {
+                pSPARC_Input->EXXDiv_Flag = 1;
+            } else if (strcmpi(temp,"ERFC") == 0 || strcmpi(temp,"erfc") == 0) {
+                pSPARC_Input->EXXDiv_Flag = 2;
+            } else {
+                printf("\nCannot recognize the method for singularity in Exact Exchange: \"%s\"\n",temp);
+                printf("Please use SPHERICAL or AUXILIARY.\n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+
+        } else if (strcmpi(str,"EXX_RANGE_FOCK:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->hyb_range_fock);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_RANGE_PBE:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->hyb_range_pbe);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MINIT_FOCK:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->MINIT_FOCK);
+            fscanf(input_fp, "%*[^\n]\n");
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);

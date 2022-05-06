@@ -33,7 +33,7 @@ ENABLE_SIMD_COMPLEX = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/
+CPPFLAGS = -Iinclude/ -Iexx/
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -77,14 +77,15 @@ endif
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
 CFLAGS = -std=gnu99 -O3 -fopenmp
 
-OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o    \
-        electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o         \
-        occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
-        hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
-        linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
-        vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o \
-        vdW/vdWDF/vdWDFGenerateKernelSpline.o vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o\
-        forces.o stress.o pressure.o finalization.o
+OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o          \
+        electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o               \
+        occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o         \
+        hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o       \
+        linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o          \
+        forces.o stress.o pressure.o finalization.o                                                    \
+        vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o vdW/vdWDF/vdWDFGenerateKernelSpline.o \
+        vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o                           \
+        exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o 
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci
