@@ -1549,7 +1549,7 @@ void Calculate_XC_stress_vdWDF(SPARC_OBJ *pSPARC) {
     }
     #ifdef DEBUG
     if (rank == 0) {
-        printf("\nvdW-DF stress (GPa):\n");
+        printf("\nvdW-DF stress, which is a part of XC stress (GPa):\n");
         for (int row = 0; row < 3; row++) {
             printf("%18.14f %18.14f %18.14f\n", 
                 stress[3*row + 0]*29421.02648438959, stress[3*row + 1]*29421.02648438959, stress[3*row + 2]*29421.02648438959);
@@ -1567,7 +1567,7 @@ void Calculate_XC_stress_vdWDF(SPARC_OBJ *pSPARC) {
         pSPARC->stress_xc[5] += stress[8]; // (3,3)
     }
     if (pSPARC->Calc_pres == 1) {
-        pSPARC->pres -= (stress[0] + stress[4] + stress[8])/3;
+        pSPARC->pres_xc += (stress[0] + stress[4] + stress[8]) * (pSPARC->Jacbdet*pSPARC->range_x*pSPARC->range_y*pSPARC->range_z);
     }
 }
 

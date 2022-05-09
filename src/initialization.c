@@ -31,8 +31,9 @@
 #include "parallelization.h"
 #include "isddft.h"
 
-#include "vdW/d3/d3Correction.h"
-#include "vdW/vdWDF/vdWDF.h"
+#include "d3Correction.h"
+#include "vdWDF.h"
+#include "mgga.h"
 
 #define TEMP_TOL 1e-12
 
@@ -302,6 +303,11 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         vdWDF_initial_read_kernel(pSPARC); // read kernel function and 2nd derivative of spline functions
         // printf("rank %d, d2 of kernel function vdWDFd2Phidk2[2][4]=%.9e\n", rank, pSPARC->vdWDFd2Phidk2[2][4]); // to verify it
+    }
+
+    // initialize metaGGA
+    if(pSPARC->mGGAflag == 1) {
+        initialize_MGGA(pSPARC);
     }
 
     // write initialized parameters into output file
@@ -1062,6 +1068,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         ixc = 427;
         pSPARC->usefock = 1;
         pSPARC->hyb_mixing = 0.25;
+    } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
+        ixc = -263267;
     } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
         ixc = -102; // this is the index of Zhang-Yang revPBE exchange in Libxc
     } else if (strcmpi(pSPARC->XC, "vdWDF2") == 0) {
@@ -1118,6 +1126,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
     pSPARC->NLCC_flag = NLCC_flag;
 
+    // check if exchange-correlation functional is metaGGA
+    pSPARC->mGGAflag = 0;
+    if (strcmpi(pSPARC->XC, "SCAN") == 0) { // it can be expand, such as adding r2SCAN 
+        pSPARC->mGGAflag = 1;
+    }
     // check if exchange-correlation functional is vdW-DF1 or vdW-DF2
     pSPARC->vdWDFFlag = 0;
     if (strcmpi(pSPARC->XC,"vdWDF1") == 0) {
@@ -1982,6 +1995,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: vdW-DF does not support Dirichlet boundary condition!\n" RESET);
             exit(EXIT_FAILURE); 
         }
+        if (pSPARC->spin_typ != 0) {
+            if (rank == 0)
+                printf(RED "ERROR: currently vdW-DF does not support spin polarization!\n" RESET);
+            exit(EXIT_FAILURE); 
+        }
     }
 
     #if !defined(USE_MKL) && !defined(USE_FFTW)
@@ -1997,6 +2015,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         exit(EXIT_FAILURE); 
     }
     #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
+
+    if ((strcmpi(pSPARC->XC, "SCAN") == 0) && (pSPARC->spin_typ != 0)) {
+        if (rank == 0) 
+            printf(RED "ERROR: currently SCAN does not support spin polarization!\n" RESET);
+        exit(EXIT_FAILURE); 
+    }
 
     if (pSPARC->usefock == 1) {
         if (pSPARC->EXXDiv_Flag < 0) {
@@ -2774,7 +2798,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version May 06, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version May 09, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

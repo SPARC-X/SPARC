@@ -21,8 +21,9 @@
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
 #include "exactExchange.h"
-#include "vdW/d3/d3Correction.h"
-#include "vdW/vdWDF/vdWDF.h"
+#include "d3Correction.h"
+#include "vdWDF.h"
+#include "mgga.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*
@@ -103,7 +104,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->XCPotential);
         free(pSPARC->e_xc);
         if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmp(pSPARC->XC,"PBE0") == 0 || strcmp(pSPARC->XC,"HF") == 0 || strcmp(pSPARC->XC,"HSE") == 0
+            || strcmp(pSPARC->XC,"PBE0") == 0 || strcmp(pSPARC->XC,"HF") == 0 || strcmp(pSPARC->XC,"HSE") == 0 || strcmp(pSPARC->XC,"SCAN") == 0
             || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             free(pSPARC->Dxcdgrho);
         }    
@@ -333,6 +334,9 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     }
     if (pSPARC->vdWDFFlag != 0){
         vdWDF_free(pSPARC);
+    }
+    if(pSPARC->mGGAflag == 1) {
+        free_MGGA(pSPARC);
     }
 
     #if defined(USE_MKL) || defined(USE_SCALAPACK)

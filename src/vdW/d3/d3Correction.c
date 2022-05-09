@@ -820,7 +820,7 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
     }
     #ifdef DEBUG
     if (rank == 0) {
-        printf("\nthe DFT-D3 stresses (GPa):\n");
+        printf("\nthe DFT-D3 stresses, which is a part of XC stress contribution (GPa):\n");
         for (row = 0; row < 3; row++) {
             printf("%18.14f %18.14f %18.14f\n", 
                 pSPARC->d3Stress[3*row + 0]*29421.02648438959, pSPARC->d3Stress[3*row + 1]*29421.02648438959, pSPARC->d3Stress[3*row + 2]*29421.02648438959);
@@ -828,18 +828,18 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
     }
     #endif
     if (pSPARC->Calc_stress == 1) {
-        pSPARC->stress[0] += pSPARC->d3Stress[0];
-        pSPARC->stress[3] += pSPARC->d3Stress[4];
-        pSPARC->stress[5] += pSPARC->d3Stress[8];
-        pSPARC->stress[1] += pSPARC->d3Stress[1];
-        pSPARC->stress[2] += pSPARC->d3Stress[2];
-        pSPARC->stress[4] += pSPARC->d3Stress[5];
-        pSPARC->pres -= (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8])/3;
+        pSPARC->stress_xc[0] += pSPARC->d3Stress[0];
+        pSPARC->stress_xc[3] += pSPARC->d3Stress[4];
+        pSPARC->stress_xc[5] += pSPARC->d3Stress[8];
+        pSPARC->stress_xc[1] += pSPARC->d3Stress[1];
+        pSPARC->stress_xc[2] += pSPARC->d3Stress[2];
+        pSPARC->stress_xc[4] += pSPARC->d3Stress[5];
+        // pSPARC->pres -= (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8])/3;
     }
     else if (pSPARC->Calc_pres == 1) {
-        pSPARC->pres -= (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8])/3;
+        pSPARC->pres_xc += (pSPARC->d3Stress[0] + pSPARC->d3Stress[4] + pSPARC->d3Stress[8]) * detLattice;
     }
-    
+    if (!rank) printf("detLattice %9.6E, cell measure %9.6E\n", detLattice, pSPARC->Jacbdet*pSPARC->range_x*pSPARC->range_y*pSPARC->range_z);
 }
 
 void free_D3_coefficients(SPARC_OBJ *pSPARC) {
