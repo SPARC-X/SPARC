@@ -32,7 +32,8 @@
 #include "initialization.h"
 #include "electrostatics.h"
 #include "energy.h"
-#include "vdW/vdWDF/vdWDF.h"
+#include "vdWDF.h"
+#include "mgga.h"
 
 #define TEMP_TOL 1e-12
 
@@ -48,6 +49,14 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     // find exchange-correlation component of pressure
     t1 = MPI_Wtime();
     Calculate_XC_pressure(pSPARC);
+    if ((pSPARC->mGGAflag == 1) && (pSPARC->countSCF > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
+        if (pSPARC->isGammaPoint) {
+            Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mgga.c
+        }
+        else {
+            Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mgga.c
+        }
+    }
     t2 = MPI_Wtime();
 #ifdef DEBUG
     if(!rank) printf("Time for calculating exchnage-correlation pressure components: %.3f ms\n", (t2 - t1)*1e3);
@@ -121,7 +130,7 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
     } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 
             || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
-            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
         int DMnd, i;
         DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
@@ -176,6 +185,12 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
         // deallocate
         free(Drho_x); free(Drho_y); free(Drho_z);
     } 
+
+    if (pSPARC->d3Flag == 1) {
+        // if (!rank) printf("XC pressure before d3 %9.6E\n", pSPARC->pres_xc);
+        d3_grad_cell_stress(pSPARC);
+        // if (!rank) printf("XC pressure after d3 %9.6E\n", pSPARC->pres_xc);
+    }
 
     if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2, compute the contribution of nonlinear correlation of vdWDF on stress/pressure
         Calculate_XC_stress_vdWDF(pSPARC); // the function is in file vdW/vdWDF/vdWDF.c

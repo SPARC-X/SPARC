@@ -31,8 +31,8 @@
 #include "isddft.h"
 #include "initialization.h"
 #include "electrostatics.h"
-
-#include "vdW/vdWDF/vdWDF.h"
+#include "mgga.h"
+#include "vdWDF.h"
 
 #define TEMP_TOL 1e-12
 
@@ -111,6 +111,14 @@ void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
     // find exchange-correlation components of stress
     t1 = MPI_Wtime();
     Calculate_XC_stress(pSPARC);
+    if (pSPARC->mGGAflag == 1) {
+        if (pSPARC->isGammaPoint) { // metaGGA stress psi term is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_stress
+            Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mgga.c
+        }
+        else {
+            Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mgga.c
+        }
+    }
     t2 = MPI_Wtime();
 #ifdef DEBUG
     if(!rank) printf("Time for calculating exchange-correlation stress components: %.3f ms\n", (t2 - t1)*1e3);
@@ -485,7 +493,7 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
     } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 
             || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
-            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0 || strcmpi(pSPARC->XC, "SCAN") == 0){
         pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
         int DMnd, i;
@@ -577,6 +585,10 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
         for(int i = 0; i < 6; i++)
             pSPARC->stress_xc[i] += stress_xc_nlcc[i];
         free(stress_xc_nlcc);
+    }
+
+    if (pSPARC->d3Flag == 1) {
+        d3_grad_cell_stress(pSPARC); 
     }
 
     if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2
