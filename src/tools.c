@@ -1493,6 +1493,392 @@ void RealSphericalHarmonic(const int len, double *x, double *y,double *z, double
 }
 
 
+/**
+ * @brief   Calculate Complex spherical harmonics for given positions and given l and m. 
+ *
+ *          Only for l = 0, 1, ..., 6.
+ */
+void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, const int l, const int m, double complex *Ylm)
+{
+    // only l=0,1,2,3,4,5,6 implemented for now
+
+    //double pi=M_PI;
+    double p;                   	  
+    int i; 
+    
+    /* l = 0 */
+    double C00 = 0.282094791773878;
+    /* l = 1 */
+    double C11 = 0.345494149471335;
+    double C10 = 0.488602511902920;
+    /* l = 2 */
+    double C22 = 0.386274202023190;
+    double C21 = 0.772548404046379;
+    double C20 = 0.315391565252520;
+    /* l = 3 */
+    double C33 = 0.417223823632784;
+    double C32 = 1.021985476433282;
+    double C31 = 0.323180184114151;
+    double C30 = 0.373176332590115;
+    /* l = 4 */
+    double C44 = 0.442532692444983;
+    double C43 = 1.251671470898352;
+    double C42 = 0.334523271778645;
+    double C41 = 0.473087347878780;
+    double C40 = 0.105785546915204;
+    /* l = 5 */
+    double C55 = 0.464132203440858;
+    double C54 = 1.467714898305751; 
+    double C53 = 0.345943719146840;
+    double C52 = 1.694771183260899;
+    double C51 = 0.320281648576215;
+    double C50 = 0.116950322453424;
+    /* l = 6 */
+    double C66 = 0.483084113580066; 
+    double C65 = 1.673452458100098;
+    double C64 = 0.356781262853998; 
+    double C63 = 0.651390485867716; 
+    double C62 = 0.325695242933858; 
+    double C61 = 0.411975516301141;
+    double C60 = 0.063569202267628;
+    
+    switch (l)
+    {
+        /* l = 0 */
+        case 0:
+            for (i = 0; i < len; i++) Ylm[i] = C00;
+            break;
+        
+        /* l = 1 */
+        case 1: 
+            switch (m) 
+            {
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++) 
+                        Ylm[i] = C11 * ((x[i]-I*y[i])/r[i]);
+                    break;
+                
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C10 * (z[i] / r[i]);
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C11 * ((x[i]+I*y[i])/r[i]);
+                    break;
+                
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); break;
+            }
+            break;
+        
+        /* l = 2 */
+        case 2: 
+            switch (m) 
+            {      
+                case -2: /* m = -2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C22 * ((x[i]-I*y[i])*(x[i]-I*y[i]))/(r[i]*r[i]);
+                    break;
+
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C21 * ((x[i]-I*y[i])*z[i])/(r[i]*r[i]);
+                    break;
+
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C20 * (2*z[i]*z[i] - x[i]*x[i] - y[i]*y[i])/(r[i]*r[i]);
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C21 * ((x[i]+I*y[i])*z[i])/(r[i]*r[i]);
+                    break;
+                
+                case 2: /* m = 2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C22 * ((x[i]+I*y[i])*(x[i]+I*y[i]))/(r[i]*r[i]);
+                    break;
+                
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); 
+                         break;
+            }
+            break;
+
+        /* l = 3 */
+        case 3: 
+            switch (m) 
+            {   
+                case -3: /* m = -3 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C33 * ((x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i]))/(r[i]*r[i]*r[i]);
+                    break;
+               
+                case -2: /* m = -2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C32 * ((x[i]-I*y[i])*((x[i]-I*y[i]))*z[i])/(r[i]*r[i]*r[i]);
+                    break;
+
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C31 * (x[i]-I*y[i])*(4*z[i]*z[i] - x[i]*x[i] - y[i]*y[i])/(r[i]*r[i]*r[i]);
+                    break;
+
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C30 * z[i]*(2*z[i]*z[i] - 3*x[i]*x[i] - 3*y[i]*y[i])/(r[i]*r[i]*r[i]);
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C31 * (x[i]+I*y[i])*(4*z[i]*z[i] - x[i]*x[i] - y[i]*y[i])/(r[i]*r[i]*r[i]);
+                    break;
+                
+                case 2: /* m = 2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C32 * (((x[i]+I*y[i])*(x[i]+I*y[i]))*z[i])/(r[i]*r[i]*r[i]);
+                    break;
+                
+                case 3: /* m = 3 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C33 * ((x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i]))/(r[i]*r[i]*r[i]);
+                    break;
+                
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); 
+                         break;
+            }
+            break;
+        
+        /* l = 4 */
+        case 4: 
+            switch (m) 
+            {     
+                case -4: /* m = -4 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C44 * ((x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i]))/pow(r[i],4);
+                    break;
+                
+                case -3: /* m = -3 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C43 * (((x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i]))*z[i])/pow(r[i],4);
+                    break;
+               
+                case -2: /* m = -2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C42 * (((x[i]-I*y[i])*(x[i]-I*y[i]))*(7*z[i]*z[i] - r[i]*r[i]))/pow(r[i],4);
+                    break;
+
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C41 * ((x[i]-I*y[i])*z[i]*(7*z[i]*z[i] - 3*r[i]*r[i]))/pow(r[i],4);
+                    break;
+
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C40 * (35*z[i]*z[i]*z[i]*z[i] - 30*(z[i]*z[i])*(r[i]*r[i]) + 3*r[i]*r[i]*r[i]*r[i])/pow(r[i],4);
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C41 * ((x[i]+I*y[i])*z[i]*(7*z[i]*z[i] - 3*r[i]*r[i]))/pow(r[i],4);
+                    break;
+                
+                case 2: /* m = 2 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C42 * (((x[i]+I*y[i])*(x[i]+I*y[i]))*(7*z[i]*z[i] - r[i]*r[i]))/pow(r[i],4);
+                    break;
+                
+                case 3: /* m = 3 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = -C43 * (((x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i]))*z[i])/pow(r[i],4);
+                    break;
+                
+                case 4: /* m = 4 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C44 * ((x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i]))/pow(r[i],4);
+                    break;
+                    
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); 
+                         break;
+            }
+            break;
+      
+        /* l = 5 */
+        case 5: 
+            switch (m) 
+            {   
+                case -5: /* m = -5 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C55 * (cpow(x[i]-I*y[i],5))/pow(r[i],5);
+                    }
+                    break;
+                
+                case -4: /* m = -4 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C54 * (cpow(x[i]-I*y[i],4)*z[i])/pow(r[i],5);
+                    }
+                    break;
+                
+                case -3: /* m = -3 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C53 * (((x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i]))*(9*z[i]*z[i] - r[i]*r[i]))/pow(r[i],5);
+                    }
+                    break;
+               
+                case -2: /* m = -2 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C52 * (((x[i]-I*y[i])*(x[i]-I*y[i]))*(3*z[i]*z[i]*z[i] - z[i]*r[i]*r[i]))/pow(r[i],5);
+                    }
+                    break;
+
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C51 * ((x[i]-I*y[i])*(21*pow(z[i],4) - 14*z[i]*z[i]*r[i]*r[i] + pow(r[i],4)))/pow(r[i],5);
+                    }
+                    break;
+
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C50 * (63*pow(z[i],5) - 70*(z[i]*z[i]*z[i])*(r[i]*r[i]) + 15*z[i]*pow(r[i],4))/pow(r[i],5);
+                    }
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C51 * ((x[i]+I*y[i])*(21*pow(z[i],4) - 14*z[i]*z[i]*r[i]*r[i] + pow(r[i],4)))/pow(r[i],5);
+                    }
+                    break;
+                
+                case 2: /* m = 2 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C52 * (((x[i]+I*y[i])*(x[i]+I*y[i]))*(3*z[i]*z[i]*z[i] - z[i]*r[i]*r[i]))/pow(r[i],5);
+                    }
+                    break;
+                
+                case 3: /* m = 3 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C53 * (((x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i]))*(9*z[i]*z[i] - r[i]*r[i]))/pow(r[i],5);
+                    }
+                    break;
+                
+                case 4: /* m = 4 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C54 * (cpow(x[i]+I*y[i],4)*z[i])/pow(r[i],5);
+                    }
+                    break;
+                
+                case 5: /* m = 5 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C55 * cpow(x[i]+I*y[i],5)/pow(r[i],5);
+                    }
+                    break;
+                    
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); 
+                         break;
+            }
+            break;
+
+        /* l = 6 */
+        case 6: 
+            switch (m) 
+            {   
+                case -6: /* m = -6 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C66 * cpow(x[i]-I*y[i],6)/pow(r[i],6);
+                    }
+                    break;
+                
+                case -5: /* m = -5 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C65 * (cpow(x[i]-I*y[i],5)*z[i])/pow(r[i],6);
+                    }
+                    break;
+                
+                case -4: /* m = -4 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C64 * (cpow(x[i]-I*y[i],4)*(11*z[i]*z[i] - r[i]*r[i]))/pow(r[i],6);
+                    break;
+                
+                case -3: /* m = -3 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C63 * (((x[i]-I*y[i])*(x[i]-I*y[i])*(x[i]-I*y[i]))*(11*z[i]*z[i]*z[i] - 3*z[i]*r[i]*r[i]))/pow(r[i],6);
+                    }
+                    break;
+               
+                case -2: /* m = -2 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C62 * (((x[i]-I*y[i])*(x[i]-I*y[i]))*(33*pow(z[i],4) - 18*(z[i]*z[i])*(r[i]*r[i]) + pow(r[i],4)))/pow(r[i],6);
+                    }
+                    break;
+
+                case -1: /* m = -1 */
+                    for (i = 0; i < len; i++)
+                        Ylm[i] = C61 * ((x[i]-I*y[i])*(33*pow(z[i],5) - 30*(z[i]*z[i]*z[i])*(r[i]*r[i]) + 5*z[i]*pow(r[i],4)))/pow(r[i],6);
+                    break;
+
+                case 0: /* m = 0 */
+                    for (i = 0; i < len; i++) {                        
+                        Ylm[i] = C60 * (231*pow(z[i],6) - 315*pow(z[i],4)*(r[i]*r[i]) + 105*(z[i]*z[i])*pow(r[i],4) - 5*pow(r[i],6))/pow(r[i],6);
+                    }
+                    break;
+                
+                case 1: /* m = 1 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C61 * ((x[i]+I*y[i])*(33*pow(z[i],5) - 30*(z[i]*z[i]*z[i])*(r[i]*r[i]) + 5*z[i]*pow(r[i],4)))/pow(r[i],6);
+                    }
+                    break;
+                
+                case 2: /* m = 2 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C62 * (((x[i]+I*y[i])*(x[i]+I*y[i]))*(33*pow(z[i],4) - 18*(z[i]*z[i])*(r[i]*r[i]) + pow(r[i],4)))/pow(r[i],6);
+                    }
+                    break;
+                
+                case 3: /* m = 3 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C63 * (((x[i]+I*y[i])*(x[i]+I*y[i])*(x[i]+I*y[i]))*(11*z[i]*z[i]*z[i] - 3*z[i]*(r[i]*r[i])))/pow(r[i],6);
+                    }
+                    break;
+                
+                case 4: /* m = 4 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C64 * (cpow(x[i]+I*y[i],4)*(11*z[i]*z[i] - r[i]*r[i]))/pow(r[i],6);
+                    }
+                    break;
+                
+                case 5: /* m = 5 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = -C65 * (cpow(x[i]+I*y[i],5)*z[i])/pow(r[i],6);
+                    }
+                    break;
+                
+                case 6: /* m = 6 */
+                    for (i = 0; i < len; i++) {
+                        Ylm[i] = C66 * cpow(x[i]+I*y[i],6)/pow(r[i],6);
+                    }
+                    break;
+                    
+                /* incorrect m */
+                default: printf("<m> must be an integer between %d and %d!\n", -l, l); 
+                         break;
+            }
+            break;
+        
+        default: printf("<l> must be an integer between 0 and 6!\n"); break;
+    }
+    
+    if (l > 0) {
+        for (i = 0; i < len; i++) {
+            if (r[i] < 1e-10) Ylm[i] = 0.0;
+        }
+    }
+}
 
 
 /*

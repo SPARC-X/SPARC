@@ -33,6 +33,8 @@
 #include "electrostatics.h"
 #include "mgga.h"
 #include "vdWDF.h"
+#include "exactExchangeProperties.h"
+#include "spinOrbitCoupling.h"
 
 #define TEMP_TOL 1e-12
 
@@ -134,10 +136,7 @@ void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
     
     // find nonlocal + kinetic stress components
     t1 = MPI_Wtime();
-    if (pSPARC->isGammaPoint)
-        Calculate_nonlocal_kinetic_stress(pSPARC);
-    else
-        Calculate_nonlocal_kinetic_stress_kpt(pSPARC);    
+    Calculate_nonlocal_kinetic_stress(pSPARC);
     t2 = MPI_Wtime();
 #ifdef DEBUG
     if(!rank) printf("Time for calculating nonlocal+kinetic stress components: %.3f ms\n", (t2 - t1)*1e3);
@@ -1054,9 +1053,23 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
 }
 
 /**
+ * @brief    Calculate nonlocal stress components.
+ */
+void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
+    if (pSPARC->isGammaPoint) {
+        Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+    } else {
+        if (pSPARC->Nspinor == 1)
+            Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
+        else if (pSPARC->Nspinor == 2)
+            Calculate_nonlocal_kinetic_stress_kpt_spinor(pSPARC);
+    }
+ }
+
+/**
  * @brief    Calculate nonlocal + kinetic components of stress.
  */
-void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC)
+void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int rank;
