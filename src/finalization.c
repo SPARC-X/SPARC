@@ -205,6 +205,8 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     free(pSPARC->CUTOFF_y);
     free(pSPARC->CUTOFF_z); 
     free(pSPARC->IP_displ);
+    if (pSPARC->SOC_Flag) 
+        free(pSPARC->IP_displ_SOC); 
     
     // free preconditioner coeff arrays
     if (pSPARC->MixingPrecond == 2 || pSPARC->MixingPrecond == 3) {
@@ -260,6 +262,12 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->psd[i].Gamma);
         free(pSPARC->psd[i].rho_c_table);
         free(pSPARC->psd[i].ppl);
+        if (pSPARC->psd[i].pspsoc == 1) {
+            free(pSPARC->psd[i].ppl_soc);
+            free(pSPARC->psd[i].Gamma_soc);
+            free(pSPARC->psd[i].UdV_soc);
+            free(pSPARC->psd[i].SplineFitUdV_soc);
+        }
     }
     // then free the psd struct itself
     free(pSPARC->psd);
@@ -414,6 +422,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                 }
                 free(pSPARC->nlocProj[ityp].Chi_c);
             }
+            if (pSPARC->SOC_Flag == 1) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
+                    // if (! pSPARC->nlocProj[ityp].nproj) continue;
+                    if (! pSPARC->nlocProj[ityp].nprojso) continue;
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj[ityp].Chiso[iat] );
+                    }
+                    free( pSPARC->nlocProj[ityp].Chiso );
+                }
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
+                    // if (! pSPARC->nlocProj[ityp].nproj) continue;
+                    if (! pSPARC->nlocProj[ityp].nprojso_ext) continue;
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj[ityp].Chisowt0[iat] );
+                        free( pSPARC->nlocProj[ityp].Chisowtl[iat] );
+                        free( pSPARC->nlocProj[ityp].Chisowtnl[iat] );
+                    }
+                    free( pSPARC->nlocProj[ityp].Chisowt0 );
+                    free( pSPARC->nlocProj[ityp].Chisowtl );
+                    free( pSPARC->nlocProj[ityp].Chisowtnl );
+                }
+            }
             free(pSPARC->nlocProj);
         }
         
@@ -429,6 +459,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     free( pSPARC->nlocProj_kptcomm[ityp].Chi_c[iat] );
                 }
                 free(pSPARC->nlocProj_kptcomm[ityp].Chi_c);
+            }
+            if (pSPARC->SOC_Flag == 1) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
+                    // if (! pSPARC->nlocProj[ityp].nproj) continue;
+                    if (! pSPARC->nlocProj_kptcomm[ityp].nprojso) continue;
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc_kptcomm[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chiso[iat] );
+                    }
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chiso );
+                }
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
+                    // if (! pSPARC->nlocProj[ityp].nproj) continue;
+                    if (! pSPARC->nlocProj_kptcomm[ityp].nprojso_ext) continue;
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc_kptcomm[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0[iat] );
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl[iat] );
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl[iat] );
+                    }
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0 );
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl );
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl );
+                }
             }
             free(pSPARC->nlocProj_kptcomm);
         }

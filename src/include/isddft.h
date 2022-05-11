@@ -78,7 +78,7 @@ typedef struct _D2D_OBJ {
  */
 typedef struct _PSD_OBJ {
     double *rVloc;     // stores local part of pseudopotential times radius
-    double *UdV; 
+    double *UdV;        // KB nonlocal SC projectors
     double *rhoIsoAtom;       // stores isolated atom electron density
     double *RadialGrid;   // stores the radial grid
     double *SplinerVlocD;  // stores derivative of rVloc from Spline
@@ -86,7 +86,7 @@ typedef struct _PSD_OBJ {
     double *SplineFitIsoAtomDen;
     double *SplineRhocD; // derivative of rho_c_table for spline
     double *rc;     // component pseudopotential cutoff
-    double *Gamma;
+    double *Gamma;  // KB SC energy for each channel
     double *rho_c_table;  // model core charge for nonlinear core correction
     double fchrg;   // fchrg value for nonlinear core correction
     double Vloc_0;  // stores Vloc(r = 0)
@@ -95,6 +95,11 @@ typedef struct _PSD_OBJ {
     int lmax;       // maximum pseudopotential component
     int size;       // size of the arrays storing the pseudopotentials   
     int *ppl;       // number of nonlocal projectors per l
+    int pspsoc;     // Flag for whether the psp has spin-orbit coupling (SOC) for each type of atom
+    int *ppl_soc;   // number of nonlocal projectors per l for SOC
+    double *Gamma_soc;  // KB SO energy for each channel
+    double *UdV_soc;    // KB nonlocal SO projectors
+    double *SplineFitUdV_soc;   // derivative of UdV_soc from Spline
 } PSD_OBJ;
 
 
@@ -147,9 +152,15 @@ typedef struct _ATOM_NLOC_INFLUENCE_OBJ {
  *          each struct contains nonlocal projectors of atoms of one type.
  */
 typedef struct _NLOC_PROJ_OBJ {
-    int nproj;    // number of projectors per atom
-    double **Chi; // projector real
-    double complex **Chi_c; // projector complex
+    int nproj;                  // number of projectors per atom
+    double **Chi;               // projector real
+    double complex **Chi_c;     // projector complex
+    int nprojso;                // number of SO projectors per atom
+    double complex **Chiso;     // SO projector complex
+    int nprojso_ext;            // number of SO projectors (columns) of Chiso matrix in SOC (after extraction)
+    double complex **Chisowt0;  // Chi matrix withou m = 0
+    double complex **Chisowtl;  // Chi matrix without m = l
+    double complex **Chisowtnl; // Chi matrix without m = -l
 } NLOC_PROJ_OBJ;
 
 
@@ -232,6 +243,10 @@ typedef struct _SPARC_OBJ{
     int spin_start_indx; // start index (global) of spin in the spin communicator
     int spin_end_indx;  // end index (global) of spin in the spin communicator
     
+    /* spin orbit coupling options */
+    int Nspinor;        // Number of spinor in wavefunction
+    int SOC_Flag;       // Flag for spin-orbit coupling (SOC) calculation
+
     /* Options for MD & Relaxation */
     int MDFlag;
     int RelaxFlag;
@@ -306,8 +321,12 @@ typedef struct _SPARC_OBJ{
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc_kptcomm; // atom info. for atoms that have nonlocal influence on the distributed domain in kptcomm_topo (LOCAL)
     NLOC_PROJ_OBJ *nlocProj;  // nonlocal projectors in psi-domain (LOCAL)
     NLOC_PROJ_OBJ *nlocProj_kptcomm;  // nonlocal projectors in kptcomm_topo (LOCAL)
+    NLOC_PROJ_OBJ *nlocProjso;  // nonlocal SO projectors in psi-domain (LOCAL)
+    NLOC_PROJ_OBJ *nlocProjso_kptcomm;  // nonlocal SO projectors in kptcomm_topo (LOCAL)
+
     //int *IP_len;              // nonlocal inner product length corresponding to each atom, size: n_atom x 1
     int *IP_displ;              // start index for storing nonlocal inner product, size: (n_atom + 1) x 1
+    int *IP_displ_SOC;          // start index for storing nonlocal inner product, size: (n_atom + 1) x 1
     
     /* Finite difference */
     int order;          // order of central difference

@@ -193,11 +193,12 @@ void Init_orbital(SPARC_OBJ *pSPARC)
     if (rank == 0) printf("Initializing Kohn-Sham orbitals ... \n");
 #endif
 
-    int k, n, i, DMnd, size_k, len_tot, size_s, spn_i;
+    int k, n, i, DMnd, size_k, len_tot, size_s, spn_i, spinor;
 #ifdef DEBUG
     double t1, t2;
 #endif
-    DMnd = pSPARC->Nd_d_dmcomm;
+    // Multiply a factor for a spinor wavefunction
+    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     size_k = DMnd * pSPARC->Nband_bandcomm;
     // notice that in processors not for orbital calculations len_tot = 0
     size_s = size_k * pSPARC->Nkpts_kptcomm;
@@ -267,7 +268,7 @@ void Init_orbital(SPARC_OBJ *pSPARC)
                 gridsizes[0] = pSPARC->Nx;
                 gridsizes[1] = pSPARC->Ny;
                 gridsizes[2] = pSPARC->Nz;
-                int size_kg = pSPARC->Nd * pSPARC->Nstates;
+                int size_kg = pSPARC->Nd * pSPARC->Nspinor * pSPARC->Nstates;
                 int size_sg = size_kg * pSPARC->Nkpts_sym;
                 for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
                     int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
@@ -275,10 +276,12 @@ void Init_orbital(SPARC_OBJ *pSPARC)
                         int kg  = pSPARC->kpt_start_indx + k; // global kpt index
                         for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
                             int ng = pSPARC->band_start_indx + n; // global band index
-                            int shift_g = sg * size_sg + kg * size_kg + ng * pSPARC->Nd; // global shift
+                            int shift_g = sg * size_sg + kg * size_kg + ng * pSPARC->Nd * pSPARC->Nspinor; // global shift
                             int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
-                            double complex *Psi_kn = pSPARC->Xorb_kpt + shift;
-                            SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
+                            for (spinor = 0; spinor < pSPARC->Nspinor; spinor ++) {
+                                double complex *Psi_kn = pSPARC->Xorb_kpt + shift + spinor * pSPARC->Nd_d_dmcomm;
+                                SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
+                            }
                         }
                     }
                 }    

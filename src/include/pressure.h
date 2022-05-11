@@ -44,7 +44,7 @@ void Calculate_local_pressure_nonorthCell(SPARC_OBJ *pSPARC);
  * @brief    Calculate nonlocal pressure components.
  */
 void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC);
-
+void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC);
 void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC);
 
 #endif // PRESSURE_H 

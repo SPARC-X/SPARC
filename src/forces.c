@@ -31,6 +31,7 @@
 #include "isddft.h"
 #include "initialization.h"
 #include "electrostatics.h"
+#include "spinOrbitCoupling.h"
 
 #define TEMP_TOL 1e-12
 
@@ -147,10 +148,14 @@ void Symmetrize_forces(SPARC_OBJ *pSPARC)
  */
 void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
 {
-    if (pSPARC->isGammaPoint)
+    if (pSPARC->isGammaPoint) {
         Calculate_nonlocal_forces_linear(pSPARC);
-    else
-        Calculate_nonlocal_forces_kpt_linear(pSPARC); 
+    } else {
+        if (pSPARC->Nspinor == 1)
+            Calculate_nonlocal_forces_kpt_linear(pSPARC); 
+        else if (pSPARC->Nspinor == 2) 
+            Calculate_nonlocal_forces_kpt_spinor_linear(pSPARC); 
+    }
 }
 
 
