@@ -106,7 +106,6 @@ void Calculate_Vxc_vdWExchangeLinearCorre(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, 
     for(i = 0; i < DMnd; i++){
         pSPARC->e_xc[i] = vdWDFex[i] + vdWDFecLinear[i]; // /epsilon of vdWDF without nonlinear correlation
         pSPARC->XCPotential[i] = vdWDFVx1[i] + vdWDFVcLinear[i]; // local part
-        // pSPARC->v_xc_loc[i] = pSPARC->XCPotential[i]; // local part of Vxc, v_xc_loc = e_xc + d e_xc / d rho // SPARC doesn't have pSPARC->v_xc_loc
         pSPARC->Dxcdgrho[i] = vdWDFVx2[i];
     }
 

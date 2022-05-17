@@ -116,16 +116,35 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
             atmcount++;
             ppmin = ppmax = qqmin = qqmax = rrmin = rrmax = 0;
             if (pSPARC->BCx == 0) {
-                ppmax = floor((rcbox_x + Lx - x0) / Lx + TEMP_TOL);
-                ppmin = -floor((rcbox_x + x0) / Lx + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    // rcut_x is the real ruct in x direction. 
+                    double rcut_x = pSPARC->pSQ->nloc[0] * pSPARC->delta_x;
+                    ppmax = floor((rcbox_x + Lx - x0 + rcut_x) / Lx + TEMP_TOL);
+                    ppmin = -floor((rcbox_x + x0 + rcut_x) / Lx + TEMP_TOL);    
+                } else {
+                    ppmax = floor((rcbox_x + Lx - x0) / Lx + TEMP_TOL);
+                    ppmin = -floor((rcbox_x + x0) / Lx + TEMP_TOL);
+                }
             }
             if (pSPARC->BCy == 0) {
-                qqmax = floor((rcbox_y + Ly - y0) / Ly + TEMP_TOL);
-                qqmin = -floor((rcbox_y + y0) / Ly + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    double rcut_y = pSPARC->pSQ->nloc[1] * pSPARC->delta_y;
+                    qqmax = floor((rcbox_y + Ly - y0 + rcut_y) / Ly + TEMP_TOL);
+                    qqmin = -floor((rcbox_y + y0 + rcut_y) / Ly + TEMP_TOL);
+                } else {
+                    qqmax = floor((rcbox_y + Ly - y0) / Ly + TEMP_TOL);
+                    qqmin = -floor((rcbox_y + y0) / Ly + TEMP_TOL);
+                }
             }
             if (pSPARC->BCz == 0) {
-                rrmax = floor((rcbox_z + Lz - z0) / Lz + TEMP_TOL);
-                rrmin = -floor((rcbox_z + z0) / Lz + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    double rcut_z = pSPARC->pSQ->nloc[2] * pSPARC->delta_z;
+                    rrmax = floor((rcbox_z + Lz - z0 + rcut_z) / Lz + TEMP_TOL);
+                    rrmin = -floor((rcbox_z + z0 + rcut_z) / Lz + TEMP_TOL);
+                } else {
+                    rrmax = floor((rcbox_z + Lz - z0) / Lz + TEMP_TOL);
+                    rrmin = -floor((rcbox_z + z0) / Lz + TEMP_TOL);
+                }
             }
 
             // check how many of it's images interacts with the local distributed domain
@@ -184,16 +203,34 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
             atmcount2++;
             ppmin = ppmax = qqmin = qqmax = rrmin = rrmax = 0;
             if (pSPARC->BCx == 0) {
-                ppmax = floor((rcbox_x + Lx - x0) / Lx + TEMP_TOL);
-                ppmin = -floor((rcbox_x + x0) / Lx + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    double rcut_x = pSPARC->pSQ->nloc[0] * pSPARC->delta_x;
+                    ppmax = floor((rcbox_x + Lx - x0 + rcut_x) / Lx + TEMP_TOL);
+                    ppmin = -floor((rcbox_x + x0 + rcut_x) / Lx + TEMP_TOL);    
+                } else {
+                    ppmax = floor((rcbox_x + Lx - x0) / Lx + TEMP_TOL);
+                    ppmin = -floor((rcbox_x + x0) / Lx + TEMP_TOL);
+                }
             }
             if (pSPARC->BCy == 0) {
-                qqmax = floor((rcbox_y + Ly - y0) / Ly + TEMP_TOL);
-                qqmin = -floor((rcbox_y + y0) / Ly + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    double rcut_y = pSPARC->pSQ->nloc[1] * pSPARC->delta_y;
+                    qqmax = floor((rcbox_y + Ly - y0 + rcut_y) / Ly + TEMP_TOL);
+                    qqmin = -floor((rcbox_y + y0 + rcut_y) / Ly + TEMP_TOL);
+                } else {
+                    qqmax = floor((rcbox_y + Ly - y0) / Ly + TEMP_TOL);
+                    qqmin = -floor((rcbox_y + y0) / Ly + TEMP_TOL);
+                }
             }
             if (pSPARC->BCz == 0) {
-                rrmax = floor((rcbox_z + Lz - z0) / Lz + TEMP_TOL);
-                rrmin = -floor((rcbox_z + z0) / Lz + TEMP_TOL);
+                if (pSPARC->SQFlag == 1) {
+                    double rcut_z = pSPARC->pSQ->nloc[2] * pSPARC->delta_z;
+                    rrmax = floor((rcbox_z + Lz - z0 + rcut_z) / Lz + TEMP_TOL);
+                    rrmin = -floor((rcbox_z + z0 + rcut_z) / Lz + TEMP_TOL);
+                } else {
+                    rrmax = floor((rcbox_z + Lz - z0) / Lz + TEMP_TOL);
+                    rrmin = -floor((rcbox_z + z0) / Lz + TEMP_TOL);
+                }
             }
             
             // check if this image interacts with the local distributed domain

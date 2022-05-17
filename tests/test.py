@@ -250,6 +250,10 @@ SYSTEMS["systemname"].append('PtAu_SOC')
 SYSTEMS["Tags"].append(['bulk', 'SOC','kpt' 'nonorth','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('BN_SQ')
+SYSTEMS["Tags"].append(['bulk', 'SQ', 'orth','lda','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>

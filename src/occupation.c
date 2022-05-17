@@ -49,7 +49,7 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     Nk = pSPARC->Nkpts_kptcomm;
     
     // find fermi level using Brent's method
-    Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter);
+    Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint);
 
     // find occupations
     if (pSPARC->isGammaPoint) { // for gamma-point systems
@@ -84,16 +84,21 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
  * @ref     W.H. Press, Numerical recepies 3rd edition: The art of scientific 
  *          computing, Cambridge university press, 2007.
  */
-double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter) 
+double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter, 
+    double (*constraint)(SPARC_OBJ*, double)) 
 {
 #define EPSILON 1e-16
 #define SIGN(a,b) ((b) > 0.0 ? fabs((a)) : -fabs((a)))
-    if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return 0.0;
+    if (pSPARC->SQFlag == 1) {
+        if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return 0.0;
+    } else {
+        if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return 0.0;
+    }
     // let all root processors in each kptcomm work together to find fermi energy.
     int iter;
     double tol1q, eq;
     double a = min(x1,x2), b = max(x1,x2), c = b, d, e = 0.0, min1, min2;
-    double fa = occ_constraint(pSPARC,a), fb = occ_constraint(pSPARC,b), fc, p, q, r, s, tol1, xm;
+    double fa = constraint(pSPARC,a), fb = constraint(pSPARC,b), fc, p, q, r, s, tol1, xm;
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -105,8 +110,8 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
         a -= w/2.0;
         b += w/2.0;
         c = b;
-        fa = occ_constraint(pSPARC,a);
-        fb = occ_constraint(pSPARC,b);
+        fa = constraint(pSPARC,a);
+        fb = constraint(pSPARC,b);
 #ifdef DEBUG
         if (rank == 0) 
             printf("Fermi level calculation: expanded bounds = (%10.6E,%10.6E), (fa,fb) = (%10.6E,%10.6E)\n", 
@@ -155,7 +160,7 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
             min1 = 3.0 * xm * q - fabs(tol1q);
             eq = e * q;
             min2 = fabs(eq);
-            if(2.0 * p < (min1 < min2 ? min1 : min2)) {	
+            if(2.0 * p < (min1 < min2 ? min1 : min2)) { 
                 //accept interpolation
                 e = d; d = p / q;
             } else {
@@ -172,9 +177,9 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
             // evaluate new trial root
             b += d;
         } else {
-            b += SIGN(tol1, xm);	
+            b += SIGN(tol1, xm);    
         }
-        fb = occ_constraint(pSPARC,b);
+        fb = constraint(pSPARC,b);
     }
     printf("Maximum iterations exceeded in brents root finding method...exiting\n");
     exit(EXIT_FAILURE);

@@ -36,6 +36,9 @@
 #include "mgga.h"
 #include "spinOrbitCoupling.h"
 #include "exactExchangeProperties.h"
+#include "sqProperties.h"
+#include "d3Correction.h"
+
 #define TEMP_TOL 1e-12
 
 
@@ -814,7 +817,10 @@ void Calculate_local_pressure(SPARC_OBJ *pSPARC) {
  */
 void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
     if (pSPARC->isGammaPoint) {
-        Calculate_nonlocal_pressure_linear(pSPARC);
+        if (pSPARC->SQFlag == 1) 
+            Calculate_nonlocal_pressure_SQ(pSPARC);
+        else
+            Calculate_nonlocal_pressure_linear(pSPARC);
     } else {
         if (pSPARC->Nspinor == 1)
             Calculate_nonlocal_pressure_kpt(pSPARC);  

@@ -21,6 +21,7 @@
 
 #include <mpi.h>
 #include <complex.h>
+#include "dssq.h"
 
 // max length of pseudopotential path
 #define L_PSD 4096
@@ -827,7 +828,7 @@ typedef struct _SPARC_OBJ{
     double *pois_FFT_const_press;   // Constants for FFT solver in Poisson's equation in press
     int ACEFlag;                    // Flag for ACE operator 
     int Nstates_occ[2];             // Number of occupied states 
-    int EXXMem_batch;            // Option for speed or memory efficiency when using ACE operator
+    int EXXMem_batch;               // Option for speed or memory efficiency when using ACE operator
     int EXXACEVal_state;            // Number of extra unoccupied states in constructing ACE operator
     int EXXDownsampling[3];         // Downsampling info
     double const_aux;               // constant for auxlliary function
@@ -836,6 +837,28 @@ typedef struct _SPARC_OBJ{
     int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
     MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
     
+    /* SQ methods */
+    int SQFlag;                     // Flag of SQ method
+    int SQ_typ;                     // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for energy
+    int SQ_typ_dm;                  // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for density matrix of properties
+    int SQ_gauss_mem;               // Memory option for gauss quadrature 
+    int SQ_npl_c;                   // Degree of polynomial (should be a multiple of 4) for Clenshaw Curtis
+    int SQ_npl_g;                   // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
+    int SQ_EigshiftFlag;            // Flag for choosing to use minmax eigenvalues of Gauss for Clenshaw Curtis in forces/stress after shifting by eigshift.
+    int SQ_correction;              // Flag for culculating "charge overlap correction".
+    double SQ_rcut;                 // Truncation or localization radius
+    double SQ_fac_g2c;              // SQ_npl_c = SQ_fac_g2c * SQ_npl_G. Used if npl_c is not specified.
+    double SQ_tol_occ;              // Tolerance for occupation corresponding to maximum eigenvalue
+    double SQ_eigshift;             // Percentage shift in eigenspectrum
+    int npNdx_SQ;           // number of processes for paral. over domain in x-dir
+    int npNdy_SQ;           // number of processes for paral. over domain in y-dir
+    int npNdz_SQ;           // number of processes for paral. over domain in z-dir
+    D2D_OBJ d2d_s2p_sq;             // D2D object for communication from sqcomm to phicomm, sq end
+    D2D_OBJ d2d_s2p_phi;            // D2D object for communication from sqcomm to phicomm, phi end
+    ATOM_NLOC_INFLUENCE_OBJ **Atom_Influence_nloc_SQ;   // atom info. for atoms that have nonlocal influence on the distributed domain (LOCAL)
+    NLOC_PROJ_OBJ **nlocProj_SQ;    // nonlocal projectors in psi-domain (LOCAL)
+    SQ_OBJ *pSQ;                    // SQ object
+
     // Extrapolation options
     double *delectronDens;
     double *delectronDens_0dt;
@@ -1100,6 +1123,21 @@ typedef struct _SPARC_INPUT_OBJ{
     int EXXDiv_Flag;        // Method for integrable singularity 
     double hyb_range_fock;  // hybrid short range for fock operator 
     double hyb_range_pbe;   // hybrid short range for exchange correlation 
+
+    /* SQ methods */
+    int SQFlag;             // Flag of SQ method
+    int SQ_typ_dm;          // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for density matrix of properties
+    int SQ_gauss_mem;       // Memory option for gauss quadrature 
+    int SQ_npl_c;           // Degree of polynomial (should be a multiple of 4) for Clenshaw Curtis
+    int SQ_npl_g;           // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
+    int SQ_EigshiftFlag;    // Flag for choosing to use minmax eigenvalues of Gauss for Clenshaw Curtis in forces/stress after shifting by eigshift.
+    double SQ_rcut;         // Truncation or localization radius
+    double SQ_fac_g2c;      // SQ_npl_c = SQ_fac_g2c * SQ_npl_G. Used if npl_c is not specified.
+    double SQ_tol_occ;      // Tolerance for occupation corresponding to maximum eigenvalue
+    double SQ_eigshift;     // Percentage shift in eigenspectrum
+    int npNdx_SQ;           // number of processes for paral. over domain in x-dir
+    int npNdy_SQ;           // number of processes for paral. over domain in y-dir
+    int npNdz_SQ;           // number of processes for paral. over domain in z-dir
 
     /* File names */
     char filename[L_STRING]; 

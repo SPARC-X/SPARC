@@ -24,7 +24,7 @@
 #include "electronicGroundState.h"
 #include "exchangeCorrelation.h"
 #include "lapVecRoutines.h"
-
+#include "energyDensity.h"
 
 void initialize_MGGA(SPARC_OBJ *pSPARC) { // allocate space to variables
     int DMnx, DMny, DMnz, DMnd;
