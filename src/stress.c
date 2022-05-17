@@ -35,6 +35,8 @@
 #include "vdWDF.h"
 #include "exactExchangeProperties.h"
 #include "spinOrbitCoupling.h"
+#include "sqProperties.h"
+#include "d3Correction.h"
 
 #define TEMP_TOL 1e-12
 
@@ -1057,7 +1059,10 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
  */
 void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
     if (pSPARC->isGammaPoint) {
-        Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+        if (pSPARC->SQFlag == 1)
+            Calculate_nonlocal_kinetic_stress_SQ(pSPARC);
+        else
+            Calculate_nonlocal_kinetic_stress_linear(pSPARC);
     } else {
         if (pSPARC->Nspinor == 1)
             Calculate_nonlocal_kinetic_stress_kpt(pSPARC);

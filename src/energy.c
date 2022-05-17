@@ -19,6 +19,7 @@
 #include "occupation.h"
 #include "tools.h"
 #include "isddft.h"
+#include "sqProperties.h"
 
 #define TEMP_TOL (1e-14)
 
@@ -46,42 +47,22 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     Calculate_Exc(pSPARC, electronDens);
     
     // band structure energy
-    //Eband = Calculate_Eband(pSPARC);
-    if (pSPARC->isGammaPoint) { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (n = 0; n < Ns; n++) {
-                // Eband += 2.0 * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n], pSPARC->Efermi) * pSPARC->lambda[n];
-                Eband += occfac * pSPARC->occ[n+spn_i*Ns] * pSPARC->lambda[n+spn_i*Ns];
-            }
-        }
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }    
-    } else { // for k-points
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (k = 0; k < Nk; k++) {
-                for (n = 0; n < Ns; n++) {
-                    //Eband += 2.0 * pSPARC->kptWts_loc[k] * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n+k*Ns], pSPARC->Efermi)
-                    //         * pSPARC->lambda[n+k*Ns];
-                    Eband += occfac * pSPARC->kptWts_loc[k] * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
-                }
-            }
-        }    
-        Eband /= pSPARC->Nkpts;
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }
-        if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-        }
-    }   
+    if (pSPARC->SQFlag == 1) {
+        Eband = Calculate_Eband_SQ(pSPARC);
+    } else {
+        Eband = Calculate_Eband(pSPARC);
+    }
     
     // find changes in Eband from previous SCF step
     dEband = fabs(Eband - pSPARC->Eband) / pSPARC->n_atom;
     pSPARC->Eband = Eband;
     
     // calculate entropy
-    pSPARC->Entropy = Calculate_electronicEntropy(pSPARC);
+    if (pSPARC->SQFlag == 1) {
+        pSPARC->Entropy = Calculate_electronicEntropy_SQ(pSPARC);
+    } else {
+        pSPARC->Entropy = Calculate_electronicEntropy(pSPARC);
+    }
     
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         VectorDotProduct(pSPARC->psdChrgDens, pSPARC->elecstPotential, pSPARC->Nd_d, &E1, pSPARC->dmcomm_phi);
@@ -136,6 +117,53 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     }
 }
 
+
+/**
+ * @brief   Calculate band energy.
+ */
+double Calculate_Eband(SPARC_OBJ *pSPARC)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
+    int n, Ns, k, spn_i, Nk;
+    double Eband, occfac; 
+    
+    Eband = 0.0; // initialize energies
+    Ns = pSPARC->Nstates;
+    Nk = pSPARC->Nkpts_kptcomm;
+    occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+
+    if (pSPARC->isGammaPoint) { // for gamma-point systems
+        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+            for (n = 0; n < Ns; n++) {
+                // Eband += 2.0 * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n], pSPARC->Efermi) * pSPARC->lambda[n];
+                Eband += occfac * pSPARC->occ[n+spn_i*Ns] * pSPARC->lambda[n+spn_i*Ns];
+            }
+        }
+        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
+            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        }    
+    } else { // for k-points
+        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+            for (k = 0; k < Nk; k++) {
+                for (n = 0; n < Ns; n++) {
+                    //Eband += 2.0 * pSPARC->kptWts_loc[k] * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n+k*Ns], pSPARC->Efermi)
+                    //         * pSPARC->lambda[n+k*Ns];
+                    Eband += occfac * pSPARC->kptWts_loc[k] * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
+                }
+            }
+        }    
+        Eband /= pSPARC->Nkpts;
+        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
+            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        }
+        if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
+            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+        }
+    }  
+    return Eband;
+}
 
 
 /**

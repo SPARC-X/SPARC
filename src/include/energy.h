@@ -25,6 +25,12 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens);
 
 
 /**
+ * @brief   Calculate band energy.
+ */
+double Calculate_Eband(SPARC_OBJ *pSPARC);
+
+
+/**
  * @brief   Calculate electronic entropy.  
  */
 double Calculate_electronicEntropy(SPARC_OBJ *pSPARC);

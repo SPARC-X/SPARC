@@ -24,6 +24,7 @@
 #include "d3Correction.h"
 #include "vdWDF.h"
 #include "mgga.h"
+#include "sq.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*
@@ -44,7 +45,11 @@
  */
 void Finalize(SPARC_OBJ *pSPARC)
 {
-    Free_SPARC(pSPARC);
+    if (pSPARC->SQFlag == 1) {
+        Free_SQ(pSPARC);
+    } else {
+        Free_SPARC(pSPARC);
+    }
     
     FILE *output_fp;
     int rank;
