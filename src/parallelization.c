@@ -76,7 +76,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         pSPARC->npband == 0 && npNd == 0) 
     {
         dims_divide_skbd(pSPARC->Nspin, pSPARC->Nkpts_sym, pSPARC->Nstates, 
-            gridsizes, nproc, &pSPARC->npspin, &pSPARC->npkpt, &pSPARC->npband, &npNd);
+            gridsizes, nproc, &pSPARC->npspin, &pSPARC->npkpt, &pSPARC->npband, &npNd, minsize, pSPARC->usefock);
         SPARC_Dims_create(npNd, 3, gridsizes, minsize, dims, &ierr);
         pSPARC->npNdx = dims[0];
         pSPARC->npNdy = dims[1];
@@ -654,7 +654,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
 
         // in order to use a subgroup of blacscomm, use the following
         // to get a good number of subgroup processes
-        bandsizes[0] = Nd_blacscomm;
+        bandsizes[0] = (pSPARC->Nd-1)/pSPARC->npNd+1;
         bandsizes[1] = pSPARC->Nstates;
         //SPARC_Dims_create(pSPARC->npband, 2, bandsizes, 1, dims, &ierr);
         ScaLAPACK_Dims_2D_BLCYC(size_blacscomm, bandsizes, dims);
@@ -1730,22 +1730,120 @@ double skbd_domain_efficiency(const int x) {
     return eff;
 }
 
-
+/**
+ * @brief  The scaling factor introduced by DMndbyNband
+ * 
+ *         Adding a side effect for tall thin local psi where applying ACE operator is slow
+ */
+double scaling_DMndbyNband(const int Ns, const int *gridsizes, const int npb, const int npd)
+{
+    int Nd = gridsizes[0] * gridsizes[1] * gridsizes[2];
+    double DMndbyNband = ceil_div(Nd,npd)/((double)ceil_div(Ns,npb));
+    // empirically DMndbyNband around 80 to 120 is good
+    double x = (DMndbyNband - 100)/20.0;
+    double cheby4 = max(0,16*pow(x,4)-12*pow(x,2)+1);
+    return pow(0.98,cheby4);
+}
 
 double skbd_weighted_efficiency(
     const int Nspin, const int Nk, const int Ns, 
-    const int *gridsizes, const int np, 
-    const int nps, const int npk, const int npb, const int npd)
+    const int *gridsizes, const int np, const int nps, 
+    const int npk, const int npb, const int npd, const int isfock)
 {
-    int ncols = workload_assigned(Nspin*Nk, Ns, nps*npk, npb);
-    double eff = Nspin * Nk * Ns * npd / (double)(ncols * np);
-    // apply weight for band
-    eff *= skbd_band_efficiency(npb);
-    // apply weight for domain
-    eff *= skbd_domain_efficiency(npd);
+    double eff;
+    if (!isfock) {
+        int ncols = workload_assigned(Nspin*Nk, Ns, nps*npk, npb);
+        eff = Nspin * Nk * Ns * npd / (double)(ncols * np);
+        // apply weight for band
+        eff *= skbd_band_efficiency(npb);
+        // apply weight for domain
+        eff *= skbd_domain_efficiency(npd);
+    } else {
+        int ncols = workload_assigned(Nspin, Nk, nps, npk);
+        eff = Nspin * Nk / (double)(ncols * nps * npk);
+        eff *= scaling_DMndbyNband(Ns, gridsizes, npb, npd);
+    }
     return eff;
 }
 
+double work_load_efficiency_fock(
+    const int Nk, const int Ns, const int *gridsizes,
+    const int np, const int np1, const int np2, const int np3
+)
+{
+    int ncols = workload_assigned(Nk, 1, np1, 1);
+    scaling_DMndbyNband(Ns, gridsizes, np2, np3);
+    double eff = Nk*(np2*np3)/(double)(ncols * np);
+    eff *= scaling_DMndbyNband(Ns, gridsizes, np2, np3);
+    return eff;
+}
+
+void dims_divide_kbd_fock(
+    const int Nk, const int Ns, const int *gridsizes,
+    const int np, int *np1, int *np2, int *np3, const int minsize)
+{
+#define LEN_NPB 20
+
+    // SPARC_Dims_create(nproc, ndims, gridsizes, minsize, int *dims, int *ierr); 
+    int cur1 = min(np,Nk);
+    int npNdx_max = gridsizes[0]/minsize;
+    int npNdy_max = gridsizes[1]/minsize;
+    int npNdz_max = gridsizes[2]/minsize;
+    int npd_max = npNdx_max * npNdy_max * npNdz_max;
+    int cur3 = min(npd_max,np/cur1);
+    int cur2 = min(np/(cur1*cur3),Ns);
+    double best_weight = work_load_efficiency_fock(Nk,Ns,gridsizes,np,cur1,cur2,cur3);
+    
+    if (best_weight > 0.9) { // prefer kpt to domain to band
+        *np1 = cur1; *np2 = cur2; *np3 = cur3;
+        return;
+    }
+
+    int npkpt, npband, npdm;
+    double weight;
+
+    int npb_list[LEN_NPB];
+    int npb_count = LEN_NPB;
+    if (np > Nk * npd_max) {
+        int npb_base = np / (Nk * npd_max);
+        int count = 0;
+        for (int i = 1; i <= LEN_NPB; i++) {
+            if (npb_base * i <= np) {
+                npb_list[count] = npb_base * i;
+                count++;
+            }
+        }
+        npb_count = count;
+    } else {
+        int count = 0;
+        for (int i = 1; i <= LEN_NPB; i++) {
+            npb_list[count] = i;
+            count++;
+        }
+        npb_count = count;
+    }
+
+    for (int i = 0; i < npb_count; i++) {
+        npband = npb_list[i];
+        int np_2d = np / npband;
+        if (np_2d < 1) continue;
+        
+        dims_divide_2d(Nk, gridsizes[0]*gridsizes[1]*gridsizes[2], np_2d, &npkpt, &npdm);
+        npband = np / (npkpt * npdm);
+        weight = work_load_efficiency_fock(Nk,Ns,gridsizes,np,npkpt,npband,npdm);
+        if (weight > best_weight) {
+            cur1 = npkpt;
+            cur2 = npband;
+            cur3 = npdm; 
+            best_weight = weight;
+        }
+        if (weight > 0.93) break;
+    }
+
+    *np1 = cur1;
+    *np2 = cur2;
+    *np3 = cur3;
+}
 
 /**
  * @brief  Caluclate a division of processors in for spin, kpoint, band, 
@@ -1761,11 +1859,13 @@ double skbd_weighted_efficiency(
  * @param npk (OUT) Number of kpoint groups.
  * @param npp (OUT) Number of band groups.
  * @param npd (OUT) Number of domain groups.
+ * @param minsize   Minimum size in domain parallelization
+ * @param isfock    Flag for if it's hybrid calculation
  **/
 void dims_divide_skbd(
     const int Nspin, const int Nk, const int Ns, 
     const int *gridsizes, const int np, 
-    int *nps, int *npk, int *npb, int *npd)
+    int *nps, int *npk, int *npb, int *npd, int minsize, int isfock)
 {
     if (Nspin != 1 && Nspin != 2) 
         exit(1);
@@ -1773,20 +1873,35 @@ void dims_divide_skbd(
     int nps_cur, npk_cur, npb_cur, npd_cur;
     double weight_cur;
     // first set naive way
-    nps_cur = min(Nspin,np);
-    npk_cur = min(Nk,np/nps_cur);
-    npb_cur = min(Ns,np/(nps_cur*npk_cur));
-    npd_cur = np/(nps_cur*npk_cur*npb_cur);
-    weight_cur = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_cur,npk_cur,npb_cur,npd_cur);
+    if (!isfock) {
+        nps_cur = min(Nspin,np);
+        npk_cur = min(Nk,np/nps_cur);
+        npb_cur = min(Ns,np/(nps_cur*npk_cur));
+        npd_cur = np/(nps_cur*npk_cur*npb_cur);
+    } else {
+        nps_cur = min(Nspin,np);
+        npk_cur = min(Nk,np/nps_cur);
+        int npNdx_max = gridsizes[0]/minsize;
+        int npNdy_max = gridsizes[1]/minsize;
+        int npNdz_max = gridsizes[2]/minsize;
+        int npd_max = npNdx_max * npNdy_max * npNdz_max;
+        npd_cur = min(npd_max,np/(nps_cur*npk_cur));
+        npb_cur = np/(nps_cur*npk_cur*npd_cur);
+    }
+    weight_cur = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_cur,npk_cur,npb_cur,npd_cur,isfock);
 
 
     // try with both Nspin = 1 
     int nps_1, npk_1, npb_1, npd_1;
     nps_1 = 1;
-    dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1);
+    if (!isfock) {
+        dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1);
+    } else {
+        dims_divide_kbd_fock(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1,minsize);
+    }
     // double weight_1 = work_load_efficiency(Nspin*Nk,Ns,np,nps_1*npk_1,npb_1,npd_1);
     double weight_1;
-    weight_1 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_1,npk_1,npb_1,npd_1);
+    weight_1 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_1,npk_1,npb_1,npd_1,isfock);
     if (weight_1 > weight_cur) {
         nps_cur = nps_1;
         npk_cur = npk_1;
@@ -1799,9 +1914,13 @@ void dims_divide_skbd(
     if (Nspin > 1 && np > 1) {
         int nps_2, npk_2, npb_2, npd_2;
         nps_2 = 2;
-        dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2);
+        if (!isfock) {
+            dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2);
+        } else {
+            dims_divide_kbd_fock(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2,minsize);
+        }
         double weight_2;
-        weight_2 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_2,npk_2,npb_2,npd_2);
+        weight_2 = skbd_weighted_efficiency(Nspin,Nk,Ns,gridsizes,np,nps_2,npk_2,npb_2,npd_2,isfock);
         if (weight_2 >= weight_cur) {
             nps_cur = nps_2;
             npk_cur = npk_2;

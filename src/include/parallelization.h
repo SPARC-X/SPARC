@@ -228,11 +228,13 @@ void dims_divide_kbd(
  * @param npk (OUT) Number of kpoint groups.
  * @param npp (OUT) Number of band groups.
  * @param npd (OUT) Number of domain groups.
+ * @param minsize   Minimum size in domain parallelization
+ * @param isfock    Flag for if it's hybrid calculation
  **/
 void dims_divide_skbd(
     const int Nspin, const int Nk, const int Ns, 
     const int *gridsizes, const int np, 
-    int *nps, int *npk, int *npb, int *npd);
+    int *nps, int *npk, int *npb, int *npd, int minsize, int isfock);
 
 
 /**

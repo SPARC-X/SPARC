@@ -2261,14 +2261,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
         // If using ACE operator, only do domain parallelization
         if (pSPARC->ACEFlag == 1) {
-            if (pSPARC->npband > 1) {
-                if (rank == 0)
-                    printf(RED "ERROR: When using ACE operator, only domain parallelization is supported.\n"
-                            "Please remove the NP_BAND_PARAL option in input file or set it to 1.\n" RESET);
-                exit(EXIT_FAILURE);
-            }
-            pSPARC->npband = 1;             // if using ACE operator only domain parallelization is used. 
-
             if (pSPARC->EXXACEVal_state < 0) {
                 // Use default EXXACEVal_state if it's negative
                 pSPARC->EXXACEVal_state = 3;
@@ -2448,20 +2440,21 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     // memory for Exact Exchange part
     double memory_exx = 0.0;
     if (pSPARC->usefock > 0) {
-        if (pSPARC->ACEFlag == 1) {
-            if (pSPARC->EXXMem_batch == 0) {
-                memory_exx =  (pSPARC->Nelectron / 2.0) * Nd * 2.0;                                              // Storage for ACE operator 
-                memory_exx += 4 * (pSPARC->Nelectron / 2.0) * (pSPARC->Nelectron / 2.0) / 2.0 * Nd * type_size;  // Storage for solving Poisson's equations
-            } else {
-                memory_exx =  (pSPARC->Nelectron / 2.0) * Nd * 2.0;                                              // Storage for ACE operator 
-                memory_exx += 4.0 * pSPARC->EXXMem_batch * nproc * Nd * type_size;                            // Storage for solving Poisson's equations
-            }
+        if (pSPARC->ACEFlag == 0) {
+            // psi outer
+            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * type_size;
+            // ace operator
+            memory_exx += (double) Nd * Ns * Nkpts_sym * Nspin * (pSPARC->npband + 2) * type_size;
         } else {
-            memory_exx =  Ns * Nd * 2.0;                                                                         // Storage for psi_outer 
-            int nproc_bandcomm;
-            MPI_Comm_size(pSPARC->bandcomm, &nproc_bandcomm);
-            if (nproc_bandcomm > 1 ) memory_exx += Ns * Nd * nproc_bandcomm;                                     // Storage for psi_outer if more than 1 band comm
-            memory_exx += 4 * (pSPARC->Nelectron / 2.0) * (pSPARC->Nelectron / 2.0) / 2.0 * Nd * type_size;      // Storage for solving Poisson's equations
+            // psi outer in dmcomm
+            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * pSPARC->npband * type_size;
+            // psi outer in kptcomm_topo
+            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * type_size;
+        }
+        if (pSPARC->EXXMem_batch == 0) {
+            memory_exx += (double) Nd * Ns * Ns * pSPARC->Nkpts_hf * Nkpts_sym * (2*type_size + 2*sizeof(int));
+        } else {
+            memory_exx += (double) pSPARC->EXXMem_batch * (2*type_size + 2*sizeof(int));
         }
         memory_usage += memory_exx;
     }
@@ -2779,11 +2772,17 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
             pSPARC->kpts_hf_red_list[pSPARC->Nkpts_hf_red++] = pSPARC->kpthf_ind[k_hf];
         }
 
+        pSPARC->kpthfred2kpthf = (int (*)[3]) calloc(sizeof(int[3]), pSPARC->Nkpts_hf_red);
+        for (k = 0; k < pSPARC->Nkpts_hf_red; k++) pSPARC->kpthfred2kpthf[k][0] = 0;
         // update the reduced index to be w.r.t. Nkpts_hf_red
+        // find inverse mapping from Nkpts_hf_red to Nkpts_hf
         for (k_hf = 0; k_hf < pSPARC->Nkpts_hf; k_hf ++) {
             for (k = 0; k < pSPARC->Nkpts_hf_red; k++) {
                 if (pSPARC->kpthf_ind[k_hf] == pSPARC->kpts_hf_red_list[k]) {
                     pSPARC->kpthf_ind_red[k_hf] = k;        // index w.r.t. Nkpts_hf_red
+                    pSPARC->kpthfred2kpthf[k][0] ++;
+                    int indx = pSPARC->kpthfred2kpthf[k][0];
+                    pSPARC->kpthfred2kpthf[k][indx] = k_hf;
                     break;
                 }
             }
@@ -3096,7 +3095,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version May 11, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jun 09, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

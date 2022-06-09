@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Apr 28, 2022)                      *
+*                       SPARC (version Jun 01, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Fri Apr 29 15:59:04 2022                  *
+*                   Start time: Wed Jun  8 21:41:21 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,9 +19,10 @@ KPOINT_SHIFT: 0.5 0.5 0.5
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
-CHEB_DEGREE: 43
-NSTATES: 9
 EXCHANGE_CORRELATION: PBE0
+NSTATES: 9
+CHEB_DEGREE: 43
+CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 CHEFSI_BOUND_FLAG: 0
 MAXIT_SCF: 100
@@ -53,6 +54,7 @@ PRINT_ENERGY_DENSITY: 0
 TOL_FOCK: 1.00E-06
 TOL_SCF_INIT: 1.00E-03
 MAXIT_FOCK: 20
+MINIT_FOCK: 1
 EXX_METHOD: FOURIER_SPACE
 EXX_DIVERGENCE: SPHERICAL
 EXX_MEM: 0
@@ -72,9 +74,9 @@ Volume                  :  1.2668032278E+02 (Bohr^3)
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
-NP_KPOINT_PARAL: 2
+NP_KPOINT_PARAL: 4
 NP_BAND_PARAL: 1
-NP_DOMAIN_PARAL: 2 2 3
+NP_DOMAIN_PARAL: 1 2 3
 NP_DOMAIN_PHI_PARAL: 2 3 4
 EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
@@ -83,7 +85,7 @@ EIG_SERIAL_MAXNS: 1500
 Number of processors               :  24
 Mesh spacing                       :  0.2 (Bohr)
 Number of symmetry adapted k-points:  4
-Output printed to                  :  sprc-calc.out
+Output printed to                  :  Si2_kpt_PBE0.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  8
@@ -91,18 +93,18 @@ Atom type 1  (valence electrons)   :  Si 4
 Pseudopotential                    :  Si.psp8
 Pseudocharge radii of atom type 1  :  7.60 7.60 7.60 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  108.15 MB
-Estimated memory per processor     :  4.51 MB
+Estimated total memory usage       :  2.82 GB
+Estimated memory per processor     :  120.13 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.7252593752E+00        2.245E-01        1.896
-2            -3.7180245502E+00        1.534E-01        0.490
-3            -3.6952781230E+00        1.971E-02        0.484
-4            -3.6940247827E+00        1.192E-02        0.481
-5            -3.6929878141E+00        1.994E-03        0.479
-6            -3.6930707190E+00        9.666E-04        0.435
+1            -3.7269345160E+00        2.216E-01        1.547
+2            -3.7181215223E+00        1.537E-01        0.401
+3            -3.6945420097E+00        1.914E-02        0.392
+4            -3.6942966398E+00        1.091E-02        0.393
+5            -3.6929713297E+00        2.034E-03        0.393
+6            -3.6930813761E+00        9.276E-04        0.349
 Total number of SCF: 6     
 
 k = [0.250, 0.250, 0.250]
@@ -110,114 +112,113 @@ Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
 
 No.1 Exx outer loop: 
-1            -3.6996750407E+00        4.568E-03        0.598
-2            -3.6991657697E+00        4.100E-03        0.493
-3            -3.6992265680E+00        3.343E-03        0.496
-4            -3.6993861538E+00        1.346E-03        0.494
-5            -3.6995098392E+00        5.835E-04        0.494
-6            -3.6995869265E+00        5.750E-04        0.492
-7            -3.6994937147E+00        7.302E-05        0.495
-8            -3.6995020093E+00        2.259E-05        0.489
-9            -3.6995021309E+00        2.900E-06        0.482
-10           -3.6995025639E+00        1.349E-06        0.509
-11           -3.6995024163E+00        2.279E-07        0.453
-Total number of SCF: 11    
+1            -3.6996684796E+00        4.572E-03        0.498
+2            -3.6991594740E+00        4.104E-03        0.406
+3            -3.6992424114E+00        3.268E-03        0.411
+4            -3.6993943706E+00        8.066E-04        0.408
+5            -3.6994241636E+00        5.842E-04        0.407
+6            -3.6995038312E+00        4.622E-05        0.404
+7            -3.6995011884E+00        3.434E-05        0.399
+8            -3.6995022809E+00        3.599E-06        0.419
+9            -3.6995018670E+00        4.062E-06        0.396
+10           -3.6995024840E+00        3.340E-07        0.375
+Total number of SCF: 10    
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 2.2744031814e-01 
+Exx outer loop error: 2.2741647992e-01 
 
 No.2 Exx outer loop: 
-1            -3.6996392015E+00        1.178E-03        0.578
-2            -3.6995900782E+00        9.106E-04        0.491
-3            -3.6995810484E+00        2.957E-04        0.492
-4            -3.6995580638E+00        4.837E-05        0.489
-5            -3.6995570919E+00        2.932E-05        0.486
-6            -3.6995554125E+00        3.998E-06        0.484
-7            -3.6995556394E+00        1.744E-06        0.479
-8            -3.6995555359E+00        8.523E-07        0.457
-Total number of SCF: 8     
+1            -3.6996379568E+00        1.176E-03        0.498
+2            -3.6995892177E+00        9.088E-04        0.406
+3            -3.6995876422E+00        3.315E-04        0.407
+4            -3.6995547112E+00        3.733E-05        0.398
+5            -3.6995545375E+00        2.636E-05        0.402
+6            -3.6995557284E+00        1.890E-06        0.394
+7            -3.6995555686E+00        9.598E-07        0.367
+Total number of SCF: 7     
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 2.3134942605e-04 
+Exx outer loop error: 2.3262538518e-04 
 
 No.3 Exx outer loop: 
-1            -3.6995830873E+00        3.503E-04        0.574
-2            -3.6995769955E+00        2.903E-04        0.522
-3            -3.6995569030E+00        4.142E-05        0.484
-4            -3.6995581257E+00        1.842E-05        0.483
-5            -3.6995584871E+00        7.286E-06        0.484
-6            -3.6995589961E+00        2.755E-06        0.483
-7            -3.6995589635E+00        1.479E-06        0.478
-8            -3.6995589972E+00        6.362E-07        0.453
-Total number of SCF: 8     
+1            -3.6995824849E+00        3.506E-04        0.486
+2            -3.6995769300E+00        2.904E-04        0.405
+3            -3.6995575936E+00        3.335E-05        0.396
+4            -3.6995586293E+00        1.588E-05        0.405
+5            -3.6995587502E+00        2.501E-06        0.394
+6            -3.6995590013E+00        1.224E-06        0.394
+7            -3.6995589757E+00        8.334E-07        0.368
+Total number of SCF: 7     
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 3.8993631757e-05 
+Exx outer loop error: 3.8983159443e-05 
 
 No.4 Exx outer loop: 
-1            -3.6995664924E+00        1.274E-04        0.572
-2            -3.6995648451E+00        1.021E-04        0.519
-3            -3.6995582485E+00        1.323E-05        0.493
-4            -3.6995589620E+00        5.594E-06        0.540
-5            -3.6995594202E+00        2.314E-06        0.479
-6            -3.6995592398E+00        5.178E-07        0.453
-Total number of SCF: 6     
+1            -3.6995663130E+00        1.285E-04        0.491
+2            -3.6995648373E+00        1.028E-04        0.404
+3            -3.6995578272E+00        1.593E-05        0.397
+4            -3.6995590092E+00        5.001E-06        0.400
+5            -3.6995594802E+00        5.064E-06        0.396
+6            -3.6995591636E+00        1.194E-06        0.390
+7            -3.6995591366E+00        9.015E-07        0.366
+Total number of SCF: 7     
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 8.8205867059e-06 
+Exx outer loop error: 8.5284680431e-06 
 
 No.5 Exx outer loop: 
-1            -3.6995612091E+00        5.569E-05        0.572
-2            -3.6995608484E+00        4.206E-05        0.493
-3            -3.6995589811E+00        5.194E-06        0.481
-4            -3.6995593468E+00        2.761E-06        0.479
-5            -3.6995594112E+00        1.951E-06        0.480
-6            -3.6995592380E+00        4.926E-07        0.454
+1            -3.6995602939E+00        5.551E-05        0.497
+2            -3.6995607663E+00        4.177E-05        0.401
+3            -3.6995588309E+00        5.660E-06        0.395
+4            -3.6995592439E+00        1.684E-06        0.392
+5            -3.6995593828E+00        1.066E-06        0.391
+6            -3.6995591851E+00        4.466E-07        0.370
 Total number of SCF: 6     
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 2.3346624305e-06 
+Exx outer loop error: 2.5913427060e-06 
 
 No.6 Exx outer loop: 
-1            -3.6995598037E+00        2.642E-05        0.568
-2            -3.6995597116E+00        1.928E-05        0.485
-3            -3.6995592206E+00        9.229E-07        0.452
-Total number of SCF: 3     
+1            -3.6995598282E+00        2.669E-05        0.480
+2            -3.6995597085E+00        1.949E-05        0.412
+3            -3.6995591564E+00        1.239E-06        0.392
+4            -3.6995593240E+00        9.889E-07        0.367
+Total number of SCF: 4     
 
 k = [0.250, 0.250, 0.250]
 Occupation of state 8 = 0.000000000000000.
 Occupation of state 9 = 0.000000000000000.
-Exx outer loop error: 7.4123610050e-07 
+Exx outer loop error: 6.7817248373e-07 
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.6995586106E+00 (Ha/atom)
-Total free energy                  : -7.3991172213E+00 (Ha)
-Band structure energy              :  2.7263607788E+00 (Ha)
-Exchange correlation energy        : -2.8877847844E+00 (Ha)
+Free energy per atom               : -3.6995586559E+00 (Ha/atom)
+Total free energy                  : -7.3991173119E+00 (Ha)
+Band structure energy              :  2.7263609417E+00 (Ha)
+Exchange correlation energy        : -2.8877847556E+00 (Ha)
 Self and correction energy         : -4.8323206509E+01 (Ha)
 Entropy*kb*T                       : -1.7305749811E-07 (Ha)
-Fermi level                        :  7.3073079009E-01 (Ha)
-RMS force                          :  2.9562752442E-01 (Ha/Bohr)
-Maximum force                      :  2.9562752442E-01 (Ha/Bohr)
-Time for force calculation         :  0.020 (sec)
-Pressure                           :  3.0830686705E+02 (GPa)
-Maximum stress                     :  3.5656503753E+02 (GPa)
-Time for stress calculation        :  0.377 (sec)
+Fermi level                        :  7.3073081794E-01 (Ha)
+RMS force                          :  2.9562749284E-01 (Ha/Bohr)
+Maximum force                      :  2.9562749284E-01 (Ha/Bohr)
+Time for force calculation         :  0.019 (sec)
+Pressure                           :  3.0830692786E+02 (GPa)
+Maximum stress                     :  3.5656508843E+02 (GPa)
+Time for stress calculation        :  0.306 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  26.623 sec
+Total walltime                     :  21.699 sec
 ___________________________________________________________________________
 
 ***************************************************************************
