@@ -816,9 +816,11 @@ typedef struct _SPARC_OBJ{
     int *kpthf_flag_kptcomm;        // flags for whether the k-point used or not for hybrid calculation
     int *Nkpts_hf_list;             // Number of k-point orbitals gathered from each k-point processes
     int kpthf_start_indx;           // starting index for k-point for hybrid calculation
+    int *kpthf_start_indx_list;     // starting index for k-point for hybrid calculation
     int *kpts_hf_red_list;          // list of reduced k-point for hybrid calculation 
     double complex *neg_phase;      // exp(-i*r*k_shift)
     double complex *pos_phase;      // exp(i*r*k_shift)
+    int (*kpthfred2kpthf)[3];       // mapping from kpthf_red to kpthf
     // tool variables for hybrid calculation
     double ACEtime;                 // Time for creating ace operator
     double Exxtime;                 // Time for applying Vexx operator
@@ -836,7 +838,13 @@ typedef struct _SPARC_OBJ{
     int flag_kpttopo_dm;            // flag of whether the dmcomm and kpttopo are the same
     int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
     MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
-    
+    // variabels for band parallelization with ACE
+    int desc_M[2][9];               // descriptor for matirx M in ACE case
+    int desc_Xi[2][9];              // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
+    int nrows_M[2];                 // local number of row of M matrix
+    int ncols_M[2];                 // local number of column of M matrix
+    int Nband_bandcomm_M[2];        // number of bands of M assigned to current bandcomm (LOCAL)
+
     /* SQ methods */
     int SQFlag;                     // Flag of SQ method
     int SQ_typ;                     // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for energy
