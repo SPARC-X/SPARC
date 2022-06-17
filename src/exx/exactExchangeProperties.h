@@ -52,7 +52,7 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC);
 /**
  * @brief   Calculate Exact Exchange stress
  */
-void Calculate_exact_exchange_stress_nonACE_kpt(SPARC_OBJ *pSPARC, 
+void Calculate_exact_exchange_stress_kpt_nonACE(SPARC_OBJ *pSPARC, 
     double complex *psi_outer, double *occ_outer, double complex *psi, double *stress_exx);
 
 /**
