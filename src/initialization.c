@@ -2170,6 +2170,14 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
 
+#if !defined(USE_MKL) && !defined(USE_SCALAPACK)
+    if (pSPARC->usefock == 1 && pSPARC->ACEFlag == 1){
+        if (rank == 0)
+            printf(RED "ERROR: To use hybrid functional with ACE method, please turn on MKL or SCALAPACK in makefile!\n"RESET);
+        exit(EXIT_FAILURE);
+    }
+#endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+
     if (pSPARC->usefock == 1) {
         if (pSPARC->SOC_Flag || pSPARC->SQFlag) {
             if (!rank) 
@@ -3095,7 +3103,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jun 09, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jun 21, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
