@@ -2114,11 +2114,16 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
     assert(M != NULL);
 
     t1 = MPI_Wtime();
+    #if defined(USE_MKL) || defined(USE_SCALAPACK)
     // perform matrix multiplication psi' * W using ScaLAPACK routines    
     pdgemm_("T", "N", &Ns_occ, &Ns_occ, &DMnd, &alpha, 
             psi, &ONE, &ONE, pSPARC->desc_Xi[spn_i], Xi_, 
             &ONE, &ONE, pSPARC->desc_Xi[spn_i], &beta, M, &ONE, &ONE, 
             pSPARC->desc_M[spn_i]);
+    #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+    // add the implementation without SCALAPACK
+    exit(255);
+    #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
 
     if (nproc_dmcomm > 1) {
         // sum over all processors in dmcomm
@@ -2151,9 +2156,14 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
 
     // Xi = WM^(-1)
     t1 = MPI_Wtime();
+    #if defined(USE_MKL) || defined(USE_SCALAPACK)
     pdtrsm_("R", "U", "N", "N", &DMnd, &Ns_occ, &alpha, 
                 M, &ONE, &ONE, pSPARC->desc_M[spn_i], 
                 Xi_, &ONE, &ONE, pSPARC->desc_Xi[spn_i]);
+    #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+    // add the implementation without SCALAPACK
+    exit(255);
+    #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
 
     t2 = MPI_Wtime();
     #ifdef DEBUG
