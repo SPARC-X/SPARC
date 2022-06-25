@@ -379,6 +379,13 @@ void Chebyshevfilter_constants_kpt(
             D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, pSPARC->DMVertices_dmcomm, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
                 pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
                 sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
+            if (strcmpi(pSPARC->XC, "SCAN") == 0) { // transfer vxcMGGA3 of this spin to kptcomm, it is moved from file mgga/mgga.c to here.
+                D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, 
+                pSPARC->DMVertices_dmcomm, pSPARC->vxcMGGA3_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
+                pSPARC->DMVertices_kptcomm, pSPARC->vxcMGGA3_loc_kptcomm, 
+                pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
+                sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
+            }
             Lanczos_kpt(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, 
                     pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->nlocProj_kptcomm, 
                     eigmin, eigmax, x0, pSPARC->TOL_LANCZOS, pSPARC->TOL_LANCZOS, 

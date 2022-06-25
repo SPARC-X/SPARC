@@ -266,7 +266,7 @@ void scanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_d
         double Dw0Dn = (w0 + 1.0) * (-DecLDA0Dn/b1c);
         double DH0Dn = b1c*(Dw0Dn*(1.0 - gInf0s) - w0*DgInf0sDn) / (1.0 + w0*(1.0 - gInf0s));
         double DH0DDn = b1c*(-w0*DgInf0sDDn) / (1.0 + w0*(1.0 - gInf0s));
-        double Dec0Dn = (DecLDA0Dn + DH0Dn)*Gc + (ec0 + H0)*DGcDn;
+        double Dec0Dn = (DecLDA0Dn + DH0Dn)*Gc + (ecLDA0 + H0)*DGcDn;
         double Dec0DDn = DH0DDn*Gc;
         // compute variation of epsilon_c^1
 
