@@ -2158,11 +2158,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
 
     if (pSPARC->mGGAflag == 1) {
-        if (pSPARC->spin_typ != 0) {
-            if (rank == 0) 
-                printf(RED "ERROR: currently SCAN does not support spin polarization!\n" RESET);
-            exit(EXIT_FAILURE); 
-        }
+        // if (pSPARC->spin_typ != 0) {
+        //     if (rank == 0) 
+        //         printf(RED "ERROR: currently SCAN does not support spin polarization!\n" RESET);
+        //     exit(EXIT_FAILURE); 
+        // }
         if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->SQFlag) {
             if (!rank) 
                 printf(RED "ERROR: Spin-orbit coupling, hybrid and SQ are not supported in this version of SCAN implementation.\n" RESET);
@@ -3103,7 +3103,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jun 21, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jun 24, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

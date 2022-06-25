@@ -190,7 +190,12 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
 #ifdef DEBUG
     double KE = 0.0;
     for (i = 0; i < DMnd; i++) {
-        KE += Krho[i + pSPARC->spin_typ*2*DMnd];
+        if (pSPARC->spin_typ == 0) {
+            KE += Krho[i];
+        }
+        else {
+            KE += Krho[i + 2*DMnd];
+        }
     }
     if (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) {
         MPI_Allreduce(MPI_IN_PLACE, &KE, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);

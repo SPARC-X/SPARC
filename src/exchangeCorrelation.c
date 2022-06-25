@@ -767,7 +767,7 @@ void Calculate_Vxc_GSGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
             ss = sigma[DMnd + spn_i*DMnd + i] * coeffss;
             
 			if (strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-                || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) {
+                || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0) {
             	divss = 1.0/(1.0 + xc_cst->mu_divkappa * ss);
             	dfxdss = xc_cst->mu * (divss * divss);
             	//d2fxdss2 = -xc_cst->mu * 2.0 * xc_cst->mu_divkappa * (divss * divss * divss);

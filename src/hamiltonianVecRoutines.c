@@ -96,7 +96,8 @@ void Hamiltonian_vectors_mult(
     if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
         // ATTENTION: now SCAN does not have polarized spin!
         int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
-        double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : pSPARC->vxcMGGA3_loc_dmcomm;
+        int sg = pSPARC->spin_start_indx + spin;
+        double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : (pSPARC->vxcMGGA3_loc_dmcomm + sg*pSPARC->Nd_d_dmcomm);
         double *mGGAterm = (double *)malloc(DMnd*ncol * sizeof(double));
         
         compute_mGGA_term_hamil(pSPARC, x, ncol, DMnd, DMVertices, vxcMGGA3_dm, mGGAterm, spin, comm);
@@ -197,7 +198,8 @@ void Hamiltonian_vectors_mult_kpt(
         if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
             // ATTENTION: now SCAN does not have polarized spin!
             int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
-            double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : pSPARC->vxcMGGA3_loc_dmcomm;
+            int sg = pSPARC->spin_start_indx + spin;
+            double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : (pSPARC->vxcMGGA3_loc_dmcomm + sg*pSPARC->Nd_d_dmcomm);
             double _Complex *mGGAterm = (double _Complex *)malloc(DMnd*ncol * sizeof(double _Complex));
             compute_mGGA_term_hamil_kpt(pSPARC, x, ncol, DMnd, DMVertices, vxcMGGA3_dm, mGGAterm, spin, kpt, comm);
             for (i = 0; i < ncol; i++) {
