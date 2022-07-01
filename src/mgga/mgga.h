@@ -23,7 +23,14 @@ void initialize_MGGA(SPARC_OBJ *pSPARC);
 void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC);
 
 /**
- * @brief   the main function in the file, compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
+ * @brief   the main function in the file, compute epsilon and XCPotential in phi domain, then transfer potential Vxc3 to psi domain
+ *          
+ * @param rho               electron density vector
+ */
+void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
+
+/**
+ * @brief   compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
  *          
  * @param rho               electron density vector
  */

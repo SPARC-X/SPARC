@@ -94,7 +94,7 @@ void Hamiltonian_vectors_mult(
 
     // adding metaGGA term
     if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
-        // ATTENTION: now SCAN does not have polarized spin!
+        
         int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
         int sg = pSPARC->spin_start_indx + spin;
         double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : (pSPARC->vxcMGGA3_loc_dmcomm + sg*pSPARC->Nd_d_dmcomm);
@@ -196,7 +196,7 @@ void Hamiltonian_vectors_mult_kpt(
 
         // adding metaGGA term
         if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
-            // ATTENTION: now SCAN does not have polarized spin!
+            
             int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
             int sg = pSPARC->spin_start_indx + spin;
             double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : (pSPARC->vxcMGGA3_loc_dmcomm + sg*pSPARC->Nd_d_dmcomm);

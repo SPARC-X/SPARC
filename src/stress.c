@@ -33,6 +33,7 @@
 #include "electrostatics.h"
 #include "mgga.h"
 #include "vdWDF.h"
+#include "d3Correction.h"
 #include "exactExchangeProperties.h"
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
