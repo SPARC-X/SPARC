@@ -1277,7 +1277,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         if (pSPARC->is_default_psd) { 
             // use default pseudopotential files
-            snprintf(psd_filename, L_PSD, "%s/psdpots/%s.psp8", pSPARC_Input->SPARCROOT, 
+            snprintf(psd_filename, L_PSD, "%s/psps/%s.psp8", pSPARC_Input->SPARCROOT, 
                                                     &pSPARC->atomType[ityp*L_ATMTYPE]);
             snprintf(&pSPARC->psdName[ityp*L_PSD], L_PSD, "%s", psd_filename);
         } else {
