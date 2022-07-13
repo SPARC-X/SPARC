@@ -3,6 +3,19 @@
 -Name
 -changes
 
+
+--------------
+Jul 12, 2022
+Name: Qimen Xu
+Changes: (doc/, psdpots/, mgga/, vdW/, exx/, sq/, makefile, energyDensity.c)
+1. Make `LaTex/` within `doc/` a hidden directory, and merge SQ manual into the main manual.
+2. Rename `psdpots/` to `psps/`.
+3. Create a `xc/` directory, and move `mgga/`, `vdW/`, and `exx/` into `xc/`.
+4. Create a `orderN/` directory, and move `sq/` into `orderN/`.
+5. Create a `include/` directory within `mgga/`, `vdW/`, `exx/`, `xc/` and `sq/`.
+6. Move energyDensity.c and the corresponding header file into `xc/mgga/`.
+
+
 --------------
 July 01, 2022
 Name: Boqin Zhang
