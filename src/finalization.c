@@ -74,7 +74,7 @@ void Finalize(SPARC_OBJ *pSPARC)
         fprintf(output_fp,"*             Material Physics & Mechanics Group, Georgia Tech            *\n");
         fprintf(output_fp,"*                       PI: Phanish Suryanarayana                         *\n");
         fprintf(output_fp,"*               List of contributors: See the documentation               *\n");
-        fprintf(output_fp,"*         Citation: See Readme.md or the documentation for details        *\n");
+        fprintf(output_fp,"*         Citation: See README.md or the documentation for details        *\n");
         fprintf(output_fp,"*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *\n");
         fprintf(output_fp,"*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *\n");
         fprintf(output_fp,"***************************************************************************\n");
