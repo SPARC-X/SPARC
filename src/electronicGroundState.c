@@ -932,7 +932,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             }
         }    
 
-        // print occ(0.9*NSTATES)] and occ(NSTATES) to .out file (only for the k point that gives max occ)
+        // print occ(0.9*NSTATES)] and occ(NSTATES) in DEBUG mode (only for the k point that gives max occ)
+        #ifdef DEBUG
         spn_i = spin_maxocc;
         k = k_maxocc;
         if(!rank) {
@@ -949,20 +950,13 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             double g_ind_90percent = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind_90percent];
             double g_ind_100percent = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind_100percent];
             // write to .out file
-            output_fp = fopen(pSPARC->OutFilename,"a");
-            if (output_fp == NULL) {
-                printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
-                exit(EXIT_FAILURE);
-            }
-            fprintf(output_fp,
-                "\nk = [%.3f, %.3f, %.3f]\n"
-                "Occupation of state %d = %.15f.\n"
-                "Occupation of state %d = %.15f.\n",
-                k1_red, k2_red, k3_red,
+            if (pSPARC->BC != 1) printf("\nk = [%.3f, %.3f, %.3f]\n", k1_red, k2_red, k3_red);
+            printf("Occupation of state %d (90%%) = %.15f.\n"
+                "Occupation of state %d (100%%) = %.15f.\n",
                 ind_90percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_90percent,
                 ind_100percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_100percent);
-            fclose(output_fp);
         }
+        #endif
     }
 
     // check if scf is converged

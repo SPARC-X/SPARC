@@ -3173,7 +3173,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"NSTATES: %d\n",pSPARC->Nstates);
         // this should depend on temperature and preconditoner used
         if (pSPARC->Nstates < (int)(1.2*(pSPARC->Nelectron/2)+5)*pSPARC->Nspinor ) { // with kerker a factor of 1.1 might be needed
-            fprintf(output_fp,"#WARNING: Number of bands may be insufficient for efficient SCF convergence.\n");
+            printf("#WARNING: Number of bands may be insufficient for efficient SCF convergence.\n");
         }
         fprintf(output_fp,"CHEB_DEGREE: %d\n",pSPARC->ChebDegree);
         if (pSPARC->CheFSI_Optmz == 1) {
@@ -3427,7 +3427,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0]*pSPARC->range_x,pSPARC->LatUVec[1]*pSPARC->range_x,pSPARC->LatUVec[2]*pSPARC->range_x);
     fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
     fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
-    fprintf(output_fp,"Volume                  :%18.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
+    fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");
     fprintf(output_fp,"***************************************************************************\n");
