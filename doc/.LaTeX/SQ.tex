@@ -3,12 +3,28 @@
 \begin{frame}[allowframebreaks,c]{} \label{SQ}
 
 \begin{center}
-\Huge \textbf{SQ}
+\Huge \textbf{Spectral Quadrature}
 \end{center}
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\textbf{Comments}} \label{SQ_COMMENTS}
+The code will fail with the following options and the related input options are listed.
+\begin{itemize}
+  \item Polarized calculation: \texttt{SPIN\_TYP}.
+  \item K-point calculation: \texttt{KPOINT\_GRID}, \texttt{KPOINT\_SHIFT}.
+  \item Dirichlet boundary condition in any direction: \texttt{BC}
+  \item Define number of states/orbitals: \texttt{NSTATES}
+  \item CS and SQ3 method: \texttt{CS\_FLAG, SQ3\_FLAG}
+  \item Hybrid functionals: \texttt{EXCHANGE\_CORRELATION}
+  \item Print eigenvalues into file: \texttt{PRINT\_EIGEN}
+\end{itemize}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks]{\texttt{SQ\_FLAG}} \label{SQ_FLAG}
@@ -334,3 +350,35 @@ Percentage shift in eigenspectrum.
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NP\_DOMAIN\_SQ\_PARAL}} \label{NP_DOMAIN_SQ_PARAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+Automatically optimized
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NP\_DOMAIN\_SQ\_PARAL}: 3 3 2
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Dimensions of the 3D Cartesian topology for SQ method.
+\end{block}
+
+\begin{block}{Remark}
+This option is for development purpose. It's better to let SPARC choose the parallization parameters in practice.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
