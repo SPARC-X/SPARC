@@ -33,9 +33,9 @@
 #include "d3Correction.h"
 #include "vdWDF.h"
 #include "mgga.h"
-#include "exactExchange.h"
+#include "exactExchangeInitialization.h"
 #include "spinOrbitCoupling.h"
-#include "sq.h"
+#include "sqInitialization.h"
 #include "sqParallelization.h"
 
 #define TEMP_TOL 1e-12

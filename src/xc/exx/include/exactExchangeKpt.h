@@ -121,30 +121,6 @@ void gather_psi_occ_outer_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_outer_kpt,
 
 
 /**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
- * 
- *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
- *          DOI: 10.1103/PhysRevB.77.193110
- */
-void compute_pois_fft_const_kpt(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   Find out the unique Bloch vector shifts (k-q)
- */
-void find_k_shift(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   Find out the positive shift exp(i*(k-q)*r) and negative shift exp(-i*(k-q)*r)
- *          for each unique Bloch shifts
- */
-void kshift_phasefactor(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   Find out the k-point for hartree-fock exact exchange in local process
- */
-void find_local_kpthf(SPARC_OBJ *pSPARC);
-
-/**
  * @brief   Apply phase factor by Bloch wave vector shifts. 
  * 
  * @param vec           vectors to be applied phase factors

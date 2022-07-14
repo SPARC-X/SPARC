@@ -36,7 +36,7 @@
 #include "d3Correction.h"
 #include "mgga.h"
 #include "spinOrbitCoupling.h"
-#include "exactExchangeProperties.h"
+#include "exactExchangePressure.h"
 #include "sqProperties.h"
 #include "d3Correction.h"
 
