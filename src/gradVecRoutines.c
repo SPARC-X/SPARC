@@ -352,12 +352,12 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
 /*  
  * @brief: function to calculate derivative
  */
-void Calc_DX(
+void Calc_DX_variable_radius(
     const double *X,       double *DX,
     const int radius,      const int stride_X,
-    const int stride_y_X,  const int stride_y_DX, 
+    const int stride_y_X,  const int stride_y_DX,
     const int stride_z_X,  const int stride_z_DX,
-    const int x_DX_spos,   const int x_DX_epos, 
+    const int x_DX_spos,   const int x_DX_epos,
     const int y_DX_spos,   const int y_DX_epos,
     const int z_DX_spos,   const int z_DX_epos,
     const int x_X_spos,    const int y_X_spos,
@@ -370,7 +370,7 @@ void Calc_DX(
     for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
     {
         int kshift_DX = k * stride_z_DX;
-        int kshift_X = kk * stride_z_X;        
+        int kshift_X = kk * stride_z_X;
         for (j = y_DX_spos, jj = y_X_spos; j < y_DX_epos; j++, jj++)
         {
             int jshift_DX = kshift_DX + j * stride_y_DX;
@@ -395,3 +395,191 @@ void Calc_DX(
         }
     }
 }
+
+
+void Calc_DX_radius4(
+    const double *X,       double *DX,
+    const int radius,      const int stride_X,
+    const int stride_y_X,  const int stride_y_DX,
+    const int stride_z_X,  const int stride_z_DX,
+    const int x_DX_spos,   const int x_DX_epos,
+    const int y_DX_spos,   const int y_DX_epos,
+    const int z_DX_spos,   const int z_DX_epos,
+    const int x_X_spos,    const int y_X_spos,
+    const int z_X_spos,    const double *stencil_coefs,
+    const double c
+)
+{
+    int i, j, k, jj, kk, r;
+    
+    for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
+    {
+        int kshift_DX = k * stride_z_DX;
+        int kshift_X = kk * stride_z_X;
+        for (j = y_DX_spos, jj = y_X_spos; j < y_DX_epos; j++, jj++)
+        {
+            int jshift_DX = kshift_DX + j * stride_y_DX;
+            int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
+            #pragma omp simd
+            //for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            for (i = 0; i < niters; i++)
+            {
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
+                double temp = X[ishift_X] * c;
+                for (r = 1; r <= 4; r++)
+                {
+                    int stride_X_r = r * stride_X;
+                    temp += (X[ishift_X + stride_X_r] - X[ishift_X - stride_X_r]) * stencil_coefs[r];
+                }
+                DX[ishift_DX] = temp;
+            }
+        }
+    }
+}
+
+
+void Calc_DX_radius6(
+    const double *X,       double *DX,
+    const int radius,      const int stride_X,
+    const int stride_y_X,  const int stride_y_DX,
+    const int stride_z_X,  const int stride_z_DX,
+    const int x_DX_spos,   const int x_DX_epos,
+    const int y_DX_spos,   const int y_DX_epos,
+    const int z_DX_spos,   const int z_DX_epos,
+    const int x_X_spos,    const int y_X_spos,
+    const int z_X_spos,    const double *stencil_coefs,
+    const double c
+)
+{
+    int i, j, k, jj, kk, r;
+    
+    for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
+    {
+        int kshift_DX = k * stride_z_DX;
+        int kshift_X = kk * stride_z_X;
+        for (j = y_DX_spos, jj = y_X_spos; j < y_DX_epos; j++, jj++)
+        {
+            int jshift_DX = kshift_DX + j * stride_y_DX;
+            int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
+            #pragma omp simd
+            //for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            for (i = 0; i < niters; i++)
+            {
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
+                double temp = X[ishift_X] * c;
+                for (r = 1; r <= 6; r++)
+                {
+                    int stride_X_r = r * stride_X;
+                    temp += (X[ishift_X + stride_X_r] - X[ishift_X - stride_X_r]) * stencil_coefs[r];
+                }
+                DX[ishift_DX] = temp;
+            }
+        }
+    }
+}
+
+
+void Calc_DX_radius8(
+    const double *X,       double *DX,
+    const int radius,      const int stride_X,
+    const int stride_y_X,  const int stride_y_DX, 
+    const int stride_z_X,  const int stride_z_DX,
+    const int x_DX_spos,   const int x_DX_epos,
+    const int y_DX_spos,   const int y_DX_epos,
+    const int z_DX_spos,   const int z_DX_epos,
+    const int x_X_spos,    const int y_X_spos,
+    const int z_X_spos,    const double *stencil_coefs,
+    const double c
+)
+{
+    int i, j, k, jj, kk, r;
+    
+    for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
+    {
+        int kshift_DX = k * stride_z_DX;
+        int kshift_X = kk * stride_z_X;
+        for (j = y_DX_spos, jj = y_X_spos; j < y_DX_epos; j++, jj++)
+        {
+            int jshift_DX = kshift_DX + j * stride_y_DX;
+            int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
+            #pragma omp simd
+            //for (i = x_DX_spos, ii = x_X_spos; i < x_DX_epos; i++, ii++)
+            for (i = 0; i < niters; i++)
+            {
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
+                double temp = X[ishift_X] * c;
+                for (r = 1; r <= 8; r++)
+                {
+                    int stride_X_r = r * stride_X;
+                    temp += (X[ishift_X + stride_X_r] - X[ishift_X - stride_X_r]) * stencil_coefs[r];
+                }
+                DX[ishift_DX] = temp;
+            }
+        }
+    }
+}
+
+
+
+/*  
+ * @brief: function to calculate derivative
+ */
+void Calc_DX(
+    const double *X,       double *DX,
+    const int radius,      const int stride_X,
+    const int stride_y_X,  const int stride_y_DX,
+    const int stride_z_X,  const int stride_z_DX,
+    const int x_DX_spos,   const int x_DX_epos,
+    const int y_DX_spos,   const int y_DX_epos,
+    const int z_DX_spos,   const int z_DX_epos,
+    const int x_X_spos,    const int y_X_spos,
+    const int z_X_spos,    const double *stencil_coefs,
+    const double c
+)
+{
+    switch (radius)
+    {
+        case 4:
+            Calc_DX_radius4(
+                X, DX, radius, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
+                x_DX_spos, x_DX_epos, y_DX_spos, y_DX_epos, z_DX_spos, z_DX_epos,
+                x_X_spos, y_X_spos, z_X_spos, stencil_coefs, c
+            );
+            return;
+            break;
+
+        case 6:
+            Calc_DX_radius6(
+                X, DX, radius, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
+                x_DX_spos, x_DX_epos, y_DX_spos, y_DX_epos, z_DX_spos, z_DX_epos,
+                x_X_spos, y_X_spos, z_X_spos, stencil_coefs, c
+            );
+            return;
+            break;
+
+        case 8:
+            Calc_DX_radius8(
+                X, DX, radius, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
+                x_DX_spos, x_DX_epos, y_DX_spos, y_DX_epos, z_DX_spos, z_DX_epos,
+                x_X_spos, y_X_spos, z_X_spos, stencil_coefs, c
+            );
+            return;
+            break;
+
+        default:
+            Calc_DX_variable_radius(
+                X, DX, radius, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
+                x_DX_spos, x_DX_epos, y_DX_spos, y_DX_epos, z_DX_spos, z_DX_epos,
+                x_X_spos, y_X_spos, z_X_spos, stencil_coefs, c
+            );
+            return;
+            break;
+    }
+}
+
