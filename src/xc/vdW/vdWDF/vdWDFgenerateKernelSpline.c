@@ -1,6 +1,6 @@
 /**
- * @file    vdWDFGenerateKernelSpline.c
- * @brief   This file contains the functions for generating the needed model kernel functions in reciprocal space
+ * @file    vdWDFgenerateKernelSpline.c
+ * @brief   This file contains the functions for generating the needed model kernel functions \Phi in reciprocal space
  *  and the value of spline functions at model energy ratios.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
@@ -29,7 +29,8 @@
 #include "isddft.h"
 #include "tools.h"
 #include "parallelization.h"
-#include "vdWDF.h"
+#include "vdWDFinitialization.h"
+#include "vdWDFgenerateKernelSpline.h"
 
 /** BLAS and LAPACK routines */
 #ifdef USE_MKL

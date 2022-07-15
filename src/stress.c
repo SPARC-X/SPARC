@@ -31,13 +31,12 @@
 #include "isddft.h"
 #include "initialization.h"
 #include "electrostatics.h"
-#include "mgga.h"
-#include "vdWDF.h"
-#include "d3Correction.h"
+#include "MGGAstress.h"
+#include "vdWDFstress.h"
+#include "d3forceStress.h"
 #include "exactExchangeStress.h"
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
-#include "d3Correction.h"
 
 #define TEMP_TOL 1e-12
 

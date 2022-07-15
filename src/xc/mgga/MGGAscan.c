@@ -1,5 +1,5 @@
 /**
- * @file    scan.c
+ * @file    MGGAscan.c
  * @brief   This file contains the functions for scan functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
@@ -17,9 +17,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "scan.h"
-#include "mgga.h"
-
+#include "MGGAscan.h"
 #include "isddft.h"
 
 

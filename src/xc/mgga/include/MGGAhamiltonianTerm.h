@@ -1,5 +1,5 @@
 /**
- * @file    mgga.h
+ * @file    MGGAhamiltonianTerm.h
  * @brief   This file contains the function declarations for metaGGA functionals.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
@@ -8,48 +8,10 @@
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
-#ifndef MGGA_H
-#define MGGA_H 
+#ifndef MGGA_HAMIL
+#define MGGA_HAMIL
 
-/**
- * @brief   allocate space to variables, initialize countSCF
- */
-void initialize_MGGA(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   compute the kinetic energy density tau and transfer it to phi domain for computing Vxc of metaGGA
- *          
- */
-void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   the main function in the file, compute epsilon and XCPotential in phi domain, then transfer potential Vxc3 to psi domain
- *          
- * @param rho               electron density vector
- */
-void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
-
-/**
- * @brief   compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
- *          
- * @param rho               electron density vector
- */
-void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
-
-/**
- * @brief   the function to compute the exchange-correlation energy of metaGGA functional
- *          
- * @param rho               electron density vector
- */
-void Calculate_Exc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
-
-/**
- * @brief   Transfer vxcMGGA3 (d(n epsilon)/d(tau)) from phi-domain to psi-domain.
- *          
- * @param vxcMGGA3_phi_domain               the vxcMGGA3 vector in phi-domain
- * @param vxcMGGA3_psi_domain               the vxcMGGA3 vector in psi-domain
- */
-void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, double *vxcMGGA3_psi_domain);
+#include "isddft.h"
 
 /**
  * @brief   the function to compute the mGGA term in Hamiltonian, called by Hamiltonian_vectors_mult
@@ -80,23 +42,4 @@ void compute_mGGA_term_hamil(const SPARC_OBJ *pSPARC, double *x, int ncol, int c
  */
 void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, int ncol, int colLength, int *DMVertices, double *vxcMGGA3_dm, double _Complex *mGGAterm, int spin, int kpt, MPI_Comm comm);
 
-/**
- * @brief   compute the metaGGA psi stress term, gamma point
- */
-void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   compute the metaGGA psi stress term, k-point
- */
-void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC);
-
-// void Calculate_XC_Pres_mGGA_psi_term(SPARC_OBJ *pSPARC);
-
-void Calculate_XC_Pres_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC);
-
-/**
- * @brief   free space allocated to MGGA variables
- */
-void free_MGGA(SPARC_OBJ *pSPARC);
-
-#endif // MGGA_H 
+#endif
