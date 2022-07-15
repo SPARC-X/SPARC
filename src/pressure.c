@@ -32,13 +32,12 @@
 #include "initialization.h"
 #include "electrostatics.h"
 #include "energy.h"
-#include "vdWDF.h"
-#include "d3Correction.h"
-#include "mgga.h"
+#include "vdWDFstress.h"
+#include "d3forceStress.h"
+#include "MGGAstress.h"
 #include "spinOrbitCoupling.h"
 #include "exactExchangePressure.h"
 #include "sqProperties.h"
-#include "d3Correction.h"
 
 #define TEMP_TOL 1e-12
 

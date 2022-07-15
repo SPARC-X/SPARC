@@ -1,8 +1,21 @@
+/**
+ * @file    d3findR0ab.c
+ * @brief   This file contains the function returning the array saving all r0ab coefficient of DFT-D3.
+ *
+ * @authors Boqin Zhang <bzhang376@gatech.edu>
+ *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
+ * Reference:
+ * S.Grimme, J.Antony, S.Ehrlich, H.Krieg, A consistent and accurate ab
+ * initio parametrization of density functional dispersion correction
+ * (DFT-D) for the 96 elements H-Pu
+ * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "d3Correction.h"
+#include "d3findR0ab.h"
 
 double find_r0ab(int atomNumI, int atomNumJ) {
 	double autoang = 0.52917726;

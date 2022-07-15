@@ -1,5 +1,5 @@
 /**
- * @file    scan.h
+ * @file    MGGAscan.h
  * @brief   This file contains the function declarations for SCAN functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>

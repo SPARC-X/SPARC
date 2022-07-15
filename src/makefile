@@ -83,10 +83,15 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
         forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o                          \
-        xc/vdW/d3/d3Correction.o xc/vdW/d3/find_r0ab.o xc/vdW/d3/copyC6.o                        \
-        xc/vdW/vdWDF/vdWDFGenerateKernelSpline.o xc/vdW/vdWDF/vdWDFExchangeLinearCorre.o         \
-        xc/vdW/vdWDF/vdWDFNonlinearCorre.o xc/mgga/scan.o xc/mgga/mgga.o xc/mgga/Sscan.o         \
-        xc/mgga/energyDensity.o xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o                 \
+        xc/vdW/d3/d3correction.o xc/vdW/d3/d3findR0ab.o xc/vdW/d3/d3copyC6.o                     \
+        xc/vdW/d3/d3initialization.o xc/vdW/d3/d3finalization.o xc/vdW/d3/d3forceStress.o        \
+        xc/vdW/vdWDF/vdWDFinitialization.o xc/vdW/vdWDF/vdWDFfinalization.o                      \
+        xc/vdW/vdWDF/vdWDFexchangeLinearCorre.o xc/vdW/vdWDF/vdWDFnonlinearCorre.o               \
+        xc/vdW/vdWDF/vdWDFstress.o xc/vdW/vdWDF/vdWDFgenerateKernelSpline.o                      \
+        xc/mgga/energyDensity.o xc/mgga/MGGAscan.o xc/mgga/MGGASscan.o                           \
+        xc/mgga/MGGAhamiltonianTerm.o xc/mgga/MGGAinitialization.o xc/mgga/MGGAstress.o          \
+        xc/mgga/MGGAfinalization.o xc/mgga/MGGAexchangeCorrelation.o                             \
+        xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o                                         \
         xc/exx/exactExchangeInitialization.o xc/exx/exactExchangeFinalization.o                  \
         xc/exx/exactExchangeStress.o xc/exx/exactExchangePressure.o orderN/sq/sq.o               \
         orderN/sq/sqInitialization.o orderN/sq/sqFinalization.o orderN/sq/sqEnergy.o             \

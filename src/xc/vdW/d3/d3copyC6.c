@@ -1,8 +1,22 @@
+/**
+ * @file    copyC6.c
+ * @brief   This file contains the function returning the array saving all C6 coefficient of DFT-D3.
+ *
+ * @authors Boqin Zhang <bzhang376@gatech.edu>
+ *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
+ * Reference:
+ * S.Grimme, J.Antony, S.Ehrlich, H.Krieg, A consistent and accurate ab
+ * initio parametrization of density functional dispersion correction
+ * (DFT-D) for the 96 elements H-Pu
+ * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "d3Correction.h"
+#include "isddft.h"
+#include "d3copyC6.h"
 
 double *****copyC6() {
 	int maxci[95] = {0,
