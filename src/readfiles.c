@@ -537,6 +537,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
       sscanf(env_NP_BAND_PARAL,"%d", &pSPARC_Input->npband);
     }
 
+    char *env_MESH_SPACING = getenv("MESH_SPACING");
+    if(env_MESH_SPACING != NULL) {
+      printf("USING MESH_SPACING: %s from env\n", env_MESH_SPACING);
+      sscanf(env_MESH_SPACING,"%lf", &pSPARC_Input->mesh_spacing);
+    }
+
     char *env_NP_DOMAIN_PARAL = getenv("NP_DOMAIN_PARAL");
     if(env_NP_DOMAIN_PARAL != NULL) {
       printf("USING NP_DOMAIN_PARAL: %s from env\n", env_NP_DOMAIN_PARAL);
