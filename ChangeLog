@@ -3,6 +3,14 @@
 -Name
 -changes
 
+
+--------------
+Jul 18, 2022
+Name: Qimen Xu
+Changes: (gradVecRoutines.c, lapVecOrth.c)
+1. When the FD order = `8, 12, 16`, use a hard-coded version of the (orthogonal, gamma-point) stencil to improve its efficiency.
+
+
 --------------
 Jul 18, 2022
 Name: Shashikant Kumar
@@ -13,18 +21,12 @@ Changes: (tests)
 4. add option to update reference files
 5. option to run on any general cluster
 
+
 --------------
 Jul 15, 2022
 Name: Boqin Zhang
 Changes: (xc/vdW/d3, xc/vdW/vdWDF, xc/mgga, stress.c, pressure.c)
 1. Split DFT-D3, vdWDF and metaGGA files into multiple files
-
-
---------------
-Jul 18, 2022
-Name: Qimen Xu
-Changes: (gradVecRoutines.c, lapVecOrth.c)
-1. When the FD order = `8, 12, 16`, use a hard-coded version of the (orthogonal, gamma-point) stencil to improve its efficiency.
 
 
 --------------
