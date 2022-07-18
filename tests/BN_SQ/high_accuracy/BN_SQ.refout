@@ -1,16 +1,16 @@
 ***************************************************************************
-*                       SPARC (version Jun 29, 2022)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Jul  7 17:21:43 2022                  *
+*                   Start time: Mon Jul 18 01:04:19 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
 CELL: 3.94897541339941 3.94897541339941 3.94897541339941 
 LATVEC:
-1.000000000000000 0.000000000000000 0.000000000000000 
-0.000000000000000 1.000000000000000 0.000000000000000 
-0.000000000000000 0.000000000000000 1.000000000000000 
+1 0 0 
+0 1 0 
+0 0 1 
 FD_GRID: 30 30 30
 FD_ORDER: 12
 BC: P P P
@@ -52,8 +52,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: BN_SQ
+OUTPUT_FILE: BN_SQ/temp_run/BN_SQ
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -61,44 +60,44 @@ Lattice vectors (Bohr):
 3.948975413399410 0.000000000000000 0.000000000000000 
 0.000000000000000 3.948975413399410 0.000000000000000 
 0.000000000000000 0.000000000000000 3.948975413399410 
-Volume                  :  6.1581929101E+01 (Bohr^3)
+Volume: 6.1581929101E+01 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
-NP_DOMAIN_SQ_PARAL: 2 3 4
-NP_DOMAIN_PHI_PARAL: 2 3 4
+NP_DOMAIN_SQ_PARAL: 4 6 6
+NP_DOMAIN_PHI_PARAL: 5 5 5
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  24
+Number of processors               :  144
 Mesh spacing                       :  0.131633 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  BN_SQ.out
+Output printed to                  :  BN_SQ/temp_run/BN_SQ.out
 Total number of atom types         :  2
 Total number of atoms              :  4
 Total number of electrons          :  16
 Atom type 1  (valence electrons)   :  B 3
-Pseudopotential                    :  B.1.07.lda.psp8
+Pseudopotential                    :  psps_tests/B.1.07.lda.psp8
 Pseudocharge radii of atom type 1  :  6.84 6.84 6.84 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  N 5
-Pseudopotential                    :  N.1.12.lda.psp8
+Pseudopotential                    :  psps_tests/N.1.12.lda.psp8
 Pseudocharge radii of atom type 2  :  6.84 6.84 6.84 (x, y, z dir)
 Number of atoms of type 2          :  2
-Estimated total memory usage       :  111.80 MB
-Estimated memory per processor     :  4.66 MB
+Estimated total memory usage       :  29.43 MB
+Estimated memory per processor     :  209.26 kB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.6273050783E+01        2.911E-01        63.042
-2            -3.6239489437E+01        2.054E-01        63.242
-3            -3.6215828258E+01        1.026E-02        63.254
-4            -3.6214344550E+01        1.972E-03        63.312
-5            -3.6214577893E+01        1.287E-04        63.223
-6            -3.6214577356E+01        5.073E-06        63.282
-7            -3.6214577569E+01        1.855E-06        63.618
-8            -3.6214577556E+01        3.546E-08        63.388
+1            -3.6273050783E+01        2.911E-01        13.667
+2            -3.6239489437E+01        2.054E-01        11.539
+3            -3.6215828258E+01        1.026E-02        11.487
+4            -3.6214344550E+01        1.972E-03        11.908
+5            -3.6214577893E+01        1.287E-04        11.521
+6            -3.6214577356E+01        5.073E-06        8.315
+7            -3.6214577569E+01        1.855E-06        8.160
+8            -3.6214577556E+01        3.546E-08        12.081
 Total number of SCF: 8     
 ====================================================================
                     Energy and force calculation                    
@@ -112,21 +111,22 @@ Entropy*kb*T                       : -1.8220920902E+02 (Ha)
 Fermi level                        : -3.6914657241E+00 (Ha)
 RMS force                          :  3.0832448480E-01 (Ha/Bohr)
 Maximum force                      :  4.4903800374E-01 (Ha/Bohr)
-Time for force calculation         :  67.575 (sec)
+Time for force calculation         :  10.867 (sec)
 Pressure                           :  2.0826876283E+04 (GPa)
 Maximum stress                     :  2.0955737877E+04 (GPa)
-Time for stress calculation        :  0.239 (sec)
+Time for stress calculation        :  0.066 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  575.614 sec
+Total walltime                     :  99.886 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

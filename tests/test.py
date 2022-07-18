@@ -11,6 +11,15 @@ import glob
 from shutil import copyfile
 import math
 
+# Other parameters to run the test (can be changed by the user)
+nprocs_tests = 24  # In default tests are run with 24 processors per node
+nnodes_tests = 1  # In default tests are run with 1 node
+npbs = 1  # By default (number of PBS files the tests are distributed to)
+launch_cluster_extension = ".pbs"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
+command_launch_extension = "qsub"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
+MPI_command = "mpirun -np 24"  # MPI command to run the executable on the given cluster
+
+
 
 # Default tolerance
 tols = {"F_tol": 1e-5, # Ha/Bohr
@@ -39,7 +48,7 @@ SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'kerker', 'gamma', 'orth', 'sme
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3')
-SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'kerker', 'gamma', 'gamma', 'orth', 'smear_gauss'])
+SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'kerker',  'gamma', 'orth', 'smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Fe_spin')
@@ -112,7 +121,7 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 ################################################################################################################
 SYSTEMS["systemname"].append('MoS2')
 SYSTEMS["Tags"].append(['surface','gga','potmix','nonorth','smear_fd','orient'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([tols["E_tol"], 5e-6, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('He16_NVKG')
 SYSTEMS["Tags"].append(['bulk','lda','potmix','orth','smear_fd','md_nvkg','gamma'])
@@ -152,11 +161,11 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 ##################################################################################################################
 SYSTEMS["systemname"].append('H2O_sheet_quick')
 SYSTEMS["Tags"].append(['surface', 'gga', 'potmix', 'orth','gamma','smear_fd'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################						
 SYSTEMS["systemname"].append('H2O_wire_quick')
 SYSTEMS["Tags"].append(['wire', 'lda', 'denmix', 'orth','gamma','smear_fd'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################### 
 SYSTEMS["systemname"].append('SiH4_quick')
 SYSTEMS["Tags"].append(['molecule', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
@@ -168,7 +177,7 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 ################################################################################################################
 SYSTEMS["systemname"].append('Au_wire_d3')
 SYSTEMS["Tags"].append(['wire', 'gga','d3'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([tols["E_tol"], 6e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MoS2_surface_d3')
 SYSTEMS["Tags"].append(['surface', 'gga','d3','nonorth'])
@@ -352,20 +361,32 @@ def findsystems(tags_systems):
 	return(data)
 
 
-def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial):
+def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isorient, isserial):
 	#""" Launches the systems with memcheck, specified number of processors and with valgrid """
 	with open("samplepbs",'r') as f_samplePBS:
 		samplePBS_content_orj = [ line.strip() for line in f_samplePBS]
 
+	for lines in samplePBS_content_orj:
+		if re.findall(r'nodes',lines) == ['nodes']:
+			nodes_ppn = re.findall(r'\d+',lines)
+			nodes_samplepbs = int(nodes_ppn[0])
+			procs_samplepbs = int(nodes_ppn[1])
+			if (nodes_samplepbs != nnodes_tests):
+				 sys.exit("Number of nodes entered is not correct either in samplepbs file or on the top of test.py file\n")
+
+			if (procs_samplepbs != nprocs_tests):
+				 sys.exit("Number of processors entered is not correct either in samplepbs file or on the top of test.py file\n")
+			break
+
 	jobID=[]
 	for i in range(len(systems)):
-		if memcheck[i] == True:
+		if  [i] == True:
 			os.chdir(systems[i])
 			f_inplace = open("inplace_reduce.supp","w")
 			f_inplace.write(inplace_file_content)
 			f_inplace.close()
 			os.chdir("./..")
-	countx=0
+	countx=0 
 	for syst in systems:
 		os.chdir(syst)
 		if isorient[countx] == False:
@@ -376,13 +397,13 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
-					os.system("cp *.psp8 temp_run")
+					# os.system("cp *.psp8 temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./low_accuracy/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
-					os.system("cp *.psp8 temp_run")
+					# os.system("cp *.psp8 temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./low_accuracy/*.restart ./temp_run")
 			else:
@@ -390,13 +411,13 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
-					os.system("cp *.psp8 temp_run")
+					# os.system("cp *.psp8 temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./low_accuracy/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./low_accuracy/*.inpt ./temp_run")
 					os.system("cp ./low_accuracy/*.ion ./temp_run")
-					os.system("cp *.psp8 temp_run")
+					# os.system("cp *.psp8 temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./low_accuracy/*.restart ./temp_run")
 		else:
@@ -407,21 +428,21 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation1/*.inpt ./temp_run1")
 					os.system("cp ./high_accuracy_orientation1/*.ion ./temp_run1")
-					os.system("cp *.psp8 temp_run1")
+					# os.system("cp *.psp8 temp_run1")
 				else:
 					os.system("cp ./low_accuracy_orientation1/*.inpt ./temp_run1")
 					os.system("cp ./low_accuracy_orientation1/*.ion ./temp_run1")
-					os.system("cp *.psp8 temp_run1")
+					# os.system("cp *.psp8 temp_run1")
 			else:
 				os.mkdir("temp_run1")
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation1/*.inpt ./temp_run1")
 					os.system("cp ./high_accuracy_orientation1/*.ion ./temp_run1")
-					os.system("cp *.psp8 temp_run1")
+					# os.system("cp *.psp8 temp_run1")
 				else:
 					os.system("cp ./low_accuracy_orientation1/*.inpt ./temp_run1")
 					os.system("cp ./low_accuracy_orientation1/*.ion ./temp_run1")
-					os.system("cp *.psp8 temp_run1")
+					# os.system("cp *.psp8 temp_run1")
 
 			if os.path.isdir("temp_run2"):
 				files = glob.glob("temp_run2/*")
@@ -430,21 +451,21 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation2/*.inpt ./temp_run2")
 					os.system("cp ./high_accuracy_orientation2/*.ion ./temp_run2")
-					os.system("cp *.psp8 temp_run2")
+					# os.system("cp *.psp8 temp_run2")
 				else:
 					os.system("cp ./low_accuracy_orientation2/*.inpt ./temp_run2")
 					os.system("cp ./low_accuracy_orientation2/*.ion ./temp_run2")
-					os.system("cp *.psp8 temp_run2")
+					# os.system("cp *.psp8 temp_run2")
 			else:
 				os.mkdir("temp_run2")
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation2/*.inpt ./temp_run2")
 					os.system("cp ./high_accuracy_orientation2/*.ion ./temp_run2")
-					os.system("cp *.psp8 temp_run2")
+					# os.system("cp *.psp8 temp_run2")
 				else:
 					os.system("cp ./low_accuracy_orientation2/*.inpt ./temp_run2")
 					os.system("cp ./low_accuracy_orientation2/*.ion ./temp_run2")
-					os.system("cp *.psp8 temp_run2")
+					# os.system("cp *.psp8 temp_run2")
 
 			if os.path.isdir("temp_run3"):
 				files = glob.glob("temp_run3/*")
@@ -453,21 +474,21 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation3/*.inpt ./temp_run3")
 					os.system("cp ./high_accuracy_orientation3/*.ion ./temp_run3")
-					os.system("cp *.psp8 temp_run3")
+					# os.system("cp *.psp8 temp_run3")
 				else:
 					os.system("cp ./low_accuracy_orientation3/*.inpt ./temp_run3")
 					os.system("cp ./low_accuracy_orientation3/*.ion ./temp_run3")
-					os.system("cp *.psp8 temp_run3")
+					# os.system("cp *.psp8 temp_run3")
 			else:
 				os.mkdir("temp_run3")
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy_orientation3/*.inpt ./temp_run3")
 					os.system("cp ./high_accuracy_orientation3/*.ion ./temp_run3")
-					os.system("cp *.psp8 temp_run3")
+					# os.system("cp *.psp8 temp_run3")
 				else:
 					os.system("cp ./low_accuracy_orientation3/*.inpt ./temp_run3")
 					os.system("cp ./low_accuracy_orientation3/*.ion ./temp_run3")
-					os.system("cp *.psp8 temp_run3")
+					# os.system("cp *.psp8 temp_run3")
 		countx=countx+1
 		os.chdir("./..")
 
@@ -475,9 +496,11 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 		count = 0
 		for syst in systems:
 			os.chdir(syst)
-			nprocs = procs_sys[count]
-			nnodes = int(math.ceil(nprocs/24.0))
-			index=0
+			# nprocs = procs_sys[count]
+			# nnodes = int(math.ceil(nprocs/24.0))
+			nprocs = procs_nodes_cluster[0] * procs_nodes_cluster[1]
+			nnodes = procs_nodes_cluster[1]
+			
 			samplePBS_content = []
 			for lines in samplePBS_content_orj:
 				samplePBS_content.append(lines)
@@ -489,37 +512,40 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				samplePBS_content.append("module load valgrind/3.16.1")
 				# samplePBS_content.append("module load valgrind")
 				#samplePBS_content.append("export MV2_USE_RDMA_CM=1")
+			index=0
 			for lines in samplePBS_content:
-				if re.findall(r'nodes',lines) == ['nodes']:
-					if nprocs == 1:
-						samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(1)
-					else:
-						samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(24)
-				if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
-					if nprocs == 1:
-						samplePBS_content[index] = "#PBS -l mem=10gb"
-					else:
-						samplePBS_content[index] = "#PBS -l pmem=7gb"
+				# if re.findall(r'nodes',lines) == ['nodes']:
+				# 	if nprocs == 1:
+				# 		samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(1)
+				# 	else:
+				# 		samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(24)
+				# if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
+				# 	if nprocs == 1:
+				# 		samplePBS_content[index] = "#PBS -l mem=10gb"
+				# 	else:
+				# 		samplePBS_content[index] = "#PBS -l pmem=7gb"
 				if re.findall(r'mpirun',lines) == ['mpirun']:
+					samplePBS_content.remove(lines)
+				if re.findall(r'srun',lines) == ['srun']:
 					samplePBS_content.remove(lines)
 				index = index+1
 
 			if memcheck[count] == True:
-				samplePBS_content.append("mpirun -np "+str(nprocs)+" valgrind --leak-check=full --track-origins=yes --suppressions=./../inplace_reduce.supp --log-file=valgrind_out ./../../sparc -name "+syst+" -log_summary > "+syst+".log")
+				samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./../inplace_reduce.supp --log-file=valgrind_out ./../../sparc -name "+syst+" -log_summary > "+syst+".log")
 			else:
-				samplePBS_content.append("mpirun -np "+str(nprocs)+" ./../../sparc"+ " -name ./"+syst+" -log_summary > "+syst+".log")
+				samplePBS_content.append(MPI_command+" "+" ./../../sparc"+ " -name ./"+syst+" -log_summary > "+syst+".log")
 			if isorient[count] == False:
 				os.chdir("temp_run")
-				f_pbs = open("launch_"+syst+".pbs","w")
+				f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
 				for lines in samplePBS_content:
 						f_pbs.write(lines+"\n")
 				f_pbs.close()
-				temp = "launch_"+syst+".pbs"
-				p = subprocess.check_output(["qsub", temp])
-				p = str(p)
-				q = p.split(".")
-				q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-				jobID.append(int(q1.group(2)))
+				temp = "launch_"+syst+launch_cluster_extension
+				p = subprocess.check_output([command_launch_extension, temp])
+				# p = str(p)
+				# q = p.split(".")
+				# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
+				# jobID.append(int(q1.group(2)))
 			else:
 				if True:
 					# os.chdir("./..")
@@ -529,40 +555,40 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 					# print(isorient)
 					# print(count)
 					os.chdir("temp_run1")
-					f_pbs = open("launch_"+syst+".pbs","w")
+					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
 					for lines in samplePBS_content:
 						f_pbs.write(lines+"\n")
 					f_pbs.close()
-					temp = "launch_"+syst+".pbs"
+					temp = "launch_"+syst+launch_cluster_extension
 					p = subprocess.check_output(["qsub", temp])
-					p = str(p)
-					q = p.split(".")
-					q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					jobID.append(int(q1.group(2)))
+					# p = str(p)
+					# q = p.split(".")
+					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
+					# jobID.append(int(q1.group(2)))
 					os.chdir("./..")
 					os.chdir("temp_run2")
-					f_pbs = open("launch_"+syst+".pbs","w")
+					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
 					for lines in samplePBS_content:
 						f_pbs.write(lines+"\n")
 					f_pbs.close()
-					temp = "launch_"+syst+".pbs"
+					temp = "launch_"+syst+launch_cluster_extension
 					p = subprocess.check_output(["qsub", temp])
-					p = str(p)
-					q = p.split(".")
-					q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					jobID.append(int(q1.group(2)))
+					# p = str(p)
+					# q = p.split(".")
+					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
+					# jobID.append(int(q1.group(2)))
 					os.chdir("./..")
 					os.chdir("temp_run3")
-					f_pbs = open("launch_"+syst+".pbs","w")
+					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
 					for lines in samplePBS_content:
 						f_pbs.write(lines+"\n")
 					f_pbs.close()
-					temp = "launch_"+syst+".pbs"
+					temp = "launch_"+syst+launch_cluster_extension
 					p = subprocess.check_output(["qsub", temp])
-					p = str(p)
-					q = p.split(".")
-					q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					jobID.append(int(q1.group(2)))
+					# p = str(p)
+					# q = p.split(".")
+					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
+					# jobID.append(int(q1.group(2)))
 
 			# temp = "launch_"+syst+".pbs"
 			# p = subprocess.check_output(["qsub", temp])
@@ -582,9 +608,11 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 		memcheck_grp = []
 		orient_grp=[]
 		if ifVHQ == True:
-			count_sys_pbs = 2
+			# count_sys_pbs = 2
+			count_sys_pbs = int(len(systems)/npbs) + 1
 		else:
-			count_sys_pbs = 5
+			count_sys_pbs = int(len(systems)/npbs) + 1
+			# count_sys_pbs = 5
 		if isserial:
 			count_sys_pbs = 1
 		while count < len(systems):
@@ -602,8 +630,11 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				#sys_grp =[]
 				#memcheck_grp = []
 				for cc in range(count_sys_pbs):
-					nprocs_grp.append(procs_sys[count+cc])
-					nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
+					
+					# nprocs_grp.append(procs_sys[count+cc])
+					# nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
+					nprocs_grp.append(procs_nodes_cluster[0] * procs_nodes_cluster[1])
+					nnodes_grp.append(procs_nodes_cluster[1])
 					sys_grp.append(systems[count+cc])
 					memcheck_grp.append(memcheck[count+cc])
 					orient_grp.append(isorient[count+cc])
@@ -614,35 +645,38 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				#sys_grp =[]
 				#memcheck_grp = []
 				for cc in range(len(systems) - count):
-					nprocs_grp.append(procs_sys[count+cc])
-					nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
+					# nprocs_grp.append(procs_sys[count+cc])
+					# nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
+					nprocs_grp.append(procs_nodes_cluster[0] * procs_nodes_cluster[1])
+					nnodes_grp.append(procs_nodes_cluster[1])
 					sys_grp.append(systems[count+cc])
 					memcheck_grp.append(memcheck[count+cc])
 					orient_grp.append(isorient[count+cc])
 				count = count+count_sys_pbs
 
 
+			
+			# if True in memcheck_grp:
+			# 	samplePBS_content.append("module purge")
+			# 	samplePBS_content.append("module load gcc/8.3.0")
+			# 	samplePBS_content.append("module load mvapich2/2.3.2")
+			# 	samplePBS_content.append("module load mkl/19.0.5")
+			# 	samplePBS_content.append("module load valgrind/3.16.1")
 			index1=0
-			if True in memcheck_grp:
-				samplePBS_content.append("module purge")
-				samplePBS_content.append("module load gcc/8.3.0")
-				samplePBS_content.append("module load mvapich2/2.3.2")
-				samplePBS_content.append("module load mkl/19.0.5")
-				samplePBS_content.append("module load valgrind/3.16.1")
-				# samplePBS_content.append("module load valgrind")
-				#samplePBS_content.append("export MV2_USE_RDMA_CM=1")
 			for lines in samplePBS_content:
-				if re.findall(r'nodes',lines) == ['nodes']:
-					if max(nprocs_grp) == 1:
-						samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(1)
-					else:
-						samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(24)
-				if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
-					if max(nprocs_grp) == 1:
-						samplePBS_content[index1] = "#PBS -l mem=10gb"
-					else:
-						samplePBS_content[index1] = "#PBS -l pmem=7gb"
+				# if re.findall(r'nodes',lines) == ['nodes']:
+				# 	if max(nprocs_grp) == 1:
+				# 		samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(1)
+				# 	else:
+				# 		samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(24)
+				# if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
+				# 	if max(nprocs_grp) == 1:
+				# 		samplePBS_content[index1] = "#PBS -l mem=10gb"
+				# 	else:
+				# 		samplePBS_content[index1] = "#PBS -l pmem=7gb"
 				if re.findall(r'mpirun',lines) == ['mpirun']:
+					samplePBS_content.remove(lines)
+				if re.findall(r'srun',lines) == ['srun']:
 					samplePBS_content.remove(lines)
 				index1 = index1+1
 
@@ -650,40 +684,40 @@ def launchsystems(systems,memcheck,procs_sys,ismempbs,ifVHQ, isorient, isserial)
 				if memcheck_grp[ll] == False:
 					#text_temp = "mpirun -env MV2_ENABLE_AFFINITY=1 -env MV2_CPU_BINDING_POLICY=bunch -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > "+sys_grp[ll]+".log"+"\n"
 					if orient_grp[ll] == False:
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 					else:
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 				else:
 					if orient_grp[ll] == False:
 						#text_temp = "mpirun -env MV2_ENABLE_AFFINITY=1 -env MV2_CPU_BINDING_POLICY=bunch -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/temp_run/inplace_reduce.supp --log-file=valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > "+sys_grp[ll]+".log"+"\n"
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 					else:
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run1/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run1/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run2/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run2/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append("mpirun -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run3/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run3/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-			f_pbs = open("launch_"+str(countpbs)+".pbs","w")
+			f_pbs = open("launch_"+str(countpbs)+launch_cluster_extension,"w")
 			for lines in samplePBS_content:
 					f_pbs.write(lines+"\n")
 			f_pbs.close()
-			temp = "launch_"+str(countpbs)+".pbs"
-			p = subprocess.check_output(["qsub", temp])
-			p = str(p)
-			q = p.split(".")
-			q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-			jobID.append(int(q1.group(2)))
+			temp = "launch_"+str(countpbs)+launch_cluster_extension
+			p = subprocess.check_output([command_launch_extension, temp])
+			# p = str(p)
+			# q = p.split(".")
+			# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
+			# jobID.append(int(q1.group(2)))
 			#print(jobID)
 			countpbs = countpbs+1
-	return jobID
+	# return jobID
 
 def isfinished(syst, isorientsys):
 	#""" Returns true if the "syst" has finished running """
@@ -1780,6 +1814,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 	Error_message_global  = []
 	Warning_message_global = []
 	Wall_error = []
+
 	for i in range(len(systems)):
 		info_temp = data_info[i]
 		info_run = info_temp['a']
@@ -2055,7 +2090,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					memlost = max(memlost)
 					text1="Memory leak check valgrind: "+"\n"+"Total memory lost: "+str(memlost)+" Bytes \n"
 			if len(info_run["energy"]) != len(info_ref["energy"]):
-				test_status.append("failed")
+				# test_status.append("failed")
 				text = "System name: "+systems[i]+"\n"+"Warning: different relaxation iterations for the convergence!"
 			E_ref = info_ref["energy"]
 			E_run = info_run["energy"]
@@ -2220,7 +2255,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					memlost = max(memlost)
 					text1="Memory leak check valgrind: "+"\n"+"Total memory lost: "+str(memlost)+" Bytes \n"
 			if len(info_run["energy"]) != len(info_ref["energy"]):
-				test_status.append("failed")
+				# test_status.append("failed")
 				text = "System name: "+systems[i]+"\n"+"different relaxation iterations for the convergence hence failed!"
 			E_ref = info_ref["energy"]
 			E_run = info_run["energy"]
@@ -2390,7 +2425,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					memlost = max(memlost)
 					text1="Memory leak check valgrind: "+"\n"+"Total memory lost: "+str(memlost)+" Bytes \n"
 			if len(info_run["energy"]) != len(info_ref["energy"]):
-				test_status.append("failed")
+				# test_status.append("failed")
 				text = "System name: "+systems[i]+"\n"+"different relaxation iterations for the convergence hence failed!"
 			E_ref = info_ref["energy"]
 			E_run = info_run["energy"]
@@ -2536,7 +2571,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
 
 		elif info_run["Type"]=="MD":
-
 			memlost=0
 			warning_message = ""
 			text1=''
@@ -2855,6 +2889,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
 	passtests = 0;
 	failtests = 0;
+
 	for pp in range(len(test_status)):
 		if test_status[pp]=="passed":
 			passtests=passtests+1
@@ -2864,7 +2899,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 28 October 2021)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 18 July 2022)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -2907,485 +2942,595 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 #############################################################################################################################################################################
 #############################################################################################################################################################################
 
-
-args = sys.argv[1:]
-# finding systems and corresponding tags
-isparallel = True
-ismempbs =False
-ifVHQ = False
-isAuto = False
-is_valgrind_all = False
-temp_result =  False
-no_concurrency=6 # number of jobs running concurrently on github server
-
-if 'temp_present' in args:
-	temp_result =  True 
-	args.remove('temp_present')
-
-if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
-	systems=SYSTEMS['systemname']
-	tags_sys=SYSTEMS['Tags']
-	tols_sys=SYSTEMS['Tols']
-	isAuto =  True
+if __name__ == '__main__':
+	args = sys.argv[1:]
+	# finding systems and corresponding tags
+	isparallel = True
+	ismempbs =False
 	ifVHQ = False
-	isparallel = False
+	isAuto = False
+	is_valgrind_all = False
+	is_update_reference = False
+	temp_result =  False
+	no_concurrency=6 # number of jobs running concurrently on github server
 
-if len(args) == 1 and re.findall(r'clean_temp',args[0]) == ['clean_temp']:
-	systems=SYSTEMS['systemname']
-	tags_sys=SYSTEMS['Tags']
-	tols_sys=SYSTEMS['Tols']
-	count=0
-	for s in systems:
-		os.chdir(s)
-		if 'orient' in tags_sys[count]:
-			os.system("rm -r temp_run1 temp_run2 temp_run3")
-		else:
-			os.system("rm -r temp_run")
-		count=count+1
-		os.chdir("./..")
-	sys.exit("Deleted the temp files")
+	systemstags = findsystems(['memcheck'])
+	systems_valgrind = systemstags[0]
+	tags_sys_valgrind = systemstags[1]
+	tols_sys_valgrind = systemstags[2]
+	systems_all  = SYSTEMS['systemname']
+	tags_sys_all = SYSTEMS['Tags']
+	tols_sys_all = SYSTEMS['Tols']
 
-if len(args) == 1 and re.findall(r'quick_run',args[0]) == ['quick_run']:
-	systems=['BaTiO3_quick','H2O_sheet_quick','H2O_wire_quick','SiH4_quick']
-	tags_sys = []
-	tols_sys = []
-	for i in range(len(systems)):
-		for j in range(len(SYSTEMS["systemname"])):
-			if systems[i] == SYSTEMS["systemname"][j]:
-				tags_sys.append(SYSTEMS["Tags"][j])
-				tols_sys.append(SYSTEMS["Tols"][j])
-	isAuto =  True
-	ifVHQ = False
-	isparallel = False
+	index_memcheck_systems = []
+	for i in range(len(systems_valgrind)):
+		index_temp = systems_all.index(systems_valgrind[i])
+		index_memcheck_systems.append(index_temp)
+		del systems_all[index_temp]
+		del tags_sys_all[index_temp]
+		del tols_sys_all[index_temp]
 
-if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
-	indx_test_temp = re.findall(r'\d+',args[0])
-	indx_test = int(indx_test_temp[0])
-	if True:
+	if 'temp_present' in args:
+		temp_result =  True 
+		args.remove('temp_present')
+
+	if 'update_reference' in args:
+		is_update_reference =  True 
+		args.remove('update_reference')
+
+
+
+
+	if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
+		# systems=SYSTEMS['systemname']
+		# tags_sys=SYSTEMS['Tags']
+		# tols_sys=SYSTEMS['Tols']
+		systems = systems_all
+		tags_sys = tags_sys_all
+		tols_sys = tols_sys_all
 		isAuto =  True
 		ifVHQ = False
 		isparallel = False
-		systems1=SYSTEMS['systemname']
-		tags_sys1=SYSTEMS['Tags']
-		tols_sys1=SYSTEMS['Tols']
-		tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
-		tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
-		systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
-		no_systems = len(systems2)
 
-		systems = systems2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-		tols_sys = tols_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-		tags_sys = tags_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
-		remain_systems = no_systems - no_concurrency * int(no_systems/no_concurrency);
-
-		if indx_test < remain_systems:
-			systems.append(systems2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
-			tols_sys.append(tols_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
-			tags_sys.append(tags_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
-
-# if len(args) == 1:
-# 	if args[0] == "autosys":
-# 		ifVHQ = False
-# 		isparallel = False
-# 		systems_temp=SYSTEMS['systemname']
-# 		tags_sys_temp=SYSTEMS['Tags']
-# 		tols_sys_temp=SYSTEMS['Tols']
-# 		systems = []
-# 		tags_sys = []
-# 		tags_sys = []
-# 		for i in range(len(systems_temp)):
-# 			if systems_temp[i] not in ['He16_NVTNH','He16_NVKG','MgO','Si8_kpt','CuSi7','MoS2']:
-# 				systems.append(systems_temp[i])
-# 				tags_sys.append(tags_sys_temp[i])
-# 				tags_sys.append(tags_sys_temp[i])
-
-if len(args) >= 2:
-	assert (args[0]=="-tags" or args[0] == "-systems" ), "first argument of the the code is either '-tags' or '-systems'"
-
-	if args[0] == "-tags":
-		tags = args[1:]
-		if tags == ['VHQ']:
-			ifVHQ = True
-			systems=SYSTEMS['systemname']
-			tags_sys=SYSTEMS['Tags']
-			tols_sys=SYSTEMS['Tols']
-		if tags == ['valgrind_all']:
-			is_valgrind_all = True
-			systems=SYSTEMS['systemname']
-			tags_sys=SYSTEMS['Tags']
-			tols_sys=SYSTEMS['Tols']
-
-		elif tags == ['serial','memused']:
-			isparallel = False
-			ismempbs = True
-			tags.remove('memused')
-			tags.remove('serial')
-			systems=SYSTEMS['systemname']
-			tags_sys=SYSTEMS['Tags']
-			tols_sys=SYSTEMS['Tols']
-		elif tags ==['serial']:
-			isparallel = False
-			tags.remove('serial')
-			systems=SYSTEMS['systemname']
-			tags_sys=SYSTEMS['Tags']
-			tols_sys=SYSTEMS['Tols']
-		elif tags == ['memused']:
-			ismempbs = True
-			tags.remove('memused')
-			systems=SYSTEMS['systemname']
-			tags_sys=SYSTEMS['Tags']
-			tols_sys=SYSTEMS['Tols']
-		else:
-			if "serial" in tags:
-				isparallel = False
-				tags.remove('serial')
-			if "valgrind_all" in tags:
-				is_valgrind_all = True;
-				tags.remove('valgrind_all')
-			if "memused" in tags:
-				ismempbs = True
-				tags.remove('memused')
-			if "VHQ" in tags:
-				ifVHQ = True
-				tags.remove('VHQ')
-			if "run_local" in tags:
-				isAuto =  True
-				ifVHQ = False
-				isparallel = False
-				tags.remove('run_local')
-			if tags == []:
-				tags_sys=SYSTEMS['Tags']
-				systems=SYSTEMS['systemname']
-				tols_sys=SYSTEMS['Tols']
+	if len(args) == 1 and re.findall(r'clean_temp',args[0]) == ['clean_temp']:
+		# systems=SYSTEMS['systemname']
+		# tags_sys=SYSTEMS['Tags']
+		# tols_sys=SYSTEMS['Tols']
+		systems = systems_all
+		tags_sys = tags_sys_all
+		tols_sys = tols_sys_all
+		count=0
+		for s in systems:
+			os.chdir(s)
+			if 'orient' in tags_sys[count]:
+				os.system("rm -r temp_run1 temp_run2 temp_run3")
 			else:
-				systemstags = findsystems(tags)
-				systems = systemstags[0]
-				tags_sys = systemstags[1]
-				tols_sys = systemstags[2]
-	if args[0] == "-systems":
-		if ('memused' in  args[1:]):
-			ismempbs = True
-			args.remove('memused')
+				os.system("rm -r temp_run")
+			count=count+1
+			os.chdir("./..")
+		sys.exit("Deleted the temp files")
 
-		if 'VHQ' in  args[1:]:
-			ifVHQ = True
-			systems = args[1:]
-			systems.remove('VHQ')
-			tags_sys = []
-			tols_sys = []
-			for i in range(len(systems)):
-				for j in range(len(SYSTEMS["systemname"])):
-					if systems[i] == SYSTEMS["systemname"][j]:
-						tags_sys.append(SYSTEMS["Tags"][j])
-						tols_sys.append(SYSTEMS["Tols"][j])
+	if len(args) == 1 and re.findall(r'quick_run',args[0]) == ['quick_run']:
+		systems=['BaTiO3_quick','H2O_sheet_quick','H2O_wire_quick','SiH4_quick']
+		tags_sys = []
+		tols_sys = []
+		for i in range(len(systems)):
+			for j in range(len(SYSTEMS["systemname"])):
+				if systems[i] == SYSTEMS["systemname"][j]:
+					tags_sys.append(SYSTEMS["Tags"][j])
+					tols_sys.append(SYSTEMS["Tols"][j])
+		isAuto =  True
+		ifVHQ = False
+		isparallel = False
 
-		elif ('serial' in  args[1:]):
-			isparallel = False
-			ismempbs = True
-			systems = args[1:]
-			systems.remove('serial')
-			tags_sys = []
-			tols_sys = []
-			for i in range(len(systems)):
-				for j in range(len(SYSTEMS["systemname"])):
-					if systems[i] == SYSTEMS["systemname"][j]:
-						tags_sys.append(SYSTEMS["Tags"][j])
-						tols_sys.append(SYSTEMS["Tols"][j])
-
-		elif ('valgrind_all' in  args[1:]):
-			is_valgrind_all = True;
-			systems = args[1:]
-			systems.remove('valgrind_all')
-			tags_sys = []
-			tols_sys = []
-			for i in range(len(systems)):
-				for j in range(len(SYSTEMS["systemname"])):
-					if systems[i] == SYSTEMS["systemname"][j]:
-						tags_sys.append(SYSTEMS["Tags"][j])
-						tols_sys.append(SYSTEMS["Tols"][j])
-
-		elif 'run_local' in  args[1:]:
+	if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
+		indx_test_temp = re.findall(r'\d+',args[0])
+		indx_test = int(indx_test_temp[0])
+		if True:
 			isAuto =  True
 			ifVHQ = False
 			isparallel = False
-			systems = args[1:]
-			systems.remove('run_local')
-			tags_sys = []
-			tols_sys = []
-			for i in range(len(systems)):
-				for j in range(len(SYSTEMS["systemname"])):
-					if systems[i] == SYSTEMS["systemname"][j]:
-						tags_sys.append(SYSTEMS["Tags"][j])
-						tols_sys.append(SYSTEMS["Tols"][j])
+			# systems1=SYSTEMS['systemname']
+			# tags_sys1=SYSTEMS['Tags']
+			# tols_sys1=SYSTEMS['Tols']
+			systems1 = systems_all
+			tags_sys1 = tags_sys_all
+			tols_sys1 = tols_sys_all
+			tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+			tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+			systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+			no_systems = len(systems2)
 
-		else:
-			systems = args[1:]
-			tags_sys = []
-			tols_sys = []
-			for i in range(len(systems)):
-				for j in range(len(SYSTEMS["systemname"])):
-					if systems[i] == SYSTEMS["systemname"][j]:
-						tags_sys.append(SYSTEMS["Tags"][j])
-						tols_sys.append(SYSTEMS["Tols"][j])
-			
-if len(args) == 0:
-	systems=SYSTEMS['systemname']
-	tags_sys=SYSTEMS['Tags']
-	tols_sys=SYSTEMS['Tols']
+			systems = systems2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			tols_sys = tols_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			tags_sys = tags_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			remain_systems = no_systems - no_concurrency * int(no_systems/no_concurrency);
 
-######################## Classifying further for memcheck, MD, relax ###########################################
+			if indx_test < remain_systems:
+				systems.append(systems2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
+				tols_sys.append(tols_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
+				tags_sys.append(tags_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
 
-singlept = []
-Type=[]
-memcheck=[]
-isspin=[]
-isorient=[]
-for i in range(len(systems)):
-	if ("orient" in tags_sys[i]):
-		isorient.append(True)
-	else:
-		isorient.append(False)
-	if ("spin" in tags_sys[i]):
-		isspin.append(True)
-	else:
-		isspin.append(False)
-	if ("memcheck" in tags_sys[i]) or (is_valgrind_all == True):
-		memcheck.append(True)
-	else:
-		memcheck.append(False)
+	# if len(args) == 1:
+	# 	if args[0] == "autosys":
+	# 		ifVHQ = False
+	# 		isparallel = False
+	# 		systems_temp=SYSTEMS['systemname']
+	# 		tags_sys_temp=SYSTEMS['Tags']
+	# 		tols_sys_temp=SYSTEMS['Tols']
+	# 		systems = []
+	# 		tags_sys = []
+	# 		tags_sys = []
+	# 		for i in range(len(systems_temp)):
+	# 			if systems_temp[i] not in ['He16_NVTNH','He16_NVKG','MgO','Si8_kpt','CuSi7','MoS2']:
+	# 				systems.append(systems_temp[i])
+	# 				tags_sys.append(tags_sys_temp[i])
+	# 				tags_sys.append(tags_sys_temp[i])
+	if len(args) >= 2:
+		assert (args[0]=="-tags" or args[0] == "-systems" ), "first argument of the the code is either '-tags' or '-systems'"
 
-	if ("relax_cell" in tags_sys[i]):
-		singlept.append(False)
-		Type.append("relax_cell")
-	elif ("relax_atom_nlcg" in tags_sys[i]) or ("relax_atom_lbfgs" in tags_sys[i]) or ("relax_atom_fire" in tags_sys[i])  :
-		singlept.append(False)
-		Type.append("relax_atom")
-	elif ("relax_total_nlcg" in tags_sys[i]) or ("relax_total_lbfgs" in tags_sys[i]) or ("relax_total_fire" in tags_sys[i]):
-		singlept.append(False)
-		Type.append("relax_total")
-	elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]) or ("md_npt" in tags_sys[i]):
-		singlept.append(False)
-		Type.append("MD")
-	else:
-		singlept.append(True)
-		Type.append("None")
+		if args[0] == "-tags":
+			tags = args[1:]
+			if tags == ['VHQ']:
+				ifVHQ = True
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+				systems = systems_all
+				tags_sys = tags_sys_all
+				tols_sys = tols_sys_all
+			elif tags == ['valgrind_include']:
+				is_valgrind_include = True
+				systems = systems_valgrind
+				tags_sys = tags_sys_valgrind
+				tols_sys = tols_sys_valgrind
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+			elif tags == ['valgrind_all']:
+				is_valgrind_all = True
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+				systems = systems_all
+				tags_sys = tags_sys_all
+				tols_sys = tols_sys_all
 
+			elif tags == ['serial','memused']:
+				isparallel = False
+				ismempbs = True
+				tags.remove('memused')
+				tags.remove('serial')
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+				systems = systems_all
+				tags_sys = tags_sys_all
+				tols_sys = tols_sys_all
+			elif tags ==['serial']:
+				isparallel = False
+				tags.remove('serial')
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+				systems = systems_all
+				tags_sys = tags_sys_all
+				tols_sys = tols_sys_all
+			elif tags == ['memused']:
+				ismempbs = True
+				tags.remove('memused')
+				# systems=SYSTEMS['systemname']
+				# tags_sys=SYSTEMS['Tags']
+				# tols_sys=SYSTEMS['Tols']
+				systems = systems_all
+				tags_sys = tags_sys_all
+				tols_sys = tols_sys_all
+			else:
+				if "serial" in tags:
+					isparallel = False
+					tags.remove('serial')
+				if "valgrind_all" in tags:
+					is_valgrind_all = True;
+					tags.remove('valgrind_all')
+				if "memused" in tags:
+					ismempbs = True
+					tags.remove('memused')
+				if "VHQ" in tags:
+					ifVHQ = True
+					tags.remove('VHQ')
+				if "run_local" in tags:
+					isAuto =  True
+					ifVHQ = False
+					isparallel = False
+					tags.remove('run_local')
+				if tags == []:
+					# tags_sys=SYSTEMS['Tags']
+					# systems=SYSTEMS['systemname']
+					# tols_sys=SYSTEMS['Tols']
+					systems = systems_all
+					tags_sys = tags_sys_all
+					tols_sys = tols_sys_all
+				else:
+					systemstags = findsystems(tags)
+					systems = systemstags[0]
+					tags_sys = systemstags[1]
+					tols_sys = systemstags[2]
+		if args[0] == "-systems":
+			if ('memused' in  args[1:]):
+				ismempbs = True
+				args.remove('memused')
 
-### Reading number of processors from the input file if isparallel == True
-indexy=0
-if isparallel == True:
-	procs_sys = []   
-	for sys in systems:
-		os.chdir(sys)
-		if isorient[indexy]==False:
-			with open("high_accuracy/"+sys+".inpt",'r') as f_inpt:
-				f_inpt_content = [ line.strip() for line in f_inpt ]
-		else:
-			with open("high_accuracy_orientation1/"+sys+".inpt",'r') as f_inpt:
-				f_inpt_content = [ line.strip() for line in f_inpt ]
-		temp = re.findall(r'\b\d+\b',f_inpt_content[0])
-		procs_sys.append(int(temp[0]))
-		f_inpt.close()
-		indexy=indexy+1
-		os.chdir("./..")
-else:
-	procs_sys = []
-	for sys in systems:
-		procs_sys.append(1)
+			if 'VHQ' in  args[1:]:
+				ifVHQ = True
+				systems = args[1:]
+				systems.remove('VHQ')
+				tags_sys = []
+				tols_sys = []
+				for i in range(len(systems)):
+					for j in range(len(SYSTEMS["systemname"])):
+						if systems[i] == SYSTEMS["systemname"][j]:
+							tags_sys.append(SYSTEMS["Tags"][j])
+							tols_sys.append(SYSTEMS["Tols"][j])
 
-# print(procs_sys)
-######################### Launching the jobs ######################################################################
-# launch in a batch of 5 systems in a single pbs file in case of "mempbscheck == False" and in a batch of 1 otherwise
-# Input to the launch function should be  - (i) systems (ii) ifmempbs (iii) numberofprocs
-if isAuto == False and temp_result == False:
-	jobID = launchsystems(systems,memcheck,procs_sys,ismempbs, ifVHQ, isorient, not isparallel)
+			elif ('serial' in  args[1:]):
+				isparallel = False
+				ismempbs = True
+				systems = args[1:]
+				systems.remove('serial')
+				tags_sys = []
+				tols_sys = []
+				for i in range(len(systems)):
+					for j in range(len(SYSTEMS["systemname"])):
+						if systems[i] == SYSTEMS["systemname"][j]:
+							tags_sys.append(SYSTEMS["Tags"][j])
+							tols_sys.append(SYSTEMS["Tols"][j])
 
-############################### Monitoring #########################################################################
-	syst_temp = []
-	isorient_temp=[]
+			elif ('valgrind_all' in  args[1:]):
+				is_valgrind_all = True;
+				systems = args[1:]
+				systems.remove('valgrind_all')
+				tags_sys = []
+				tols_sys = []
+				for i in range(len(systems)):
+					for j in range(len(SYSTEMS["systemname"])):
+						if systems[i] == SYSTEMS["systemname"][j]:
+							tags_sys.append(SYSTEMS["Tags"][j])
+							tols_sys.append(SYSTEMS["Tols"][j])
+
+			elif 'run_local' in  args[1:]:
+				isAuto =  True
+				ifVHQ = False
+				isparallel = False
+				systems = args[1:]
+				systems.remove('run_local')
+				tags_sys = []
+				tols_sys = []
+				for i in range(len(systems)):
+					for j in range(len(SYSTEMS["systemname"])):
+						if systems[i] == SYSTEMS["systemname"][j]:
+							tags_sys.append(SYSTEMS["Tags"][j])
+							tols_sys.append(SYSTEMS["Tols"][j])
+
+			else:
+				systems = args[1:]
+				tags_sys = []
+				tols_sys = []
+				for i in range(len(systems)):
+					for j in range(len(SYSTEMS["systemname"])):
+						if systems[i] == SYSTEMS["systemname"][j]:
+							tags_sys.append(SYSTEMS["Tags"][j])
+							tols_sys.append(SYSTEMS["Tols"][j])
+				
+	if len(args) == 0:
+		# systems=SYSTEMS['systemname']
+		# tags_sys=SYSTEMS['Tags']
+		# tols_sys=SYSTEMS['Tols']
+		systems = systems_all
+		tags_sys = tags_sys_all
+		tols_sys = tols_sys_all
+
+	######################## Classifying further for memcheck, MD, relax ###########################################
+
+	singlept = []
+	Type=[]
+	memcheck=[]
+	isspin=[]
+	isorient=[]
 	for i in range(len(systems)):
-		syst_temp.append(systems[i])
-		isorient_temp.append(isorient[i])
-
-	for i in range_with_status(len(systems)):
-		temp = True
-		while temp:
-			# print(syst_temp, "\n")
-			for j in range(len(syst_temp)):
-				if isfinishedJobsID(jobID) == True:
-					del syst_temp[j]
-					del isorient_temp[j]
-					temp = False
-					break
-				if isfinished(syst_temp[j], isorient_temp[j]) == True:
-					del syst_temp[j]
-					del isorient_temp[j]
-					# syst_temp.remove(syst_temp[j])
-					# isorient_temp.remove(isorient_temp[j])
-					temp = False
-					break
-				time.sleep(4)
-
-	print('\n')
-elif isAuto == True and temp_result == False:
-	countrun=0
-	for systs in systems:
-		print(str(countrun)+": "+systs+" started running")
-		os.chdir(systs)
-		if isorient[countrun] == False:
-			if os.path.exists("temp_run"):
-				os.system("rm -r temp_run")
-				os.system("mkdir temp_run")
-				os.system("cp low_accuracy/*.inpt ./temp_run/")
-				os.system("cp low_accuracy/*.ion ./temp_run/")
-				os.system("cp ./*.psp8 ./temp_run/")
-			else:
-				os.system("mkdir temp_run")
-				os.system("cp low_accuracy/*.inpt ./temp_run/")
-				os.system("cp low_accuracy/*.ion ./temp_run/")
-				os.system("cp ./*.psp8 ./temp_run/")
-			os.chdir("temp_run")
-			os.system("./../../sparc -name "+systs+" > log")
+		if ("orient" in tags_sys[i]):
+			isorient.append(True)
 		else:
-			if os.path.exists("temp_run1"):
-				os.system("rm -r temp_run1")
-				os.system("mkdir temp_run1")
-				os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
-				os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
-				os.system("cp ./*.psp8 ./temp_run1/")
-			else:
-				os.system("mkdir temp_run1")
-				os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
-				os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
-				os.system("cp ./*.psp8 ./temp_run1/")
-			os.chdir("temp_run1")
-			os.system("./../../sparc -name "+systs+" > log")
+			isorient.append(False)
+		if ("spin" in tags_sys[i]):
+			isspin.append(True)
+		else:
+			isspin.append(False)
+		if ("memcheck" in tags_sys[i]) or (is_valgrind_all == True):
+			memcheck.append(True)
+		else:
+			memcheck.append(False)
 
+		if ("relax_cell" in tags_sys[i]):
+			singlept.append(False)
+			Type.append("relax_cell")
+		elif ("relax_atom_nlcg" in tags_sys[i]) or ("relax_atom_lbfgs" in tags_sys[i]) or ("relax_atom_fire" in tags_sys[i])  :
+			singlept.append(False)
+			Type.append("relax_atom")
+		elif ("relax_total_nlcg" in tags_sys[i]) or ("relax_total_lbfgs" in tags_sys[i]) or ("relax_total_fire" in tags_sys[i]):
+			singlept.append(False)
+			Type.append("relax_total")
+		elif ("md_nve" in tags_sys[i]) or ("md_nvtnh" in tags_sys[i]) or ("md_nvkg" in tags_sys[i]) or ("md_npt" in tags_sys[i]):
+			singlept.append(False)
+			Type.append("MD")
+		else:
+			singlept.append(True)
+			Type.append("None")
+
+	
+
+	if is_update_reference:
+		if ifVHQ:
+			accuracy_text = 'high_accuracy'
+		else:
+			accuracy_text = 'low_accuracy'
+		
+		index_count=0
+		for systs in systems:
+			os.chdir(systs)
+			if 'orient' in tags_sys[index_count]:
+				if Type[index_count] == "None":
+					os.system("cp temp_run1/"+systs+".out "+accuracy_text+"_orientation1/"+systs+".refout")
+					os.system("cp temp_run1/"+systs+".static "+accuracy_text+"_orientation1/"+systs+".refstatic")
+					os.system("cp temp_run2/"+systs+".out "+accuracy_text+"_orientation2/"+systs+".refout")
+					os.system("cp temp_run2/"+systs+".static "+accuracy_text+"_orientation2/"+systs+".refstatic")
+					os.system("cp temp_run3/"+systs+".out "+accuracy_text+"_orientation3/"+systs+".refout")
+					os.system("cp temp_run3/"+systs+".static "+accuracy_text+"_orientation3/"+systs+".refstatic")
+				elif Type[index_count] == "MD":
+					os.system("cp temp_run1/"+systs+".out "+accuracy_text+"_orientation1/"+systs+".refout")
+					os.system("cp temp_run1/"+systs+".aimd "+accuracy_text+"_orientation1/"+systs+".refaimd")
+					os.system("cp temp_run2/"+systs+".out "+accuracy_text+"_orientation2/"+systs+".refout")
+					os.system("cp temp_run2/"+systs+".aimd "+accuracy_text+"_orientation2/"+systs+".refaimd")
+					os.system("cp temp_run3/"+systs+".out "+accuracy_text+"_orientation3/"+systs+".refout")
+					os.system("cp temp_run3/"+systs+".aimd "+accuracy_text+"_orientation3/"+systs+".refaimd")
+				elif ((Type[index_count] == "relax_atom") or (Type[index_count] == "relax_cell") or (Type[index_count] == "relax_total")):
+					os.system("cp temp_run1/"+systs+".out "+accuracy_text+"_orientation1/"+systs+".refout")
+					os.system("cp temp_run1/"+systs+".geopt "+accuracy_text+"_orientation1/"+systs+".refgeopt")
+					os.system("cp temp_run2/"+systs+".out "+accuracy_text+"_orientation2/"+systs+".refout")
+					os.system("cp temp_run2/"+systs+".geopt "+accuracy_text+"_orientation2/"+systs+".refgeopt")
+					os.system("cp temp_run3/"+systs+".out "+accuracy_text+"_orientation3/"+systs+".refout")
+					os.system("cp temp_run3/"+systs+".geopt "+accuracy_text+"_orientation3/"+systs+".refgeopt")
+			else:
+				if Type[index_count] == "None":
+					os.system("cp temp_run/"+systs+".out "+accuracy_text+"/"+systs+".refout")
+					os.system("cp temp_run/"+systs+".static "+accuracy_text+"/"+systs+".refstatic")
+				elif Type[index_count] == "MD":
+					os.system("cp temp_run/"+systs+".out "+accuracy_text+"/"+systs+".refout")
+					os.system("cp temp_run/"+systs+".aimd "+accuracy_text+"/"+systs+".refaimd")
+				elif ((Type[index_count] == "relax_atom") or (Type[index_count] == "relax_cell") or (Type[index_count] == "relax_total")):
+					os.system("cp temp_run/"+systs+".out "+accuracy_text+"/"+systs+".refout")
+					os.system("cp temp_run/"+systs+".geopt "+accuracy_text+"/"+systs+".refgeopt")
+			index_count = index_count + 1
 			os.chdir("./..")
-			if os.path.exists("temp_run2"):
-				os.system("rm -r temp_run2")
-				os.system("mkdir temp_run2")
-				os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
-				os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
-				os.system("cp ./*.psp8 ./temp_run2/")
-			else:
-				os.system("mkdir temp_run2")
-				os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
-				os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
-				os.system("cp ./*.psp8 ./temp_run2/")
+		sys.exit("Reference files have been updated\n")
 
-			os.chdir("temp_run2")
-			os.system("./../../sparc -name "+systs+" > log")
-			os.chdir("./..")
-			if os.path.exists("temp_run3"):
-				os.system("rm -r temp_run3")
-				os.system("mkdir temp_run3")
-				os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
-				os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
-				os.system("cp ./*.psp8 ./temp_run3/")
-			else:
-				os.system("mkdir temp_run3")
-				os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
-				os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
-				os.system("cp ./*.psp8 ./temp_run3/")
-			os.chdir("temp_run3")
-			os.system("./../../sparc -name "+systs+" > log")
-		countrun=countrun+1
-		print(str(countrun)+": "+systs+" has finished running")
-		os.chdir("./../..")
-
-
-#######################################################################################################################
-count_run=0
-data_info={}
-sys_which_ran_idx=[]
-try:
-	os.chdir(home_directory)
-	temp=getInfo(systems[0],singlept[0],Type[0],False,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
-	temp1=getInfo(systems[0],singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
-	data_info[count_run] = {'a': temp, 'b': temp1}
-	sys_which_ran_idx.append(count_run)
-	count_run=count_run+1
-except:
-	print("Warning: "+systems[0]+" has some issues: please check that \n")
-
-#temp2 = getInfo(systems[0],singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0])
-# if os.path.exists('./'+systems[0]+"/"+systems[0]+".refabinitout"):
-# 	temp2 = getInfoAbinit(systems[0],singlept[0],Type[0],isspin[0],ifVHQ)
-# 	data_info = {0: {'a': temp, 'b': temp1, 'c': temp2}}
-# else:
-
-for i in range(len(systems)):
-	if i>0:
-		try:
-			os.chdir(home_directory)
-			temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
-			temp1=getInfo(systems[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
-			temp_dict = {'a': temp, 'b': temp1}
-			data_info[count_run] = temp_dict
-			sys_which_ran_idx.append(i)
-			count_run=count_run+1
-
-		except:
-			print("Warning: system named '"+systems[i]+"' has some issues: please check and rerun this system again \n")
-
-
-
-#tols = readtol(tolfilname)
-sys_which_ran=[]
-isparallel_which_ran=[]
-ifVHQ_which_ran=[]
-isorient_which_ran=[]
-
-for i in range(len(systems)):
-	if i in sys_which_ran_idx:
-		sys_which_ran.append(systems[i])
-		isorient_which_ran.append(isorient[i])
-
-os.chdir(home_directory)
-test_status, Warning_message_global, Error_message_global = WriteReport(data_info, sys_which_ran, isparallel, ifVHQ, isorient_which_ran)
-passtests = 0;
-failtests = 0;
-for pp in range(len(test_status)):
-	if test_status[pp]=="passed":
-		passtests=passtests+1
+	### Reading number of processors from the input file if isparallel == True
+	indexy=0
+	if isparallel == True:
+		procs_nodes_cluster = [nprocs_tests, nnodes_tests]
+		# procs_sys = []   
+		# for sys in systems:
+		# 	os.chdir(sys)
+		# 	if isorient[indexy]==False:
+		# 		with open("high_accuracy/"+sys+".inpt",'r') as f_inpt:
+		# 			f_inpt_content = [ line.strip() for line in f_inpt ]
+		# 	else:
+		# 		with open("high_accuracy_orientation1/"+sys+".inpt",'r') as f_inpt:
+		# 			f_inpt_content = [ line.strip() for line in f_inpt ]
+		# 	temp = re.findall(r'\b\d+\b',f_inpt_content[0])
+		# 	procs_sys.append(int(temp[0]))
+		# 	f_inpt.close()
+		# 	indexy=indexy+1
+		# 	os.chdir("./..")
 	else:
-		failtests=failtests+1
+		# procs_sys = []
+		# for sys in systems:
+		# 	procs_sys.append(1)
+		procs_nodes_cluster = [1, 1]
 
-#print("out of "+str(passtests+failtests)+"tests, "+str(passtests)+" tests have passed, and "+str(failtests)+" have failed \n")
-CGREEN='\033[92m'
-CRED = '\033[91m'
-CWHITE='\33[0m'
-CBLUE='\033[94m'
-print('--------------------------------------------------------------\n')
-print("Total systems: "+str(passtests+failtests)+"\n")
-print(CGREEN+"Tests passed: "+str(passtests)+CWHITE+"\n")
-print(CRED+"Tests failed: "+str(failtests)+CWHITE+"\n")
-print("Detailed report available in Report.txt file \n")
+	######################### Launching the jobs ######################################################################
+	# launch in a batch of 5 systems in a single pbs file in case of "mempbscheck == False" and in a batch of 1 otherwise
+	# Input to the launch function should be  - (i) systems (ii) ifmempbs (iii) numberofprocs
+	if isAuto == False and temp_result == False:
+		jobID = launchsystems(systems,memcheck,procs_nodes_cluster,ismempbs, ifVHQ, isorient, not isparallel)
 
-count_fail=0
-print('--------------------------------------------------------------\n')
-if failtests > 0:
-	print(CRED+'\033[1m'+'Failed test summary: '+CWHITE+ '\033[0m'+'\n')
+	############################### Monitoring #########################################################################
+		syst_temp = []
+		isorient_temp=[]
+		for i in range(len(systems)):
+			syst_temp.append(systems[i])
+			isorient_temp.append(isorient[i])
+
+		for i in range_with_status(len(systems)):
+			temp = True
+			while temp:
+				# print(syst_temp, "\n")
+				for j in range(len(syst_temp)):
+					# if isfinishedJobsID(jobID) == True:
+					# 	del syst_temp[j]
+					# 	del isorient_temp[j]
+					# 	temp = False
+					# 	break
+					if isfinished(syst_temp[j], isorient_temp[j]) == True:
+						del syst_temp[j]
+						del isorient_temp[j]
+						# syst_temp.remove(syst_temp[j])
+						# isorient_temp.remove(isorient_temp[j])
+						temp = False
+						break
+						time.sleep(0.3)
+				time.sleep(10)
+
+		print('\n')
+	elif isAuto == True and temp_result == False:
+		countrun=0
+		for systs in systems:
+			print(str(countrun)+": "+systs+" started running")
+			os.chdir(systs)
+			if isorient[countrun] == False:
+				if os.path.exists("temp_run"):
+					os.system("rm -r temp_run")
+					os.system("mkdir temp_run")
+					os.system("cp low_accuracy/*.inpt ./temp_run/")
+					os.system("cp low_accuracy/*.ion ./temp_run/")
+					# os.system("cp ./*.psp8 ./temp_run/")
+				else:
+					os.system("mkdir temp_run")
+					os.system("cp low_accuracy/*.inpt ./temp_run/")
+					os.system("cp low_accuracy/*.ion ./temp_run/")
+					# os.system("cp ./*.psp8 ./temp_run/")
+				os.chdir("temp_run")
+				os.system("./../../sparc -name "+systs+" > log")
+			else:
+				if os.path.exists("temp_run1"):
+					os.system("rm -r temp_run1")
+					os.system("mkdir temp_run1")
+					os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
+					os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
+					# os.system("cp ./*.psp8 ./temp_run1/")
+				else:
+					os.system("mkdir temp_run1")
+					os.system("cp low_accuracy_orientation1/*.inpt ./temp_run1/")
+					os.system("cp low_accuracy_orientation1/*.ion ./temp_run1/")
+					# os.system("cp ./*.psp8 ./temp_run1/")
+				os.chdir("temp_run1")
+				os.system("./../../sparc -name "+systs+" > log")
+
+				os.chdir("./..")
+				if os.path.exists("temp_run2"):
+					os.system("rm -r temp_run2")
+					os.system("mkdir temp_run2")
+					os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
+					os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
+					# os.system("cp ./*.psp8 ./temp_run2/")
+				else:
+					os.system("mkdir temp_run2")
+					os.system("cp low_accuracy_orientation2/*.inpt ./temp_run2/")
+					os.system("cp low_accuracy_orientation2/*.ion ./temp_run2/")
+					# os.system("cp ./*.psp8 ./temp_run2/")
+
+				os.chdir("temp_run2")
+				os.system("./../../sparc -name "+systs+" > log")
+				os.chdir("./..")
+				if os.path.exists("temp_run3"):
+					os.system("rm -r temp_run3")
+					os.system("mkdir temp_run3")
+					os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
+					os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
+					# os.system("cp ./*.psp8 ./temp_run3/")
+				else:
+					os.system("mkdir temp_run3")
+					os.system("cp low_accuracy_orientation3/*.inpt ./temp_run3/")
+					os.system("cp low_accuracy_orientation3/*.ion ./temp_run3/")
+					# os.system("cp ./*.psp8 ./temp_run3/")
+				os.chdir("temp_run3")
+				os.system("./../../sparc -name "+systs+" > log")
+			countrun=countrun+1
+			print(str(countrun)+": "+systs+" has finished running")
+			os.chdir("./../..")
+
+
+	#######################################################################################################################
+
+	count_run=0
+	data_info={}
+	sys_which_ran_idx=[]
+	try:
+		os.chdir(home_directory)
+		temp=getInfo(systems[0],singlept[0],Type[0],False,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
+		temp1=getInfo(systems[0],singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
+		data_info[count_run] = {'a': temp, 'b': temp1}
+		sys_which_ran_idx.append(count_run)
+		count_run=count_run+1
+	except:
+		print("Warning: "+systems[0]+" has some issues: please check that \n")
+
+	#temp2 = getInfo(systems[0],singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0])
+	# if os.path.exists('./'+systems[0]+"/"+systems[0]+".refabinitout"):
+	# 	temp2 = getInfoAbinit(systems[0],singlept[0],Type[0],isspin[0],ifVHQ)
+	# 	data_info = {0: {'a': temp, 'b': temp1, 'c': temp2}}
+	# else:
+
+	for i in range(len(systems)):
+		if i>0:
+			try:
+				os.chdir(home_directory)
+				temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
+				temp1=getInfo(systems[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
+				temp_dict = {'a': temp, 'b': temp1}
+				data_info[count_run] = temp_dict
+				sys_which_ran_idx.append(i)
+				count_run=count_run+1
+
+			except:
+				print("Warning: system named '"+systems[i]+"' has some issues: please check and rerun this system again \n")
+
+
+	#tols = readtol(tolfilname)
+	sys_which_ran=[]
+	isparallel_which_ran=[]
+	ifVHQ_which_ran=[]
+	isorient_which_ran=[]
+
+	for i in range(len(systems)):
+		if i in sys_which_ran_idx:
+			sys_which_ran.append(systems[i])
+			isorient_which_ran.append(isorient[i])
+
+
+	os.chdir(home_directory)
+	test_status, Warning_message_global, Error_message_global = WriteReport(data_info, sys_which_ran, isparallel, ifVHQ, isorient_which_ran)
+	passtests = 0;
+	failtests = 0;
 	for pp in range(len(test_status)):
-		if test_status[pp]!="passed":
-			print(CRED+str(count_fail+1)+". "+sys_which_ran[pp]+": "+Error_message_global[count_fail]+CWHITE+"\n")
-			count_fail=count_fail+1
-print('--------------------------------------------------------------\n')
+		if test_status[pp]=="passed":
+			passtests=passtests+1
+		else:
+			failtests=failtests+1
 
-print('--------------------------------------------------------------\n')
-count_warn=0;
-print(CBLUE+'\033[1m'+'Warning summary: '+CWHITE+'\033[0m'+'\n')
-for pp in range(len(Warning_message_global)):
-	if Warning_message_global[pp]!="":
-		print(CBLUE+str(count_warn+1)+". "+sys_which_ran[pp]+": "+Warning_message_global[pp]+CWHITE+"\n")
-		count_warn=count_warn+1
-print('--------------------------------------------------------------\n')
-os.chdir(home_directory)
-if os.path.exists("launch_1.pbs"):
-	os.system("rm *.pbs")
-	os.system("rm *.sparc")
+	#print("out of "+str(passtests+failtests)+"tests, "+str(passtests)+" tests have passed, and "+str(failtests)+" have failed \n")
+	CGREEN='\033[92m'
+	CRED = '\033[91m'
+	CWHITE='\33[0m'
+	CBLUE='\033[94m'
+	print('--------------------------------------------------------------\n')
+	print("Total systems: "+str(passtests+failtests)+"\n")
+	print(CGREEN+"Tests passed: "+str(passtests)+CWHITE+"\n")
+	print(CRED+"Tests failed: "+str(failtests)+CWHITE+"\n")
+	print("Detailed report available in Report.txt file \n")
 
-if isAuto == True:
+	count_fail=0
+	print('--------------------------------------------------------------\n')
 	if failtests > 0:
-		raise Exception(str(failtests) + " out of "+str(passtests+failtests) +" failed")
+		print(CRED+'\033[1m'+'Failed test summary: '+CWHITE+ '\033[0m'+'\n')
+		for pp in range(len(test_status)):
+			if test_status[pp]!="passed":
+				print(CRED+str(count_fail+1)+". "+sys_which_ran[pp]+": "+Error_message_global[count_fail]+CWHITE+"\n")
+				count_fail=count_fail+1
+	print('--------------------------------------------------------------\n')
+
+	print('--------------------------------------------------------------\n')
+	count_warn=0;
+	print(CBLUE+'\033[1m'+'Warning summary: '+CWHITE+'\033[0m'+'\n')
+	for pp in range(len(Warning_message_global)):
+		if Warning_message_global[pp]!="":
+			print(CBLUE+str(count_warn+1)+". "+sys_which_ran[pp]+": "+Warning_message_global[pp]+CWHITE+"\n")
+			count_warn=count_warn+1
+	print('--------------------------------------------------------------\n')
+	os.chdir(home_directory)
+	if os.path.exists("launch_1.pbs"):
+		os.system("rm *.pbs")
+		os.system("rm *.sparc")
+
+	if isAuto == True:
+		if failtests > 0:
+			raise Exception(str(failtests) + " out of "+str(passtests+failtests) +" failed")

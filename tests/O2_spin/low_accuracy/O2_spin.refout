@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Oct 11, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Oct 27 17:55:44 2021                  *
+*                   Start time: Mon Jul 18 01:33:43 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -17,13 +17,12 @@ BC: D D D
 SPIN_TYP: 1
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
-CHEB_DEGREE: 35
-NSTATES: 10
-#WARNING: Number of bands may be insufficient for efficient SCF convergence.
 EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 10
+CHEB_DEGREE: 35
+CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 0
 CALC_PRES: 0
-CHEFSI_BOUND_FLAG: 0
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -51,7 +50,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: O2_spin
+OUTPUT_FILE: O2_spin/temp_run/O2_spin
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -59,7 +58,7 @@ Lattice vectors (Bohr):
 21.000000000000000 0.000000000000000 0.000000000000000 
 0.000000000000000 18.000000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 18.000000000000000 
-Volume                  :  6.8040000000E+03 (Bohr^3)
+Volume: 6.8040000000E+03 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -74,66 +73,63 @@ EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
 Number of processors               :  24
 Mesh spacing                       :  0.2 (Bohr)
-Output printed to                  :  O2_spin.out
+Output printed to                  :  O2_spin/temp_run/O2_spin.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  12
 Atom type 1  (valence electrons)   :  O 6
-Pseudopotential                    :  O.psp8
+Pseudopotential                    :  psps_tests/O_LDA1.psp8
 Pseudocharge radii of atom type 1  :  7.00 7.00 7.00 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  1.24 GB
-Estimated memory per processor     :  52.79 MB
+Estimated total memory usage       :  1.12 GB
+Estimated memory per processor     :  47.99 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.5893334628E+01         2.0000E+00        1.247E-01        4.373
-2            -1.5929846069E+01         2.0000E+00        1.014E-01        1.762
-3            -1.5926056892E+01         2.0000E+00        1.091E-01        1.664
-4            -1.5911614541E+01         2.0000E+00        1.390E-02        1.717
-5            -1.5912292162E+01         2.0000E+00        4.095E-03        1.724
-6            -1.5912280521E+01         2.0000E+00        1.503E-03        1.728
-7            -1.5911529479E+01         2.0000E+00        6.475E-04        1.699
-8            -1.5911145850E+01         2.0000E+00        4.231E-04        1.694
-9            -1.5910805216E+01         2.0000E+00        1.403E-04        1.609
-10           -1.5910711201E+01         2.0000E+00        8.031E-05        1.645
-11           -1.5910576178E+01         2.0000E+00        4.226E-05        1.581
-12           -1.5910531319E+01         2.0000E+00        2.818E-05        1.570
-13           -1.5910504283E+01         2.0000E+00        7.570E-06        1.395
-14           -1.5910495175E+01         2.0000E+00        4.845E-06        1.430
-15           -1.5910494807E+01         2.0000E+00        2.688E-06        1.414
-16           -1.5910494583E+01         2.0000E+00        1.177E-06        1.334
-17           -1.5910493376E+01         2.0000E+00        4.341E-07        0.858
+1            -1.5893334628E+01         2.0000E+00        1.247E-01        3.432
+2            -1.5929846069E+01         2.0000E+00        1.014E-01        1.470
+3            -1.5926056892E+01         2.0000E+00        1.091E-01        1.385
+4            -1.5911614541E+01         2.0000E+00        1.390E-02        1.482
+5            -1.5912292162E+01         2.0000E+00        4.095E-03        1.448
+6            -1.5912280521E+01         2.0000E+00        1.503E-03        1.441
+7            -1.5911529479E+01         2.0000E+00        6.475E-04        1.418
+8            -1.5911145850E+01         2.0000E+00        4.231E-04        1.428
+9            -1.5910805216E+01         2.0000E+00        1.403E-04        1.353
+10           -1.5910711201E+01         2.0000E+00        8.031E-05        1.373
+11           -1.5910576178E+01         2.0000E+00        4.226E-05        1.338
+12           -1.5910531319E+01         2.0000E+00        2.818E-05        1.313
+13           -1.5910504283E+01         2.0000E+00        7.570E-06        1.149
+14           -1.5910495175E+01         2.0000E+00        4.845E-06        1.183
+15           -1.5910494807E+01         2.0000E+00        2.688E-06        1.160
+16           -1.5910494583E+01         2.0000E+00        1.177E-06        1.112
+17           -1.5910493376E+01         2.0000E+00        4.341E-07        0.668
 Total number of SCF: 17    
-
-k = [0.000, 0.000, 0.000]
-Occupation of state 9 = 0.000000000000000.
-Occupation of state 10 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
 Free energy per atom               : -1.5910493627E+01 (Ha/atom)
 Total free energy                  : -3.1820987255E+01 (Ha)
-Band structure energy              : -6.6844890400E+00 (Ha)
+Band structure energy              : -6.6844890399E+00 (Ha)
 Exchange correlation energy        : -6.6425012989E+00 (Ha)
 Self and correction energy         : -6.4063409725E+01 (Ha)
-Entropy*kb*T                       : -3.5012876300E-13 (Ha)
-Fermi level                        : -2.7009893201E-01 (Ha)
-RMS force                          :  1.6390829637E-01 (Ha/Bohr)
-Maximum force                      :  1.6390829637E-01 (Ha/Bohr)
-Time for force calculation         :  0.031 (sec)
+Entropy*kb*T                       : -3.5129845879E-13 (Ha)
+Fermi level                        : -2.7009546690E-01 (Ha)
+RMS force                          :  1.6390829636E-01 (Ha/Bohr)
+Maximum force                      :  1.6390829636E-01 (Ha/Bohr)
+Time for force calculation         :  0.028 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  30.615 sec
+Total walltime                     :  25.448 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

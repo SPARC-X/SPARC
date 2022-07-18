@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Oct 11, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Oct 27 17:52:07 2021                  *
+*                   Start time: Mon Jul 18 01:33:08 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,11 +19,11 @@ KPOINT_SHIFT: 0.5 0.5 0.5
 SPIN_TYP: 1
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.009999935878
-CHEB_DEGREE: 42
-NSTATES: 35
 EXCHANGE_CORRELATION: GGA_PBE
-CALC_STRESS: 1
+NSTATES: 35
+CHEB_DEGREE: 42
 CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -53,7 +53,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: Fe_spin_nlcc
+OUTPUT_FILE: Fe_spin_nlcc/temp_run/Fe_spin_nlcc
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -61,7 +61,7 @@ Lattice vectors (Bohr):
 5.420000000000000 0.000000000000000 0.000000000000000 
 0.000000000000000 5.420000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 5.420000000000000 
-Volume                  :  1.5922008800E+02 (Bohr^3)
+Volume: 1.5922008800E+02 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -77,40 +77,36 @@ EIG_SERIAL_MAXNS: 10000
 Number of processors               :  24
 Mesh spacing                       :  0.150556 (Bohr)
 Number of symmetry adapted k-points:  4
-Output printed to                  :  Fe_spin_nlcc.out
+Output printed to                  :  Fe_spin_nlcc/temp_run/Fe_spin_nlcc.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
-Pseudopotential                    :  FeGGA.psp8
+Pseudopotential                    :  psps_tests/FeGGA2.psp8
 Pseudocharge radii of atom type 1  :  6.78 6.78 6.78 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  1.30 GB
-Estimated memory per processor     :  55.67 MB
+Estimated total memory usage       :  1.19 GB
+Estimated memory per processor     :  50.61 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.2518991000E+02         4.3499E+00        6.922E-02        8.505
-2            -1.2531241668E+02         4.1456E+00        4.529E-02        2.109
-3            -1.2538577178E+02         4.1203E+00        2.206E-02        2.432
-4            -1.2536771186E+02         4.1242E+00        5.252E-03        2.112
-5            -1.2536625419E+02         4.1053E+00        6.193E-03        2.108
-6            -1.2536519204E+02         4.1001E+00        3.414E-03        2.109
-7            -1.2535984046E+02         4.0851E+00        1.278E-03        2.103
-8            -1.2536456013E+02         4.0764E+00        4.601E-04        2.107
-9            -1.2536346827E+02         4.0778E+00        1.940E-04        2.112
-10           -1.2536377369E+02         4.0762E+00        6.079E-05        2.109
-11           -1.2536370980E+02         4.0766E+00        1.271E-05        2.106
-12           -1.2536372283E+02         4.0765E+00        3.756E-06        2.108
-13           -1.2536372358E+02         4.0765E+00        1.351E-06        2.110
-14           -1.2536372321E+02         4.0765E+00        1.375E-06        2.106
-15           -1.2536372300E+02         4.0765E+00        4.481E-07        2.086
+1            -1.2518991000E+02         4.3499E+00        6.922E-02        4.144
+2            -1.2531241668E+02         4.1456E+00        4.529E-02        1.057
+3            -1.2538577178E+02         4.1203E+00        2.206E-02        1.049
+4            -1.2536771186E+02         4.1242E+00        5.252E-03        1.050
+5            -1.2536625419E+02         4.1053E+00        6.193E-03        1.046
+6            -1.2536519204E+02         4.1001E+00        3.414E-03        1.056
+7            -1.2535984046E+02         4.0851E+00        1.278E-03        1.041
+8            -1.2536456013E+02         4.0764E+00        4.601E-04        1.047
+9            -1.2536346827E+02         4.0778E+00        1.940E-04        1.045
+10           -1.2536377369E+02         4.0762E+00        6.079E-05        1.046
+11           -1.2536370980E+02         4.0766E+00        1.271E-05        1.046
+12           -1.2536372283E+02         4.0765E+00        3.756E-06        1.042
+13           -1.2536372358E+02         4.0765E+00        1.351E-06        1.045
+14           -1.2536372321E+02         4.0765E+00        1.375E-06        1.045
+15           -1.2536372300E+02         4.0765E+00        4.481E-07        1.022
 Total number of SCF: 15    
-
-k = [0.250, 0.250, 0.250]
-Occupation of state 32 = 0.000000000000000.
-Occupation of state 35 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
@@ -121,23 +117,24 @@ Exchange correlation energy        : -3.5511984931E+01 (Ha)
 Self and correction energy         : -3.6180683813E+02 (Ha)
 Entropy*kb*T                       : -2.0457377713E-02 (Ha)
 Fermi level                        :  4.5829211664E-01 (Ha)
-RMS force                          :  8.0414802436E-07 (Ha/Bohr)
-Maximum force                      :  8.0414802436E-07 (Ha/Bohr)
-Time for force calculation         :  0.095 (sec)
-Pressure                           : -1.6379900018E+01 (GPa)
-Maximum stress                     :  1.6379900468E+01 (GPa)
-Time for stress calculation        :  0.171 (sec)
+RMS force                          :  8.0414828660E-07 (Ha/Bohr)
+Maximum force                      :  8.0414828660E-07 (Ha/Bohr)
+Time for force calculation         :  0.066 (sec)
+Pressure                           : -1.6379900020E+01 (GPa)
+Maximum stress                     :  1.6379900470E+01 (GPa)
+Time for stress calculation        :  0.116 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  38.720 sec
+Total walltime                     :  19.088 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

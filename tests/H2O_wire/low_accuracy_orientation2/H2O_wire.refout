@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Oct 11, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Oct 27 17:54:42 2021                  *
+*                   Start time: Mon Jul 18 01:33:37 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,12 +19,11 @@ KPOINT_SHIFT: 0 0 0
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.003674932
-CHEB_DEGREE: 35
-NSTATES: 8
-#WARNING: Number of bands may be insufficient for efficient SCF convergence.
 EXCHANGE_CORRELATION: LDA_PZ
-CALC_STRESS: 1
+NSTATES: 8
+CHEB_DEGREE: 35
 CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -50,7 +49,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: H2O_wire
+OUTPUT_FILE: H2O_wire/temp_run2/H2O_wire
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -58,90 +57,87 @@ Lattice vectors (Bohr):
 14.000000000000000 0.000000000000000 0.000000000000000 
 0.000000000000000 6.000000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 14.000000000000000 
-Volume                  :  1.1760000000E+03 (Bohr^3)
+Volume: 1.1760000000E+03 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
 NP_KPOINT_PARAL: 1
-NP_BAND_PARAL: 1
-NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 1 1 1
+NP_BAND_PARAL: 8
+NP_DOMAIN_PARAL: 1 1 3
+NP_DOMAIN_PHI_PARAL: 3 2 4
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  1
+Number of processors               :  24
 Mesh spacing                       :  0.2 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  H2O_wire.out
+Output printed to                  :  H2O_wire/temp_run2/H2O_wire.out
 Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  H 1
-Pseudopotential                    :  H.psp8
+Pseudopotential                    :  psps_tests/H_LDA.psp8
 Pseudocharge radii of atom type 1  :  7.00 7.00 7.00 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  O 6
-Pseudopotential                    :  O.psp8
+Pseudopotential                    :  psps_tests/O_LDA1.psp8
 Pseudocharge radii of atom type 2  :  7.00 7.00 7.00 (x, y, z dir)
 Number of atoms of type 2          :  1
-Estimated total memory usage       :  66.00 MB
-Estimated memory per processor     :  66.00 MB
+Estimated total memory usage       :  87.69 MB
+Estimated memory per processor     :  3.65 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.8973493124E+00        1.726E-01        5.360
-2            -5.7897110754E+00        9.155E-02        2.856
-3            -5.7206328410E+00        5.470E-02        2.866
-4            -5.7106895935E+00        1.323E-02        2.804
-5            -5.6976593944E+00        6.565E-03        2.818
-6            -5.6961764672E+00        2.262E-03        2.621
-7            -5.6941037533E+00        2.115E-03        2.652
-8            -5.6947071206E+00        6.456E-04        2.585
-9            -5.6942860727E+00        4.900E-04        2.469
-10           -5.6945978195E+00        1.584E-04        2.385
-11           -5.6946527795E+00        5.526E-05        2.234
-12           -5.6946776001E+00        4.072E-05        2.229
-13           -5.6946996366E+00        2.110E-05        2.235
-14           -5.6947004949E+00        1.181E-05        2.170
-15           -5.6947150659E+00        1.194E-05        2.061
-16           -5.6947108655E+00        5.328E-06        2.072
-17           -5.6947096586E+00        3.781E-06        2.090
-18           -5.6947085463E+00        2.361E-06        2.049
-19           -5.6947086805E+00        8.922E-07        0.806
+1            -5.8887310950E+00        1.677E-01        0.256
+2            -5.7929516410E+00        9.370E-02        0.127
+3            -5.7184122167E+00        5.491E-02        0.120
+4            -5.7198152871E+00        2.139E-02        0.118
+5            -5.6980667343E+00        6.551E-03        0.118
+6            -5.6965890743E+00        2.466E-03        0.115
+7            -5.6956336564E+00        1.886E-03        0.118
+8            -5.6946532039E+00        7.340E-04        0.112
+9            -5.6941995700E+00        7.572E-04        0.112
+10           -5.6948168730E+00        2.322E-04        0.106
+11           -5.6945964762E+00        1.192E-04        0.102
+12           -5.6946717642E+00        6.056E-05        0.097
+13           -5.6946925227E+00        2.347E-05        0.094
+14           -5.6946977770E+00        1.755E-05        0.096
+15           -5.6947113991E+00        9.766E-06        0.088
+16           -5.6947072810E+00        5.686E-06        0.091
+17           -5.6947119701E+00        3.492E-06        0.081
+18           -5.6947092115E+00        1.720E-06        0.082
+19           -5.6947079131E+00        7.260E-07        0.038
 Total number of SCF: 19    
-
-k = [0.000, 0.000, 0.000]
-Occupation of state 7 = 0.000000000000000.
-Occupation of state 8 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -5.6947079532E+00 (Ha/atom)
-Total free energy                  : -1.7084123860E+01 (Ha)
-Band structure energy              : -4.2704983729E+00 (Ha)
-Exchange correlation energy        : -4.1216150525E+00 (Ha)
+Free energy per atom               : -5.6947079595E+00 (Ha/atom)
+Total free energy                  : -1.7084123878E+01 (Ha)
+Band structure energy              : -4.2704928853E+00 (Ha)
+Exchange correlation energy        : -4.1216139639E+00 (Ha)
 Self and correction energy         : -3.5330307325E+01 (Ha)
-Entropy*kb*T                       : -3.0007942983E-09 (Ha)
-Fermi level                        : -1.6492650619E-01 (Ha)
-RMS force                          :  1.4575692162E-02 (Ha/Bohr)
-Maximum force                      :  1.7651544422E-02 (Ha/Bohr)
-Time for force calculation         :  0.107 (sec)
-Maximum stress                     :  2.0807040572E-02 (a.u.)
-Time for stress calculation        :  0.275 (sec)
+Entropy*kb*T                       : -3.0007973591E-09 (Ha)
+Fermi level                        : -1.6492568493E-01 (Ha)
+RMS force                          :  1.4575297895E-02 (Ha/Bohr)
+Maximum force                      :  1.7651075442E-02 (Ha/Bohr)
+Time for force calculation         :  0.006 (sec)
+Maximum stress                     :  2.0806758899E-02 (a.u.)
+Time for stress calculation        :  0.017 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  50.523 sec
+Total walltime                     :  2.276 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

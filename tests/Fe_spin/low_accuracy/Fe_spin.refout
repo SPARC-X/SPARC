@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Oct 11, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Oct 27 17:51:36 2021                  *
+*                   Start time: Mon Jul 18 01:32:46 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,11 +19,11 @@ KPOINT_SHIFT: 0.5 0.5 0.5
 SPIN_TYP: 1
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.009999935878
-CHEB_DEGREE: 42
-NSTATES: 35
 EXCHANGE_CORRELATION: GGA_PBE
-CALC_STRESS: 1
+NSTATES: 35
+CHEB_DEGREE: 42
 CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -53,7 +53,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
-OUTPUT_FILE: Fe_spin
+OUTPUT_FILE: Fe_spin/temp_run/Fe_spin
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -61,7 +61,7 @@ Lattice vectors (Bohr):
 5.420000000000000 0.000000000000000 0.000000000000000 
 0.000000000000000 5.420000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 5.420000000000000 
-Volume                  :  1.5922008800E+02 (Bohr^3)
+Volume: 1.5922008800E+02 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -77,39 +77,35 @@ EIG_SERIAL_MAXNS: 10000
 Number of processors               :  24
 Mesh spacing                       :  0.150556 (Bohr)
 Number of symmetry adapted k-points:  4
-Output printed to                  :  Fe_spin.out
+Output printed to                  :  Fe_spin/temp_run/Fe_spin.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
-Pseudopotential                    :  FeGGA.psp8
+Pseudopotential                    :  psps_tests/FeGGA1.psp8
 Pseudocharge radii of atom type 1  :  6.93 6.93 6.93 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  1.30 GB
-Estimated memory per processor     :  55.67 MB
+Estimated total memory usage       :  1.19 GB
+Estimated memory per processor     :  50.61 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1828584633E+02         4.3240E+00        7.273E-02        9.469
-2            -1.1837891488E+02         4.1198E+00        4.892E-02        2.328
-3            -1.1845142573E+02         4.1007E+00        2.308E-02        2.307
-4            -1.1844185173E+02         4.1149E+00        5.497E-03        2.287
-5            -1.1843490297E+02         4.0926E+00        6.141E-03        2.284
-6            -1.1843313318E+02         4.0891E+00        3.298E-03        2.283
-7            -1.1842804273E+02         4.0777E+00        1.440E-03        2.274
-8            -1.1843260707E+02         4.0679E+00        4.663E-04        2.282
-9            -1.1843112798E+02         4.0704E+00        3.112E-04        2.289
-10           -1.1843168675E+02         4.0683E+00        5.707E-05        2.275
-11           -1.1843169369E+02         4.0686E+00        1.290E-05        2.274
-12           -1.1843169913E+02         4.0685E+00        5.805E-06        2.275
-13           -1.1843169329E+02         4.0685E+00        1.816E-06        2.274
-14           -1.1843169269E+02         4.0685E+00        8.631E-07        2.255
+1            -1.1828584633E+02         4.3240E+00        7.273E-02        5.136
+2            -1.1837891488E+02         4.1198E+00        4.892E-02        1.300
+3            -1.1845142573E+02         4.1007E+00        2.308E-02        1.290
+4            -1.1844185173E+02         4.1149E+00        5.497E-03        1.289
+5            -1.1843490297E+02         4.0926E+00        6.141E-03        1.286
+6            -1.1843313318E+02         4.0891E+00        3.298E-03        1.287
+7            -1.1842804273E+02         4.0777E+00        1.440E-03        1.279
+8            -1.1843260707E+02         4.0679E+00        4.663E-04        1.292
+9            -1.1843112798E+02         4.0704E+00        3.112E-04        1.287
+10           -1.1843168675E+02         4.0683E+00        5.707E-05        1.291
+11           -1.1843169369E+02         4.0686E+00        1.290E-05        1.289
+12           -1.1843169913E+02         4.0685E+00        5.805E-06        1.299
+13           -1.1843169329E+02         4.0685E+00        1.816E-06        1.291
+14           -1.1843169269E+02         4.0685E+00        8.631E-07        1.269
 Total number of SCF: 14    
-
-k = [0.250, 0.250, 0.250]
-Occupation of state 32 = 0.000000000000000.
-Occupation of state 35 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
@@ -120,23 +116,24 @@ Exchange correlation energy        : -2.5080406381E+01 (Ha)
 Self and correction energy         : -2.4301280496E+02 (Ha)
 Entropy*kb*T                       : -2.0376356372E-02 (Ha)
 Fermi level                        :  2.4292229711E-01 (Ha)
-RMS force                          :  3.6381422005E-08 (Ha/Bohr)
-Maximum force                      :  3.6381422005E-08 (Ha/Bohr)
-Time for force calculation         :  0.067 (sec)
-Pressure                           : -1.5793463856E+01 (GPa)
-Maximum stress                     :  1.5793481626E+01 (GPa)
-Time for stress calculation        :  0.160 (sec)
+RMS force                          :  3.6383430190E-08 (Ha/Bohr)
+Maximum force                      :  3.6383430190E-08 (Ha/Bohr)
+Time for force calculation         :  0.042 (sec)
+Pressure                           : -1.5793463858E+01 (GPa)
+Maximum stress                     :  1.5793481628E+01 (GPa)
+Time for stress calculation        :  0.107 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  39.519 sec
+Total walltime                     :  22.167 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Dec 23, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Dec 23 23:41:38 2021                  *
+*                   Start time: Mon Jul 18 01:40:06 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,13 +19,13 @@ KPOINT_SHIFT: 0 0 0
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.003674926479
-CHEB_DEGREE: 33
-NSTATES: 67
 EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 67
+CHEB_DEGREE: 33
+CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 0
 CALC_PRES: 0
-CHEFSI_BOUND_FLAG: 0
-MAXIT_SCF: 50
+MAXIT_SCF: 70
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
 TOL_SCF: 5.00E-06
@@ -53,7 +53,7 @@ PRINT_DENSITY: 0
 D3_FLAG: 1
 D3_RTHR: 9000
 D3_CN_THR: 1600
-OUTPUT_FILE: sprc-calc
+OUTPUT_FILE: MoS2_surface_d3/temp_run/MoS2_surface_d3
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -61,103 +61,101 @@ Lattice vectors (Bohr):
 12.067888776200000 0.000000000000000 0.000000000000000 
 -6.033944384156582 10.450151012422566 0.000000000000000 
 0.000000000000000 0.000000000000000 22.676713509999999 
-Volume                  :  2.8597889160E+03 (Bohr^3)
+Volume: 2.8597889160E+03 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
 NP_KPOINT_PARAL: 1
 NP_BAND_PARAL: 4
-NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 1 2 2
+NP_DOMAIN_PARAL: 1 2 3
+NP_DOMAIN_PHI_PARAL: 2 3 4
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  4
+Number of processors               :  24
 Mesh spacing in x-direction        :  0.241358 (Bohr)
 Mesh spacing in y-direction        :  0.241341 (Bohr)
 Mesh spacing in z direction        :  0.241242 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  sprc-calc.out
+Output printed to                  :  MoS2_surface_d3/temp_run/MoS2_surface_d3.out
 Total number of atom types         :  2
 Total number of atoms              :  12
 Total number of electrons          :  104
 Atom type 1  (valence electrons)   :  Mo 14
-Pseudopotential                    :  Mo.pot
+Pseudopotential                    :  psps_tests/Mo.psp8
 Pseudocharge radii of atom type 1  :  7.72 7.72 7.72 (x, y, z dir)
 Number of atoms of type 1          :  4
 Atom type 2  (valence electrons)   :  S 6
-Pseudopotential                    :  S.pot
+Pseudopotential                    :  psps_tests/S.psp8
 Pseudocharge radii of atom type 2  :  7.72 7.72 7.72 (x, y, z dir)
 Number of atoms of type 2          :  8
-Estimated total memory usage       :  857.18 MB
-Estimated memory per processor     :  214.30 MB
+Estimated total memory usage       :  779.15 MB
+Estimated memory per processor     :  32.46 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.9665698026E+01        5.675E-02        15.293
-2            -2.9684650951E+01        5.086E-02        4.822
-3            -2.9692501904E+01        3.753E-02        4.881
-4            -2.9703057565E+01        1.885E-02        4.855
-5            -2.9700701792E+01        1.138E-02        4.479
-6            -2.9694908230E+01        6.122E-03        4.586
-7            -2.9695309347E+01        3.896E-03        4.541
-8            -2.9693742350E+01        2.514E-03        4.556
-9            -2.9693988938E+01        1.123E-03        4.255
-10           -2.9693728166E+01        7.463E-04        4.451
-11           -2.9693556474E+01        3.997E-04        4.431
-12           -2.9693430330E+01        2.620E-04        4.324
-13           -2.9693321349E+01        2.149E-04        4.187
-14           -2.9693248770E+01        1.633E-04        4.135
-15           -2.9693210897E+01        1.475E-04        4.339
-16           -2.9693112056E+01        1.035E-04        4.100
-17           -2.9693104644E+01        9.618E-05        4.341
-18           -2.9693072132E+01        7.075E-05        4.297
-19           -2.9693048635E+01        6.246E-05        4.344
-20           -2.9693012820E+01        5.115E-05        4.217
-21           -2.9693005573E+01        4.747E-05        4.366
-22           -2.9692976207E+01        3.506E-05        4.057
-23           -2.9692981398E+01        2.687E-05        4.286
-24           -2.9692980390E+01        2.294E-05        4.267
-25           -2.9692976569E+01        1.804E-05        4.150
-26           -2.9692976224E+01        1.511E-05        4.166
-27           -2.9692970358E+01        1.217E-05        4.066
-28           -2.9692971772E+01        1.288E-05        4.089
-29           -2.9692966703E+01        7.987E-06        4.153
-30           -2.9692962755E+01        7.032E-06        3.832
-31           -2.9692965164E+01        4.703E-06        3.380
-Total number of SCF: 31    
-
-k = [0.000, 0.000, 0.000]
-Occupation of state 60 = 0.000000000000000.
-Occupation of state 67 = 0.000000000000000.
+1            -2.9665688849E+01        5.675E-02        3.819
+2            -2.9684649430E+01        5.086E-02        1.196
+3            -2.9692499008E+01        3.753E-02        1.233
+4            -2.9703056158E+01        1.885E-02        1.206
+5            -2.9700705258E+01        1.139E-02        1.211
+6            -2.9694907820E+01        6.122E-03        1.148
+7            -2.9695310328E+01        3.897E-03        1.157
+8            -2.9693743072E+01        2.514E-03        1.139
+9            -2.9693988865E+01        1.123E-03        1.066
+10           -2.9693728541E+01        7.467E-04        1.113
+11           -2.9693556417E+01        3.996E-04        1.119
+12           -2.9693431215E+01        2.617E-04        1.127
+13           -2.9693320516E+01        2.147E-04        1.060
+14           -2.9693248698E+01        1.632E-04        1.042
+15           -2.9693210770E+01        1.474E-04        1.093
+16           -2.9693112113E+01        1.035E-04        1.031
+17           -2.9693104698E+01        9.595E-05        1.099
+18           -2.9693072175E+01        7.069E-05        1.080
+19           -2.9693047962E+01        6.232E-05        1.088
+20           -2.9693013796E+01        5.161E-05        1.073
+21           -2.9693004567E+01        4.639E-05        1.140
+22           -2.9692984835E+01        2.920E-05        1.050
+23           -2.9692982728E+01        2.689E-05        1.082
+24           -2.9692976270E+01        2.145E-05        0.984
+25           -2.9692979540E+01        1.844E-05        1.055
+26           -2.9692982603E+01        1.634E-05        1.081
+27           -2.9692969665E+01        1.355E-05        1.067
+28           -2.9692962164E+01        8.819E-06        0.983
+29           -2.9692963025E+01        7.091E-06        1.066
+30           -2.9692958821E+01        5.839E-06        1.024
+31           -2.9692961821E+01        5.069E-06        1.031
+32           -2.9692962924E+01        3.934E-06        0.874
+Total number of SCF: 32    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.9698849057E+01 (Ha/atom)
-Total free energy                  : -3.5638618869E+02 (Ha)
-Band structure energy              : -8.2780997692E+01 (Ha)
-Exchange correlation energy        : -4.9456173516E+01 (Ha)
+Free energy per atom               : -2.9698848176E+01 (Ha/atom)
+Total free energy                  : -3.5638617811E+02 (Ha)
+Band structure energy              : -8.2777141162E+01 (Ha)
+Exchange correlation energy        : -4.9456155162E+01 (Ha)
 Self and correction energy         : -8.4782631421E+02 (Ha)
-Entropy*kb*T                       : -2.0987506086E-07 (Ha)
-Fermi level                        : -1.3803189588E-01 (Ha)
+Entropy*kb*T                       : -2.0987506667E-07 (Ha)
+Fermi level                        : -1.3799426411E-01 (Ha)
 DFT-D3 correction                  : -7.0611867877E-02 (Ha)
-RMS force                          :  7.9641985260E-03 (Ha/Bohr)
-Maximum force                      :  1.1947496661E-02 (Ha/Bohr)
-Time for force calculation         :  0.151 (sec)
+RMS force                          :  7.9548350560E-03 (Ha/Bohr)
+Maximum force                      :  1.1933469593E-02 (Ha/Bohr)
+Time for force calculation         :  0.040 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  151.571 sec
+Total walltime                     :  39.074 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

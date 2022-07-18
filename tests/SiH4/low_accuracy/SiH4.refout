@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Oct 11, 2021)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Oct 27 17:59:23 2021                  *
+*                   Start time: Mon Jul 18 01:34:30 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -17,12 +17,12 @@ BC: D D D
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
-CHEB_DEGREE: 30
-NSTATES: 9
 EXCHANGE_CORRELATION: LDA_PW
+NSTATES: 9
+CHEB_DEGREE: 30
+CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 0
 CALC_PRES: 0
-CHEFSI_BOUND_FLAG: 0
 MAXIT_SCF: 30
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -48,7 +48,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 1
 PRINT_DENSITY: 0
-OUTPUT_FILE: SiH4
+OUTPUT_FILE: SiH4/temp_run/SiH4
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -56,7 +56,7 @@ Lattice vectors (Bohr):
 23.000000000000000 0.000000000000000 0.000000000000000 
 0.000000000000000 23.000000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 23.000000000000000 
-Volume                  :  1.2167000000E+04 (Bohr^3)
+Volume: 1.2167000000E+04 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -71,52 +71,48 @@ EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
 Number of processors               :  24
 Mesh spacing                       :  0.25 (Bohr)
-Output printed to                  :  SiH4.out
-Final eigenvalues printed to       :  SiH4.eigen
+Output printed to                  :  SiH4/temp_run/SiH4.out
+Final eigenvalues printed to       :  SiH4/temp_run/SiH4.eigen
 Total number of atom types         :  2
 Total number of atoms              :  5
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  Si.psp8
+Pseudopotential                    :  psps_tests/Si_LDA.psp8
 Pseudocharge radii of atom type 1  :  7.25 7.25 7.25 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  H 1
-Pseudopotential                    :  H.psp8
+Pseudopotential                    :  psps_tests/H_LDA.psp8
 Pseudocharge radii of atom type 2  :  7.25 7.25 7.25 (x, y, z dir)
 Number of atoms of type 2          :  4
-Estimated total memory usage       :  553.55 MB
-Estimated memory per processor     :  23.06 MB
+Estimated total memory usage       :  503.21 MB
+Estimated memory per processor     :  20.97 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.3255622782E+00        3.349E-01        1.977
-2            -1.3105195285E+00        2.398E-01        1.031
-3            -1.2645045905E+00        3.712E-02        0.975
-4            -1.2602286561E+00        2.736E-02        1.012
-5            -1.2538806845E+00        1.158E-02        1.001
-6            -1.2496855618E+00        6.992E-03        0.967
-7            -1.2496203393E+00        3.436E-03        0.963
-8            -1.2481559641E+00        1.429E-03        0.934
-9            -1.2478366170E+00        1.166E-03        0.924
-10           -1.2479720147E+00        3.700E-04        0.871
-11           -1.2479779982E+00        2.474E-04        0.875
-12           -1.2479953677E+00        1.721E-04        0.817
-13           -1.2479110623E+00        7.192E-05        0.733
-14           -1.2479142456E+00        5.057E-05        0.749
-15           -1.2479106092E+00        3.291E-05        0.727
-16           -1.2479044295E+00        2.403E-05        0.691
-17           -1.2479103739E+00        1.206E-05        0.677
-18           -1.2479112384E+00        8.596E-06        0.645
-19           -1.2479124084E+00        3.720E-06        0.603
-20           -1.2479127042E+00        2.649E-06        0.666
-21           -1.2479121896E+00        1.184E-06        0.523
-22           -1.2479119692E+00        6.651E-07        0.302
+1            -1.3255622782E+00        3.349E-01        1.722
+2            -1.3105195285E+00        2.398E-01        0.865
+3            -1.2645045905E+00        3.712E-02        0.821
+4            -1.2602286561E+00        2.736E-02        0.854
+5            -1.2538806845E+00        1.158E-02        0.826
+6            -1.2496855619E+00        6.992E-03        0.830
+7            -1.2496203393E+00        3.436E-03        0.836
+8            -1.2481559641E+00        1.429E-03        0.793
+9            -1.2478366170E+00        1.166E-03        0.782
+10           -1.2479720147E+00        3.700E-04        0.733
+11           -1.2479779982E+00        2.474E-04        0.741
+12           -1.2479953677E+00        1.721E-04        0.693
+13           -1.2479110623E+00        7.192E-05        0.629
+14           -1.2479142456E+00        5.057E-05        0.661
+15           -1.2479106092E+00        3.291E-05        0.618
+16           -1.2479044295E+00        2.403E-05        0.589
+17           -1.2479103739E+00        1.206E-05        0.573
+18           -1.2479112384E+00        8.596E-06        0.548
+19           -1.2479124084E+00        3.720E-06        0.517
+20           -1.2479127042E+00        2.649E-06        0.567
+21           -1.2479121896E+00        1.184E-06        0.447
+22           -1.2479119692E+00        6.651E-07        0.261
 Total number of SCF: 22    
-
-k = [0.000, 0.000, 0.000]
-Occupation of state 8 = 0.000000000000000.
-Occupation of state 9 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
@@ -125,22 +121,23 @@ Total free energy                  : -6.2395590139E+00 (Ha)
 Band structure energy              : -2.8711346768E+00 (Ha)
 Exchange correlation energy        : -2.4735920706E+00 (Ha)
 Self and correction energy         : -1.9373391100E+01 (Ha)
-Entropy*kb*T                       : -2.8891719302E-11 (Ha)
-Fermi level                        : -2.7987946563E-01 (Ha)
-RMS force                          :  3.8842695408E-04 (Ha/Bohr)
-Maximum force                      :  4.8553931258E-04 (Ha/Bohr)
-Time for force calculation         :  0.019 (sec)
+Entropy*kb*T                       : -2.8891577206E-11 (Ha)
+Fermi level                        : -2.7987946158E-01 (Ha)
+RMS force                          :  3.8842695310E-04 (Ha/Bohr)
+Maximum force                      :  4.8553931131E-04 (Ha/Bohr)
+Time for force calculation         :  0.020 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  19.774 sec
+Total walltime                     :  16.834 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            
