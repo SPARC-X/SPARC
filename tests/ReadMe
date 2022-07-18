@@ -18,6 +18,13 @@ tests could also be launched by using command "make test" inside the src folder.
 
 The tests use the "sparc" executable inside the "lib" folder.
 
+The tests could be run on any number of processors which can be changed by modifying some lines in test.py (15-20) and the samplepbs file(default is set at 24 processors)
+
+In the samplepbs load appropriate modules depedning on the cluster you use and also specify the number of processors, number of nodes, walltime, memory based on the cluster
+
+The low accuracy tests on 24 processors should take about 30-40 minutes and high accuracy ones about 2-3 hours depending on the cluster
+
+
 2) tags:
 
 bulk, surface, wire, molecule
@@ -36,13 +43,13 @@ diff_length, diff_mesh
 memcheck, memused
 serial
 VHQ
-run_local, valgrind_all
+run_local, valgrind_all, valgrind_include
 bandgap
 d3, vdWDF
 PBE0, HSE
 SOC
 SQ
-
+update_reference (to update the reference files with the current results)
 
 3) To add a system:
 
@@ -66,3 +73,7 @@ Follow following steps:
 
 6) If the testing framework has run once, to only run the check against the reference output files
 	$ python test.py temp_present
+
+7) To run on a cluster:
+	Change line 15 to line 20 for test.py file based on your cluster
+	Also update samplepbs in the tests folder according to the cluster job submission script (do not change the name 'samplepbs')

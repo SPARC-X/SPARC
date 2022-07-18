@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jan 04, 2022)                      *
+*                       SPARC (version Jul 15, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Feb 26 12:21:56 2022                  *
+*                   Start time: Mon Jul 18 00:57:06 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,11 +19,11 @@ KPOINT_SHIFT: 0.5 0 0
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
-CHEB_DEGREE: 40
-NSTATES: 15
 EXCHANGE_CORRELATION: vdWDF1
-CALC_STRESS: 1
+NSTATES: 15
+CHEB_DEGREE: 40
 CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
@@ -50,7 +50,7 @@ PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 VDWDF_GEN_KERNEL: 1
-OUTPUT_FILE: Si4_kpt_vdWDF1
+OUTPUT_FILE: Si4_kpt_vdWDF1/temp_run/Si4_kpt_vdWDF1
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -58,84 +58,81 @@ Lattice vectors (Bohr):
 5.160000000000000 5.160000000000000 0.000000000000000 
 0.000000000000000 5.160000000000000 5.160000000000000 
 10.320000000000000 0.000000000000000 10.320000000000000 
-Volume                  :  5.4955238400E+02 (Bohr^3)
+Volume: 5.4955238400E+02 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
 NP_KPOINT_PARAL: 1
-NP_BAND_PARAL: 3
-NP_DOMAIN_PARAL: 1 2 4
-NP_DOMAIN_PHI_PARAL: 2 2 6
+NP_BAND_PARAL: 15
+NP_DOMAIN_PARAL: 1 3 3
+NP_DOMAIN_PHI_PARAL: 4 4 9
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  24
+Number of processors               :  144
 Mesh spacing in x-direction        :  0.208495 (Bohr)
 Mesh spacing in y-direction        :  0.197225 (Bohr)
 Mesh spacing in z direction        :  0.192035 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  Si4_kpt_vdWDF1.out
+Output printed to                  :  Si4_kpt_vdWDF1/temp_run/Si4_kpt_vdWDF1.out
 Total number of atom types         :  1
 Total number of atoms              :  4
 Total number of electrons          :  16
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  Si.psp8
+Pseudopotential                    :  psps_tests/Si-4-2.4_GGA.psp8
 Pseudocharge radii of atom type 1  :  7.71 7.49 7.49 (x, y, z dir)
 Number of atoms of type 1          :  4
-Estimated total memory usage       :  171.85 MB
-Estimated memory per processor     :  7.16 MB
+Estimated total memory usage       :  156.18 MB
+Estimated memory per processor     :  1.08 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.8990113850E+00        4.045E-02        7.611
-2            -3.9170273824E+00        2.912E-02        2.060
-3            -3.9193894116E+00        1.725E-02        2.076
-4            -3.9199619182E+00        3.406E-03        2.041
-5            -3.9199857305E+00        1.970E-03        2.035
-6            -3.9199908968E+00        4.390E-04        2.054
-7            -3.9199912976E+00        3.105E-04        2.049
-8            -3.9199914630E+00        9.858E-05        2.045
-9            -3.9199914728E+00        6.303E-05        2.025
-10           -3.9199914901E+00        1.590E-05        2.035
-11           -3.9199914800E+00        6.841E-06        2.020
-12           -3.9199914738E+00        2.119E-06        2.021
-13           -3.9199914749E+00        6.556E-07        1.957
+1            -3.8971646442E+00        3.876E-02        0.831
+2            -3.9167012616E+00        2.945E-02        0.325
+3            -3.9193467722E+00        1.723E-02        0.356
+4            -3.9199317259E+00        5.241E-03        0.331
+5            -3.9199841166E+00        2.252E-03        0.268
+6            -3.9199904652E+00        6.542E-04        0.286
+7            -3.9199914048E+00        1.780E-04        0.280
+8            -3.9199914566E+00        1.269E-04        0.267
+9            -3.9199914752E+00        2.481E-05        0.275
+10           -3.9199914749E+00        1.564E-05        0.251
+11           -3.9199914772E+00        4.174E-06        0.247
+12           -3.9199914885E+00        3.038E-06        0.237
+13           -3.9199914705E+00        7.664E-07        0.224
 Total number of SCF: 13    
-
-k = [0.250, 0.000, 0.000]
-Occupation of state 14 = 0.000000000000000.
-Occupation of state 15 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.9199914749E+00 (Ha/atom)
-Total free energy                  : -1.5679965900E+01 (Ha)
-Band structure energy              :  1.2581717443E+00 (Ha)
-Exchange correlation energy        : -5.0001140969E+00 (Ha)
+Free energy per atom               : -3.9199914705E+00 (Ha/atom)
+Total free energy                  : -1.5679965882E+01 (Ha)
+Band structure energy              :  1.2581712082E+00 (Ha)
+Exchange correlation energy        : -5.0001141544E+00 (Ha)
 Self and correction energy         : -9.6641034743E+01 (Ha)
-Entropy*kb*T                       : -2.0482903588E-08 (Ha)
-Fermi level                        :  2.5213502974E-01 (Ha)
-vdWDF energy                       :  4.9286979213E-02 (Ha)
-RMS force                          :  5.8142023827E-02 (Ha/Bohr)
-Maximum force                      :  6.1679766647E-02 (Ha/Bohr)
-Time for force calculation         :  0.042 (sec)
-Pressure                           :  8.2189006412E+00 (GPa)
-Maximum stress                     :  1.4343140520E+01 (GPa)
-Time for stress calculation        :  0.181 (sec)
+Entropy*kb*T                       : -2.0483727639E-08 (Ha)
+Fermi level                        :  2.5213493917E-01 (Ha)
+vdWDF energy                       :  4.9286999318E-02 (Ha)
+RMS force                          :  5.8142012455E-02 (Ha/Bohr)
+Maximum force                      :  6.1680010231E-02 (Ha/Bohr)
+Time for force calculation         :  0.009 (sec)
+Pressure                           :  8.2189044946E+00 (GPa)
+Maximum stress                     :  1.4343158005E+01 (GPa)
+Time for stress calculation        :  0.046 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  88.605 sec
+Total walltime                     :  50.616 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            
