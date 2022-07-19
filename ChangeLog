@@ -3,6 +3,14 @@
 -Name
 -changes
 
+
+--------------
+Jul 19, 2022
+Name: Qimen Xu
+Changes: (gradVecRoutines.c, lapVecOrth.c)
+1. When the FD order = `12`, use a hard-coded version of the (orthogonal, gamma-point) stencil to improve its efficiency.
+
+
 --------------
 Jul 18, 2022
 Name: Shashikant Kumar
@@ -12,6 +20,7 @@ Changes: (tests)
 3. All tests with same number of processors
 4. add option to update reference files
 5. option to run on any general cluster
+
 
 --------------
 Jul 15, 2022
