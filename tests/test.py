@@ -142,9 +142,22 @@ SYSTEMS["systemname"].append('P_triclinic')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
-						# < Uncomment 3 lines below and fill in the details for the new systems>
-# SYSTEMS["systemname"].append('??type the system name??')
-# SYSTEMS["Tags"].append([??type the tags for the system as strings separated by comma??])
+SYSTEMS["systemname"].append('BaTiO3_quick')
+SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('H2O_sheet_quick')
+SYSTEMS["Tags"].append(['surface', 'gga', 'potmix', 'orth','gamma','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################						# < Uncomment 3 lines below and fill in the details for the new systems>
+SYSTEMS["systemname"].append('H2O_wire_quick')
+SYSTEMS["Tags"].append(['wire', 'lda', 'denmix', 'orth','gamma','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################### SYSTEMS["systemname"].append('??type the system name??')
+SYSTEMS["systemname"].append('SiH4_quick')
+SYSTEMS["Tags"].append(['molecule', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################### SYSTEMS["Tags"].append([??type the tags for the system as strings separated by comma??])
 # SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 
 
@@ -2627,6 +2640,18 @@ if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
 	isAuto =  True
 	ifVHQ = False
 	isparallel = False
+if len(args) == 1 and re.findall(r'quick_run',args[0]) == ['quick_run']:
+	systems=['BaTiO3_quick','H2O_sheet_quick','H2O_wire_quick','SiH4_quick']
+	tags_sys = []
+	tols_sys = []
+	for i in range(len(systems)):
+		for j in range(len(SYSTEMS["systemname"])):
+			if systems[i] == SYSTEMS["systemname"][j]:
+				tags_sys.append(SYSTEMS["Tags"][j])
+				tols_sys.append(SYSTEMS["Tols"][j])
+	isAuto =  True
+	ifVHQ = False
+	isparallel = False
 
 if len(args) == 1 and re.findall(r'autosys',args[0]) == ['autosys']:
 	indx_test_temp = re.findall(r'\d+',args[0])
@@ -2999,7 +3024,7 @@ for i in range(len(systems)):
 			temp_dict = {'a': temp, 'b': temp1}
 				#data_info[i] = temp_dict
 			data_info[count_run] = temp_dict
-			sys_which_ran_idx.append(count_run)
+			sys_which_ran_idx.append(i)
 			count_run=count_run+1
 
 		except:

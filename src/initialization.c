@@ -352,7 +352,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->npNdx_phi = 0;      // number of processes for calculating phi in paral. over domain in x-dir
     pSPARC_Input->npNdy_phi = 0;      // number of processes for calculating phi in paral. over domain in y-dir
     pSPARC_Input->npNdz_phi = 0;      // number of processes for calculating phi in paral. over domain in z-dir
-    pSPARC_Input->eig_serial_maxns = 2000;// maximum Nstates for solving the subspace eigenproblem in serial by default,
+    pSPARC_Input->eig_serial_maxns = 10000;// maximum Nstates for solving the subspace eigenproblem in serial by default,
                                       // for Nstates greater than this value, a parallel methods will be used instead, unless 
                                       // ScaLAPACK is not compiled or useLAPACK is turned off.
     pSPARC_Input->eig_paral_blksz = 128; // block size for distributing the subspace eigenproblem
@@ -1817,10 +1817,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
         && fabs(pSPARC->k2[0]) < TEMP_TOL 
         && fabs(pSPARC->k3[0]) < TEMP_TOL);
-
-    // estimate memory usage
-    double memory_usage = estimate_memory(pSPARC);
-    pSPARC->memory_usage = memory_usage;
 }
 
 
@@ -1837,6 +1833,8 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     int Nspin = pSPARC->Nspin;
     int Nkpts_sym = pSPARC->Nkpts_sym;
     int m = pSPARC->MixingHistory;
+    int npspin = pSPARC->npspin;
+    int npkpt = pSPARC->npkpt;
 
     int type_size;
     if (pSPARC->isGammaPoint) {
@@ -1846,8 +1844,8 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     }
 
     // orbitals (dominant)
-    int ncpy_orbitals = 6; // copies required during chebyshev filtering
-    double memory_orbitals = (double) ncpy_orbitals * Nd * Ns * Nspin * Nkpts_sym * type_size;
+    int ncpy_orbitals = 4; // extra copies required during CheFSI 
+    double memory_orbitals = (double) Nd * Ns * (ncpy_orbitals*npspin*npkpt + Nspin * Nkpts_sym) * type_size;
 
     // vectors: rho, phi, Veff, mixing history vectors, etc.
     int ncpy_vectors = 6 + 4 * Nspin + 2 * m * Nspin + 3 * (2*Nspin-1) + 1;
@@ -2297,7 +2295,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 23, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Jul 09, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2612,6 +2610,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         //     }
         // }
     }
+
+    // estimate memory usage
+    double memory_usage = estimate_memory(pSPARC);
+    pSPARC->memory_usage = memory_usage;
 
     char mem_str[32];
     formatBytes(pSPARC->memory_usage,32,mem_str);

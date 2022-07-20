@@ -1,0 +1,39 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name> 
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+
+# Reminder: when changing number of atoms, change the RELAX flags accordingly
+#           as well.
+
+ATOM_TYPE: Si               # atom type followed with valence charge
+N_TYPE_ATOM: 1               # number of atoms of this type
+PSEUDO_POT:  Si.psp8         # pseudopotential
+ATOMIC_MASS: 28.0855
+COORD:
+11.5 11.5 11.5
+RELAX:
+0 0 0
+
+ATOM_TYPE: H               # atom type followed with valence charge
+N_TYPE_ATOM: 4              # number of atoms of this type
+PSEUDO_POT:  H.psp8
+ATOMIC_MASS: 1.00794000
+COORD:                       # coordinates follows
+  13.317752000000000  12.817755000000000  12.517755000000001
+   9.882242999999999   8.982244000000000  13.117756999999999
+   9.882242999999999  12.817755999999999  10.882244000000000
+  13.217751000000000   9.882248000000001   8.882248000000001
+RELAX:
+1 1 1
+1 1 1
+1 1 1
+1 1 1
