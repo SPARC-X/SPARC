@@ -7,6 +7,7 @@
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  *          Hua Huang <huangh223@gatech.edu>
  *          Edmond Chow <echow@cc.gatech.edu>
+ *          Alfredo Metere (GPU support), Lawrence Livermore National Laboratory <metere1@llnl.gov>, <alfredo.metere@xsilico.com>
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -45,12 +46,18 @@
 #include "isddft.h"
 #include "parallelization.h"
 
+#if USE_PCE
 #include <libpce.h>
 #include "hamstruct.h"
 #include "ca3dmm.h"
+#endif
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
+
+#ifdef SPARCX_ACCEL
+#include "accel.h"
+#endif
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -99,11 +106,15 @@ typedef struct DP_CheFSI_s* DP_CheFSI_t;
  * @ brief: Main function of Chebyshev filtering 
  */
 
+#if USE_PCE
 void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
                      Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
                      Our_Hamiltonian_Struct *ham_struct, 
                      Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
                      MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
+#else
+void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
+#endif
 {
     // Set up for CheFSI function
     if(pSPARC->spincomm_index < 0) return; 
@@ -230,11 +241,15 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
         // 2) Chebyshev filtering,          3) Projection, 
         // 4) Solve projected eigenproblem, 5) Subspace rotation
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++)
+#if USE_PCE
             CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i, 
                    hd, cheb, Eigvals,
                    ham_struct,
                    Psi1, Psi2, Psi3,
                    kptcomm, dmcomm, blacscomm);
+#else
+            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
+#endif
 
         t1 = MPI_Wtime();
         
@@ -263,7 +278,9 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
 
         pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
 
+#if USE_PCE
         PCE_Occ_Set(Eigvals, hd, pSPARC->occ);
+#endif
 
         
         // check occupation (if Nstates is large enough) for every SCF
@@ -325,11 +342,15 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
 /**
  * @brief   Apply Chebyshev-filtered subspace iteration steps.
  */
+#if USE_PCE
 void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i,
             Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
             Our_Hamiltonian_Struct *ham_struct, 
             Psi_Info *Psi1, Psi_Info *Psi2, Psi_Info *Psi3,
             MPI_Comm kptcomm, MPI_Comm dmcomm, MPI_Comm blacscomm)
+#else
+void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int k, int spn_i)
+#endif
 {
     int rank, rank_spincomm, nproc_kptcomm;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -339,10 +360,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // determine the constants for performing chebyshev filtering
     Chebyshevfilter_constants(pSPARC, x0, &lambda_cutoff, &pSPARC->eigmin[spn_i], &pSPARC->eigmax[spn_i], count, k, spn_i);
    
+#if USE_PCE
     cheb->filter_left = lambda_cutoff;
     cheb->filter_right = pSPARC->eigmax[spn_i];
     cheb->min_eig = pSPARC->eigmin[spn_i];
     cheb->order = pSPARC->ChebDegree;
+#endif
 
 #ifdef DEBUG
             if (!rank && spn_i == 0) {
@@ -373,7 +396,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_EVA_MODULE
     if (CheFSI_use_EVA == 1)
     {
-      exit(-1);
         EVA_Chebyshev_Filtering(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i],
@@ -382,6 +404,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     } else {
     #endif
     
+    #if USE_PCE
       printf("spn_i: %i, size_s: %i\n", spn_i, size_s);
       const char* s_libpce_use_scalapack_matmats = getenv("LIBPCE_USE_SCALAPACK_MATMATS");
       int libpce_use_scalapack_matmats = 0;
@@ -406,10 +429,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
                              hd->local_num_cols, Psi1, Psi2,
                              ham_struct->communication_device, ham_struct->compute_device, Psi3);
     
-        //  ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-        //                     pSPARC->Yorb, pSPARC->Nband_bandcomm, 
-        //                     pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
-        //                     pSPARC->dmcomm, &t_temp);
 
         // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
         //   double res = fabs(pSPARC->Yorb[i]- Psi2->data[i]);
@@ -419,6 +438,13 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         //   }
         // }
         // memcpy(pSPARC->Yorb, Psi2->data, hd->local_num_cols * hd->local_num_fd * sizeof(double));
+    #else /*USE_PCE */
+
+        ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
+                           pSPARC->Yorb, pSPARC->Nband_bandcomm, 
+                           pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
+                           pSPARC->dmcomm, &t_temp);
+    #endif /* USE_PCE */
 
     #ifdef USE_EVA_MODULE
     }
@@ -432,7 +458,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     
     t1 = MPI_Wtime();
     // ** calculate projected Hamiltonian and overlap matrix ** //
-    #ifdef USE_DP_SUBEIG
+#ifdef USE_DP_SUBEIG
+
+#if USE_PCE
       double b_HY = MPI_Wtime();
       Our_Hamiltonian(ham_struct, Psi2, Psi1, 0);
       double a_HY = MPI_Wtime();
@@ -504,16 +532,14 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     if (rank == 0 && spn_i == 0) 
         printf("DP_Project_Hamiltonian, rank 0, DP_Project_Hamiltonian used %.3lf ms\n", 1000.0 * (a_PsiTPsi - b_HY));
     #endif
-
-    //  DP_Project_Hamiltonian(
-    //      pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*size_s, 
-    //      pSPARC->Hp, pSPARC->Mp, spn_i
-    //  );
-    //DP_Project_Hamiltonian(
-    //    pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
-    //    pSPARC->Hp, pSPARC->Mp, spn_i
-    //);
       MPI_Barrier(kptcomm);
+#else /* USE_LIBPCE */
+
+    DP_Project_Hamiltonian(
+        pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
+        pSPARC->Hp, pSPARC->Mp, spn_i
+    );
+#endif /* USE_LIBPCE */
 
     // DP_CheFSI_t DP_CheFSI = (DP_CheFSI_t) pSPARC->DP_CheFSI;
     // if(rank == 0) {
@@ -525,8 +551,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     //       }
     //     }
     // }
-    #else
-      exit(-1);
+    #else /* USE_DP_SUBEIG */
     // allocate memory for block cyclic format of the wavefunction
     if (pSPARC->npband > 1) {
         pSPARC->Yorb_BLCYC = (double *)malloc(
@@ -535,7 +560,8 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     }
     Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb, 
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
-    #endif
+    #endif /*USE_DP_SUBEIG */
+
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0) printf("Total time for projection: %.3f ms\n", (t2-t1)*1e3);
@@ -544,6 +570,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
+#if USE_PCE
     if(libpce_use_scalapack_matmats) {
     PCE_Eigensolve_Scalapack(Eigvals, hd, &H_s, &M_s, &se,  ham_struct->communication_device, ham_struct->compute_device, kptcomm);
     } else {
@@ -558,7 +585,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
 
 
 
-    // DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
     //PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
 
     // if(rank == 0) {
@@ -573,20 +599,31 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     if(!libpce_use_scalapack_matmats) {
       PCE_Mat_Destroy(&M_s);
     }
+#else /* USE_PCE */
+     DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
+#endif /* USE_PCE */
+
 
     //PCE_Eig_Get(&Eigvals, &hd, pSPARC->lambda);
-    #else
-      exit(-1);
+    #else /* USE_DP_SUBEIG */
     Solve_Generalized_EigenProblem(pSPARC, k, spn_i);
     #endif
     
     t3 = MPI_Wtime();
+#if USE_PCE
     PCE_Eig_Get(Eigvals, hd, pSPARC->lambda, kptcomm);
-    // if eigvals are calculated in root process, then bcast the eigvals
-    // if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
-    //     MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, 
-    //               MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
-    // }
+#else /* USE_PCE */
+    // SPARCX_ACCEL_NOTE Need to add this to propagate GPU calculated eigenvalues back to the other MPI tasks
+    #ifdef SPARCX_ACCEL
+    if (pSPARC->useACCEL == 1 && nproc_kptcomm > 1) 
+	MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, MPI_DOUBLE, 0, pSPARC->kptcomm); 
+    #else
+    if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
+        MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, 
+                  MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
+    }
+    #endif //SPARCX_ACCEL
+#endif /* USE_PCE */
     
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -614,8 +651,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** subspace rotation ** //
     #ifdef USE_DP_SUBEIG
-      // DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
-
+#if USE_PCE
     ca3dmm_engine_p mult_subsp;
     if(libpce_use_scalapack_matmats) {
       PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
@@ -629,8 +665,11 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
       ca3dmm_engine_free(&mult_subsp);
     }
       printf("ABCD\n");
-    #else
-      exit(-1);
+#else /* USE_PCE */
+       DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
+#endif
+
+    #else /* USE_DP_SUBEIG */
     double *YQ_BLCYC;
     if (pSPARC->npband > 1) {
         // find Y * Q, store the result in Xorb (band+domain) and YQ_BLCYC (block cyclic format)
@@ -648,7 +687,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         free(pSPARC->Yorb_BLCYC);
         pSPARC->Yorb_BLCYC = NULL;
     }
-    #endif
+    #endif /* USE_DP_SUBEIG */
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
@@ -1051,22 +1090,47 @@ void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, doubl
     int Ns_dp = DP_CheFSI->Ns_dp;
     double *Mp_local = DP_CheFSI->Mp_local;
     double *Hp_local = DP_CheFSI->Hp_local;
-    cblas_dgemm(
+    // SPARCX_ACCEL_NOTE: ADD HERE THE MATRIX PROJECTION GPU STUFF
+    #ifdef SPARCX_ACCEL
+	if (pSPARC->useACCEL == 1)
+	{
+    	ACCEL_DGEMM(
         CblasColMajor, CblasTrans, CblasNoTrans,
         Ns_dp, Ns_dp, Nd_dp,
         1.0, Y_dp, Nd_dp, Y_dp, Nd_dp, 
         0.0, Mp_local, Ns_dp
-    );
-    cblas_dgemm(
+	    );
+    	ACCEL_DGEMM(
         CblasColMajor, CblasTrans, CblasNoTrans,
         Ns_dp, Ns_dp, Nd_dp,
         1.0, Y_dp, Nd_dp, HY_dp, Nd_dp, 
         0.0, Hp_local, Ns_dp
-    );
+	    );
+	}
+	else
+	#endif // SPARCX_ACCEL
+	{ // Need to enclose CPU-only original statements between brackets
+		cblas_dgemm(
+			CblasColMajor, CblasTrans, CblasNoTrans,
+			Ns_dp, Ns_dp, Nd_dp,
+			1.0, Y_dp, Nd_dp, Y_dp, Nd_dp, 
+			0.0, Mp_local, Ns_dp
+		);
+		cblas_dgemm(
+			CblasColMajor, CblasTrans, CblasNoTrans,
+			Ns_dp, Ns_dp, Nd_dp,
+			1.0, Y_dp, Nd_dp, HY_dp, Nd_dp, 
+			0.0, Hp_local, Ns_dp
+		);
+	} // End
     et = MPI_Wtime();
     #ifdef DEBUG
-    if (rank_kpt == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, local dgemm for Hp & Mp used %.3lf ms\n", 1000.0 * (et - st));
-    #endif
+    #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE ADD DEBUG LINE FOR SPARCX_ACCEL
+    if (rank_kpt == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, local %s for Hp & Mp used %.3lf ms\n", STR_DGEMM, 1000.0 * (et - st));
+    #else
+	if (rank_kpt == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, local cblas_dgemm for Hp & Mp used %.3lf ms\n", 1000.0 * (et - st));
+	#endif // SPARCX_ACCEL
+    #endif // DEBUG
 
     // Reduce to Mp & Hp
     st = MPI_Wtime();
@@ -1120,66 +1184,103 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
     DP_CheFSI_t DP_CheFSI = (DP_CheFSI_t) pSPARC->DP_CheFSI;
     if (DP_CheFSI == NULL) return;
     
-    if (pSPARC->useLAPACK == 1)
-    {
-        int Ns_dp = DP_CheFSI->Ns_dp;
-        int rank_kpt = DP_CheFSI->rank_kpt;
-        double *eig_vecs = DP_CheFSI->eig_vecs;
-        double st = MPI_Wtime();
-        if (rank_kpt == 0)
+    #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE -- ADDS GPU Eigensolver
+	if (pSPARC->useACCEL == 1)
+	{
+		int Ns_dp = DP_CheFSI->Ns_dp;
+		int rank_kpt = DP_CheFSI->rank_kpt;
+		double *eig_vecs = DP_CheFSI->eig_vecs;
+		double st = MPI_Wtime();
+		if (rank_kpt == 0)
+		{
+			double *Hp_local = DP_CheFSI->Hp_local;
+			double *Mp_local = DP_CheFSI->Mp_local; 
+			double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
+			int info = 0;
+			if (pSPARC->StandardEigenFlag == 0)
+				info = DSYGV( LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
+							Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val);
+			else 
+				info = DSYEV(LAPACK_COL_MAJOR,'V','U', Ns_dp, Hp_local, Ns_dp, eig_val);
+			
+			copy_mat_blk(sizeof(double), Hp_local, Ns_dp, Ns_dp, Ns_dp, eig_vecs, Ns_dp);
+		}
+		double et0 = MPI_Wtime();
+		MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
+		double et1 = MPI_Wtime();
+		#ifdef DEBUG
+		if (pSPARC->StandardEigenFlag == 0) {
+			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, %s used %.3lf ms\n", 1000.0 * (et1 - st), STR_DSYGV, 1000.0 * (et0 - st));
+		} else {
+			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, %s used %.3lf ms\n", 1000.0 * (et1 - st), STR_DSYEV, 1000.0 * (et0 - st));
+		}
+		#endif
+	}
+	else
+	#endif // SPARCX_ACCEL
+    { // Enclose in brackets original CPU if(useLAPACK...) block and put it at the bottom
+
+        if (pSPARC->useLAPACK == 1)
         {
-            double *Hp_local = DP_CheFSI->Hp_local;
-            double *Mp_local = DP_CheFSI->Mp_local; 
-            double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
-            LAPACKE_dsygvd(
-                LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
-                Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
-            );
-            copy_mat_blk(sizeof(double), Hp_local, Ns_dp, Ns_dp, Ns_dp, eig_vecs, Ns_dp);
-        }
-        double et0 = MPI_Wtime();
-        MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
-        double et1 = MPI_Wtime();
-        #ifdef DEBUG
-        if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, LAPACKE_dsygvd used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
-        #endif
-    } else {
-        #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        int rank_dmcomm = -1;
-        if (pSPARC->dmcomm != MPI_COMM_NULL) 
-            MPI_Comm_rank(pSPARC->dmcomm, &rank_dmcomm);
-        // Hp and Mp is only correct at the first blacscomm
-        if (rank_dmcomm == 0) {
-            int ONE = 1;
-            // Step 1: redistribute DP_CheFSI->Hp_local and DP_CheFSI->Mp_local on rank_kpt == 0 to ScaLAPACK format 
-            pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI->Hp_local, &ONE, &ONE, 
-                      DP_CheFSI->desc_Hp_local, pSPARC->Hp, &ONE, &ONE, 
-                      pSPARC->desc_Hp_BLCYC, &pSPARC->ictxt_blacs_topo);
-            pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI->Mp_local, &ONE, &ONE, 
-                      DP_CheFSI->desc_Mp_local, pSPARC->Mp, &ONE, &ONE, 
-                      pSPARC->desc_Mp_BLCYC, &pSPARC->ictxt_blacs_topo);
+            int Ns_dp = DP_CheFSI->Ns_dp;
+            int rank_kpt = DP_CheFSI->rank_kpt;
+            double *eig_vecs = DP_CheFSI->eig_vecs;
+            double st = MPI_Wtime();
+            if (rank_kpt == 0)
+            {
+                double *Hp_local = DP_CheFSI->Hp_local;
+                double *Mp_local = DP_CheFSI->Mp_local; 
+                double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
+                LAPACKE_dsygvd(
+                    LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
+                    Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
+                );
+                copy_mat_blk(sizeof(double), Hp_local, Ns_dp, Ns_dp, Ns_dp, eig_vecs, Ns_dp);
+            }
+            double et0 = MPI_Wtime();
+            MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
+            double et1 = MPI_Wtime();
+            #ifdef DEBUG
+            if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, LAPACKE_dsygvd used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
+            #endif
+        } else {
+            #if defined(USE_MKL) || defined(USE_SCALAPACK)
+            int rank_dmcomm = -1;
+            if (pSPARC->dmcomm != MPI_COMM_NULL) 
+                MPI_Comm_rank(pSPARC->dmcomm, &rank_dmcomm);
+            // Hp and Mp is only correct at the first blacscomm
+            if (rank_dmcomm == 0) {
+                int ONE = 1;
+                // Step 1: redistribute DP_CheFSI->Hp_local and DP_CheFSI->Mp_local on rank_kpt == 0 to ScaLAPACK format 
+                pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI->Hp_local, &ONE, &ONE, 
+                        DP_CheFSI->desc_Hp_local, pSPARC->Hp, &ONE, &ONE, 
+                        pSPARC->desc_Hp_BLCYC, &pSPARC->ictxt_blacs_topo);
+                pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, DP_CheFSI->Mp_local, &ONE, &ONE, 
+                        DP_CheFSI->desc_Mp_local, pSPARC->Mp, &ONE, &ONE, 
+                        pSPARC->desc_Mp_BLCYC, &pSPARC->ictxt_blacs_topo);
 
-            // Step 2: use scalapack to solve the generalized eigenproblem
-            Solve_Generalized_EigenProblem(pSPARC, 0, spn_i); // the 2nd arg is not used
+                // Step 2: use scalapack to solve the generalized eigenproblem
+                Solve_Generalized_EigenProblem(pSPARC, 0, spn_i); // the 2nd arg is not used
 
-            // Step 3: redistribute the obtained eigenvectors from ScaLAPACK format to DP_CheFSI->eig_vecs on rank_kpt == 0
-            pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Q, &ONE, &ONE, 
-                      pSPARC->desc_Q_BLCYC, DP_CheFSI->eig_vecs, &ONE, &ONE, 
-                      DP_CheFSI->desc_eig_vecs, &pSPARC->ictxt_blacs_topo);
-        }
-        int Ns_dp = DP_CheFSI->Ns_dp;
-        MPI_Bcast(DP_CheFSI->eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
-        
-        if (pSPARC->npNd > 1 && pSPARC->bandcomm_index >= 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
-            double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
-            MPI_Bcast(eig_val, Ns_dp, MPI_DOUBLE, 0, pSPARC->dmcomm);
-        }
+                // Step 3: redistribute the obtained eigenvectors from ScaLAPACK format to DP_CheFSI->eig_vecs on rank_kpt == 0
+                pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Q, &ONE, &ONE, 
+                        pSPARC->desc_Q_BLCYC, DP_CheFSI->eig_vecs, &ONE, &ONE, 
+                        DP_CheFSI->desc_eig_vecs, &pSPARC->ictxt_blacs_topo);
+            }
+            int Ns_dp = DP_CheFSI->Ns_dp;
+            MPI_Bcast(DP_CheFSI->eig_vecs, Ns_dp * Ns_dp, MPI_DOUBLE, 0, DP_CheFSI->kpt_comm);
+            
+            if (pSPARC->npNd > 1 && pSPARC->bandcomm_index >= 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
+                double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
+                MPI_Bcast(eig_val, Ns_dp, MPI_DOUBLE, 0, pSPARC->dmcomm);
+            }
 
-        #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        int rank_kpt = DP_CheFSI->rank_kpt;
-        if (rank_kpt == 0) printf("[FATAL] Subspace eigenproblem should be solved using ScaLAPACK but ScaLAPACK is not compiled\n");
-        exit(255);
-        #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+            #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+            int rank_kpt = DP_CheFSI->rank_kpt;
+            if (rank_kpt == 0) printf("[FATAL] Subspace eigenproblem should be solved using ScaLAPACK but ScaLAPACK is not compiled\n");
+            exit(255);
+            #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+        }
     }
 }
 
@@ -1207,12 +1308,27 @@ void DP_Subspace_Rotation(SPARC_OBJ *pSPARC, double *Psi_rot)
     double *Y_dp     = DP_CheFSI->Y_dp;
     double *YQ_dp    = DP_CheFSI->HY_dp;
     double *eig_vecs = DP_CheFSI->eig_vecs;
-    cblas_dgemm(
+    // SPARCX_ACCEL_NOTE: ADD HERE THE LINES FOR GPU-ACCELERATED ROTATION
+	#ifdef SPARCX_ACCEL
+	if (pSPARC->useACCEL == 1)
+	{
+		ACCEL_DGEMM(
         CblasColMajor, CblasNoTrans, CblasNoTrans,
         Nd_dp, Ns_dp, Ns_dp, 
         1.0, Y_dp, Nd_dp, eig_vecs, Ns_dp,
         0.0, YQ_dp, Nd_dp
-    );
+    	);
+	}
+	else
+	#endif // SPARCX_ACCEL
+	{ // SPARCX_ACCEL_NOTE Brackets now needed to enclose the original CPU-only cblas call
+		cblas_dgemm(
+			CblasColMajor, CblasNoTrans, CblasNoTrans,
+			Nd_dp, Ns_dp, Ns_dp, 
+			1.0, Y_dp, Nd_dp, eig_vecs, Ns_dp,
+			0.0, YQ_dp, Nd_dp
+		);
+	} // SPARCX_ACCEL_NOTE End.
     et0 = MPI_Wtime();
     
     // Redistribute Psi * Q back into band + domain format using MPI_Alltoallv
@@ -1464,135 +1580,183 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
     #ifdef DEBUG    
     double st = MPI_Wtime();
     #endif
-    if (pSPARC->useLAPACK == 1) {
-        int info = 0;
-        t1 = MPI_Wtime();
-        if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
-            (pSPARC->is_domain_uniform && !rank_kptcomm)) {
-            info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
-                          pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
-                          pSPARC->lambda + spn_i*pSPARC->Nstates);
+    #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE
+		if (pSPARC->useACCEL == 1) {
+		int info = 0;
+		t1 = MPI_Wtime();
+		if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
+			(pSPARC->is_domain_uniform && !rank_kptcomm)) {
+			if (pSPARC->StandardEigenFlag == 0)
+				info = DSYGV(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
+							  pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
+							  pSPARC->lambda + spn_i*pSPARC->Nstates);
+			else 
+				info = DSYEV(LAPACK_COL_MAJOR,'V','U',pSPARC->Nstates,pSPARC->Hp,
+							  pSPARC->Nstates, pSPARC->lambda + spn_i*pSPARC->Nstates);
+		}
+		t2 = MPI_Wtime();
+		#ifdef DEBUG
+		if (pSPARC->StandardEigenFlag == 0) {
+			if(!rank_spincomm && spn_i == 0) {
+				printf("==generalized eigenproblem: "
+					   "info = %d, solving generalized eigenproblem using %s: %.3f ms\n", info, STR_DSYGV, (t2 - t1)*1e3);
+			}
+		} else {
+			if(!rank_spincomm && spn_i == 0) {
+				printf("==standard eigenproblem: "
+					   "info = %d, solving standard eigenproblem using %s: %.3f ms\n", info, STR_DSYEV, (t2 - t1)*1e3);
+			}
+		}
+		#endif
+
+		int ONE = 1;
+		t1 = MPI_Wtime();
+		// distribute eigenvectors to block cyclic format
+		pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Hp, &ONE, &ONE, 
+				  pSPARC->desc_Hp_BLCYC, pSPARC->Q, &ONE, &ONE, 
+				  pSPARC->desc_Q_BLCYC, &pSPARC->ictxt_blacs_topo);
+		t2 = MPI_Wtime();
+		#ifdef DEBUG
+		if(!rank_spincomm && spn_i == 0) {
+			printf("==generalized eigenproblem: "
+				   "distribute subspace eigenvectors into block cyclic format: %.3f ms\n", 
+				   (t2 - t1)*1e3);
+		}
+		#endif
+	}
+	else
+	#endif // SPARCX_ACCEL
+    { // SPARCX_ACCEL_NOTE Enclose the whole IF+ELSE statement from CPU-only and place it at the bottom.
+        if (pSPARC->useLAPACK == 1) {
+            int info = 0;
+            t1 = MPI_Wtime();
+            if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
+                (pSPARC->is_domain_uniform && !rank_kptcomm)) {
+                info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
+                            pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
+                            pSPARC->lambda + spn_i*pSPARC->Nstates);
+            }
+            t2 = MPI_Wtime();
+            #ifdef DEBUG
+            if(!rank_spincomm && spn_i == 0) {
+                printf("==generalized eigenproblem: "
+                    "info = %d, solving generalized eigenproblem using LAPACKE_dsygvd: %.3f ms\n", 
+                    info, (t2 - t1)*1e3);
+            }
+            #endif
+
+            int ONE = 1;
+            t1 = MPI_Wtime();
+            // distribute eigenvectors to block cyclic format
+            pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Hp, &ONE, &ONE, 
+                    pSPARC->desc_Hp_BLCYC, pSPARC->Q, &ONE, &ONE, 
+                    pSPARC->desc_Q_BLCYC, &pSPARC->ictxt_blacs_topo);
+            t2 = MPI_Wtime();
+            #ifdef DEBUG
+            if(!rank_spincomm && spn_i == 0) {
+                printf("==generalized eigenproblem: "
+                    "distribute subspace eigenvectors into block cyclic format: %.3f ms\n", 
+                    (t2 - t1)*1e3);
+            }
+            #endif
+        } else {
+            int nprow, npcol, myrow, mycol;
+            Cblacs_gridinfo(pSPARC->ictxt_blacs_topo, &nprow, &npcol, &myrow, &mycol);
+
+            int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, *iwork, liwork, *ifail, 
+                *icluster, info, N, M, NZ;
+            double *work, *gap, vl = 0.0, vu = 0.0, abstol, orfac = 0.001; 
+            
+            int NNP, NN, NP0, MQ0, NB;
+            N = pSPARC->Nstates;
+
+            // this setting yields the most orthogonal eigenvectors
+            abstol = pdlamch_(&pSPARC->ictxt_blacs_topo, "U");
+            
+            //** first do a workspace query **//
+            lwork = liwork = -1;
+            work  = (double *)malloc(100 * sizeof(double));
+            gap   = (double *)malloc(nprow * npcol * sizeof(double));
+            iwork = (int *)malloc(100 * sizeof(int));
+            ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
+            icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));
+
+            t1 = MPI_Wtime();
+            pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
+                    pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
+                    pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
+                    &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, 
+                    pSPARC->Q, &ONE, &ONE, pSPARC->desc_Q_BLCYC, 
+                    work, &lwork, iwork, &liwork, ifail, icluster, gap, &info);
+            t2 = MPI_Wtime();
+            #ifdef DEBUG
+            if(!rank && spn_i == 0) printf("rank = %d, work(1) = %f, iwork(1) = %d, time for "
+                            "workspace query: %.3f ms\n", 
+                            rank, work[0], iwork[0], (t2 - t1)*1e3);
+            #endif
+            //** calculate eigenvalues and eigenvectors **//
+            // Warning: pdsygvx requires the block sizes in both row and col 
+            //          dimension to be the same!
+            lwork = (int) fabs(work[0]);
+            NB = pSPARC->desc_Hp_BLCYC[4]; // distribution block size
+            NN = max(max(N, NB),2);
+            NP0 = numroc_( &NN, &NB, &ZERO, &ZERO, &nprow );
+            MQ0 = numroc_( &NN, &NB, &ZERO, &ZERO, &npcol );
+            lwork = max(lwork, 5 * N + max(5 * NN, NP0 * MQ0 + 2 * NB * NB) 
+                        + ((N - 1) / (nprow * npcol) + 1) * NN);
+            // TODO: increase lwork 
+            /**
+             * The ScaLAPACK routine for estimating memory might not work well for 
+             * the case where only few processes contain the whole matrix and most 
+             * processes do not. i.e., where the data are concentrated.
+             */
+            //lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
+            lwork += max(N*N, min(10*lwork,2000000));
+            work = realloc(work, lwork * sizeof(double));
+            
+            liwork = iwork[0];
+            NNP = max(max(N,4), nprow * npcol+1);
+            liwork = max(liwork, 6 * NNP);
+            
+            //liwork += min(20*liwork, 200000); // TODO: for safety, to be optimized
+            liwork += max(N*N, min(20*liwork, 200000));
+            iwork = realloc(iwork, liwork * sizeof(int));
+
+            /** ScaLAPACK might fail when the the matrix is distributed only on 
+             *  few processes and most process contains empty local matrices. 
+             *  consider using a subgroup of the processors to solve the 
+             *  eigenvalue problem and then re-distribute.
+             */
+            
+            t1 = MPI_Wtime();
+            // vl, vu, il and iu are not referenced for RANGE = "A"
+            pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
+                    pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
+                    pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
+                    &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, pSPARC->Q, 
+                    &ONE, &ONE, pSPARC->desc_Q_BLCYC, work, &lwork, 
+                    iwork, &liwork, ifail, icluster, gap, &info);
+
+            if (info != 0 && !rank) {
+                printf("\nError in solving generalized eigenproblem! info = %d\n", info);
+            }
+            
+            t2 = MPI_Wtime();
+            #ifdef DEBUG
+            if(!rank && spn_i == 0) {
+                printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized "
+                    "eigenproblem in %d x %d process grid: %.3f ms\n", 
+                        rank, info, ifail[0], nprow, npcol, (t2 - t1)*1e3);
+                printf("rank = %d, after calling pdsygvx, Nstates = %d\n", rank, N);
+            }
+            #endif
+            free(work);
+            free(gap);
+            free(iwork);
+            free(ifail);
+            free(icluster);
         }
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-        if(!rank_spincomm && spn_i == 0) {
-            printf("==generalized eigenproblem: "
-                   "info = %d, solving generalized eigenproblem using LAPACKE_dsygvd: %.3f ms\n", 
-                   info, (t2 - t1)*1e3);
-        }
-        #endif
-
-        int ONE = 1;
-        t1 = MPI_Wtime();
-        // distribute eigenvectors to block cyclic format
-        pdgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Hp, &ONE, &ONE, 
-                  pSPARC->desc_Hp_BLCYC, pSPARC->Q, &ONE, &ONE, 
-                  pSPARC->desc_Q_BLCYC, &pSPARC->ictxt_blacs_topo);
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-        if(!rank_spincomm && spn_i == 0) {
-            printf("==generalized eigenproblem: "
-                   "distribute subspace eigenvectors into block cyclic format: %.3f ms\n", 
-                   (t2 - t1)*1e3);
-        }
-        #endif
-    } else {
-        int nprow, npcol, myrow, mycol;
-        Cblacs_gridinfo(pSPARC->ictxt_blacs_topo, &nprow, &npcol, &myrow, &mycol);
-
-        int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, *iwork, liwork, *ifail, 
-            *icluster, info, N, M, NZ;
-        double *work, *gap, vl = 0.0, vu = 0.0, abstol, orfac = 0.001; 
-        
-        int NNP, NN, NP0, MQ0, NB;
-        N = pSPARC->Nstates;
-
-        // this setting yields the most orthogonal eigenvectors
-        abstol = pdlamch_(&pSPARC->ictxt_blacs_topo, "U");
-          
-        //** first do a workspace query **//
-        lwork = liwork = -1;
-        work  = (double *)malloc(100 * sizeof(double));
-        gap   = (double *)malloc(nprow * npcol * sizeof(double));
-        iwork = (int *)malloc(100 * sizeof(int));
-        ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
-        icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));
-
-        t1 = MPI_Wtime();
-        pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
-                 pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
-                 pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
-                 &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, 
-                 pSPARC->Q, &ONE, &ONE, pSPARC->desc_Q_BLCYC, 
-                 work, &lwork, iwork, &liwork, ifail, icluster, gap, &info);
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-        if(!rank && spn_i == 0) printf("rank = %d, work(1) = %f, iwork(1) = %d, time for "
-                         "workspace query: %.3f ms\n", 
-                         rank, work[0], iwork[0], (t2 - t1)*1e3);
-        #endif
-        //** calculate eigenvalues and eigenvectors **//
-        // Warning: pdsygvx requires the block sizes in both row and col 
-        //          dimension to be the same!
-        lwork = (int) fabs(work[0]);
-        NB = pSPARC->desc_Hp_BLCYC[4]; // distribution block size
-        NN = max(max(N, NB),2);
-        NP0 = numroc_( &NN, &NB, &ZERO, &ZERO, &nprow );
-        MQ0 = numroc_( &NN, &NB, &ZERO, &ZERO, &npcol );
-        lwork = max(lwork, 5 * N + max(5 * NN, NP0 * MQ0 + 2 * NB * NB) 
-                    + ((N - 1) / (nprow * npcol) + 1) * NN);
-        // TODO: increase lwork 
-        /**
-         * The ScaLAPACK routine for estimating memory might not work well for 
-         * the case where only few processes contain the whole matrix and most 
-         * processes do not. i.e., where the data are concentrated.
-         */
-        //lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
-        lwork += max(N*N, min(10*lwork,2000000));
-	    work = realloc(work, lwork * sizeof(double));
-        
-        liwork = iwork[0];
-        NNP = max(max(N,4), nprow * npcol+1);
-        liwork = max(liwork, 6 * NNP);
-        
-        //liwork += min(20*liwork, 200000); // TODO: for safety, to be optimized
-        liwork += max(N*N, min(20*liwork, 200000));
-	    iwork = realloc(iwork, liwork * sizeof(int));
-
-        /** ScaLAPACK might fail when the the matrix is distributed only on 
-         *  few processes and most process contains empty local matrices. 
-         *  consider using a subgroup of the processors to solve the 
-         *  eigenvalue problem and then re-distribute.
-         */
-        
-        t1 = MPI_Wtime();
-        // vl, vu, il and iu are not referenced for RANGE = "A"
-        pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
-                 pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
-                 pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
-                 &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, pSPARC->Q, 
-                 &ONE, &ONE, pSPARC->desc_Q_BLCYC, work, &lwork, 
-                 iwork, &liwork, ifail, icluster, gap, &info);
-
-        if (info != 0 && !rank) {
-            printf("\nError in solving generalized eigenproblem! info = %d\n", info);
-        }
-        
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-        if(!rank && spn_i == 0) {
-            printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized "
-                   "eigenproblem in %d x %d process grid: %.3f ms\n", 
-                    rank, info, ifail[0], nprow, npcol, (t2 - t1)*1e3);
-            printf("rank = %d, after calling pdsygvx, Nstates = %d\n", rank, N);
-        }
-        #endif
-        free(work);
-        free(gap);
-        free(iwork);
-        free(ifail);
-        free(icluster);
-    }
+    } // SPARCX_ACCEL_NOTE END
 
     #ifdef DEBUG    
     double et = MPI_Wtime();

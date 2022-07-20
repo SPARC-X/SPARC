@@ -22,9 +22,23 @@
 #define pdgemr2d_ pdgemr2d
 #define pdgemm_ pdgemm
 #define pdsygvx_ pdsygvx
+#define pdsyevx_ pdsyevx
 #define pzgemm_ pzgemm
 #define pzgemr2d_ pzgemr2d
 #define pzhegvx_ pzhegvx
+#define pdsyrk_ pdsyrk
+#define pdsyr2k_ pdsyr2k
+#define pdaxpy_ pdaxpy
+#define pdsyevd_ pdsyevd
+#define pdsyev_ pdsyev
+#define pdpotrf_ pdpotrf
+#define pddot_ pddot
+#define pdcopy_ pdcopy
+#define pdscal_ pdscal
+#define pdnrm2_ pdnrm2
+#define pdgemv_ pdgemv
+#define pdtrsm_ pdtrsm
+#define pdlatra_ pdlatra
 #endif
 
 extern void   pdlawrite_();

@@ -5,6 +5,7 @@
  * @authors Qimen Xu <qimenxu@gatech.edu>
  *          Abhiraj Sharma <asharma424@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
+ *          Alfredo Metere (GPU Support), Lawrence Livermore National Laboratory, <metere1@llnl.gov>, <alfredo.metere@xsilico.com>
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -440,6 +441,9 @@ typedef struct _SPARC_OBJ{
     double complex *Q_kpt;                    // eigenvectors of the generalized eigenproblem: Hp * Q_i  = lambda_i * Mp * Q_i
     double *Hp_s;                 // whole projected Hamiltonian Hp redistributed for solving eigenproblem (GLOBAL)   
     double *Mp_s;                 // whole projected mass matrix Mp redistributed for solving eigenproblem (GLOBAL)
+    #ifdef ACCEL
+    int useACCEL;                 // SPARCX_ACCEL_NOTE Flag needed to trigger GPU Acceleration
+    #endif
     int useLAPACK;                // flag for using LAPACK_dsygv to solve subspace eigenproblem
     int eig_serial_maxns;// maximum Nstates for using LAPACK to solve the subspace eigenproblem by default,
                         // for Nstates greater than this value, ScaLAPACK will be used instead, unless 

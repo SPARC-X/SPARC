@@ -38,10 +38,12 @@
 #include "stress.h"
 #include "pressure.h"
 
+#if USE_PCE
 #include <libpce.h>
 #include <vnl_mod.h>
 #include "hamstruct.h"
 #include "pce_interface.h"
+#endif
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -457,6 +459,7 @@ void scf(SPARC_OBJ *pSPARC)
     SCFcount = 0;
 
     // START OF INTEGRATION WITH LIBPCE
+#if USE_PCE
     Psi_Info Psi1;
     Psi_Info Psi2;
     Psi_Info Psi3;
@@ -588,6 +591,7 @@ void scf(SPARC_OBJ *pSPARC)
     //SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
     SPARC2NONLOCAL_interface(pSPARC, &hd, &nl, compute_device);
     }
+#endif /* USE_PCE*/
 
 
     // START OF SCF LOOP
@@ -610,13 +614,19 @@ void scf(SPARC_OBJ *pSPARC)
 		// start scf timer
         t_scf_s = MPI_Wtime();
         
+#if USE_PCE
         if (pSPARC->isGammaPoint) {
           PCE_Veff_Set(&veff_info, &hd, pSPARC->Veff_loc_dmcomm);
         }
+#endif /* USE_PCE */
 
+#if USE_PCE
         Calculate_elecDens(rank, pSPARC, SCFcount, error, 
                            &hd, &cheb, &Eigvals, &ham_struct, &Psi1, &Psi2, &Psi3,
                            pSPARC->kptcomm, pSPARC->dmcomm, pSPARC->blacscomm);
+#else
+        Calculate_elecDens(rank, pSPARC, SCFcount, error);
+#endif
 
         // Calculate net magnetization for spin polarized calculations
         if (pSPARC->spin_typ != 0)
@@ -843,6 +853,7 @@ void scf(SPARC_OBJ *pSPARC)
         }
     }
 
+#if USE_PCE
     if(pSPARC->isGammaPoint) {
       PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
       PCE_Psi_Destroy(&Psi1);
@@ -854,7 +865,9 @@ void scf(SPARC_OBJ *pSPARC)
     }
 
     PCE_FD_Destroy(&fd_raw);
+
     printf("DESTROYED\n");
+#endif
 
     
     if (!rank) {
