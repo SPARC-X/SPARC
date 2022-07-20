@@ -20,7 +20,8 @@
 #include "isddft.h"
 #include "gradVecRoutines.h"
 #include "tools.h"
-#include "vdW/vdWDF/vdWDF.h"
+#include "vdWDF.h"
+#include "mgga.h"
 
 
 
@@ -111,6 +112,8 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
                 pSPARC->XCPotential[i] = 0.0;
             }
         }
+    } else if(pSPARC->mGGAflag == 1) {
+        Calculate_transfer_Vxc_MGGA(pSPARC, rho);
     } else {
         printf("Cannot recognize the XC option provided!\n");
         exit(EXIT_FAILURE);
@@ -487,7 +490,7 @@ void Calculate_Vxc_GGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
         ss = (sigma[i]/4.0) * coeffss; // s^2
 
         if (strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) { 
+            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0) { 
             divss = 1.0/(1.0 + xc_cst->mu_divkappa * ss);
             dfxdss = xc_cst->mu * (divss * divss);
             //d2fxdss2 = -xc_cst->mu * 2.0 * xc_cst->mu_divkappa * (divss * divss * divss);
@@ -1059,6 +1062,9 @@ void Calculate_Exc(SPARC_OBJ *pSPARC, double *electronDens)
         || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
         || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0)
         Calculate_Exc_GGA(pSPARC, rho);
+    else if(pSPARC->mGGAflag == 1) {
+        Calculate_Exc_MGGA(pSPARC, rho);
+    }
     else {
         printf("Cannot recognize the XC option provided!\n");
         exit(EXIT_FAILURE);

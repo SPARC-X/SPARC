@@ -15,7 +15,7 @@ USE_DP_SUBEIG = 1
 USE_FFTW      = 0
 
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 0
+DEBUG_MODE    = 1
 
 USE_PCE := 1
 ifeq ($(USE_PCE), 1)
@@ -55,7 +55,7 @@ ENABLE_SIMD_COMPLEX = 0
 # LDFLAGS += -L$(BLASROOT)
 
 #CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-CPPFLAGS = -Iinclude/ -Iexx/
+CPPFLAGS = -Iinclude/ -Iexx/ -IvdW/d3 -IvdW/vdWDF -Imgga
 LDLIBS   = -lrt
 
 LIBPCE_DEP = main.o # Dummy value for dependency
@@ -156,7 +156,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o          \
         forces.o stress.o pressure.o finalization.o                                                    \
         vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o vdW/vdWDF/vdWDFGenerateKernelSpline.o \
-        vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o                           \
+        vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o mgga/scan.o mgga/mgga.o   \
         exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o 
 
 ifeq ($(USE_PCE), 1)

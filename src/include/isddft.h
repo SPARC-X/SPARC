@@ -745,6 +745,15 @@ typedef struct _SPARC_OBJ{
     double *vdWDFpotential;
 
     int countSCF; // for helping output variables in 1st step, to be deleted in the future
+    
+    /* metaGGA functionals (SCAN) */
+    int mGGAflag;
+    double *KineticTauPhiDomain;
+    double *vxcMGGA1; // d(n\epsilon)/dn, in dmcomm_phi
+    double *vxcMGGA2; // d(n\epsilon)/d|grad n|, in dmcomm_phi
+    double *vxcMGGA3; // d(n\epsilon)/d(\tau), in dmcomm_psi
+    double *vxcMGGA3_loc_dmcomm; // d(n\epsilon)/d(\tau), in dmcomm (saving \psi)
+    double *vxcMGGA3_loc_kptcomm; // d(n\epsilon)/d(\tau), in kptcomm (handling different kpts)
 
     /* Exact Exchange */
     int usefock;                    // Flag for if using Hartree-Fock operator 
