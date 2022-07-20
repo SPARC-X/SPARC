@@ -15,7 +15,7 @@ USE_DP_SUBEIG = 1
 USE_FFTW      = 0
 
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 1
+DEBUG_MODE    = 0
 
 USE_PCE := 1
 ifeq ($(USE_PCE), 1)
