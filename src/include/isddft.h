@@ -226,7 +226,7 @@ typedef struct _SPARC_OBJ{
     /* spin options */
     int spin_typ;       // flag to choose between spin unpolarized and spin polarized calculation
     int Nspin;          // number of spin in a calculation. 1 - spin unpolarized and 2 - spin polarized
-    double netM;        // Net magenetization of the system
+    double netM;        // Net magnetization of the system
     int spin_start_indx; // start index (global) of spin in the spin communicator
     int spin_end_indx;  // end index (global) of spin in the spin communicator
     
@@ -241,6 +241,7 @@ typedef struct _SPARC_OBJ{
     
     /* Domain description */
     int cell_typ; // Flag for cell shape (orthogonal/nonorthogonal/helical)
+    int Flag_latvec_scale; // Flag indicating wether LATVEC_SCALE is specified
     int numIntervals_x; // number of intervals in x direction
     int numIntervals_y; // number of intervals in y direction
     int numIntervals_z; // number of intervals in z direction  
@@ -252,6 +253,9 @@ typedef struct _SPARC_OBJ{
     double range_x;
     double range_y;
     double range_z;
+    double latvec_scale_x; // scaling factor for the 1st latvec
+    double latvec_scale_y; // scaling factor for the 2nd latvec
+    double latvec_scale_z; // scaling factor for the 3rd latvec
     double LatVec[9];
     double delta_x;     // mesh size in x-direction
     double delta_y;     // mesh size in y-direction
@@ -359,6 +363,8 @@ typedef struct _SPARC_OBJ{
     int precondcoeff_n;    // number of coefficient terms in the rational fit of the preconditioner 
     double precond_kerker_kTF;
     double precond_kerker_thresh;
+    double precond_kerker_kTF_mag; // for preconditioning the magnetization
+    double precond_kerker_thresh_mag; // for preconditioning the magnetization
     double precond_resta_q0;
     double precond_resta_Rs;
     double precondcoeff_k; // constant term in the rational fit of the preconditioner
@@ -451,11 +457,14 @@ typedef struct _SPARC_OBJ{
     /* Mixing */
     int MixingVariable; // mixing options: 0 - density mixing (default), 1 - potential mixing
     int MixingPrecond;  // Preconditioner: 0 - none, 1 - Kerker (default)
+    int MixingPrecondMag;  // Preconditioner for magnetization: 0 - none, 1 - Kerker (default)
     int MixingHistory;       // number of history vectors to keep
     int PulayFrequency;      // Pulay frequency in periodic pulay method
     int PulayRestartFlag;    // Pulay restart flag
     double MixingParameter;  // mixing parameter, often denoted as beta
     double MixingParameterSimple;  // mixing parameter for simple mixing step, often denoted as omega
+    double MixingParameterMag;  // mixing parameter for the magnetization density, denoted as beta_mag
+    double MixingParameterSimpleMag;  // mixing parameter for the magnetization density in simple mixing step, often denoted as omega_mag
 
     /* k-points */
     int Nkpts;          // number of k-points
@@ -704,6 +713,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int MDFlag;
     int RelaxFlag;
     int RestartFlag;
+    int Flag_latvec_scale; // Flag indicating wether LATVEC_SCALE is specified
     int numIntervals_x; // number of intervals in x direction
     int numIntervals_y; // number of intervals in y direction
     int numIntervals_z; // number of intervals in z direction  
@@ -741,6 +751,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int Relax_Niter;    // max number of relaxation iterations in the current run
     int MixingVariable; // mixing options: 0 - density mixing (default), 1 - potential mixing
     int MixingPrecond;  // Preconditioner: 0 - none, 1 - kerker (default)
+    int MixingPrecondMag;  // Preconditioner for magnetization: 0 - none, 1 - kerker (default)
     int MixingHistory;
     int PulayFrequency;
     int PulayRestartFlag;
@@ -793,6 +804,9 @@ typedef struct _SPARC_INPUT_OBJ{
     double range_x;
     double range_y;
     double range_z;
+    double latvec_scale_x; // scaling factor for the 1st latvec
+    double latvec_scale_y; // scaling factor for the 2nd latvec
+    double latvec_scale_z; // scaling factor for the 3rd latvec
     double LatVec[9];
     
     /* discretization */
@@ -816,6 +830,8 @@ typedef struct _SPARC_INPUT_OBJ{
     // preconditioner for SCF
     double precond_kerker_kTF;
     double precond_kerker_thresh;
+    double precond_kerker_kTF_mag;
+    double precond_kerker_thresh_mag;
     double precond_resta_q0;
     double precond_resta_Rs;
 
@@ -828,6 +844,8 @@ typedef struct _SPARC_INPUT_OBJ{
     /* Mixing */
     double MixingParameter;
     double MixingParameterSimple;
+    double MixingParameterMag;  // mixing parameter for the magnetization density, denoted as beta_mag
+    double MixingParameterSimpleMag;  // mixing parameter for the magnetization density in simple mixing step, often denoted as omega_mag
     
     /* MD options */
     double MD_dt;        // MD time step

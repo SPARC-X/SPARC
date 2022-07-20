@@ -3,6 +3,50 @@
 -Name
 -changes
 
+
+--------------
+May 11, 2021
+Name: Shashikant Kumar
+Changes: (tests)
+1. Updated the reference files
+2. Enabled valgrind tests for all systems, tests of SCF iterations
+
+
+--------------
+Apr 23, 2021
+Name: Qimen Xu
+Changes: (mixing.c)
+1. Add options to perform a different mixing parameter and different preconditioner for the magnetization density/potential from the total density/potential in spin-polarized calcuations. The new options are:
+1) `MIXING_PARAMETER_MAG`
+2) `MIXING_PARAMETER_SIMPLE_MAG`
+3) `MIXING_PRECOND_MAG`
+4) `PRECOND_KERKER_KTF_MAG`
+5) `PRECOND_KERKER_THRESH_MAG`
+Details about these options can be found in doc/Manual.pdf.
+
+
+--------------
+Apr 20, 2021
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Fix bug in mixing history vectors for spin-polarized tests which seriously affects the SCF convergence.
+2. Modify the mixing function so that it's consistent with M-SPARC.
+
+
+--------------
+Apr 19, 2021
+Name: Qimen Xu
+Changes: (readfiles.c, initialization.c, isddft.h)
+1. Add input option LATVEC_SCALE, which is an alternative option for CELL, except it takes into account the length of the lattice vectors given by LATVEC.
+
+
+--------------
+Apr 14, 2021
+Name: Qimen Xu
+Changes: (electrostatics.c)
+1. Fix bug in NLCC: reinitialize core charge density correctly when atoms are moved.
+
+
 --------------
 Apr 06, 2021
 Name: Shashikant Kumar

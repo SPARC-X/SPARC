@@ -121,9 +121,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         if (pSPARC->MixingVariable == 0) { 
             free(pSPARC->Veff_loc_dmcomm_phi_in);
         }
-        if (pSPARC->MixingPrecond != 0) {
-           free(pSPARC->mixing_hist_Pfk);
-        }
+        free(pSPARC->mixing_hist_Pfk);
         //free(pSPARC->forces);
         // free MD and relax stuff
     	if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){

@@ -141,5 +141,5 @@ sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
-test1: ../tests/test.py
+test: ../tests/test.py
 	cd ../tests; python test.py 

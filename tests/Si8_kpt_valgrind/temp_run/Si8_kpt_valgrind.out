@@ -1,0 +1,117 @@
+***************************************************************************
+*                       SPARC (version Apr 23, 2021)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Mon May 10 20:47:39 2021                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 7.29734198184517 7.29734198184517 7.29734198184517 
+LATVEC:
+0.5 0.5 0 
+0 0.5 0.5 
+0.5 0 0.5 
+FD_GRID: 21 21 21
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 2 2 2
+KPOINT_SHIFT: 0.5 0.5 0.5
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001000000336
+CHEB_DEGREE: 27
+NSTATES: 9
+EXCHANGE_CORRELATION: LDA_PW
+CALC_STRESS: 1
+CHEFSI_BOUND_FLAG: 0
+MAXIT_SCF: 100
+MINIT_SCF: 3
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-03
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-05
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-05
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 0
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: Si8_kpt_valgrind
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 4
+NP_BAND_PARAL: 3
+NP_DOMAIN_PARAL: 1 1 2
+NP_DOMAIN_PHI_PARAL: 2 3 3
+EIG_SERIAL_MAXNS: 2000
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  24
+Mesh spacing                       :  0.347492 (Bohr)
+Number of symmetry adapted k-points:  4
+Output printed to                  :  Si8_kpt_valgrind.out
+Total number of atom types         :  1
+Total number of atoms              :  2
+Total number of electrons          :  8
+Atom type 1  (valence electrons)   :  Si 4
+Pseudopotential                    :  Si.psp8
+Pseudocharge radii of atom type 1  :  7.30 7.30 7.30 (x, y, z dir)
+Number of atoms of type 1          :  2
+Estimated total memory usage       :  32.50 MB
+Estimated memory per processor     :  1.35 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -3.9611385320E+00        2.871E-02        44.761
+2            -3.9626183086E+00        1.679E-02        10.491
+3            -3.9631048005E+00        1.363E-03        10.426
+4            -3.9630834035E+00        6.913E-04        10.264
+Total number of SCF: 4     
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 8 = 0.000000000000000.
+Occupation of state 9 = 0.000000000000000.
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.9630834035E+00 (Ha/atom)
+Total free energy                  : -7.9261668070E+00 (Ha)
+Band structure energy              :  1.8181835770E-01 (Ha)
+Exchange correlation energy        : -2.3892475560E+00 (Ha)
+Self and correction energy         : -2.5549933696E+01 (Ha)
+Entropy*kb*T                       : -1.4392318926E-07 (Ha)
+Fermi level                        :  2.5521605366E-01 (Ha)
+RMS force                          :  2.1623394850E-02 (Ha/Bohr)
+Maximum force                      :  2.1623394850E-02 (Ha/Bohr)
+Time for force calculation         :  0.728 (sec)
+Pressure                           : -1.3249368730E+00 (GPa)
+Maximum stress                     :  4.9098007769E+00 (GPa)
+Time for stress calculation        :  3.754 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  84.903 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           

@@ -64,6 +64,8 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     char *str            = malloc(L_STRING * sizeof(char));
     char *temp           = malloc(L_STRING * sizeof(char));
     int i, Flag_smear_typ = 0, Flag_Temp = 0, Flag_elecT = 0, Flag_ionT = 0, Flag_ionT_end = 0; // Flag_eqT = 0,
+    int Flag_cell = 0;
+    int Flag_latvec_scale = 0;
     int Flag_accuracy = 0;
     int Flag_kptshift = 0;
     int Flag_fdgrid, Flag_ecut, Flag_meshspacing;
@@ -118,9 +120,17 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d", &pSPARC_Input->eig_paral_blksz);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"CELL:") == 0) {
+            Flag_cell = 1;
             fscanf(input_fp,"%lf", &pSPARC_Input->range_x);
             fscanf(input_fp,"%lf", &pSPARC_Input->range_y);
             fscanf(input_fp,"%lf", &pSPARC_Input->range_z);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"LATVEC_SCALE:") == 0) {
+            Flag_latvec_scale = 1;
+            pSPARC_Input->Flag_latvec_scale = 1;
+            fscanf(input_fp,"%lf", &pSPARC_Input->latvec_scale_x);
+            fscanf(input_fp,"%lf", &pSPARC_Input->latvec_scale_y);
+            fscanf(input_fp,"%lf", &pSPARC_Input->latvec_scale_z);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"LATVEC:") == 0) {
             fscanf(input_fp, "%*[^\n]\n");
@@ -353,6 +363,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"PRECOND_KERKER_THRESH:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_thresh);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"PRECOND_KERKER_KTF_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_kTF_mag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"PRECOND_KERKER_THRESH_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->precond_kerker_thresh_mag);
+            fscanf(input_fp, "%*[^\n]\n");
         } /*else if (strcmpi(str,"PRECOND_RESTA_Q0:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->precond_resta_q0);
             fscanf(input_fp, "%*[^\n]\n");
@@ -389,6 +405,18 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PRECOND_MAG:") == 0) {
+            fscanf(input_fp,"%s",temp); // read mixing preconditioner
+            if (strcmpi(temp,"none") == 0) {
+                pSPARC_Input->MixingPrecondMag = 0;
+            } else if (strcmpi(temp,"kerker") == 0) {
+                pSPARC_Input->MixingPrecondMag = 1;
+            } else {
+                printf("\nCannot recognize mixing preconditioner for magnetization: \"%s\"\n",temp);
+                printf("Available options: \"none\" and \"kerker\" (case insensitive) \n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MIXING_HISTORY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->MixingHistory);
             fscanf(input_fp, "%*[^\n]\n");
@@ -397,6 +425,12 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MIXING_PARAMETER_SIMPLE:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterSimple);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PARAMETER_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterMag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MIXING_PARAMETER_SIMPLE_MAG:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->MixingParameterSimpleMag);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"PULAY_FREQUENCY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PulayFrequency);
@@ -583,6 +617,28 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // copy filename into pSPARC struct
     snprintf(pSPARC->filename, L_STRING, "%s", pSPARC_Input->filename);
     
+    // check CELL and LATVEC_SCALE
+    if (Flag_cell == 1 && Flag_latvec_scale == 1) {
+        printf("\nCELL and LATVEC_SCALE cannot be specified simultaneously!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // LACVEC_SCALE takes into account the length of the LATVEC's, so we'll scale the cell lengths
+    if (Flag_latvec_scale == 1) {
+        pSPARC_Input->range_x = pSPARC_Input->latvec_scale_x * sqrt(
+                                + pSPARC_Input->LatVec[0] * pSPARC_Input->LatVec[0]
+                                + pSPARC_Input->LatVec[1] * pSPARC_Input->LatVec[1] 
+                                + pSPARC_Input->LatVec[2] * pSPARC_Input->LatVec[2]);
+        pSPARC_Input->range_y = pSPARC_Input->latvec_scale_y * sqrt(
+                                + pSPARC_Input->LatVec[3] * pSPARC_Input->LatVec[3]
+                                + pSPARC_Input->LatVec[4] * pSPARC_Input->LatVec[4] 
+                                + pSPARC_Input->LatVec[5] * pSPARC_Input->LatVec[5]);
+        pSPARC_Input->range_z = pSPARC_Input->latvec_scale_z * sqrt(
+                                + pSPARC_Input->LatVec[6] * pSPARC_Input->LatVec[6]
+                                + pSPARC_Input->LatVec[7] * pSPARC_Input->LatVec[7] 
+                                + pSPARC_Input->LatVec[8] * pSPARC_Input->LatVec[8]);
+    }
+
     // Isolated cluster can be in orthogonal cell only
     double mult;
     int j;

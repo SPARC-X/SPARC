@@ -35,7 +35,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 117
+#define N_MEMBR 126
 
 
 
@@ -390,6 +390,8 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->TOL_PRECOND = -1.0;         // default Kerker tolerance will be set up later, depending on the mesh size
     pSPARC_Input->precond_kerker_kTF = 1.0;    // Thomas-Fermi screening length in the Kerker preconditioner
     pSPARC_Input->precond_kerker_thresh = 0.1; // Threshold for the truncated Kerker preconditioner
+    pSPARC_Input->precond_kerker_kTF_mag = 1.0;    // Thomas-Fermi screening length in the Kerker preconditioner
+    pSPARC_Input->precond_kerker_thresh_mag = 0.1; // Threshold for the truncated Kerker preconditioner
     pSPARC_Input->precond_resta_q0 = 1.36;
     pSPARC_Input->precond_resta_Rs = 2.76;
 
@@ -397,10 +399,12 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     /* default mixing */
     pSPARC_Input->MixingVariable = -1;        // default mixing variabl (will be set to 'density' mixing)
-    pSPARC_Input->MixingPrecond = -1;         // default mixing preconditioner (will be set to'kerker'
-                                              // for 'density' mixing, and 'none' for 'potential' mixing)
+    pSPARC_Input->MixingPrecond = -1;         // default mixing preconditioner (will be set later)
+    pSPARC_Input->MixingPrecondMag = -1;      // default mixing preconditioner for magnetization density/potential (will be set later)
     pSPARC_Input->MixingParameter = 0.3;      // default mixing parameter
     pSPARC_Input->MixingParameterSimple = -1.0;     // default mixing parameter for simple mixing step (will be set up later)
+    pSPARC_Input->MixingParameterMag = -1.0;   // default mixing parameter for magnetization density/potential
+    pSPARC_Input->MixingParameterSimpleMag = -1.0; // default mixing parameter for magnetization density/potential in simple mixing step (will be set up later)
     pSPARC_Input->MixingHistory = 7;          // default mixing history
     pSPARC_Input->PulayFrequency = 1;         // default Pulay frequency
     pSPARC_Input->PulayRestartFlag = 0;       // default Pulay restart flag
@@ -436,6 +440,10 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->range_x = -1.0;
     pSPARC_Input->range_y = -1.0;
     pSPARC_Input->range_z = -1.0;
+    pSPARC_Input->Flag_latvec_scale = 0;
+    pSPARC_Input->latvec_scale_x = -1.0;
+    pSPARC_Input->latvec_scale_y = -1.0;
+    pSPARC_Input->latvec_scale_z = -1.0;
     pSPARC_Input->BC = -1;                    // default BC will be set up after reading input
 	pSPARC_Input->BCx = -1;
 	pSPARC_Input->BCy = -1;
@@ -794,6 +802,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->MDFlag = pSPARC_Input->MDFlag;
     pSPARC->RelaxFlag = pSPARC_Input->RelaxFlag;
     pSPARC->RestartFlag = pSPARC_Input->RestartFlag;
+    pSPARC->Flag_latvec_scale = pSPARC_Input->Flag_latvec_scale;
     pSPARC->numIntervals_x = pSPARC_Input->numIntervals_x;
     pSPARC->numIntervals_y = pSPARC_Input->numIntervals_y;
     pSPARC->numIntervals_z = pSPARC_Input->numIntervals_z;
@@ -818,6 +827,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Relax_Niter = pSPARC_Input->Relax_Niter;
     pSPARC->MixingVariable = pSPARC_Input->MixingVariable;
     pSPARC->MixingPrecond = pSPARC_Input->MixingPrecond;
+    pSPARC->MixingPrecondMag = pSPARC_Input->MixingPrecondMag;
     pSPARC->MixingHistory = pSPARC_Input->MixingHistory;
     pSPARC->PulayFrequency = pSPARC_Input->PulayFrequency;
     pSPARC->PulayRestartFlag = pSPARC_Input->PulayRestartFlag;
@@ -856,6 +866,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         if (!rank) printf("\nError: Please specify valid CELL dimensions!\n");
         exit(EXIT_FAILURE);
     }
+    pSPARC->latvec_scale_x = pSPARC_Input->latvec_scale_x;
+    pSPARC->latvec_scale_y = pSPARC_Input->latvec_scale_y;
+    pSPARC->latvec_scale_z = pSPARC_Input->latvec_scale_z;
     // allocate the memory for lattice vector array
     for(i = 0; i < 9; i++)
         pSPARC->LatVec[i] = pSPARC_Input->LatVec[i];
@@ -875,6 +888,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->POISSON_SOLVER = pSPARC_Input->Poisson_solver;
     pSPARC->precond_kerker_kTF = pSPARC_Input->precond_kerker_kTF;
     pSPARC->precond_kerker_thresh = pSPARC_Input->precond_kerker_thresh;
+    pSPARC->precond_kerker_kTF_mag = pSPARC_Input->precond_kerker_kTF_mag;
+    pSPARC->precond_kerker_thresh_mag = pSPARC_Input->precond_kerker_thresh_mag;
     pSPARC->precond_resta_q0 = pSPARC_Input->precond_resta_q0;
     pSPARC->precond_resta_Rs = pSPARC_Input->precond_resta_Rs;
     pSPARC->REFERENCE_CUTOFF = pSPARC_Input->REFERENCE_CUTOFF;
@@ -882,6 +897,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->elec_T = pSPARC_Input->elec_T;
     pSPARC->MixingParameter = pSPARC_Input->MixingParameter;
     pSPARC->MixingParameterSimple = pSPARC_Input->MixingParameterSimple;
+    pSPARC->MixingParameterMag = pSPARC_Input->MixingParameterMag;
+    pSPARC->MixingParameterSimpleMag = pSPARC_Input->MixingParameterSimpleMag;
     pSPARC->MD_dt = pSPARC_Input->MD_dt;
     pSPARC->ion_T = pSPARC_Input->ion_T;
     pSPARC->thermos_Tf = pSPARC_Input->thermos_Tf;
@@ -1432,9 +1449,21 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 #endif
 
-    // set default simple mixing parameter to be the same as for pulay mixing
+    // set default simple (linear) mixing parameter to be the same as for pulay mixing
     if (pSPARC->MixingParameterSimple < 0.0) {
         pSPARC->MixingParameterSimple = pSPARC->MixingParameter;
+    }
+
+    // set default mixing parameter for magnetization density to the same as mixing
+    // parameter for total density/potential
+    if (pSPARC->MixingParameterMag < 0.0) {
+        pSPARC->MixingParameterMag = pSPARC->MixingParameter;
+    }
+
+    // set default simple (linear) mixing parameter for magnetization density to be the
+    // same as for pulay mixing
+    if (pSPARC->MixingParameterSimpleMag < 0.0) {
+        pSPARC->MixingParameterSimpleMag = pSPARC->MixingParameterMag;
     }
 
     if (pSPARC->MixingVariable < 0) { // mixing variable not provided
@@ -1443,6 +1472,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     if (pSPARC->MixingPrecond < 0) { // mixing preconditioner not provided
         pSPARC->MixingPrecond = 1;  // set default to 'Kerker' preconditioner
+    }
+
+    if (pSPARC->MixingPrecondMag < 0) { // mixing preconditioner for magnetization not provided
+        pSPARC->MixingPrecondMag = 0;  // set default to 'none'
     }
 
     // set up real space preconditioner coefficients
@@ -2264,14 +2297,18 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 05, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Apr 23, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Input parameters                                \n");
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+    if (pSPARC->Flag_latvec_scale == 0) {
+        fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+    } else {
+        fprintf(output_fp,"LATVEC_SCALE: %.15g %.15g %.15g \n",pSPARC->latvec_scale_x,pSPARC->latvec_scale_y,pSPARC->latvec_scale_z);
+    }
     fprintf(output_fp,"LATVEC:\n");
     fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
     fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
@@ -2398,6 +2435,18 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     } else if (pSPARC->MixingPrecond == 3) {
         fprintf(output_fp,"MIXING_PRECOND: truncated_kerker\n");
     }
+    
+    if (pSPARC->Nspin > 1) {
+        if (pSPARC->MixingPrecondMag == 0) {
+            fprintf(output_fp,"MIXING_PRECOND_MAG: none\n");
+        } else if (pSPARC->MixingPrecondMag == 1) {
+            fprintf(output_fp,"MIXING_PRECOND_MAG: kerker\n");
+        } else if (pSPARC->MixingPrecondMag == 2) {
+            fprintf(output_fp,"MIXING_PRECOND_MAG: resta\n");
+        } else if (pSPARC->MixingPrecondMag == 3) {
+            fprintf(output_fp,"MIXING_PRECOND_MAG: truncated_kerker\n");
+        }
+    }
 
     // for large periodic systems, give warning if preconditioner is not chosen
     if (pSPARC->BC == 2) {
@@ -2431,9 +2480,22 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"PRECOND_FITPOW: %d\n",pSPARC->precond_fitpow);
     }
 
+    if (pSPARC->Nspin > 1) {
+        if (pSPARC->MixingPrecondMag == 1) {
+            fprintf(output_fp,"PRECOND_KERKER_KTF_MAG: %.10G\n",pSPARC->precond_kerker_kTF_mag);
+            fprintf(output_fp,"PRECOND_KERKER_THRESH_MAG: %.10G\n",pSPARC->precond_kerker_thresh_mag);
+        }
+    }
+
     fprintf(output_fp,"MIXING_PARAMETER: %.10G\n",pSPARC->MixingParameter);
     if (pSPARC->PulayFrequency > 1) {
         fprintf(output_fp,"MIXING_PARAMETER_SIMPLE: %.10G\n",pSPARC->MixingParameterSimple);
+    }
+    if (pSPARC->Nspin > 1) {
+        fprintf(output_fp,"MIXING_PARAMETER_MAG: %.10G\n",pSPARC->MixingParameterMag);
+        if (pSPARC->PulayFrequency > 1) {
+            fprintf(output_fp,"MIXING_PARAMETER_SIMPLE_MAG: %.10G\n",pSPARC->MixingParameterSimpleMag);
+        }
     }
     fprintf(output_fp,"MIXING_HISTORY: %d\n",pSPARC->MixingHistory);
     fprintf(output_fp,"PULAY_FREQUENCY: %d\n",pSPARC->PulayFrequency);
@@ -2592,7 +2654,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
 
 /**
  * @brief Create MPI struct type SPARC_INPUT_MPI for broadcasting.
- */
+*/
 void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     SPARC_INPUT_OBJ sparc_input_tmp;
 
@@ -2610,7 +2672,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2618,7 +2680,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -2635,15 +2698,16 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1,       /* int */ 
-                          1, 1, 1, 9, 1,
-                          1, 3, 1, 1, 1,
+                          1, 1, 1, 1, 1, /* int */ 
+                          1, 1, 1, 1, 1, 
+                          1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1,         /* double */
+                          1, 1, 1, 1, 1, 
+                          1, 1, 1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -2670,6 +2734,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.spin_typ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RestartFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.Flag_latvec_scale, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_y, addr + i++);
     MPI_Get_address(&sparc_input_tmp.numIntervals_z, addr + i++);
@@ -2694,6 +2759,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.Relax_Niter, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MixingVariable, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MixingPrecond, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.MixingPrecondMag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MixingHistory, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PulayFrequency, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PulayRestartFlag, addr + i++);
@@ -2729,6 +2795,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_z, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_x, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_y, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.latvec_scale_z, addr + i++);
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mesh_spacing, addr + i++);
     MPI_Get_address(&sparc_input_tmp.ecut, addr + i++);
@@ -2743,6 +2812,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.TOL_PRECOND, addr + i++);
     MPI_Get_address(&sparc_input_tmp.precond_kerker_kTF, addr + i++);
     MPI_Get_address(&sparc_input_tmp.precond_kerker_thresh, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.precond_kerker_kTF_mag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.precond_kerker_thresh_mag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.precond_resta_q0, addr + i++);
     MPI_Get_address(&sparc_input_tmp.precond_resta_Rs, addr + i++);
     MPI_Get_address(&sparc_input_tmp.REFERENCE_CUTOFF, addr + i++);
@@ -2750,6 +2821,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.elec_T, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MixingParameter, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MixingParameterSimple, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.MixingParameterMag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.MixingParameterSimpleMag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MD_dt, addr + i++);
     MPI_Get_address(&sparc_input_tmp.ion_T, addr + i++);
     MPI_Get_address(&sparc_input_tmp.thermos_Tf, addr + i++);
