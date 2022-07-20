@@ -4,11 +4,19 @@
 -changes
 
 --------------
+Mar 18, 2022
+Name: Boqin Zhang
+Changes: (initialization.c, md.c, md.h)
+1. Modify NPT-NH and NPT-NP to output LATVEC_SCALE in .out and .restart
+2. Add error message for using vdW-DF in Dirichlet boundary condition
+
+
+--------------
 Feb 26, 2022
 Name: Boqin Zhang
 Changes: (initialization.c, isddft.h, md.c, pressure.c, stress.c, finalization.c, vdW/vdWDF, tests/test.py)
 1. Add van der Waals density functional (vdWDF1 and vdWDF2), and their test systems
-2. modify bugs in MPT-NH and NPT-NT thermostat
+2. modify bugs in NPT-NH and NPT-NP thermostat
 
 
 --------------
