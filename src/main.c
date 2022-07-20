@@ -61,7 +61,10 @@ int main(int argc, char *argv[]) {
     if (rank == 0) {
         printf("The program took %.3f s.\n", t2 - t1); 
     }
-    
+
+    // ensure stdout flushed to prevent Finalize hang
+    fflush(stdout);
+
     // finalize MPI
     MPI_Finalize();
 #if USE_GPU

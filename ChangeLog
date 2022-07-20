@@ -5,6 +5,59 @@
 
 
 --------------
+Oct 28, 2021
+Name: Shashikant Kumar
+Changes: (tests)
+1. Added features in the test.py to launch the jobs in batches
+2. Updated the reference output files
+
+
+--------------
+Oct 11, 2021
+Name: Xin Jing
+Changes: (parallelization.c)
+1. Fix bug in is_phi_eq_kpt_topo when there are MPI_COMM_NULL and dmcomm_phi is actually equal to kptcomm_topo
+
+
+--------------
+Oct 07, 2021
+Name: Xin Jing
+Changes: (readfiles.c)
+1. increase robustness in checking scientific notation of pseudopotential files
+
+--------------
+Oct 07, 2021
+Name: Qimen Xu
+Changes: (parallelization.c, eigenSolver.c, finalization.c, isddft.h)
+1. Fix bug in Lanczos: in the case user specifies `NP_DOMAIN_PHI_PARAL`, check if dmcomm_phi is the same as kptcomm_topo before using dmcomm_phi for Lanczos.
+
+
+--------------
+Oct 03, 2021
+Name: Qimen Xu
+Changes: (main.c, initialization.c, md.c, relax.c)
+1. Explicitly flush the standard output right before MPI_Finalization to prevent Finalize hang.
+2. In DEBUG mode, make sure all standard output are printed by rank 0.
+
+
+--------------
+Sep 22, 2021
+Name: Xin Jing
+Changes: (initialization.c,)
+1. Change numbering of output files
+2. Add robustness of reading .ion files
+3. Fix bug in print electron density
+4. Add KENIG in .aimd file
+
+
+--------------
+Sep 22, 2021
+Name: Xin Jing
+Changes: (initialization.c)
+1. Add CELL section in output file
+
+
+--------------
 Sep 19, 2021
 Name: Shashikant Kumar
 Changes: (tests)

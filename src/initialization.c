@@ -174,7 +174,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         MPI_Bcast(&SPARC_Input, 1, SPARC_INPUT_MPI, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
+        if (rank == 0) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
 #endif
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
@@ -581,7 +581,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("Bcast pre-info. took %.3f ms\n", (t2-t1)*1000);
+        if (rank == 0) printf("Bcast pre-info. took %.3f ms\n", (t2-t1)*1000);
 #endif
         // unpack info.
         pSPARC->n_atom = tempbuff[0];
@@ -727,7 +727,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf("MPI_Bcast packed buff of length %d took %.3f ms\n", l_buff,(t2-t1)*1000);
+        if (rank == 0) printf("MPI_Bcast packed buff of length %d took %.3f ms\n", l_buff,(t2-t1)*1000);
 #endif
         // unpack the variables
         position = 0;
@@ -1011,7 +1011,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         i = 0;
         while ( (access( temp_outfname, F_OK ) != -1) && i <= MAX_OUTPUT ) {
             i++;
-            snprintf(temp_outfname, L_STRING, "%s_%d", pSPARC->OutFilename, i);
+            snprintf(temp_outfname, L_STRING, "%s_%02d", pSPARC->OutFilename, i);
         }
         pSPARC->suffixNum = i; // note that this is only known to rank 0!
 
@@ -1035,19 +1035,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         } else if (i > 0) {
             char tempchar[L_STRING];
             snprintf(tempchar, L_STRING, "%s", pSPARC->OutFilename);
-            snprintf(pSPARC->OutFilename,   L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->OutFilename,   L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->StaticFilename);
-            snprintf(pSPARC->StaticFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->StaticFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->AtomFilename);
-            snprintf(pSPARC->AtomFilename,  L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->AtomFilename,  L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->DensFilename);
-            snprintf(pSPARC->DensFilename,  L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->DensFilename,  L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->EigenFilename);
-            snprintf(pSPARC->EigenFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->EigenFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->MDFilename);
-            snprintf(pSPARC->MDFilename,    L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->MDFilename,    L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->RelaxFilename);
-            snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%d", tempchar, i);
+            snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%02d", tempchar, i);
         }
     }
     // Initialize MD/relax variables
@@ -2324,7 +2324,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jul 23, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Oct 11, 2021)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2558,6 +2558,14 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"PRINT_RELAXOUT: %d\n",pSPARC->PrintRelaxout);
     }
     fprintf(output_fp,"OUTPUT_FILE: %s\n",pSPARC->filename_out);
+    fprintf(output_fp,"***************************************************************************\n");
+    fprintf(output_fp,"                                Cell                                       \n");
+    fprintf(output_fp,"***************************************************************************\n");
+    fprintf(output_fp,"Lattice vectors (Bohr):\n");
+    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0]*pSPARC->range_x,pSPARC->LatUVec[1]*pSPARC->range_x,pSPARC->LatUVec[2]*pSPARC->range_x);
+    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
+    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
+    fprintf(output_fp,"Volume                  :%18.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");
     fprintf(output_fp,"***************************************************************************\n");

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 23, 2021)                      *
+*                       SPARC (version Oct 11, 2021)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Jul 31 02:30:39 2021                  *
+*                   Start time: Wed Oct 27 17:58:52 2021                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0 0 
 -0.292371704722737 0.956304755963035 0 
 0.17364817766693 -0.110492654830881 0.978589640054184 
-FD_GRID: 102 102 102
+FD_GRID: 25 25 25
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 1 1 1
@@ -19,8 +19,8 @@ KPOINT_SHIFT: 0 0 0
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.0009999935878
-CHEB_DEGREE: 51
-NSTATES: 24
+CHEB_DEGREE: 21
+NSTATES: 30
 EXCHANGE_CORRELATION: GGA_PBE
 CALC_STRESS: 1
 CHEFSI_BOUND_FLAG: 0
@@ -48,19 +48,27 @@ PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 OUTPUT_FILE: Si8
 ***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+10.199999999999999 0.000000000000000 0.000000000000000 
+-2.982191388171917 9.754308510822955 0.000000000000000 
+1.771211412202686 -1.127025079274986 9.981614328552677 
+Volume                  :  9.9311020509E+02 (Bohr^3)
+***************************************************************************
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
 NP_KPOINT_PARAL: 1
-NP_BAND_PARAL: 24
-NP_DOMAIN_PARAL: 1 1 1
+NP_BAND_PARAL: 6
+NP_DOMAIN_PARAL: 1 2 2
 NP_DOMAIN_PHI_PARAL: 2 3 4
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  24
-Mesh spacing                       :  0.1 (Bohr)
+Mesh spacing                       :  0.408 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  Si8.out
 Total number of atom types         :  1
@@ -68,60 +76,54 @@ Total number of atoms              :  8
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Si 4
 Pseudopotential                    :  Si.psp8
-Pseudocharge radii of atom type 1  :  6.50 6.50 6.50 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  7.75 7.75 7.75 (x, y, z dir)
 Number of atoms of type 1          :  8
-Estimated total memory usage       :  1.71 GB
-Estimated memory per processor     :  72.75 MB
+Estimated total memory usage       :  27.37 MB
+Estimated memory per processor     :  1.14 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.7980132142E+00        8.069E-02        22.477
-2            -3.8890340632E+00        6.143E-02        7.274
-3            -3.9049476812E+00        3.904E-02        7.079
-4            -3.9095197869E+00        2.922E-02        6.980
-5            -3.9121649522E+00        1.675E-02        7.001
-6            -3.9136346679E+00        1.312E-02        6.939
-7            -3.9145615136E+00        1.070E-02        6.827
-8            -3.9151319384E+00        6.826E-03        6.856
-9            -3.9153960685E+00        4.341E-03        6.866
-10           -3.9154727298E+00        5.732E-03        6.788
-11           -3.9155335156E+00        3.357E-03        6.730
-12           -3.9155539986E+00        1.017E-03        6.774
-13           -3.9155571784E+00        4.638E-04        6.504
-14           -3.9155578321E+00        2.682E-04        6.417
-15           -3.9155580241E+00        1.206E-04        6.269
-16           -3.9155580698E+00        3.601E-05        6.145
-17           -3.9155580814E+00        1.569E-05        5.926
-18           -3.9155580777E+00        8.861E-06        5.835
-19           -3.9155580872E+00        4.349E-06        5.758
-20           -3.9155580834E+00        1.604E-06        5.672
-21           -3.9155580748E+00        8.926E-07        5.465
-Total number of SCF: 21    
+1            -3.9137790908E+00        2.450E-02        0.194
+2            -3.9152777976E+00        1.448E-02        0.057
+3            -3.9154807727E+00        8.410E-03        0.056
+4            -3.9155443098E+00        3.819E-03        0.055
+5            -3.9155528429E+00        1.933E-03        0.054
+6            -3.9155547698E+00        9.493E-04        0.054
+7            -3.9155553142E+00        4.930E-04        0.053
+8            -3.9155554941E+00        1.970E-04        0.051
+9            -3.9155555499E+00        6.871E-05        0.049
+10           -3.9155555465E+00        2.829E-05        0.048
+11           -3.9155555293E+00        1.129E-05        0.046
+12           -3.9155555466E+00        5.468E-06        0.046
+13           -3.9155555611E+00        2.179E-06        0.046
+14           -3.9155555201E+00        1.027E-06        0.044
+15           -3.9155555349E+00        3.433E-07        0.042
+Total number of SCF: 15    
 
 k = [0.000, 0.000, 0.000]
-Occupation of state 22 = 0.000000000000000.
-Occupation of state 24 = 0.000000000000000.
+Occupation of state 27 = 0.000000000000000.
+Occupation of state 30 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.9155580748E+00 (Ha/atom)
-Total free energy                  : -3.1324464598E+01 (Ha)
-Band structure energy              :  1.3724116038E+00 (Ha)
-Exchange correlation energy        : -9.7764544645E+00 (Ha)
-Self and correction energy         : -1.0219610261E+02 (Ha)
-Entropy*kb*T                       : -2.0847590991E-04 (Ha)
-Fermi level                        :  2.3355794466E-01 (Ha)
-RMS force                          :  1.3574224346E-01 (Ha/Bohr)
-Maximum force                      :  1.3574242789E-01 (Ha/Bohr)
-Time for force calculation         :  0.223 (sec)
-Pressure                           :  1.7705383065E+01 (GPa)
-Maximum stress                     :  2.2356450707E+01 (GPa)
-Time for stress calculation        :  0.572 (sec)
+Free energy per atom               : -3.9155555349E+00 (Ha/atom)
+Total free energy                  : -3.1324444279E+01 (Ha)
+Band structure energy              :  1.3723950225E+00 (Ha)
+Exchange correlation energy        : -9.7764023863E+00 (Ha)
+Self and correction energy         : -1.0219468888E+02 (Ha)
+Entropy*kb*T                       : -2.0843764825E-04 (Ha)
+Fermi level                        :  2.3355824496E-01 (Ha)
+RMS force                          :  1.3572955609E-01 (Ha/Bohr)
+Maximum force                      :  1.3577072498E-01 (Ha/Bohr)
+Time for force calculation         :  0.009 (sec)
+Pressure                           :  1.7874674142E+01 (GPa)
+Maximum stress                     :  2.2523246073E+01 (GPa)
+Time for stress calculation        :  0.063 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  156.282 sec
+Total walltime                     :  1.056 sec
 ___________________________________________________________________________
 
 ***************************************************************************

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 23, 2021)                      *
+*                       SPARC (version Oct 11, 2021)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Jul 31 03:00:38 2021                  *
+*                   Start time: Wed Oct 27 17:51:36 2021                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0 0 
 0 1 0 
 0 0 1 
-FD_GRID: 68 68 68
+FD_GRID: 36 36 36
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 2 2 2
@@ -19,7 +19,7 @@ KPOINT_SHIFT: 0.5 0.5 0.5
 SPIN_TYP: 1
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.009999935878
-CHEB_DEGREE: 54
+CHEB_DEGREE: 42
 NSTATES: 35
 EXCHANGE_CORRELATION: GGA_PBE
 CALC_STRESS: 1
@@ -34,10 +34,12 @@ TOL_LANCZOS: 1.00E-02
 TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-MIXING_PRECOND_MAG: none
-TOL_PRECOND: 6.35E-06
+MIXING_PRECOND_MAG: kerker
+TOL_PRECOND: 2.27E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
+PRECOND_KERKER_KTF_MAG: 1
+PRECOND_KERKER_THRESH_MAG: 0.1
 MIXING_PARAMETER: 0.3
 MIXING_PARAMETER_MAG: 0.3
 MIXING_HISTORY: 7
@@ -53,19 +55,27 @@ PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 OUTPUT_FILE: Fe_spin
 ***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+5.420000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 5.420000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 5.420000000000000 
+Volume                  :  1.5922008800E+02 (Bohr^3)
+***************************************************************************
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 2
 NP_KPOINT_PARAL: 4
 NP_BAND_PARAL: 3
 NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 3 2 4
+NP_DOMAIN_PHI_PARAL: 2 3 4
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  24
-Mesh spacing                       :  0.0797059 (Bohr)
+Mesh spacing                       :  0.150556 (Bohr)
 Number of symmetry adapted k-points:  4
 Output printed to                  :  Fe_spin.out
 Total number of atom types         :  1
@@ -73,28 +83,28 @@ Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
 Pseudopotential                    :  FeGGA.psp8
-Pseudocharge radii of atom type 1  :  6.38 6.38 6.38 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  6.93 6.93 6.93 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  10.24 GB
-Estimated memory per processor     :  436.76 MB
+Estimated total memory usage       :  1.30 GB
+Estimated memory per processor     :  55.67 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1841291490E+02         4.3203E+00        7.266E-02        86.009
-2            -1.1842617074E+02         4.1122E+00        4.734E-02        21.114
-3            -1.1843016981E+02         4.0861E+00        2.045E-02        21.082
-4            -1.1843214240E+02         4.0929E+00        1.396E-02        21.085
-5            -1.1843172204E+02         4.0910E+00        4.789E-03        21.143
-6            -1.1843170826E+02         4.0775E+00        1.998E-03        21.061
-7            -1.1843172819E+02         4.0741E+00        9.463E-04        21.022
-8            -1.1843173132E+02         4.0692E+00        1.213E-04        21.017
-9            -1.1843173142E+02         4.0688E+00        4.382E-05        21.089
-10           -1.1843173143E+02         4.0686E+00        1.804E-05        21.026
-11           -1.1843173143E+02         4.0685E+00        7.673E-06        20.986
-12           -1.1843173143E+02         4.0685E+00        4.635E-06        20.996
-13           -1.1843173143E+02         4.0685E+00        1.036E-06        20.973
-14           -1.1843173144E+02         4.0685E+00        5.176E-07        20.794
+1            -1.1828584633E+02         4.3240E+00        7.273E-02        9.469
+2            -1.1837891488E+02         4.1198E+00        4.892E-02        2.328
+3            -1.1845142573E+02         4.1007E+00        2.308E-02        2.307
+4            -1.1844185173E+02         4.1149E+00        5.497E-03        2.287
+5            -1.1843490297E+02         4.0926E+00        6.141E-03        2.284
+6            -1.1843313318E+02         4.0891E+00        3.298E-03        2.283
+7            -1.1842804273E+02         4.0777E+00        1.440E-03        2.274
+8            -1.1843260707E+02         4.0679E+00        4.663E-04        2.282
+9            -1.1843112798E+02         4.0704E+00        3.112E-04        2.289
+10           -1.1843168675E+02         4.0683E+00        5.707E-05        2.275
+11           -1.1843169369E+02         4.0686E+00        1.290E-05        2.274
+12           -1.1843169913E+02         4.0685E+00        5.805E-06        2.275
+13           -1.1843169329E+02         4.0685E+00        1.816E-06        2.274
+14           -1.1843169269E+02         4.0685E+00        8.631E-07        2.255
 Total number of SCF: 14    
 
 k = [0.250, 0.250, 0.250]
@@ -103,23 +113,23 @@ Occupation of state 35 = 0.000000000000000.
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.1843173144E+02 (Ha/atom)
-Total free energy                  : -2.3686346288E+02 (Ha)
-Band structure energy              : -2.9476226824E+01 (Ha)
-Exchange correlation energy        : -2.5080396561E+01 (Ha)
-Self and correction energy         : -2.4301286587E+02 (Ha)
-Entropy*kb*T                       : -2.0376028158E-02 (Ha)
-Fermi level                        :  2.4292269866E-01 (Ha)
-RMS force                          :  8.7181114487E-07 (Ha/Bohr)
-Maximum force                      :  8.7181114487E-07 (Ha/Bohr)
-Time for force calculation         :  0.450 (sec)
-Pressure                           : -1.5782036963E+01 (GPa)
-Maximum stress                     :  1.5782250845E+01 (GPa)
-Time for stress calculation        :  0.949 (sec)
+Free energy per atom               : -1.1843169284E+02 (Ha/atom)
+Total free energy                  : -2.3686338568E+02 (Ha)
+Band structure energy              : -2.9476137605E+01 (Ha)
+Exchange correlation energy        : -2.5080406381E+01 (Ha)
+Self and correction energy         : -2.4301280496E+02 (Ha)
+Entropy*kb*T                       : -2.0376356372E-02 (Ha)
+Fermi level                        :  2.4292229711E-01 (Ha)
+RMS force                          :  3.6381422005E-08 (Ha/Bohr)
+Maximum force                      :  3.6381422005E-08 (Ha/Bohr)
+Time for force calculation         :  0.067 (sec)
+Pressure                           : -1.5793463856E+01 (GPa)
+Maximum stress                     :  1.5793481626E+01 (GPa)
+Time for stress calculation        :  0.160 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  361.365 sec
+Total walltime                     :  39.519 sec
 ___________________________________________________________________________
 
 ***************************************************************************

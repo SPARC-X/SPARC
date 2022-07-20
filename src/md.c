@@ -800,6 +800,8 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
     	fprintf(output_md,":Desc_TIO: Ionic temperature. Unit=Kelvin \n");
     	fprintf(output_md,":Desc_TEN: Total energy. TEN = KEN + FEN. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_KEN: Ionic kinetic energy. Unit=Ha/atom \n");
+		fprintf(output_md,":Desc_KENIG: Kinetic energy: 3/2 N k T of ideal gas at temperature T = TIO. Unit=Ha/atom \n"
+						  "     where N = number of particles, k = Boltzmann constant\n");
     	fprintf(output_md,":Desc_FEN: Free energy. FEN = UEN - TSEN. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_UEN: Internal energy. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_TSEN: Electronic entropic energy. Unit=Ha/atom \n");
@@ -826,12 +828,15 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
     	fprintf(output_md,":Desc_MIND: Minimum of the distance of all ions of the same type. Unit=Bohr \n");
     	fprintf(output_md, "\n\n");
     } else{
+		double ken_ig = 0.0;
+		ken_ig = 3.0/2.0 * pSPARC->n_atom * pSPARC->kB * pSPARC->ion_T;
 
 	    // Print Temperature and energy
 	    fprintf(output_md,":TEL: %.15g\n", pSPARC->elec_T);
 	    fprintf(output_md,":TIO: %.15g\n", pSPARC->ion_T);
 		fprintf(output_md,":TEN: %18.10E\n", pSPARC->TE);
 		fprintf(output_md,":KEN: %18.10E\n", pSPARC->KE);
+		fprintf(output_md,":KENIG:%18.10E\n",ken_ig/pSPARC->n_atom);
 		fprintf(output_md,":FEN: %18.10E\n", pSPARC->PE);
 		fprintf(output_md,":UEN: %18.10E\n", pSPARC->PE - pSPARC->Entropy/pSPARC->n_atom);
 		fprintf(output_md,":TSEN:%18.10E\n", pSPARC->Entropy/pSPARC->n_atom);
@@ -1173,7 +1178,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf(GRN "MPI_Bcast (.restart MD) packed buff of length %d took %.3f ms\n" RESET, l_buff,(t2-t1)*1000);
+        if (rank == 0) printf(GRN "MPI_Bcast (.restart MD) packed buff of length %d took %.3f ms\n" RESET, l_buff,(t2-t1)*1000);
 #endif
 		// unpack the variables
         position = 0;

@@ -1732,3 +1732,71 @@ void read_vec(
         }
     }
 }
+
+
+/**
+ * @brief   Function to check the below-tag format
+ *          Note: used in readfiles.c for readion function
+ */
+void check_below_entries(FILE *ion_fp, char *tag) 
+{
+    int i;
+    char *str = malloc(L_STRING * sizeof(char));
+
+    str[0] = '\0';
+    fscanf(ion_fp, "%[^\n]%*c", str);
+    for (i = 0; i < strlen(str); i++) {
+        if (isdigit(str[i])) {
+            printf(RED"ERROR: Please remove the data in the same line as the %s tag in the ION file. All entries should be strictly below the %s tag.\n"RESET, tag, tag);
+            exit(EXIT_FAILURE);
+        }
+    }
+    free(str);
+}
+
+
+/**
+ * @brief   Check the input options in ion file
+ */
+int check_num_input(FILE *fp, void *array, char TYPE)
+{
+    int nums_now, bytes_now;
+    int bytes_consumed = 0, nums_read = 0;
+    char *str = malloc(L_STRING * sizeof(char));
+    str[0] = '\0';
+
+    if (TYPE != 'I' && TYPE != 'D') {
+        printf("ERROR: Unknown type\n");
+        exit(EXIT_FAILURE);
+    }
+
+    fscanf(fp,"%s",str);
+    fseek ( fp , -strlen(str) , SEEK_CUR );
+    
+    if (str[0] == '#') {
+        fscanf(fp, "%*[^\n]\n"); // skip current line
+        free(str);
+        return -1;
+    }
+    
+    fscanf(fp, "%[^\n]%*c", str);
+
+    if (TYPE == 'I') {
+        while ( ( nums_now = 
+                sscanf( str + bytes_consumed, "%d%n", (int *)array + nums_read, & bytes_now )
+                ) > 0 && nums_read < 10) {
+            bytes_consumed += bytes_now;
+            nums_read += nums_now;
+        }
+    } else if (TYPE == 'D') {
+        while ( ( nums_now = 
+                sscanf( str + bytes_consumed, "%lf%n", (double *)array + nums_read, & bytes_now )
+                ) > 0 && nums_read < 10) {
+            bytes_consumed += bytes_now;
+            nums_read += nums_now;
+        }
+    }
+    
+    free(str);
+    return nums_read;
+}

@@ -1635,7 +1635,7 @@ void RestartRelax(SPARC_OBJ *pSPARC) {
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
 #ifdef DEBUG
         t2 = MPI_Wtime();
-        if (rank == 1) printf(GRN "MPI_Bcast (.restart relax) packed buff of length %d took %.3f ms\n" RESET, l_buff,(t2-t1)*1000);
+        if (rank == 0) printf(GRN "MPI_Bcast (.restart relax) packed buff of length %d took %.3f ms\n" RESET, l_buff,(t2-t1)*1000);
 #endif
         // unpack the variables
         position = 0;

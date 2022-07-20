@@ -453,7 +453,8 @@ typedef struct _SPARC_OBJ{
     D2D_OBJ d2d_dmcomm;           // D2D structure containing target ranks for D2D transfer (obtained by processes in psi domain)
     D2D_OBJ d2d_dmcomm_lanczos;   // D2D structure containing target ranks for D2D transfer (obtained by processes in psi domain for Lanczos)
     D2D_OBJ d2d_kptcomm_topo;     // D2D structure containing target ranks for D2D transfer (obtained by processes in kptcomm_topo domain)
-    
+    int is_phi_eq_kpt_topo; // flag indicating if dmcomm_phi have the same group of processes as kptcomm_topo
+
     /* Mixing */
     int MixingVariable; // mixing options: 0 - density mixing (default), 1 - potential mixing
     int MixingPrecond;  // Preconditioner: 0 - none, 1 - Kerker (default)

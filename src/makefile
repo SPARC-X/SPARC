@@ -9,7 +9,7 @@ USE_SCALAPACK = 0
 # Set USE_DP_SUBEIG = 1 to use SPARC rather than ScaLAPACK routines for matrix data distribution
 # (USE_DP_SUBEIG = 1 is required if both USE_MKL = 0 and USE_SCALAPACK = 0)
 # Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
-USE_DP_SUBEIG = 1
+USE_DP_SUBEIG = 0
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
