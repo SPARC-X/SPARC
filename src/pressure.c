@@ -32,6 +32,7 @@
 #include "initialization.h"
 #include "electrostatics.h"
 #include "energy.h"
+#include "vdW/vdWDF/vdWDF.h"
 
 #define TEMP_TOL 1e-12
 
@@ -107,7 +108,7 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
 
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
-    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0){
+    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
         int DMnd, i;
         DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
@@ -162,6 +163,10 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
         // deallocate
         free(Drho_x); free(Drho_y); free(Drho_z);
     } 
+
+    if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2, compute the contribution of nonlinear correlation of vdWDF on stress/pressure
+        Calculate_XC_stress_vdWDF(pSPARC); // the function is in file vdW/vdWDF/vdWDF.c
+    }
 
     if (pSPARC->NLCC_flag) {
         double Calculate_XC_pressure_nlcc(SPARC_OBJ *pSPARC);

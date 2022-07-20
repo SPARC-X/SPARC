@@ -32,13 +32,14 @@
 #include "isddft.h"
 
 #include "vdW/d3/d3Correction.h"
+#include "vdW/vdWDF/vdWDF.h"
 
 #define TEMP_TOL 1e-12
 
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 136
+#define N_MEMBR 137
 
 
 
@@ -286,6 +287,16 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         else {
             set_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
         }
+    }
+
+    // initialize vdW-DF
+    if (pSPARC->vdWDFFlag != 0) {
+        if ((pSPARC->vdWDFKernelGenFlag) && (rank == 0)) {
+            vdWDF_generate_kernel(pSPARC->filename); // if there is no file of kernel function and d2Spline, then generate one
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        vdWDF_initial_read_kernel(pSPARC); // read kernel function and 2nd derivative of spline functions
+        // printf("rank %d, d2 of kernel function vdWDFd2Phidk2[2][4]=%.9e\n", rank, pSPARC->vdWDFd2Phidk2[2][4]); // to verify it
     }
 
     // write initialized parameters into output file
@@ -541,6 +552,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->d3Flag = 0;
     pSPARC_Input->d3Rthr = 1600.0;
     pSPARC_Input->d3Cn_thr = 625.0;
+
+    /* Default vdW-DF option */
+    pSPARC_Input->vdWDFKernelGenFlag = 1;
 
     /* Default stress flags*/
     pSPARC_Input->Calc_stress = 0;
@@ -911,6 +925,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Calc_stress = pSPARC_Input->Calc_stress;
     pSPARC->Calc_pres = pSPARC_Input->Calc_pres;
     pSPARC->d3Flag = pSPARC_Input->d3Flag;
+    pSPARC->vdWDFKernelGenFlag = pSPARC_Input->vdWDFKernelGenFlag;
     // double type values
     pSPARC->range_x = pSPARC_Input->range_x;
     pSPARC->range_y = pSPARC_Input->range_y;
@@ -997,6 +1012,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             ixc = 15;
         } else if (strcmpi(pSPARC->XC, "GGA_PBEsol") == 0) {
             ixc = 116;
+        } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
+            ixc = -102; // this is the index of Zhang-Yang revPBE exchange in Libxc
+        } else if (strcmpi(pSPARC->XC, "vdWDF2") == 0) {
+            ixc = -108; // this is the index of PW86 exchange in Libxc
         }
         for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
             if (pSPARC->psd[ityp].pspxc != ixc) {
@@ -1030,6 +1049,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
     pSPARC->NLCC_flag = NLCC_flag;
+
+    // check if exchange-correlation functional is vdW-DF1 or vdW-DF2
+    pSPARC->vdWDFFlag = 0;
+    if (strcmpi(pSPARC->XC,"vdWDF1") == 0) {
+        pSPARC->vdWDFFlag = 1;
+    }
+    if (strcmpi(pSPARC->XC,"vdWDF2") == 0) {
+        pSPARC->vdWDFFlag = 2;
+    }
 
     // initialize energy values
     pSPARC->Esc = 0.0;
@@ -1879,6 +1907,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
         && fabs(pSPARC->k2[0]) < TEMP_TOL 
         && fabs(pSPARC->k3[0]) < TEMP_TOL);
+
+    #if !defined(USE_MKL) && !defined(USE_FFTW)
+    if (pSPARC->vdWDFFlag != 0){
+        if (rank == 0)
+            printf(RED "ERROR: To use vdW-DF, please turn on MKL or FFTW in makefile!\n"
+            "Or you can stop using vdW-DF by setting other exchange-correlation functionals.\n" RESET);
+        exit(EXIT_FAILURE); 
+    }
+    #endif // #if defined(USE_MKL)
 }
 
 
@@ -2386,7 +2423,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jan 04, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Feb 26, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2650,6 +2687,9 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"D3_RTHR: %.15G\n",pSPARC->d3Rthr);   
         fprintf(output_fp,"D3_CN_THR: %.15G\n",pSPARC->d3Cn_thr);
     }
+    if (pSPARC->vdWDFFlag != 0) {
+        fprintf(output_fp,"VDWDF_GEN_KERNEL: %d\n",pSPARC->vdWDFKernelGenFlag);
+    }
     fprintf(output_fp,"OUTPUT_FILE: %s\n",pSPARC->filename_out);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                                Cell                                       \n");
@@ -2805,7 +2845,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -2834,7 +2874,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 3, /* int */ 
+                          1, 1, 3, 1,/* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -2932,6 +2972,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.d3Flag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.NPT_NHnnos, addr + i++);
     MPI_Get_address(&sparc_input_tmp.NPTscaleVecs, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.vdWDFKernelGenFlag, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);

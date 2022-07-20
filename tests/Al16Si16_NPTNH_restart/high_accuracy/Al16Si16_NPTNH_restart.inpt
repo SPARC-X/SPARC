@@ -1,0 +1,43 @@
+# nprocs: 24
+LATVEC_SCALE: 15 15 15
+LATVEC:
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+MESH_SPACING: 0.30
+BC: P P P
+KPOINT_GRID: 1 1 1
+# SPIN_TYP: 1
+EXCHANGE_CORRELATION: LDA_PW
+TOL_SCF: 5e-7
+# TOL_POISSON: 1e-7
+# TOL_PSEUDOCHARGE: 1e-5
+MIXING_PARAMETER: 1.0
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+PRECOND_KERKER_THRESH: 0
+
+# MD
+MD_FLAG: 1                    # 1 = MD, 0 = no MD (default)
+ION_TEMP: 1120            # kelvin
+# ION_TEMP_END: 1120
+MD_METHOD: NPT_NH          # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+#QMASS: 1600                # mass for NH thermostat
+MD_TIMESTEP: 0.6              # fs
+MD_NSTEP: 10              # run MD for MD_NSTEP steps or TWTIME minutes, whichever comes first
+#TWTIME: 1400
+RESTART_FLAG: 1               # 1 = restart MD from .restart file if present, 0 = start new
+#ION_VEL_DSTR: 1               # Initial velocities: 1 = uniform, 2 = Maxwell-Boltzmann (default)
+TARGET_PRESSURE: 0 GPa
+NPT_NH_QMASS: 4 4000 4000 4000 4000
+NPT_NH_BMASS: 250000
+
+# NSTATES: 64
+
+# outputs
+# CALC_PRES: 1
+CALC_STRESS: 1 # whether this selection changes the result of NPT?
+PRINT_ATOMS: 1
+# PRINT_VELS: 1
+PRINT_FORCES: 1
+PRINT_MDOUT: 1                # print MD output to .aimd file

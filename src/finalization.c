@@ -22,6 +22,7 @@
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
 
 #include "vdW/d3/d3Correction.h"
+#include "vdW/vdWDF/vdWDF.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*
@@ -101,7 +102,8 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->Vc);
         free(pSPARC->XCPotential);
         free(pSPARC->e_xc);
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0){
+        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             free(pSPARC->Dxcdgrho);
         }    
         free(pSPARC->elecstPotential);
@@ -310,7 +312,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->spin_bridge_comm != MPI_COMM_NULL)
         MPI_Comm_free(&pSPARC->spin_bridge_comm);     
     if (pSPARC->d3Flag == 1) {
-       free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
+        free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
+    }
+    if (pSPARC->vdWDFFlag != 0){
+        vdWDF_free(pSPARC);
     }
 
     #if defined(USE_MKL) || defined(USE_SCALAPACK)

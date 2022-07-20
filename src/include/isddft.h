@@ -620,6 +620,7 @@ typedef struct _SPARC_OBJ{
     double prtarget;       // Target pressure of barostatic system, used in both NPT_NH and NPT_NP
     double scale;          // length ratio of the size of cell in NPT, used in both NPT_NH and NPT_NP
     double volumeCell;  // volume of the cell, used in both NPT_NH and NPT_NP
+    double initialLatVecLength[3]; // used for outputting LATVEC_SCALE
     // NPT-NH
     int NPT_NHnnos;              // amount of thermostat variables in the Nose-Hoover chain, it should be smaller than 100
     double NPT_NHqmass[L_QMASS];    // qmass in NPT, the largest number of thermostat variable is 60 //ORIGINAL VARIABLES! DON'T CHANGE IT!
@@ -702,6 +703,45 @@ typedef struct _SPARC_OBJ{
     double d3S18;
     FILE *d3Output;
     double d3Sigma[9]; // stress of cell caused by d3
+
+    // vdW-DF1 and vdW-DF2
+    int vdWDFFlag;
+    int vdWDFKernelGenFlag;
+    int vdWDFnrpoints;
+    int vdWDFnqs;
+    double vdWDFdr;
+    double vdWDFdk;
+    double vdWDFZab;
+    double detLattice;
+    double *vdWDFqmesh;
+    double **vdWDFkernelPhi;
+    double **vdWDFd2Phidk2;
+    double **vdWDFd2Splineydx2;
+    double **Drho;
+    double *gradRhoLen;
+    double *vdWDFq0;
+    double *vdWDFdq0drho;
+    double *vdWDFdq0dgradrho;
+    double **vdWDFps;
+    double **vdWDFdpdq0s;
+    MPI_Comm zAxisComm;
+    int zAxisVertices[6];
+    D2D_OBJ gatherThetasSender;
+    D2D_OBJ gatherThetasRecvr;
+    D2D_OBJ scatterThetasSender;
+    D2D_OBJ scatterThetasRecvr;
+    double _Complex **vdWDFthetaFTs;
+    double reciLattice[9]; // inverse of lattice multiply a coefficient
+    int **timeReciLattice; // reciprocal lattice grid point i = timeReciLattice[0][i]*pSPARC->reciLattice0(0 1 2)+timeReciLattice[1][i]*pSPARC->reciLattice1(3 4 5)+timeReciLattice[2][i]*pSPARC->reciLattice2(6 7 8)
+    double **vdWDFreciLatticeGrid; // 000 100 200 ... 010 110 210 ... 001 101 201 ... 011 111 211 ...
+    double *vdWDFreciLength;
+    double **vdWDFkernelReciPoints;
+    double _Complex **vdWDFuFTs;
+    double **vdWDFu;
+    double vdWDFenergy;
+    double *vdWDFpotential;
+
+    int countSCF; // for helping output variables in 1st step, to be deleted in the future
 
     // Extrapolation options
     double *delectronDens;
@@ -950,6 +990,9 @@ typedef struct _SPARC_INPUT_OBJ{
     int d3Flag;
     double d3Rthr;        // cutoff radius for calculating d3 energy correction
     double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
+
+    /* vdW-DF options */
+    int vdWDFKernelGenFlag; // generate the kernel functions or read kernel functions from files
     
     /* File names */
     char filename[L_STRING]; 
