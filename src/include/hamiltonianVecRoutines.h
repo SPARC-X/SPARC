@@ -29,7 +29,7 @@
  */
 void Hamiltonian_vectors_mult(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
                               ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                              int ncol, double c, double *x, double *Hx, MPI_Comm comm);
+                              int ncol, double c, double *x, double *Hx, int spin, MPI_Comm comm);
 
 
 
@@ -70,7 +70,7 @@ void Hamiltonian_vec_mult_nonorth(const SPARC_OBJ *pSPARC, int DMnd, int *DMVert
 void Hamiltonian_vectors_mult_kpt(
     const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-    int ncol, double c, double complex *x, double complex *Hx, int kpt, MPI_Comm comm
+    int ncol, double c, double complex *x, double complex *Hx, int spin, int kpt, MPI_Comm comm
 );
 
 

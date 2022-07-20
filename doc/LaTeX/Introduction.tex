@@ -7,6 +7,7 @@ SPARC is an open-source software package for the accurate, efficient, and scalab
   \item Structural relaxation and quantum molecular dynamics (QMD). 
   \item Local and semilocal exchange correlation functionals. 
   \item ONCV and TM pseudopotentials in psp8 (ABINIT) format. 
+  \item Hybrid calculation with PBE0, HF and HSE.
 \end{itemize}
 Additional details regarding the formulation and implementation of SPARC can be found in the accompanying paper. Please direct any questions and report any bugs to Prof.~Phanish Suryanarayana.
 
@@ -163,40 +164,150 @@ Upon successful execution of the \texttt{sparc} code, depending on the calculati
 \begin{frame}[allowframebreaks]{\textbf{Input file options}} \label{Index}
 \vspace{-2mm}
 \begin{block}{System}
-\hyperlink{CELL}{\texttt{CELL}} $\vert$ \hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} $\vert$ \hyperlink{LATVEC}{\texttt{LATVEC}}  $\vert$ \hyperlink{FD_GRID}{\texttt{FD\_GRID}} $\vert$ \hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}} $\vert$ \hyperlink{ECUT}{\texttt{ECUT}} $\vert$ \hyperlink{BC}{\texttt{BC}} $\vert$ \hyperlink{FD_ORDER}{\texttt{FD\_ORDER}} $\vert$ \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}} $\vert$ \hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} $\vert$ \hyperlink{KPOINT_GRID}{\texttt{KPOINT\_GRID}} $\vert$ \hyperlink{KPOINT_SHIFT}{\texttt{KPOINT\_SHIFT}} $\vert$ \hyperlink{ELEC_TEMP_TYPE}{\texttt{ELEC\_TEMP\_TYPE}} $\vert$ \hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} $\vert$ \hyperlink{SMEARING}{\texttt{SMEARING}} $\vert$ \hyperlink{NSTATES}{\texttt{NSTATES}}     $\vert$ \hyperlink{D3_FLAG}{\texttt{D3\_FLAG}} $\vert$ \hyperlink{D3_RTHR}{\texttt{D3\_RTHR}} $\vert$ \hyperlink{D3_CN_THR}{\texttt{D3\_CN\_THR}} $\vert$ \hyperlink{VDWDF_GEN_KERNEL}{\texttt{VDWDF\_GEN\_KERNEL}}\\
-\hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}} $\vert$ \hyperlink{PSEUDO_POT}{\texttt{PSEUDO\_POT}}  $\vert$ \hyperlink{N_TYPE_ATOM}{\texttt{N\_TYPE\_ATOM}} $\vert$ \hyperlink{COORD}{\texttt{COORD}} $\vert$ \hyperlink{COORD_FRAC}{\texttt{COORD\_FRAC}} $\vert$ \hyperlink{RELAX}{\texttt{RELAX}} $\vert$ \hyperlink{SPIN}{\texttt{SPIN}} 
+\hyperlink{CELL}{\texttt{CELL}} $\vert$
+\hyperlink{LATVEC_SCALE}{\texttt{LATVEC\_SCALE}} $\vert$
+\hyperlink{LATVEC}{\texttt{LATVEC}}  $\vert$
+\hyperlink{FD_GRID}{\texttt{FD\_GRID}} $\vert$
+\hyperlink{MESH_SPACING}{\texttt{MESH\_SPACING}} $\vert$
+\hyperlink{ECUT}{\texttt{ECUT}} $\vert$
+\hyperlink{BC}{\texttt{BC}} $\vert$
+\hyperlink{FD_ORDER}{\texttt{FD\_ORDER}} $\vert$
+\hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}} $\vert$
+\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} $\vert$
+\hyperlink{KPOINT_GRID}{\texttt{KPOINT\_GRID}} $\vert$
+\hyperlink{KPOINT_SHIFT}{\texttt{KPOINT\_SHIFT}} $\vert$
+\hyperlink{ELEC_TEMP_TYPE}{\texttt{ELEC\_TEMP\_TYPE}} $\vert$
+\hyperlink{ELEC_TEMP}{\texttt{ELEC\_TEMP}} $\vert$
+\hyperlink{SMEARING}{\texttt{SMEARING}} $\vert$
+\hyperlink{NSTATES}{\texttt{NSTATES}}     $\vert$
+\hyperlink{D3_FLAG}{\texttt{D3\_FLAG}} $\vert$
+\hyperlink{D3_RTHR}{\texttt{D3\_RTHR}} $\vert$
+\hyperlink{D3_CN_THR}{\texttt{D3\_CN\_THR}} $\vert$
+\hyperlink{VDWDF_GEN_KERNEL}{\texttt{VDWDF\_GEN\_KERNEL}} $\vert$
+\hyperlink{EXX_RANGE_FOCK}{\texttt{EXX\_RANGE\_FOCK}} $\vert$ 
+\hyperlink{EXX_RANGE_PBE}{\texttt{EXX\_RANGE\_PBE}} $\vert$ 
+\hyperlink{ATOM_TYPE}{\texttt{ATOM\_TYPE}} $\vert$
+\hyperlink{PSEUDO_POT}{\texttt{PSEUDO\_POT}}  $\vert$
+\hyperlink{N_TYPE_ATOM}{\texttt{N\_TYPE\_ATOM}} $\vert$
+\hyperlink{COORD}{\texttt{COORD}} $\vert$
+\hyperlink{COORD_FRAC}{\texttt{COORD\_FRAC}} $\vert$
+\hyperlink{RELAX}{\texttt{RELAX}} $\vert$
+\hyperlink{SPIN}{\texttt{SPIN}} 
 \end{block}
 
 \begin{block}{SCF}
-\hyperlink{CHEB_DEGREE}{\texttt{CHEB\_DEGREE}} $\vert$ \hyperlink{CHEFSI_BOUND_FLAG}{\texttt{CHEFSI\_BOUND\_FLAG}} $\vert$ \hyperlink{RHO_TRIGGER}{\texttt{RHO\_TRIGGER}} $\vert$ \hyperlink{MAXIT_SCF}{\texttt{MAXIT\_SCF}} $\vert$ \hyperlink{MINIT_SCF}{\texttt{MINIT\_SCF}} $\vert$ \hyperlink{TOL_SCF}{\texttt{TOL\_SCF}} $\vert$ \hyperlink{SCF_FORCE_ACC}{\texttt{SCF\_FORCE\_ACC}} $\vert$ \hyperlink{SCF_ENERGY_ACC}{\texttt{SCF\_ENERGY\_ACC}} $\vert$ \hyperlink{TOL_LANCZOS}{\texttt{TOL\_LANCZOS}} $\vert$ \hyperlink{MIXING_VARIABLE}{\texttt{MIXING\_VARIABLE}} $\vert$ \hyperlink{MIXING_HISTORY}{\texttt{MIXING\_HISTORY}} $\vert$ \hyperlink{MIXING_PARAMETER}{\texttt{MIXING\_PARAMETER}} $\vert$ \hyperlink{MIXING_PARAMETER_SIMPLE}{\texttt{MIXING\_PARAMETER\_SIMPLE}} $\vert$ \hyperlink{MIXING_PARAMETER_MAG}{\texttt{MIXING\_PARAMETER\_MAG}} $\vert$ \hyperlink{MIXING_PARAMETER_SIMPLE_MAG}{\texttt{MIXING\_PARAMETER\_SIMPLE\_MAG}} $\vert$ \hyperlink{PULAY_FREQUENCY}{\texttt{PULAY\_FREQUENCY}} $\vert$ \hyperlink{PULAY_RESTART}{\texttt{PULAY\_RESTART}} $\vert$ \hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}} $\vert$  \hyperlink{MIXING_PRECOND_MAG}{\texttt{MIXING\_PRECOND\_MAG}} $\vert$ \hyperlink{TOL_PRECOND}{\texttt{TOL\_PRECOND}} $\vert$ \hyperlink{PRECOND_KERKER_KTF}{\texttt{PRECOND\_KERKER\_KTF}} $\vert$ \hyperlink{PRECOND_KERKER_THRESH}{\texttt{PRECOND\_KERKER\_THRESH}} $\vert$ \hyperlink{PRECOND_KERKER_KTF_MAG}{\texttt{PRECOND\_KERKER\_KTF\_MAG}} $\vert$ \hyperlink{PRECOND_KERKER_THRESH_MAG}{\texttt{PRECOND\_KERKER\_THRESH\_MAG}} $\vert$ \hyperlink{FIX_RAND}{\texttt{FIX\_RAND}}
+\hyperlink{CHEB_DEGREE}{\texttt{CHEB\_DEGREE}} $\vert$
+\hyperlink{CHEFSI_BOUND_FLAG}{\texttt{CHEFSI\_BOUND\_FLAG}} $\vert$
+\hyperlink{RHO_TRIGGER}{\texttt{RHO\_TRIGGER}} $\vert$
+\hyperlink{MAXIT_SCF}{\texttt{MAXIT\_SCF}} $\vert$
+\hyperlink{MINIT_SCF}{\texttt{MINIT\_SCF}} $\vert$
+\hyperlink{TOL_SCF}{\texttt{TOL\_SCF}} $\vert$
+\hyperlink{SCF_FORCE_ACC}{\texttt{SCF\_FORCE\_ACC}} $\vert$
+\hyperlink{SCF_ENERGY_ACC}{\texttt{SCF\_ENERGY\_ACC}} $\vert$
+\hyperlink{TOL_LANCZOS}{\texttt{TOL\_LANCZOS}} $\vert$
+\hyperlink{MIXING_VARIABLE}{\texttt{MIXING\_VARIABLE}} $\vert$
+\hyperlink{MIXING_HISTORY}{\texttt{MIXING\_HISTORY}} $\vert$
+\hyperlink{MIXING_PARAMETER}{\texttt{MIXING\_PARAMETER}} $\vert$
+\hyperlink{MIXING_PARAMETER_SIMPLE}{\texttt{MIXING\_PARAMETER\_SIMPLE}} $\vert$
+\hyperlink{MIXING_PARAMETER_MAG}{\texttt{MIXING\_PARAMETER\_MAG}} $\vert$
+\hyperlink{MIXING_PARAMETER_SIMPLE_MAG}{\texttt{MIXING\_PARAMETER\_SIMPLE\_MAG}} $\vert$
+\hyperlink{PULAY_FREQUENCY}{\texttt{PULAY\_FREQUENCY}} $\vert$
+\hyperlink{PULAY_RESTART}{\texttt{PULAY\_RESTART}} $\vert$
+\hyperlink{MIXING_PRECOND}{\texttt{MIXING\_PRECOND}} $\vert$
+\hyperlink{MIXING_PRECOND_MAG}{\texttt{MIXING\_PRECOND\_MAG}} $\vert$
+\hyperlink{TOL_PRECOND}{\texttt{TOL\_PRECOND}} $\vert$
+\hyperlink{PRECOND_KERKER_KTF}{\texttt{PRECOND\_KERKER\_KTF}} $\vert$
+\hyperlink{PRECOND_KERKER_THRESH}{\texttt{PRECOND\_KERKER\_THRESH}} $\vert$
+\hyperlink{PRECOND_KERKER_KTF_MAG}{\texttt{PRECOND\_KERKER\_KTF\_MAG}} $\vert$
+\hyperlink{PRECOND_KERKER_THRESH_MAG}{\texttt{PRECOND\_KERKER\_THRESH\_MAG}} $\vert$
+\hyperlink{FIX_RAND}{\texttt{FIX\_RAND}} $\vert$ 
+\hyperlink{TOL_FOCK}{\texttt{TOL\_FOCK}} $\vert$ 
+\hyperlink{MAXIT_FOCK}{\texttt{MAXIT\_FOCK}} $\vert$ 
+\hyperlink{MINIT_FOCK}{\texttt{MINIT\_FOCK}} $\vert$ 
+\hyperlink{TOL_SCF_INIT}{\texttt{TOL\_SCF\_INIT}} $\vert$ 
+\hyperlink{ACE_FLAG}{\texttt{ACE\_FLAG}} $\vert$ 
+\hyperlink{EXX_METHOD}{\texttt{EXX\_METHOD}} $\vert$ 
+\hyperlink{EXX_MEM}{\texttt{EXX\_MEM}} $\vert$ 
+\hyperlink{EXX_ACE_VALENCE_STATES}{\texttt{EXX\_ACE\_VALENCE\_STATES}} $\vert$ 
+\hyperlink{EXX_DOWNSAMPLING}{\texttt{EXX\_DOWNSAMPLING}} $\vert$ 
+\hyperlink{EXX_DIVERGENCE}{\texttt{EXX\_DIVERGENCE}}
 \end{block}
 
 \vspace{-2mm}
 \begin{block}{Electrostatics}
-\hyperlink{TOL_POISSON}{\texttt{TOL\_POISSON}} $\vert$ \hyperlink{MAXIT_POISSON}{\texttt{MAXIT\_POISSON}} $\vert$ \hyperlink{TOL_PSEUDOCHARGE}{\texttt{TOL\_PSEUDOCHARGE}} $\vert$ \hyperlink{REFERENCE_CUTOFF}{\texttt{REFERENCE\_CUTOFF}} 
+\hyperlink{TOL_POISSON}{\texttt{TOL\_POISSON}} $\vert$
+\hyperlink{MAXIT_POISSON}{\texttt{MAXIT\_POISSON}} $\vert$
+\hyperlink{TOL_PSEUDOCHARGE}{\texttt{TOL\_PSEUDOCHARGE}} $\vert$
+\hyperlink{REFERENCE_CUTOFF}{\texttt{REFERENCE\_CUTOFF}} 
 \end{block}
 
 \vspace{-2mm}
 \begin{block}{Stress calculation}
-\hyperlink{CALC_STRESS}{\texttt{CALC\_STRESS}} $\vert$ \hyperlink{CALC_PRES}{\texttt{CALC\_PRES}}
+\hyperlink{CALC_STRESS}{\texttt{CALC\_STRESS}} $\vert$
+\hyperlink{CALC_PRES}{\texttt{CALC\_PRES}}
 \end{block}
 \vspace{-2mm}
 
 \begin{block}{QMD}
-\hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} $\vert$ \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} $\vert$ \hyperlink{MD_NSTEP}{\texttt{MD\_NSTEP}} $\vert$ \hyperlink{MD_TIMESTEP}{\texttt{MD\_TIMESTEP}} $\vert$ \hyperlink{ION_TEMP}{\texttt{ION\_TEMP}} $\vert$ \hyperlink{ION_TEMP_END}{\texttt{ION\_TEMP\_END}} $\vert$ \hyperlink{ION_VEL_DSTR}{\texttt{ION\_VEL\_DSTR}} $\vert$ \hyperlink{ION_VEL_DSTR_RAND}{\texttt{ION\_VEL\_DSTR\_RAND}} $\vert$ \hyperlink{QMASS}{\texttt{QMASS}} $\vert$\hyperlink{NPT_NH_QMASS}{\texttt{NPT\_NH\_QMASS}} $\vert$ \hyperlink{NPT_NH_BMASS}{\texttt{NPT\_NH\_BMASS}} $\vert$ \hyperlink{NPT_NP_QMASS}{\texttt{NPT\_NP\_QMASS}} $\vert$ \hyperlink{NPT_NP_BMASS}{\texttt{NPT\_NP\_BMASS}} $\vert$ \hyperlink{NPT_SCALE_VECS}{\texttt{NPT\_SCALE\_VECS}} $\vert$ \hyperlink{TARGET_PRESSURE}{\texttt{TARGET\_PRESSURE}} $\vert$ 
-\hyperlink{RESTART_FLAG}{\texttt{RESTART\_FLAG}} $\vert$ \hyperlink{TWTIME}{\texttt{TWTIME}}
+\hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} $\vert$
+\hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} $\vert$
+\hyperlink{MD_NSTEP}{\texttt{MD\_NSTEP}} $\vert$
+\hyperlink{MD_TIMESTEP}{\texttt{MD\_TIMESTEP}} $\vert$
+\hyperlink{ION_TEMP}{\texttt{ION\_TEMP}} $\vert$
+\hyperlink{ION_TEMP_END}{\texttt{ION\_TEMP\_END}} $\vert$
+\hyperlink{ION_VEL_DSTR}{\texttt{ION\_VEL\_DSTR}} $\vert$
+\hyperlink{ION_VEL_DSTR_RAND}{\texttt{ION\_VEL\_DSTR\_RAND}} $\vert$
+\hyperlink{QMASS}{\texttt{QMASS}} $\vert$
+\hyperlink{NPT_NH_QMASS}{\texttt{NPT\_NH\_QMASS}} $\vert$
+\hyperlink{NPT_NH_BMASS}{\texttt{NPT\_NH\_BMASS}} $\vert$
+\hyperlink{NPT_NP_QMASS}{\texttt{NPT\_NP\_QMASS}} $\vert$
+\hyperlink{NPT_NP_BMASS}{\texttt{NPT\_NP\_BMASS}} $\vert$
+\hyperlink{NPT_SCALE_VECS}{\texttt{NPT\_SCALE\_VECS}} $\vert$
+\hyperlink{TARGET_PRESSURE}{\texttt{TARGET\_PRESSURE}} $\vert$
+\hyperlink{RESTART_FLAG}{\texttt{RESTART\_FLAG}} $\vert$
+\hyperlink{TWTIME}{\texttt{TWTIME}}
 \end{block}
+
 \vspace{-2mm}
 \begin{block}{Structural relaxation}
-\hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} $\vert$ \hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}} $\vert$ \hyperlink{RELAX_NITER}{\texttt{RELAX\_NITER}} $\vert$ \hyperlink{TOL_RELAX}{\texttt{TOL\_RELAX}} $\vert$ \hyperlink{TOL_RELAX_CELL}{\texttt{TOL\_RELAX\_CELL}} $\vert$ \hyperlink{RELAX_MAXDILAT}{\texttt{RELAX\_MAXDILAT}} $\vert$ \hyperlink{NLCG_SIGMA}{\texttt{NLCG\_SIGMA}} $\vert$ \hyperlink{L_HISTORY}{\texttt{L\_HISTORY}} $\vert$ \hyperlink{L_FINIT_STP}{\texttt{L\_FINIT\_STP}} $\vert$ \hyperlink{L_MAXMOV}{\texttt{L\_MAXMOV}} $\vert$ \hyperlink{L_AUTOSCALE}{\texttt{L\_AUTOSCALE}} $\vert$ \hyperlink{L_LINEOPT}{\texttt{L\_LINEOPT}} $\vert$ \hyperlink{L_ICURV}{\texttt{L\_ICURV}} $\vert$ \hyperlink{FIRE_DT}{\texttt{FIRE\_DT}} $\vert$ \hyperlink{FIRE_MASS}{\texttt{FIRE\_MASS}} $\vert$ \hyperlink{FIRE_MAXMOV}{\texttt{FIRE\_MAXMOV}} $\vert$ \hyperlink{RESTART_FLAG}{\texttt{RESTART\_FLAG}}
+\hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} $\vert$
+\hyperlink{RELAX_METHOD}{\texttt{RELAX\_METHOD}} $\vert$
+\hyperlink{RELAX_NITER}{\texttt{RELAX\_NITER}} $\vert$
+\hyperlink{TOL_RELAX}{\texttt{TOL\_RELAX}} $\vert$
+\hyperlink{TOL_RELAX_CELL}{\texttt{TOL\_RELAX\_CELL}} $\vert$
+\hyperlink{RELAX_MAXDILAT}{\texttt{RELAX\_MAXDILAT}} $\vert$
+\hyperlink{NLCG_SIGMA}{\texttt{NLCG\_SIGMA}} $\vert$
+\hyperlink{L_HISTORY}{\texttt{L\_HISTORY}} $\vert$
+\hyperlink{L_FINIT_STP}{\texttt{L\_FINIT\_STP}} $\vert$
+\hyperlink{L_MAXMOV}{\texttt{L\_MAXMOV}} $\vert$
+\hyperlink{L_AUTOSCALE}{\texttt{L\_AUTOSCALE}} $\vert$
+\hyperlink{L_LINEOPT}{\texttt{L\_LINEOPT}} $\vert$
+\hyperlink{L_ICURV}{\texttt{L\_ICURV}} $\vert$
+\hyperlink{FIRE_DT}{\texttt{FIRE\_DT}} $\vert$
+\hyperlink{FIRE_MASS}{\texttt{FIRE\_MASS}} $\vert$
+\hyperlink{FIRE_MAXMOV}{\texttt{FIRE\_MAXMOV}} $\vert$
+\hyperlink{RESTART_FLAG}{\texttt{RESTART\_FLAG}}
 \end{block}
 
 \begin{block}{Print options}
-\hyperlink{PRINT_ATOMS}{\texttt{PRINT\_ATOMS}} $\vert$ \hyperlink{PRINT_FORCES}{\texttt{PRINT\_FORCES}} $\vert$ \hyperlink{PRINT_MDOUT}{\texttt{PRINT\_MDOUT}} $\vert$ \hyperlink{PRINT_RELAXOUT}{\texttt{PRINT\_RELAXOUT}} $\vert$ \hyperlink{PRINT_RESTART}{\texttt{PRINT\_RESTART}} $\vert$ \hyperlink{PRINT_RESTART_FQ}{\texttt{PRINT\_RESTART\_FQ}} $\vert$ \hyperlink{PRINT_VELS}{\texttt{PRINT\_VELS}} $\vert$ \hyperlink{OUTPUT_FILE}{\texttt{OUTPUT\_FILE}}
+\hyperlink{PRINT_ATOMS}{\texttt{PRINT\_ATOMS}} $\vert$
+\hyperlink{PRINT_FORCES}{\texttt{PRINT\_FORCES}} $\vert$
+\hyperlink{PRINT_MDOUT}{\texttt{PRINT\_MDOUT}} $\vert$
+\hyperlink{PRINT_RELAXOUT}{\texttt{PRINT\_RELAXOUT}} $\vert$
+\hyperlink{PRINT_RESTART}{\texttt{PRINT\_RESTART}} $\vert$
+\hyperlink{PRINT_RESTART_FQ}{\texttt{PRINT\_RESTART\_FQ}} $\vert$
+\hyperlink{PRINT_VELS}{\texttt{PRINT\_VELS}} $\vert$
+\hyperlink{OUTPUT_FILE}{\texttt{OUTPUT\_FILE}}
 \end{block}
 
 \begin{block}{Parallelization options}
-\hyperlink{NP_SPIN_PARAL}{\texttt{NP\_SPIN\_PARAL}} $\vert$ \hyperlink{NP_KPOINT_PARAL}{\texttt{NP\_KPOINT\_PARAL}} $\vert$ \hyperlink{NP_BAND_PARAL}{\texttt{NP\_BAND\_PARAL}} $\vert$ \hyperlink{NP_DOMAIN_PARAL}{\texttt{NP\_DOMAIN\_PARAL}} $\vert$ \hyperlink{NP_DOMAIN_PHI_PARAL}{\texttt{NP\_DOMAIN\_PHI\_PARAL}} $\vert$ \hyperlink{EIG_SERIAL_MAXNS}{\texttt{EIG\_SERIAL\_MAXNS}} $\vert$ \hyperlink{EIG_PARAL_BLKSZ}{\texttt{EIG\_PARAL\_BLKSZ}}
+\hyperlink{NP_SPIN_PARAL}{\texttt{NP\_SPIN\_PARAL}} $\vert$
+\hyperlink{NP_KPOINT_PARAL}{\texttt{NP\_KPOINT\_PARAL}} $\vert$
+\hyperlink{NP_BAND_PARAL}{\texttt{NP\_BAND\_PARAL}} $\vert$
+\hyperlink{NP_DOMAIN_PARAL}{\texttt{NP\_DOMAIN\_PARAL}} $\vert$
+\hyperlink{NP_DOMAIN_PHI_PARAL}{\texttt{NP\_DOMAIN\_PHI\_PARAL}} $\vert$
+\hyperlink{EIG_SERIAL_MAXNS}{\texttt{EIG\_SERIAL\_MAXNS}} $\vert$
+\hyperlink{EIG_PARAL_BLKSZ}{\texttt{EIG\_PARAL\_BLKSZ}}
 \end{block}
 
 \end{frame}

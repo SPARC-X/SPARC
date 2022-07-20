@@ -45,6 +45,11 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC);
  */
 void scf(SPARC_OBJ *pSPARC);
 
+/**
+ * @brief   KS-DFT self-consistent field (SCF) calculations.
+ */
+void scf_loop(SPARC_OBJ *pSPARC);
+
 
 /**
  * @ brief Evaluate SCF error.

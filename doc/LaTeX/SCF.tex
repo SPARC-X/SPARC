@@ -959,3 +959,352 @@ Flag to fix the random seeds for setting initial guesses. Once set to $1$, the r
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_FOCK}} \label{TOL_FOCK}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Automatically set for $10^{-3}$ Ha/Bohr accuracy in force
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_FOCK}: 1e-6
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the Hartree-Fock outer loop, measured by the difference between the band energy in 2 consecutive outer loops.
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals, like PBE0 and HSE. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MAXIT\_FOCK}} \label{MAXIT_FOCK}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+20
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MAXIT\_FOCK}: 50
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The maximum number of iterations for Hartree-Fock outer loop.
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals, like PBE0 and HSE. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MINIT\_FOCK}} \label{MINIT_FOCK}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MINIT\_FOCK}: 3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The minimum number of iterations for Hartree-Fock outer loop.
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals, like PBE0 and HSE. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_SCF\_INIT}} \label{TOL_SCF_INIT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+$\max($\hyperlink{TOL_FOCK}{\texttt{TOL\_FOCK}}$\times 10,0.001)$
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_SCF\_INIT}: 1e-6
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The initial SCF tolerance for PBE iteration when using hybrid functionals. 
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals, like PBE0 and HSE. Change the \texttt{TOL\_SCF\_INIT} to change the initial guess for Hartree Fock outer loop.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{ACE\_FLAG}} \label{ACE_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{ACE\_FLAG}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Use ACE operator to accelarte the hybrid calculation.
+\end{block}
+
+\begin{block}{Remark}
+Without ACE operator, the hybrid calculation will be way slower than with it on depending on the system size.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_METHOD}} \label{EXX_METHOD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+\texttt{FOURIER\_SPACE}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_METHOD}: \texttt{REAL\_SPACE}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Methods to solve Poisson's equation in Exact Exchange part. Options include using FFT to solve it in Fourier space and using linear solver, like CG, to solve in Real space.
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals for molecule simulation, like PBE0 and HSE. 
+\texttt{FOURIER\_SPACE} method is much faster than \texttt{REAL\_SPACE} method.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_MEM}} \label{EXX_MEM}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_MEM}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of Poisson's equations to be solved in each process at a time when creating exact exchange operator or ACE operator. It could be any non negative integer. 
+\end{block}
+
+\begin{block}{Remark}
+If set to 0, user could get fastest speed but with highest memory requirement. If set to positive integer, user could run large systems with relatively small memory but slower speed. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_ACE\_VALENCE\_STATES}} \label{EXX_ACE_VALENCE_STATES}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_ACE\_VALENCE\_STATES}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Control of number of unoccupied states used to construct ACE operator.
+\end{block}
+
+\begin{block}{Remark}
+Only active when using hybrid functionals with ACE operator. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_DOWNSAMPLING}} \label{EXX_DOWNSAMPLING}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1 1 1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_DOWNSAMPLING}: 1 2 3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Down-sampling of k-points grids. There should be 3 nonnegative integers. 0 means using 0 k-point in that direction, 
+requiring 0 is one of the k-point after time-reversal symmetry in that direction. 
+Positive value should be a factor of the number of grid points in that direction. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{EXX\_DIVERGENCE}} \label{EXX_DIVERGENCE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.35\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+SPHERICAL
+\end{block}
+
+\column{0.55\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXX\_DIVERGENCE}: \texttt{AUXILIARY}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Treatment of divergence in exact exchange. Options are \texttt{SPHERICAL} (spherical truncation), 
+\texttt{AUXILIARY} (auxiliary function method) and \texttt{ERFC} (erfc screening).
+\end{block}
+
+\begin{block}{Remark}
+For systems with cube-like geometry, both methods converge fast. For slab and wire, auxiliary function method is a better option. 
+ERFC screening is the default option for HSE in bulk and molecule simulation.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

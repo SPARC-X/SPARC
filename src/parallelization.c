@@ -1090,7 +1090,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
 
         // if GGA then allocate for xc energy per particle for each grid point and der. wrt. grho
         if(strcmp(pSPARC->XC,"GGA_PBE") == 0 || strcmp(pSPARC->XC,"GGA_RPBE") == 0 || strcmp(pSPARC->XC,"GGA_PBEsol") == 0
-        || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
+            || strcmp(pSPARC->XC,"PBE0") == 0 || strcmp(pSPARC->XC,"HF") == 0 || strcmp(pSPARC->XC,"HSE") == 0
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             pSPARC->Dxcdgrho = (double *)malloc( DMnd * (2*pSPARC->Nspin - 1) * sizeof(double) );
             assert(pSPARC->Dxcdgrho != NULL);
         }
@@ -1164,9 +1165,10 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     else
         pSPARC->is_phi_eq_kpt_topo = 0;
 
-    if ((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
-        pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0 &&
-        (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint) )
+    if (((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
+            pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0
+            && (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint))
+            || (pSPARC->usefock != 0) )
     {
         gridsizes[0] = pSPARC->Nx;
         gridsizes[1] = pSPARC->Ny;
@@ -2351,6 +2353,238 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
     free(rDMnxi);
 }
 
+/**
+ * @brief   Transfer complex data from one 3-d Domain Decomposition to another.
+ * 
+ *          See the description of D2D
+ */
+void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, double _Complex *sdata, int *rDMVert,
+         double _Complex *rdata, MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    double t1, t2, t3, t4;
+
+    int ndims, rank_recv_comm, rank_send_comm,
+        coords_send_comm[3], coords_recv_comm[3];
+    ndims = 3;
+
+    t1 = MPI_Wtime();
+
+    int i, j, k, iloc, jloc, kloc, n;
+    int nsend_tot, *send_coord_start, *send_coord_end, *send_coords;
+    nsend_tot = 0;
+    send_coord_start = NULL;
+    send_coord_end = NULL;
+    send_coords = NULL;
+
+    // buffers
+    int DMnd, *DMnxi, *sDMnxi, *rDMnxi, *DMVert_temp;
+    double _Complex **sendbuf, **recvbuf;
+    sendbuf = NULL;
+    recvbuf = NULL;
+
+    int *coord_temp = (int *)malloc(ndims * sizeof(int));
+    DMVert_temp = (int *)malloc(2 * ndims * sizeof(int));
+    DMnxi = (int *)malloc(ndims * sizeof(int));
+    sDMnxi = (int *)malloc(ndims * sizeof(int));
+    rDMnxi = (int *)malloc(ndims * sizeof(int));
+
+    MPI_Request *send_request, *recv_request;
+    send_request = NULL;
+    recv_request = NULL;
+
+    // set up send processes
+    if (send_comm != MPI_COMM_NULL) {
+
+        t3 = MPI_Wtime();
+
+        for (n = 0; n < 3; n++) {
+            sDMnxi[n] = sDMVert[2*n+1] - sDMVert[2*n] + 1;
+        }
+        send_coord_start = (int *)malloc(ndims * sizeof(int));
+        send_coord_end = (int *)malloc(ndims * sizeof(int));
+        MPI_Comm_rank(send_comm, &rank_send_comm);
+        MPI_Cart_coords(send_comm, rank_send_comm, ndims, coords_send_comm);
+
+        // find out in each dimension, how many recv processes the local domain spans over
+        for (n = 0; n < 3; n++) {
+            send_coord_start[n] = block_decompose_rank(gridsizes[n], rdims[n], sDMVert[n*2]);
+            send_coord_end[n]   = block_decompose_rank(gridsizes[n], rdims[n], sDMVert[n*2+1]);
+        }
+        nsend_tot = d2d_sender->n_target;
+        send_coords = (int *)malloc(nsend_tot * ndims * sizeof(int));
+
+        // find out all the coordinates of the receiver processes in the recv_comm Cart Topology
+        c_ndgrid(ndims, send_coord_start, send_coord_end, send_coords);
+
+        t4 = MPI_Wtime();
+        #ifdef DEBUG
+            if (rank == 0) printf("======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took %.3f ms\n", (t4-t3)*1e3);
+        #endif
+
+        sendbuf = (double _Complex **)malloc(nsend_tot * sizeof(double _Complex *));
+        send_request = malloc(nsend_tot * sizeof(*send_request));
+        // go over each receiver process send data to that process
+        for (n = 0; n < nsend_tot; n++) {
+            DMnd = 1;
+            for (i = 0; i < 3; i++) {
+                coord_temp[i] = send_coords[i*nsend_tot+n];
+                // local domain in the receiver process
+                DMVert_temp[2*i] = block_decompose_nstart(gridsizes[i], rdims[i], coord_temp[i]);
+                DMnxi[i] = block_decompose(gridsizes[i], rdims[i], coord_temp[i]);
+                DMVert_temp[2*i+1] = DMVert_temp[2*i] + DMnxi[i] - 1;
+                // find intersect of local domains in send process and receiver process
+                DMVert_temp[2*i] = max(DMVert_temp[2*i], sDMVert[2*i]);
+                DMVert_temp[2*i+1] = min(DMVert_temp[2*i+1], sDMVert[2*i+1]);
+                DMnxi[i] = DMVert_temp[2*i+1] - DMVert_temp[2*i] + 1;
+                DMnd *= DMnxi[i];
+            }
+            sendbuf[n] = (double _Complex *)malloc( DMnd * sizeof(double _Complex));
+            for (k = 0; k < DMnxi[2]; k++) {
+                kloc = k + DMVert_temp[4] - sDMVert[4];
+                for (j = 0; j < DMnxi[1]; j++) {
+                    jloc = j + DMVert_temp[2] - sDMVert[2];
+                    for (i = 0; i < DMnxi[0]; i++) {
+                        iloc = i + DMVert_temp[0] - sDMVert[0];
+                        sendbuf[n][k*DMnxi[1]*DMnxi[0]+j*DMnxi[0]+i] =
+                        sdata[kloc*sDMnxi[1]*sDMnxi[0]+jloc*sDMnxi[0]+iloc];
+                    }
+                }
+            }
+            MPI_Isend(sendbuf[n], DMnd, MPI_DOUBLE_COMPLEX, d2d_sender->target_ranks[n], 111, union_comm, &send_request[n]);
+        }
+    }
+#ifdef DEBUG
+    if (rank == 0) printf("======D2D: finished initiating send_comm! Start entering receivers comm\n");
+#endif
+    int nrecv_tot, *recv_coord_start, *recv_coord_end, *recv_coords;
+    nrecv_tot = 0;
+    recv_coord_start = NULL;
+    recv_coord_end = NULL;
+    recv_coords = NULL;
+
+    // set up receiver processes
+    if (recv_comm != MPI_COMM_NULL) {
+        t3 = MPI_Wtime();
+        MPI_Comm_rank(recv_comm, &rank_recv_comm);
+        MPI_Cart_coords(recv_comm, rank_recv_comm, ndims, coords_recv_comm);
+
+        // local domain sizes
+        for (n = 0; n < ndims; n++) {
+            rDMnxi[n] = rDMVert[2*n+1] - rDMVert[2*n] + 1;
+        }
+
+        recv_coord_start = (int *)malloc(ndims * sizeof(int));
+        recv_coord_end = (int *)malloc(ndims * sizeof(int));
+
+        // find in each dimension, how many send processes the local domain spans over
+        for (n = 0; n < ndims; n++) {
+            recv_coord_start[n] = block_decompose_rank(gridsizes[n], sdims[n], rDMVert[n*2]);
+            recv_coord_end[n]   = block_decompose_rank(gridsizes[n], sdims[n], rDMVert[n*2+1]);
+        }
+
+        nrecv_tot = d2d_recvr->n_target;
+        recv_coords = (int *)malloc(nrecv_tot * ndims * sizeof(int));
+
+        // find out all the coords of the send process in the send_comm topology
+        c_ndgrid(ndims, recv_coord_start, recv_coord_end, recv_coords);
+
+    t4 = MPI_Wtime();
+#ifdef DEBUG
+    if (rank == 0) printf("======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took %.3f ms\n", (t4-t3)*1e3);
+#endif
+
+        recvbuf = (double _Complex **)malloc(nrecv_tot * sizeof(double _Complex *));
+        recv_request = malloc(nrecv_tot * sizeof(*recv_request));
+        // go over each send process and receive data from that process
+        for (n = 0; n < nrecv_tot; n++) {
+            DMnd = 1;
+            for (i = 0; i < ndims; i++) {
+                coord_temp[i] = recv_coords[i*nrecv_tot+n];
+                // local domain in the send process
+                DMVert_temp[2*i] = block_decompose_nstart(gridsizes[i], sdims[i], coord_temp[i]);
+                DMnxi[i] = block_decompose(gridsizes[i], sdims[i], coord_temp[i]);
+                DMVert_temp[2*i+1] = DMVert_temp[2*i] + DMnxi[i] - 1;
+                // find intersect of local domains in send process and receiver process
+                DMVert_temp[2*i] = max(DMVert_temp[2*i], rDMVert[2*i]);
+                DMVert_temp[2*i+1] = min(DMVert_temp[2*i+1], rDMVert[2*i+1]);
+                DMnxi[i] = DMVert_temp[2*i+1] - DMVert_temp[2*i] + 1;
+                DMnd *= DMnxi[i];
+            }
+            recvbuf[n] = (double _Complex *)malloc( DMnd * sizeof(double _Complex));
+            MPI_Irecv(recvbuf[n], DMnd, MPI_DOUBLE_COMPLEX, d2d_recvr->target_ranks[n], 111, union_comm, &recv_request[n]);
+        }
+    }
+
+    t2 = MPI_Wtime();
+#ifdef DEBUG
+    if (rank == 0) printf("======D2D: initiated sending and receiving took %.3f ms\n", (t2-t1)*1e3);
+#endif
+
+    if (send_comm != MPI_COMM_NULL) {
+        MPI_Waitall(nsend_tot, send_request, MPI_STATUS_IGNORE);
+    }
+
+    if (recv_comm != MPI_COMM_NULL) {
+        MPI_Waitall(nrecv_tot, recv_request, MPI_STATUS_IGNORE);
+        for (n = 0; n < nrecv_tot; n++) {
+            DMnd = 1;
+            for (i = 0; i < ndims; i++) {
+                coord_temp[i] = recv_coords[i*nrecv_tot+n];
+                // local domain in the send process
+                DMVert_temp[2*i] = block_decompose_nstart(gridsizes[i], sdims[i], coord_temp[i]);
+                DMnxi[i] = block_decompose(gridsizes[i], sdims[i], coord_temp[i]);
+                DMVert_temp[2*i+1] = DMVert_temp[2*i] + DMnxi[i] - 1;
+                // find intersect of local domains in send process and receiver process
+                DMVert_temp[2*i] = max(DMVert_temp[2*i], rDMVert[2*i]);
+                DMVert_temp[2*i+1] = min(DMVert_temp[2*i+1], rDMVert[2*i+1]);
+                DMnxi[i] = DMVert_temp[2*i+1] - DMVert_temp[2*i] + 1;
+                DMnd *= DMnxi[i];
+            }
+            for (k = 0; k < DMnxi[2]; k++) {
+                kloc = k + DMVert_temp[4] - rDMVert[4];
+                for (j = 0; j < DMnxi[1]; j++) {
+                    jloc = j + DMVert_temp[2] - rDMVert[2];
+                    for (i = 0; i < DMnxi[0]; i++) {
+                        iloc = i + DMVert_temp[0] - rDMVert[0];
+                        rdata[kloc*rDMnxi[1]*rDMnxi[0]+jloc*rDMnxi[0]+iloc] =
+                        recvbuf[n][k*DMnxi[1]*DMnxi[0]+j*DMnxi[0]+i];
+                    }
+                }
+            }
+        }
+    }
+
+    if (send_comm != MPI_COMM_NULL) {
+        for (n = 0; n < nsend_tot; n++) {
+            free(sendbuf[n]);
+        }
+        free(sendbuf);
+        free(send_request);
+        free(send_coord_start);
+        free(send_coord_end);
+        free(send_coords);
+    }
+
+    if (recv_comm != MPI_COMM_NULL) {
+        for (n = 0; n < nrecv_tot; n++) {
+            free(recvbuf[n]);
+        }
+        free(recvbuf);
+        free(recv_request);
+        free(recv_coord_start);
+        free(recv_coord_end);
+        free(recv_coords);
+    }
+
+    free(coord_temp);
+    free(DMVert_temp);
+    free(DMnxi);
+    free(sDMnxi);
+    free(rDMnxi);
+}
 
 
 void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, double *sdata, int *rDMVert, double *rdata,

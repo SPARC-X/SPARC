@@ -32,7 +32,7 @@
  */
 void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                               const int ncol, const double c, const double complex *x, 
-                              double complex *Dx, const int dir, const int kpt, MPI_Comm comm)
+                              double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm)
 {
     int nproc;
     MPI_Comm_size(comm, &nproc);
@@ -44,7 +44,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
         dims[0] = dims[1] = dims[2] = 1;
    
     for (int i = 0; i < ncol; i++)
-        Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, kpt, comm, dims);  
+        Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, kpt_vec, comm, dims);  
 }
 
 
@@ -56,7 +56,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  */
 void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                       const int ncol, const double c, const double complex *x,
-                      double complex *Dx, const int dir, const int kpt, MPI_Comm comm, const int* dims)
+                      double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm, const int* dims)
 {
     int nproc = dims[0] * dims[1] * dims[2];
     int periods[3];
@@ -170,7 +170,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
             m_spos[0] = FDn; m_spos[1] = 0; m_spos[2] = 0; m_spos[3] = 0; m_spos[4] = 0; m_spos[5] = 0; m_spos[6] = DMnx_in; m_spos[7] = 0;
             m_epos[0] = DMnx_in; m_epos[1] = DMnx; m_epos[2] = DMnx; m_epos[3] = DMnx; m_epos[4] = DMnx; m_epos[5] = FDn; m_epos[6] = DMnx; m_epos[7] = DMnx;
             l_m = pSPARC->Nx;
-            phase_fac_m = cos(pSPARC->k1_loc[kpt] * pSPARC->range_x) + sin(pSPARC->k1_loc[kpt] * pSPARC->range_x) * I;
+            phase_fac_m = cos(kpt_vec * pSPARC->range_x) + sin(kpt_vec * pSPARC->range_x) * I;
             break;
         case 1:
             pshift = DMnx; pshift_ex = DMnx_ex; 
@@ -183,7 +183,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
             m_spos[0] = FDn; m_spos[1] = 0; m_spos[2] = 0; m_spos[3] = 0; m_spos[4] = DMny_in; m_spos[5] = FDn; m_spos[6] = FDn; m_spos[7] = 0;
             m_epos[0] = DMny_in; m_epos[1] = DMny; m_epos[2] = DMny; m_epos[3] = FDn; m_epos[4] = DMny; m_epos[5] = DMny_in; m_epos[6] = DMny_in; m_epos[7] = DMny;
             l_m = pSPARC->Ny;
-            phase_fac_m = cos(pSPARC->k2_loc[kpt] * pSPARC->range_y) + sin(pSPARC->k2_loc[kpt] * pSPARC->range_y) * I;
+            phase_fac_m = cos(kpt_vec * pSPARC->range_y) + sin(kpt_vec * pSPARC->range_y) * I;
             break;
         case 2:
             pshift = DMnxny; pshift_ex = DMnxny_ex;
@@ -196,7 +196,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
             m_spos[0] = FDn; m_spos[1] = 0; m_spos[2] = DMnz_in; m_spos[3] = FDn; m_spos[4] = FDn; m_spos[5] = FDn; m_spos[6] = FDn; m_spos[7] = 0;
             m_epos[0] = DMnz_in; m_epos[1] = FDn; m_epos[2] = DMnz; m_epos[3] = DMnz_in; m_epos[4] = DMnz_in; m_epos[5] = DMnz_in; m_epos[6] = DMnz_in; m_epos[7] = DMnz;
             l_m = pSPARC->Nz;
-            phase_fac_m = cos(pSPARC->k3_loc[kpt] * pSPARC->range_z) + sin(pSPARC->k3_loc[kpt] * pSPARC->range_z) * I;
+            phase_fac_m = cos(kpt_vec * pSPARC->range_z) + sin(kpt_vec * pSPARC->range_z) * I;
             break;
         default: printf("gradient dir must be either 0, 1 or 2!\n");
                  exit(EXIT_FAILURE);

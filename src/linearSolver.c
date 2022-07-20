@@ -154,3 +154,76 @@ void AAR(
 }
 
 
+
+/**
+ * @brief   Conjugate Gradient (CG) method for solving a general linear system Ax = b. 
+ *
+ *          CG() assumes that x and  b is distributed among the given communicator. 
+ *          Ax is calculated by calling function Ax().
+ */
+void CG(SPARC_OBJ *pSPARC, 
+    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, double *, MPI_Comm),
+    int N, int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
+)
+{
+    int i, j, iter_count = 0, sqrt_n = (int)sqrt(N);
+    double *r, *d, *q, delta_new, delta_old, alpha, beta, err, b_2norm;
+
+    r = (double *)calloc( DMnd , sizeof(double) );
+    d = (double *)calloc( DMnd , sizeof(double) );
+    q = (double *)calloc( DMnd , sizeof(double) );    
+    assert(r != NULL && d != NULL && q != NULL);
+    /********************************************************************/
+
+    Vector2Norm(b, DMnd, &b_2norm, comm); 
+    tol *= b_2norm;
+
+    Ax(pSPARC, DMnd, DMVertices, 1, 0.0, x, r, comm);
+
+    for (i = 0; i < DMnd; ++i){
+        r[i] = b[i] + r[i];
+        d[i] = r[i];
+    }
+    Vector2Norm(r, DMnd, &delta_new, comm);
+
+    err = tol + 1.0;
+    while(iter_count < max_iter && err > tol){
+        Ax(pSPARC, DMnd, DMVertices, 1, 0.0, d, q, comm);
+        VectorDotProduct(d, q, DMnd, &alpha, comm);
+
+        alpha = - delta_new * delta_new / alpha;
+
+        for (j = 0; j < DMnd; ++j)
+            x[j] = x[j] + alpha * d[j];
+        
+        // Restart every sqrt_n cycles.
+        if ((iter_count % sqrt_n)==0) {
+            Ax(pSPARC, N, DMVertices, 1, 0.0, x, r, comm);
+            for (j = 0; j < DMnd; ++j){
+                r[j] = b[j] + r[j];
+            }
+        } else {
+            for (j = 0; j < DMnd; ++j)
+                r[j] = r[j] + alpha * q[j];
+        }
+
+        delta_old = delta_new;
+
+        Vector2Norm(r, DMnd, &delta_new, comm);
+
+        err = delta_new;
+        beta = delta_new * delta_new / (delta_old * delta_old);
+        for (j = 0; j < DMnd; ++j)
+            d[j] = r[j] + beta * d[j];
+
+        iter_count++;
+    }
+
+    if (fabs(err) > tol) {
+        printf("WARNING: CG failed!\n");
+    }
+
+    free(r);
+    free(d);
+    free(q);
+}

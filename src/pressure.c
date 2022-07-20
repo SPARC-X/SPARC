@@ -72,6 +72,16 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     if(!rank) printf("Time for calculating nonlocal pressure components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
     
+    if (pSPARC->usefock > 0) {
+        // find exact exchange pressure components
+        t1 = MPI_Wtime();
+        Calculate_exact_exchange_pressure(pSPARC);
+        t2 = MPI_Wtime();
+    #ifdef DEBUG
+        if(!rank) printf("Time for calculating exact exchange pressure components: %.3f ms\n", (t2 - t1)*1e3);
+    #endif
+    }    
+
 	// find total pressure    
  	if(!rank){
  	    // Define measure of unit cell
@@ -84,6 +94,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
             cell_measure *= pSPARC->range_z;
         		
  		pSPARC->pres = (-2 * (pSPARC->Eband + pSPARC->Escc) + pSPARC->pres_xc + pSPARC->pres_el + pSPARC->pres_nl);
+        if (pSPARC->usefock > 1) pSPARC->pres += pSPARC->pres_exx; 
  		pSPARC->pres /= (-3 * cell_measure); // measure = volume for 3D, area for 2D, and length for 1D.
  	}
 #ifdef DEBUG    
@@ -108,7 +119,9 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
 
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
-    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
+    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 
+            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
+            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
         int DMnd, i;
         DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
@@ -998,7 +1011,7 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta;
+    double k1, k2, k3, theta, kpt_vec;
     double complex bloch_fac, a, b;
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal pressure\n");
@@ -1050,8 +1063,9 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
                 k1 = pSPARC->k1_loc[kpt];
                 k2 = pSPARC->k2_loc[kpt];
                 k3 = pSPARC->k3_loc[kpt];
+                kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
                 // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
                 beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin* (dim + 1) + count);
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
                     if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen

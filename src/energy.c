@@ -95,19 +95,37 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         E3 *= pSPARC->dV;
     }
     
-    // calculate total free energy
-    Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
-    pSPARC->Exc_corr = E3;
-    // find change in Etot from previous SCF step
-    dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
-    pSPARC->Etot = Etot;
-    MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-    if(!rank) printf("Etot    = %18.12f\nEband   = %18.12f\nE1      = %18.12f\nE2      = %18.12f\n"
-                     "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
-                     "dE = %.3e, dEband = %.3e\n", 
-              Etot, Eband, E1, E2, E3, pSPARC->Exc, pSPARC->Esc, pSPARC->Entropy, dEtot, dEband); 
-#endif
+    if (pSPARC->usefock <= 1) {
+        // calculate total free energy
+        Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
+        pSPARC->Exc_corr = E3;
+        // find change in Etot from previous SCF step
+        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
+        pSPARC->Etot = Etot;
+        MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    #ifdef DEBUG
+        if(!rank) printf("Etot    = %18.12f\nEband   = %18.12f\nE1      = %18.12f\nE2      = %18.12f\n"
+                        "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
+                        "dE = %.3e, dEband = %.3e\n", 
+                Etot, Eband, E1, E2, E3, pSPARC->Exc, pSPARC->Esc, pSPARC->Entropy, dEtot, dEband); 
+    #endif
+    } else {
+        // add the Exact exchange correction term    
+        pSPARC->Exc += pSPARC->Eexx;
+        // calculate total free energy
+        Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy - 2*pSPARC->Eexx;
+        pSPARC->Exc_corr = E3;
+        // find change in Etot from previous SCF step
+        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
+        pSPARC->Etot = Etot;
+        MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    #ifdef DEBUG
+        if(!rank) printf("Etot    = %18.12f\nEband   = %18.12f\nE1      = %18.12f\nE2      = %18.12f\n"
+                        "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
+                        "Eexx    = %18.12f\n, dE = %.3e, dEband = %.3e\n", 
+                Etot, Eband, E1, E2, E3, pSPARC->Exc, pSPARC->Esc, pSPARC->Entropy, pSPARC->Eexx, dEtot, dEband); 
+    #endif
+    }
 }
 
 
