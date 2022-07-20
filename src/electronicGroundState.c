@@ -63,6 +63,29 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     if (rank == 0) printf("Start ground-state calculation.\n");
 #endif
     
+    // Check if Reference Cutoff > 0.5 * nearest neighbor distance
+    // Check if Reference Cutoff < mesh spacing
+    if (rank == 0) {
+        double nn = compute_nearest_neighbor_dist(pSPARC, 'N');
+        int SCF_ind;
+        if (pSPARC->MDFlag == 1)
+            SCF_ind = pSPARC->MDCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0);
+        else if(pSPARC->RelaxFlag >= 1)
+            SCF_ind = pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0);
+        else
+            SCF_ind = 1;
+        if (pSPARC->REFERENCE_CUTOFF > 0.5*nn) {
+            printf("\nWARNING: REFERENCE _CUFOFF (%.6f Bohr) > 1/2 nn (nearest neighbor) distance (%.6f Bohr) in SCF#%d\n",
+                        pSPARC->REFERENCE_CUTOFF, 0.5*nn,  SCF_ind);
+        }
+        if (pSPARC->REFERENCE_CUTOFF < pSPARC->delta_x ||
+            pSPARC->REFERENCE_CUTOFF < pSPARC->delta_y ||
+            pSPARC->REFERENCE_CUTOFF < pSPARC->delta_z ) {
+            printf("\nWARNING: REFERENCE _CUFOFF (%.6f Bohr) < MESH_SPACING (dx %.6f Bohr, dy %.6f Bohr, dz %.6f Bohr) in SCF#%d\n",
+                        pSPARC->REFERENCE_CUTOFF, pSPARC->delta_x, pSPARC->delta_y, pSPARC->delta_z, SCF_ind );
+        }
+    }
+    
 	// initialize the history variables of Anderson mixing
 	if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
 	    memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspin * pSPARC->MixingHistory);
@@ -145,7 +168,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     }
     
     // Calculate Stress and pressure
-    if(pSPARC->Calc_stress == 1 || pSPARC->Calc_pres == 1){
+    if(pSPARC->Calc_stress == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_stress(pSPARC);
         t2 = MPI_Wtime();
@@ -180,7 +203,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"Time for stress calculation        :  %.3f (sec)\n",t2-t1);
             fclose(output_fp);
         }
-    } else if(pSPARC->Calc_pres == 1){ // obsolete, will calculate stress tensor instead
+    } else if(pSPARC->Calc_pres == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_pressure(pSPARC);
         t2 = MPI_Wtime();
@@ -726,7 +749,7 @@ void scf(SPARC_OBJ *pSPARC)
         
         // check if Etot is NaN
         if (pSPARC->Etot != pSPARC->Etot) {
-            if (!rank) printf("Error: Etot is NaN\n");
+            if (!rank) printf("ERROR: Etot is NaN\n");
             exit(EXIT_FAILURE);
         }
 

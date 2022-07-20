@@ -863,7 +863,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->range_y = pSPARC_Input->range_y;
     pSPARC->range_z = pSPARC_Input->range_z;
     if (pSPARC->range_x <= 0.0 || pSPARC->range_y <= 0.0 || pSPARC->range_z <= 0.0) {
-        if (!rank) printf("\nError: Please specify valid CELL dimensions!\n");
+        if (!rank) printf("\nERROR: Please specify valid CELL dimensions!\n");
         exit(EXIT_FAILURE);
     }
     pSPARC->latvec_scale_x = pSPARC_Input->latvec_scale_x;
@@ -918,7 +918,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     strncpy(pSPARC->RelaxMeth , pSPARC_Input->RelaxMeth,sizeof(pSPARC->RelaxMeth));
     strncpy(pSPARC->XC, pSPARC_Input->XC,sizeof(pSPARC->XC));
     if (strcmp(pSPARC->XC,"UNDEFINED") == 0) {
-        if (!rank) printf("\nError: Please specify XC type!\n");
+        if (!rank) printf("\nERROR: Please specify XC type!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -984,7 +984,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     if (pSPARC->Nstates < (pSPARC->Nelectron / 2)) {
-        if (!rank) printf("\nError: number of states is less than Nelectron/2!\n");
+        if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -1218,7 +1218,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             x = *(pSPARC->atom_pos+3*i);
             if (x < pSPARC->xin || x > pSPARC->range_x + pSPARC->xin)
             {
-                printf("\nError: position of atom # %d is out of the domain!\n",i+1);
+                printf("\nERROR: position of atom # %d is out of the domain!\n",i+1);
                 exit(EXIT_FAILURE);
             }
         }
@@ -1241,7 +1241,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             y = *(pSPARC->atom_pos+1+3*i);
             if (y < 0 || y > pSPARC->range_y)
             {
-                printf("\nError: position of atom # %d is out of the domain!\n",i+1);
+                printf("\nERROR: position of atom # %d is out of the domain!\n",i+1);
                 exit(EXIT_FAILURE);
             }
         }
@@ -1264,7 +1264,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             z = *(pSPARC->atom_pos+2+3*i);
             if (z < 0 || z > pSPARC->range_z)
             {
-                printf("\nError: position of atom # %d is out of the domain!\n",i+1);
+                printf("\nERROR: position of atom # %d is out of the domain!\n",i+1);
                 exit(EXIT_FAILURE);
             }
         }
@@ -1835,6 +1835,7 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     int m = pSPARC->MixingHistory;
     int npspin = pSPARC->npspin;
     int npkpt = pSPARC->npkpt;
+    int npNd = pSPARC->npNd;
 
     int type_size;
     if (pSPARC->isGammaPoint) {
@@ -1844,15 +1845,39 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     }
 
     // orbitals (dominant)
-    int ncpy_orbitals = 4; // extra copies required during CheFSI 
+    int ncpy_orbitals; // extra copies required during CheFSI 
+    if (pSPARC->npband > 1) {
+        // MKL pdgemr2d internally creates ~2.5 copies during pdgemr2d in projection + Yorb, Yorb_BLCYC, HY_BLCYC
+        ncpy_orbitals = 5.5; 
+    } else {
+        // when there's no band parallelization (domain only), then pdgemr2d is not needed for projection
+        // moreover, the block cyclic formats Yorb_BLCYC, HY_BLCYC (also YQ_BLCYC during rotation) are not needed
+        // so the necessary copies are: Yorb, Ynew (during Chebyshev filtering)
+        // sometimes dgemm (MKL) also might internally create ~0.5 copy of the orbital, we add 0.5 for safety
+        ncpy_orbitals = 2.5; 
+    }
+    #ifdef USE_DP_SUBEIG
+        ncpy_orbitals = 6; // DP requires 4 extra copies, Yorb, and a temp copy (Chebyshev filtering and Projection)
+    #endif
     double memory_orbitals = (double) Nd * Ns * (ncpy_orbitals*npspin*npkpt + Nspin * Nkpts_sym) * type_size;
 
     // vectors: rho, phi, Veff, mixing history vectors, etc.
     int ncpy_vectors = 6 + 4 * Nspin + 2 * m * Nspin + 3 * (2*Nspin-1) + 1;
     double memory_vectors = (double) ncpy_vectors * Nd * sizeof(double);
 
+    // subspace matrix: Hs, Ms, Q
+    int ncpy_matrices = 3 * npNd;
+    #ifdef USE_DP_SUBEIG
+        ncpy_matrices = 3 * nproc; // DP stores Hp_local,Mp_local,eigvecs in (almost) every process
+    #endif
+    double memory_matrices = (double) ncpy_matrices * Ns * Ns * sizeof(double);
+
     // total memory
-    double memory_usage = memory_orbitals + memory_vectors;
+    double memory_usage = memory_orbitals + memory_vectors + memory_matrices;
+
+    // add some buffer for other memory
+    const double buf_rat = 0.10; // add 10% more memory
+    memory_usage *= (1.0 + buf_rat); 
 
     #ifdef DEBUG
     if (rank == 0) {
@@ -1865,6 +1890,10 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
         printf("orbitals             : %s\n", mem_str);
         formatBytes(memory_vectors, 32, mem_str);
         printf("global sized vectors : %s\n", mem_str);
+        formatBytes(memory_matrices, 32, mem_str);
+        printf("subspace matrices : %s\n", mem_str);
+        formatBytes(memory_usage*buf_rat/(1.0+buf_rat), 32, mem_str);
+        printf("others : %s\n", mem_str);
         printf("----------------------------------------------\n");
         formatBytes(memory_usage/nproc,32,mem_str);
         printf("Estimated memory usage per processor: %s\n",mem_str);
@@ -2138,7 +2167,7 @@ void Cart2nonCart_transformMat(SPARC_OBJ *pSPARC) {
 
     if(pSPARC->Jacbdet <= 0){
         if(rank == 0)
-            printf("Error: Volume(det(jacobian)) %lf is <= 0\n", pSPARC->Jacbdet);
+            printf("ERROR: Volume(det(jacobian)) %lf is <= 0\n", pSPARC->Jacbdet);
         exit(EXIT_FAILURE);
     }
 
@@ -2295,7 +2324,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jul 09, 2021)                      *\n");  
+    fprintf(output_fp,"*                       SPARC (version Jul 23, 2021)                      *\n");  
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2859,4 +2888,45 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     //MPI_Type_create_struct(N_MEMBR, blens, disps, SPARC_types, &SPARC_INPUT_MPI_tmp);
     //MPI_Type_create_resized(SPARC_INPUT_MPI_tmp, 0, extend, pSPARC_INPUT_MPI);
     //MPI_Type_commit(pSPARC_INPUT_MPI);
+}
+
+
+/**
+ * @brief   Computing nearest neighbohr distance
+ */
+double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN) {
+#ifdef DEBUG
+    double t1, t2;
+    t1 = MPI_Wtime();
+#endif
+    int atm1, atm2;
+    double nn, dist;
+    nn = 100000000000;
+    if (CorN == 'N') {           // Non-Cartesian coordinates
+        for (atm1 = 0; atm1 < pSPARC->n_atom-1; atm1++) {
+            for (atm2 = atm1+1; atm2 < pSPARC->n_atom; atm2++) {
+                CalculateDistance(pSPARC, pSPARC->atom_pos[3*atm1], pSPARC->atom_pos[3*atm1+1], pSPARC->atom_pos[3*atm1+2],
+                                    pSPARC->atom_pos[3*atm2], pSPARC->atom_pos[3*atm2+1], pSPARC->atom_pos[3*atm2+2], &dist);
+                if (dist < nn) nn = dist;
+            }
+        }
+    } else if (CorN == 'C') {                            // Cartesian coordinates
+        for (atm1 = 0; atm1 < pSPARC->n_atom-1; atm1++) {
+            for (atm2 = atm1+1; atm2 < pSPARC->n_atom; atm2++) {
+                dist = fabs(sqrt(pow(pSPARC->atom_pos[3*atm1] - pSPARC->atom_pos[3*atm2],2.0) 
+                               + pow(pSPARC->atom_pos[3*atm1+1] - pSPARC->atom_pos[3*atm2+1],2.0) 
+                               + pow(pSPARC->atom_pos[3*atm1+2] - pSPARC->atom_pos[3*atm2+2],2.0) ));
+                if (dist < nn) nn = dist;
+            }
+        }
+    } else {
+        printf("ERROR: please use 'N' for non-cartesian coordinates and 'C' for cartesian coordinates in compute_nearest_neighbor_dist function.");
+        exit(-1);
+    }
+    
+#ifdef DEBUG
+    t2 = MPI_Wtime();
+    printf("\nComputing nearest neighbor distance (%.3f Bohr) takes %.3f ms\n", nn, (t2-t1)*1000);
+#endif
+    return nn;
 }

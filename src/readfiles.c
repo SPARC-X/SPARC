@@ -1170,7 +1170,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         printf("Input element type: %s\n", elemType);
 #endif
         if (strcmpi(str,elemType) != 0) {
-            printf("\nError: Pseudopotential file %s does not match with input atom type %s!\n",
+            printf("\nERROR: Pseudopotential file %s does not match with input atom type %s!\n",
             psd_filename, &pSPARC->atomType[ityp*L_ATMTYPE]);
             exit(EXIT_FAILURE);
         }
@@ -1342,7 +1342,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
             dr_j = pSPARC->psd[ityp].RadialGrid[jj] - pSPARC->psd[ityp].RadialGrid[jj-1];
             // check if dr is 0
             if (fabs(dr_j) < TEMP_TOL) {
-                printf("\nError: repeated radial grid values in pseudopotential (%s)!\n\n", psd_filename);
+                printf("\nERROR: repeated radial grid values in pseudopotential (%s)!\n\n", psd_filename);
                 exit(EXIT_FAILURE);
             }
             // check if mesh is uniform

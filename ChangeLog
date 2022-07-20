@@ -3,6 +3,69 @@
 -Name
 -changes
 
+
+--------------
+Sep 19, 2021
+Name: Shashikant Kumar
+Changes: (tests)
+1. Updated reference output files
+2. Added a new NLCC system
+3. Added a feature to just run the check 
+4. Added MIXING_PRECOND_MAG tests
+
+
+--------------
+Sep 17, 2021
+Name: Xin Jing
+Changes: (doc/, initialization.c, electronicGroundState.c)
+1. Modify documentation.
+2. Capitalize Error and Warnings
+3. Fix bug in mixing
+4. Fix bug in exchange correlation with NLCC
+
+
+--------------
+Sep 09, 2021
+Name: Qimen Xu
+Changes: (doc/)
+1. Modify documentation.
+
+
+--------------
+Jul 31, 2021
+Name: Shashikant Kumar
+Changes: (tests)
+1. Replaced "CELL" with "LATVEC_SCALE" in input files
+2. Fe_spin with non-zero magnetization
+3. Bulk system with three orientations
+4. Bandgap tests for molecules
+5. Check ionic stress and velocities for MD
+6. added option "clean_temp" to clear the files
+
+
+--------------
+Jul 23, 2021
+Name: Qimen Xu
+Changes: (electronicGroundState.c)
+1. Switch back to calculating the pressure directly when CALC_PRES is turned on alone (i.e., CALC_STRESS is off).
+
+
+--------------
+Jul 14, 2021
+Name: Qimen Xu
+Changes: (eigenSolver*.c, parallelization.c, initialization.c)
+1. Modify memory estimate (include extra memory used by MKL).
+2. Reduce memory usage due to MKL for domain-only parallelization (NP_BAND_PARAL: 1): skip data transfer through p?gemr2d and explicitly call BLAS ?gemm instead of ScaLAPACK p?gemm for projection.
+3. Move memory allocation of eigmin/eigmax arrays to initialization stage.
+
+
+--------------
+Jul 13, 2021
+Name: Shashikant Kumar
+Changes: (tests)
+1. Fixed bug in 'tests' folder for the systems with 'quick_run' tag
+
+
 --------------
 Jul 09, 2021
 Name: Shashikant Kumar

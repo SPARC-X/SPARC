@@ -234,7 +234,7 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
     // *** store residual & iteration history *** //
     if (iter_count > 0) {
         i_hist = (iter_count - 1) % m;
-        if (pSPARC->PulayRestartFlag && iter_count % (p+1) == 0) {
+        if (pSPARC->PulayRestartFlag && i_hist == 0) {
             // TODO: check if this is necessary!
             for (i = 0; i < N*(m-1); i++) {
                 R[N+i] = F[N+i] = 0.0; // set all cols to 0 (except for 1st col)

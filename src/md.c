@@ -765,7 +765,7 @@ void Check_atomlocation(SPARC_OBJ *pSPARC) {
 			for(atm = 0; atm < pSPARC->n_atom; atm++){
 				if(pSPARC->atom_pos[atm * 3 + dir] >= length || pSPARC->atom_pos[atm * 3 + dir] < 0){
 					if(!rank)
-						printf("Error: Atom number %d has crossed the boundary in %d direction",atm, dir);
+						printf("ERROR: Atom number %d has crossed the boundary in %d direction",atm, dir);
 					exit(EXIT_FAILURE);
 				}
 			}

@@ -164,6 +164,10 @@ double estimate_memory(const SPARC_OBJ *pSPARC);
  */
 double Ecut2h(double Ecut, int FDn);
 
+/**
+ * @brief   Computing nearest neighbohr distance
+ */
+double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN);
 #endif // INITIALIZATION_H 
 
 

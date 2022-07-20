@@ -86,8 +86,8 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
     
     // TODO: Change to (elecgs_Count > 0) once the previous electron density is used during restart
     if(pSPARC->elecgs_Count == 0 && SCFcount == 0){
-        pSPARC->eigmin = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
-        pSPARC->eigmax = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
+        // pSPARC->eigmin = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
+        // pSPARC->eigmax = (double *) malloc(pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm * sizeof (double));
     }
     if(pSPARC->elecgs_Count > 0) 
         pSPARC->rhoTrigger = 1;
@@ -251,20 +251,6 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
             }
 #endif
 
-    #ifdef USE_EVA_MODULE
-    if (CheFSI_use_EVA_Kpt == -1)
-    {
-        char *use_EVA_p = getenv("EXT_VEC_ACCEL");
-        if (use_EVA_p != NULL) CheFSI_use_EVA_Kpt = atoi(use_EVA_p);
-        else CheFSI_use_EVA_Kpt = 0;
-        if (CheFSI_use_EVA_Kpt != 1) CheFSI_use_EVA_Kpt = 0;
-        if (pSPARC->cell_typ != 0) CheFSI_use_EVA_Kpt = 0;
-        
-        // EVA module does not support kpts yet
-        CheFSI_use_EVA_Kpt = 0;
-    }
-    #endif
-    
     double t1, t2, t3, t_temp;
     int size_k, size_s;
     
@@ -273,25 +259,10 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
 
     // ** Chebyshev filtering ** //
     t1 = MPI_Wtime();
-    #ifdef USE_EVA_MODULE
-    if (CheFSI_use_EVA_Kpt == 1)
-    {
-        /*
-        EVA_Chebyshev_Filtering(
-            pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Nband_bandcomm, 
-            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt],
-            pSPARC->dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->Yorb_kpt
-        );
-        */
-    } else {
-    #endif
-        ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
-                           pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
-                           pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
-                           pSPARC->dmcomm, &t_temp);
-    #ifdef USE_EVA_MODULE
-    }
-    #endif
+    ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
+                   pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
+                   pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
+                   pSPARC->dmcomm, &t_temp);
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && kpt == 0) 
@@ -307,6 +278,12 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
         pSPARC->Hp_kpt, pSPARC->Mp_kpt, spn_i, kpt
     );
     #else
+    // allocate memory for block cyclic format of the wavefunction
+    if (pSPARC->npband > 1) {
+        pSPARC->Yorb_BLCYC_kpt = (double complex *)malloc(
+            pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
+        assert(pSPARC->Yorb_BLCYC_kpt != NULL);
+    }
     Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
                         pSPARC->Hp_kpt, pSPARC->Mp_kpt, kpt, spn_i, pSPARC->dmcomm);
     #endif
@@ -344,9 +321,22 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation_kpt(pSPARC, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s);
     #else
+    double complex *YQ_BLCYC;
+    if (pSPARC->npband > 1) {
+        YQ_BLCYC = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
+        assert(YQ_BLCYC != NULL);
+    } else {
+        YQ_BLCYC = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
+    }
     // ScaLAPACK stores the eigenvectors in Q
     Subspace_Rotation_kpt(pSPARC, pSPARC->Yorb_BLCYC_kpt, pSPARC->Q_kpt, 
-                      pSPARC->Xorb_BLCYC_kpt, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, spn_i);
+                      YQ_BLCYC, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, spn_i);
+    
+    if (pSPARC->npband > 1) {
+        free(YQ_BLCYC);
+        free(pSPARC->Yorb_BLCYC_kpt);
+        pSPARC->Yorb_BLCYC_kpt = NULL;
+    }
     #endif
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -1002,9 +992,13 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     t3 = MPI_Wtime();
 
     t1 = MPI_Wtime();
-    // distribute orbitals into block cyclic format
-    pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
-              pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
+    if (pSPARC->npband > 1) {
+        // distribute orbitals into block cyclic format
+        pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
+                  pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
+    } else {
+        pSPARC->Yorb_BLCYC_kpt = Y;
+    }
     t2 = MPI_Wtime();  
     #ifdef DEBUG  
     if(!rank && spn_i == 0 && kpt == 0) 
@@ -1012,14 +1006,26 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
                 rank, (t2 - t1)*1e3);          
     #endif
     t1 = MPI_Wtime();
-    #ifdef DEBUG    
-    if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, STARTING PZGEMM ...\n",rank);
-    #endif    
-    // perform matrix multiplication using ScaLAPACK routines
-    pzgemm_("C", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
-            pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
-            pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
-            &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+    if (pSPARC->npband > 1) {
+        #ifdef DEBUG    
+        if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, STARTING PZGEMM ...\n",rank);
+        #endif    
+        // perform matrix multiplication using ScaLAPACK routines
+        pzgemm_("C", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
+                pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
+                pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
+                &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+    } else {
+        #ifdef DEBUG    
+        if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, STARTING ZGEMM ...\n",rank);
+        #endif 
+        cblas_zgemm(
+            CblasColMajor, CblasConjTrans, CblasNoTrans,
+            pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
+            &alpha, pSPARC->Yorb_BLCYC_kpt, Nd_blacscomm, pSPARC->Yorb_BLCYC_kpt, Nd_blacscomm, 
+            &beta, Mp, pSPARC->Nstates
+        );
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) 
@@ -1049,49 +1055,46 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     // save HY in Xorb
     int size_k = pSPARC->Nd_d_dmcomm * pSPARC->Nband_bandcomm;
     int size_s = size_k * pSPARC->Nkpts_kptcomm;
-    #ifdef USE_EVA_MODULE
-    if (CheFSI_use_EVA_Kpt == 1)
-    {
-        /*
-        EVA_Hamil_MatVec(
-            pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, 
-            pSPARC->Nband_bandcomm, 0.0, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm,
-            pSPARC->Atom_Influence_nloc, pSPARC->nlocProj,
-            Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, pSPARC->dmcomm
-        );
-        */
-    } else {
-    #endif
-        Hamiltonian_vectors_mult_kpt(
-            pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
-            pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, pSPARC->dmcomm
-        );
-    #ifdef USE_EVA_MODULE
-    }
-    #endif
+    Hamiltonian_vectors_mult_kpt(
+        pSPARC, pSPARC->Nd_d_dmcomm, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
+        pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, pSPARC->dmcomm
+    );
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, finding HY took %.3f ms\n", rank, (t2 - t1)*1e3);   
     #endif    
     
     t1 = MPI_Wtime();
-    // distribute HY
-    HY_BLCYC = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
-    pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, &ONE, &ONE, 
-              pSPARC->desc_orbitals, HY_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, 
-              &pSPARC->ictxt_blacs);
+    if (pSPARC->npband > 1) {
+        // distribute HY
+        HY_BLCYC = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
+        pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, &ONE, &ONE, 
+                  pSPARC->desc_orbitals, HY_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, 
+                  &pSPARC->ictxt_blacs);
+    } else {
+        HY_BLCYC = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, distributing HY into block cyclic form took %.3f ms\n", 
                      rank, (t2 - t1)*1e3);  
     #endif
     t1 = MPI_Wtime();
-    // perform matrix multiplication Y' * HY using ScaLAPACK routines
-    pzgemm_("C", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
-            pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, HY_BLCYC, 
-            &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Hp, &ONE, &ONE, 
-            pSPARC->desc_Hp_BLCYC);
-    
+    if (pSPARC->npband > 1) {
+        // perform matrix multiplication Y' * HY using ScaLAPACK routines
+        pzgemm_("C", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
+                pSPARC->Yorb_BLCYC_kpt, &ONE, &ONE, pSPARC->desc_orb_BLCYC, HY_BLCYC, 
+                &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Hp, &ONE, &ONE, 
+                pSPARC->desc_Hp_BLCYC);
+    } else{
+        cblas_zgemm(
+            CblasColMajor, CblasConjTrans, CblasNoTrans,
+            pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
+            &alpha, pSPARC->Yorb_BLCYC_kpt, Nd_blacscomm, HY_BLCYC, Nd_blacscomm, 
+            &beta, Hp, pSPARC->Nstates
+        );
+    }
+
     if (nproc_dmcomm > 1 && !pSPARC->is_domain_uniform) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Hp, pSPARC->nr_Hp_BLCYC*pSPARC->nc_Hp_BLCYC, 
@@ -1102,7 +1105,9 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, finding Y'*HY took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
-    free(HY_BLCYC);
+    if (pSPARC->npband > 1) {
+        free(HY_BLCYC);
+    }
 #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
 }
 
@@ -1308,22 +1313,32 @@ void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double comple
     double t1, t2;
 
     t1 = MPI_Wtime();
-    // perform matrix multiplication Psi * Q using ScaLAPACK routines
-    pzgemm_("N", "N", &Nd_blacscomm, &pSPARC->Nstates, &pSPARC->Nstates, &alpha, 
-            Psi, &ONE, &ONE, pSPARC->desc_orb_BLCYC, Q, &ONE, &ONE, 
-            pSPARC->desc_Q_BLCYC, &beta, PsiQ, &ONE, &ONE, pSPARC->desc_orb_BLCYC);
-    
+    if (pSPARC->npband > 1) {
+        // perform matrix multiplication Psi * Q using ScaLAPACK routines
+        pzgemm_("N", "N", &Nd_blacscomm, &pSPARC->Nstates, &pSPARC->Nstates, &alpha, 
+                Psi, &ONE, &ONE, pSPARC->desc_orb_BLCYC, Q, &ONE, &ONE, 
+                pSPARC->desc_Q_BLCYC, &beta, PsiQ, &ONE, &ONE, pSPARC->desc_orb_BLCYC);
+    } else {
+        cblas_zgemm(
+            CblasColMajor, CblasNoTrans, CblasNoTrans,
+            Nd_blacscomm, pSPARC->Nstates, pSPARC->Nstates, 
+            &alpha, Psi, Nd_blacscomm, Q, pSPARC->Nstates,
+            &beta, PsiQ, Nd_blacscomm
+        );
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, subspace rotation using ScaLAPACK took %.3f ms\n", 
                      rank, (t2 - t1)*1e3); 
     #endif
     t1 = MPI_Wtime();
-    // distribute rotated orbitals from block cyclic format back into 
-    // original format (band + domain)
-    pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, PsiQ, &ONE, &ONE, 
-              pSPARC->desc_orb_BLCYC, Psi_rot, &ONE, &ONE, 
-              pSPARC->desc_orbitals, &pSPARC->ictxt_blacs);
+    if (pSPARC->npband > 1) {
+        // distribute rotated orbitals from block cyclic format back into 
+        // original format (band + domain)
+        pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, PsiQ, &ONE, &ONE, 
+                  pSPARC->desc_orb_BLCYC, Psi_rot, &ONE, &ONE, 
+                  pSPARC->desc_orbitals, &pSPARC->ictxt_blacs);
+    }
     t2 = MPI_Wtime();    
     #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) 
