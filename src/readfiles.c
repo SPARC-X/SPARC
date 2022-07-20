@@ -532,6 +532,15 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->d3Flag);         
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_RTHR:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->d3Rthr);         
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_CN_THR:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->d3Cn_thr);         
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"CALC_STRESS:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Calc_stress);  
             fscanf(input_fp, "%*[^\n]\n");

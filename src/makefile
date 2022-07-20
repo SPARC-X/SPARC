@@ -13,7 +13,7 @@ USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
-USE_PCE := 0
+USE_PCE := 1
 ifeq ($(USE_PCE), 1)
 ifeq ($(USE_DP_SUBEIG), 0)
 	$(error USE_PCE=1 is currently only tested with USE_DP_SUBEIG=1)
@@ -30,6 +30,7 @@ else
 USE_GPU    := 0
 USE_ELPA := 0
 endif
+DEBUG_MODE    = 1
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -143,6 +144,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
+        vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o \
         forces.o stress.o pressure.o finalization.o
 
 ifeq ($(USE_PCE), 1)

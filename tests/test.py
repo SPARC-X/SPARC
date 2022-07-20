@@ -162,6 +162,26 @@ SYSTEMS["systemname"].append('SiH4_quick')
 SYSTEMS["Tags"].append(['molecule', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('SnO_bulk_d3')
+SYSTEMS["Tags"].append(['bulk', 'gga','d3'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Au_wire_d3')
+SYSTEMS["Tags"].append(['wire', 'gga','d3'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('MoS2_surface_d3')
+SYSTEMS["Tags"].append(['surface', 'gga','d3','nonorth'])
+SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Si8_atom_geopt_d3')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'denmix', 'kerker', 'relax_atom_lbfgs','gamma','smear_gauss','d3'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Si8_cell_geopt_d3')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_cell','gamma','smear_fd','d3'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>

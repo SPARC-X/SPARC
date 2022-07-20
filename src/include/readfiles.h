@@ -15,6 +15,12 @@
 #include "isddft.h"
 
 /**
+ * @brief   find the type name of element from the input name
+ *
+ */
+void find_element(char *element, char *atom_type);
+
+/**
  * @brief   Read input file.
  *
  *          This function reads the input file and saves the data into the 
