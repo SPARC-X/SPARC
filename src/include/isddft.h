@@ -5,6 +5,7 @@
  * @authors Qimen Xu <qimenxu@gatech.edu>
  *          Abhiraj Sharma <asharma424@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
+ *          Alfredo Metere (GPU Support), Lawrence Livermore National Laboratory, <metere1@llnl.gov>, <alfredo.metere@xsilico.com>
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -20,12 +21,14 @@
 
 #include <mpi.h>
 #include <complex.h>
+#include <stdio.h>
 
 // max length of pseudopotential path
 #define L_PSD 4096
 // max length of input strings
 #define L_STRING 512
 #define L_ATMTYPE 8
+#define L_QMASS  60
 
 
 // TO PRINT IN COLOR
@@ -440,6 +443,9 @@ typedef struct _SPARC_OBJ{
     double complex *Q_kpt;                    // eigenvectors of the generalized eigenproblem: Hp * Q_i  = lambda_i * Mp * Q_i
     double *Hp_s;                 // whole projected Hamiltonian Hp redistributed for solving eigenproblem (GLOBAL)   
     double *Mp_s;                 // whole projected mass matrix Mp redistributed for solving eigenproblem (GLOBAL)
+    #ifdef ACCEL
+    int useACCEL;                 // SPARCX_ACCEL_NOTE Flag needed to trigger GPU Acceleration
+    #endif
     int useLAPACK;                // flag for using LAPACK_dsygv to solve subspace eigenproblem
     int eig_serial_maxns;// maximum Nstates for using LAPACK to solve the subspace eigenproblem by default,
                         // for Nstates greater than this value, ScaLAPACK will be used instead, unless 
@@ -608,6 +614,37 @@ typedef struct _SPARC_OBJ{
     double qmass;          // mass parameter
     double amu2au;         // conversion factor for atomic mass unit -> atomic unit of mass
     double fs2atu;         // conversion factor for femto second -> atomic unit of time (Jiffy) 
+    // NPT
+    int NPTscaleVecs[3];    // which lattice vector can be rescaled?
+    int NPTisotropicFlag;   // whether it is an isotropic cell expansion
+    double prtarget;       // Target pressure of barostatic system, used in both NPT_NH and NPT_NP
+    double scale;          // length ratio of the size of cell in NPT, used in both NPT_NH and NPT_NP
+    double volumeCell;  // volume of the cell, used in both NPT_NH and NPT_NP
+    // NPT-NH
+    int NPT_NHnnos;              // amount of thermostat variables in the Nose-Hoover chain, it should be smaller than 100
+    double NPT_NHqmass[L_QMASS];    // qmass in NPT, the largest number of thermostat variable is 60 //ORIGINAL VARIABLES! DON'T CHANGE IT!
+    double NPT_NHbmass;          // bmass in NPT
+    double glogs[L_QMASS];       // Accelerations of virtual thermal variables
+    double vlogs[L_QMASS];       // Velocities of virtual thermal variables
+    double vlogv;          // Velocity of virtual baro variables
+    double xlogs[L_QMASS];       // Positions of virtual thermal variables
+    // NPT-NP
+    int maxTimeIter;     // largest allowed amount of iteration
+    double NPT_NP_qmass; // qmass used in NPT_NP
+    double NPT_NP_bmass; // bmass used in NPT_NP
+    double range_x_velo; // velocity of x sidelength
+    double range_y_velo; // velocity of y sidelength
+    double range_z_velo; // velocity of z sidelength
+    double G_NPT_NP[3]; // G tensor, for barostat control
+    double Pm_NPT_NP[3]; // Pm tensor
+    double Kbaro; // kinetic energy of barostat variables
+    double Ubaro; // potential energy of barostat variables
+    double S_NPT_NP; // S, for thermostat control
+    double Sv_NPT_NP; // velocity of S
+    double Kther; // kinetic energy of thermostat variable
+    double Uther; // potential energy of thermostat variable
+    double Hamiltonian_NPT_NP; // Hamiltonian of the NPT-NP system
+    double init_Hamil_NPT_NP; // initial Hamiltonian of the system
     // Relaxation
     double Relax_fac;      // Relaxation factor
     int elecgs_Count;      // To count the number of times electronic ground state is calculated
@@ -640,6 +677,31 @@ typedef struct _SPARC_OBJ{
     int cellrelax_dims[3];
     double max_dilatation;
     double TOL_RELAX_CELL;
+
+    // DFT-D3 correction
+    double d3Energy[4]; // total d3 energy, e6, e8, e63
+    double *d3Grads;   // atomic forces caused by d3 (-grad)
+    double d3Stress[9]; // stress of cell caused by d3
+
+    int d3Flag;
+    double d3Rthr;        // cutoff radius for calculating d3 energy correction
+    double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
+
+    int *atomicNumbers;  // atomic numbers of atoms
+    double *atomScaledR2R4;
+    double *atomScaledRcov;
+    double *atomCN;
+    int *atomMaxci;
+    int nImageCN[3]; // largest amount of image cells on 3 directions needed to consider for computing CN
+    int nImageEG[3]; // largest amount of image cells on 3 directions needed to consider for computing d3 energy
+    double *****c6ab; // pointer of C6 sample results
+    double lattice[9];
+    int BCtype[3];
+    int periodicBCFlag;
+    double d3Rs6;
+    double d3S18;
+    FILE *d3Output;
+    double d3Sigma[9]; // stress of cell caused by d3
 
     // Extrapolation options
     double *delectronDens;
@@ -853,6 +915,14 @@ typedef struct _SPARC_INPUT_OBJ{
     double ion_T;        // Ionic temperature in Kelvin = initial temp of thermostat in NVT_NH
     double thermos_Tf;   // Final temperature of the thermostat
     double qmass;        // mass parameter of Nose Hoover thermostat
+
+    int NPT_NHnnos;            // number of thermostat variables in NPT_NH
+    int NPTscaleVecs[3];       // which lattice vector can be rescaled?
+    double NPT_NHqmass[L_QMASS];// qmass used in NPT_NH
+    double NPT_NHbmass;        // Bmass used in NPT_NH
+    double prtarget;     // Target pressure of barostatic system, UNIT on input file is GPa
+    double NPT_NP_qmass; // qmass used in NPT_NP
+    double NPT_NP_bmass; // Bmass used in NPT_NP
     
     /* Walltime */
     double TWtime;
@@ -875,6 +945,11 @@ typedef struct _SPARC_INPUT_OBJ{
     char RelaxMeth[32];
     
     char XC[32];        // exchage-correlation approx. name
+
+    /* DFT-D3 options */
+    int d3Flag;
+    double d3Rthr;        // cutoff radius for calculating d3 energy correction
+    double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
     
     /* File names */
     char filename[L_STRING]; 

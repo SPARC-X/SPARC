@@ -9,12 +9,28 @@ USE_SCALAPACK = 0
 # Set USE_DP_SUBEIG = 1 to use SPARC rather than ScaLAPACK routines for matrix data distribution
 # (USE_DP_SUBEIG = 1 is required if both USE_MKL = 0 and USE_SCALAPACK = 0)
 # Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
-USE_DP_SUBEIG = 0
+USE_DP_SUBEIG = 1
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
+USE_PCE := 1
+ifeq ($(USE_PCE), 1)
+ifeq ($(USE_DP_SUBEIG), 0)
+	$(error USE_PCE=1 is currently only tested with USE_DP_SUBEIG=1)
+endif
+ifeq ($(ACCEL), 1)
+	$(error USE_PCE=1 is currently only tested with ACCEL=0)
+endif
+ifeq ($(USE_EVA_MODULE), 1)
+	$(error USE_PCE=1 is currently only tested with USE_EVA_MODULE=0)
+endif
 USE_GPU    := 1
 USE_ELPA := 1
+else
+USE_GPU    := 0
+USE_ELPA := 0
+endif
+DEBUG_MODE    = 1
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -35,6 +51,12 @@ ENABLE_SIMD_COMPLEX = 0
 # LDFLAGS += -L$(BLASROOT)
 
 #CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
+CPPFLAGS = -Iinclude/
+LDLIBS   = -lrt
+
+LIBPCE_DEP = main.o # Dummy value for dependency
+ifeq ($(USE_PCE), 1)
+CPPFLAGS += -DUSE_PCE=1
 LIBPCE_DIR=../Hamiltonian/
 CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
 
@@ -46,8 +68,8 @@ ELPA_LIB = elpa
 # Uses gcc
 LIBPCE_MAKEFILE=Makefile.pace.icc
 
-CPPFLAGS = -Iinclude/ -I $(LIBPCE_DIR)/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-LDLIBS   = -lrt -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
+CPPFLAGS += -I $(LIBPCE_DIR)/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
+LDLIBS += -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
 
 ifeq ($(USE_GPU), 1)
 
@@ -61,6 +83,10 @@ else
 LFLAGS_GPU_HOST:=$(LFALGS_GPU_HOST),-lopenblas
 endif
 LFLAGS_GPU+=-Xcompiler $(LFLAGS_GPU_HOST) 
+
+endif
+LIBPCE_DEP = $(LIBPCE_DIR)/lib/libpce.a
+
 endif
 
 
@@ -118,7 +144,12 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
-        forces.o stress.o pressure.o finalization.o hamstruct.o pce_interface.o
+        vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o \
+        forces.o stress.o pressure.o finalization.o
+
+ifeq ($(USE_PCE), 1)
+OBJSC += hamstruct.o pce_interface.o
+endif
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci
@@ -131,7 +162,7 @@ all: sparc
 # %.o : %.c
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
-sparc: $(OBJSC) $(LIBPCE_DIR)/lib/libpce.a
+sparc: $(OBJSC) $(LIBPCE_DEP) 
 	if [ "$(USE_GPU)" == "1" ]; then \
 		nvcc -DUSE_GPU $(LFLAGS_GPU) $(LDFLAGS) -o $(LIBBASE) $^; \
 	else \

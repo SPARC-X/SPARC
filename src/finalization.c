@@ -20,6 +20,8 @@
 #include "tools.h"
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
+
+#include "vdW/d3/d3Correction.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*
@@ -307,6 +309,9 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         MPI_Comm_free(&pSPARC->spincomm);
     if (pSPARC->spin_bridge_comm != MPI_COMM_NULL)
         MPI_Comm_free(&pSPARC->spin_bridge_comm);     
+    if (pSPARC->d3Flag == 1) {
+       free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
+    }
 
     #if defined(USE_MKL) || defined(USE_SCALAPACK)
     Cblacs_gridexit(pSPARC->ictxt_blacs);

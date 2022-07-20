@@ -38,10 +38,14 @@
 #include "stress.h"
 #include "pressure.h"
 
+#if USE_PCE
 #include <libpce.h>
 #include <vnl_mod.h>
 #include "hamstruct.h"
 #include "pce_interface.h"
+#endif
+
+#include "vdW/d3/d3Correction.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -94,6 +98,16 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     
     Calculate_EGS_elecDensEnergy(pSPARC);
 
+    // DFT-D3 correction
+    if (pSPARC->d3Flag == 1) {
+        t1 = MPI_Wtime();
+        d3_energy_gradient(pSPARC);
+        t2 = MPI_Wtime();
+        #ifdef DEBUG
+            if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
+        #endif
+    }
+
     // write energies into output file   
     if (!rank && pSPARC->Verbosity) {
         output_fp = fopen(pSPARC->OutFilename,"a");
@@ -111,6 +125,9 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
         fprintf(output_fp,"Entropy*kb*T                       :%18.10E (Ha)\n", pSPARC->Entropy);
         fprintf(output_fp,"Fermi level                        :%18.10E (Ha)\n", pSPARC->Efermi);
+        if (pSPARC->d3Flag == 1) {
+        	fprintf(output_fp,"DFT-D3 correction                  :%18.10E (Ha)\n", pSPARC->d3Energy[0]);
+        }
         fclose(output_fp);
         // for static calculation, print energy to .static file
         if (pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
@@ -129,6 +146,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
     // calculate forces
     Calculate_EGS_Forces(pSPARC);
+    if (pSPARC->d3Flag == 1) add_d3_forces(pSPARC);
     t2 = MPI_Wtime();
     
     // write forces into .static file if required
@@ -171,6 +189,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     if(pSPARC->Calc_stress == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_stress(pSPARC);
+        if (pSPARC->d3Flag == 1) d3_grad_cell_stress(pSPARC);
         t2 = MPI_Wtime();
         if(!rank && pSPARC->Verbosity) {
             // write stress to .static file
@@ -206,6 +225,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     } else if(pSPARC->Calc_pres == 1){
         t1 = MPI_Wtime();
         Calculate_electronic_pressure(pSPARC);
+        if (pSPARC->d3Flag == 1) d3_grad_cell_stress(pSPARC); // add the D3 contribution on pressure to total pressure
         t2 = MPI_Wtime();
         if(!rank && pSPARC->Verbosity) {
         	output_fp = fopen(pSPARC->OutFilename,"a");
@@ -457,6 +477,7 @@ void scf(SPARC_OBJ *pSPARC)
     SCFcount = 0;
 
     // START OF INTEGRATION WITH LIBPCE
+#if USE_PCE
     Psi_Info Psi1;
     Psi_Info Psi2;
     Psi_Info Psi3;
@@ -588,6 +609,7 @@ void scf(SPARC_OBJ *pSPARC)
     //SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
     SPARC2NONLOCAL_interface(pSPARC, &hd, &nl, compute_device);
     }
+#endif /* USE_PCE*/
 
 
     // START OF SCF LOOP
@@ -610,13 +632,19 @@ void scf(SPARC_OBJ *pSPARC)
 		// start scf timer
         t_scf_s = MPI_Wtime();
         
+#if USE_PCE
         if (pSPARC->isGammaPoint) {
           PCE_Veff_Set(&veff_info, &hd, pSPARC->Veff_loc_dmcomm);
         }
+#endif /* USE_PCE */
 
+#if USE_PCE
         Calculate_elecDens(rank, pSPARC, SCFcount, error, 
                            &hd, &cheb, &Eigvals, &ham_struct, &Psi1, &Psi2, &Psi3,
                            pSPARC->kptcomm, pSPARC->dmcomm, pSPARC->blacscomm);
+#else
+        Calculate_elecDens(rank, pSPARC, SCFcount, error);
+#endif
 
         // Calculate net magnetization for spin polarized calculations
         if (pSPARC->spin_typ != 0)
@@ -843,6 +871,7 @@ void scf(SPARC_OBJ *pSPARC)
         }
     }
 
+#if USE_PCE
     if(pSPARC->isGammaPoint) {
       PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
       PCE_Psi_Destroy(&Psi1);
@@ -854,7 +883,9 @@ void scf(SPARC_OBJ *pSPARC)
     }
 
     PCE_FD_Destroy(&fd_raw);
+
     printf("DESTROYED\n");
+#endif
 
     
     if (!rank) {

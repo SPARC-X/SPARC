@@ -102,4 +102,74 @@ void RestartMD(SPARC_OBJ *pSPARC);
 */
 void Rename_restart(SPARC_OBJ *pSPARC);
 
+/* 
+@ brief: Performs Molecular Dynamics using NPT_NH.
+*/
+void NPT_NH(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: Updating accelerations and velocities of thermostat and barostat variables.
+*/
+void IsoPress(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: Updating accelerations and velocities of particles in the first half step.
+*/
+void AccelVelocityParticle (SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: Updating velocities of particles in the second half step.
+*/
+void VelocityParticle (SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: Updating positions of particles, size of unit cell and position of thermostat variables.
+*/
+void PositionParticleCell(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: reinitialize related variables after the size changing of cell.
+*/
+void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: calculate Hamiltonian of the NPT system.
+*/
+void hamiltonian_NPT_NH(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: Performs Molecular Dynamics using NPT_NP.
+*/
+void NPT_NP(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: calculate Hamiltonian of the NPT_NP system.
+*/
+void initialize_Hamiltonian(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: updating momentums of thermostat and barostat variables and particles in the first half step in NPT_NP.
+*/
+void updateMomentum_FirstHalf(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: updating momentums of thermostat and barostat variables and particles in the second half step in NPT_NP.
+*/
+void updateMomentum_SecondHalf(SPARC_OBJ *pSPARC);
+
+/* 
+@ brief: updating value of thermostat variable and length of cell and positions of particles in NPT_NP.
+*/
+void updatePosition(SPARC_OBJ *pSPARC);
+
+/**
+ * @ brief: function to convert non cartesian to cartesian coordinates and velocities, from initialization.c
+ */
+void nonCart2Cart(double *LatUVec, double *carCoord, double *nonCarCoord);
+
+/**
+ * @brief: function to convert cartesian to non cartesian coordinates and velocities, from initialization.c
+ */
+void Cart2nonCart(double *gradT, double *carCoord, double *nonCarCoord);
+
 #endif // MD_H

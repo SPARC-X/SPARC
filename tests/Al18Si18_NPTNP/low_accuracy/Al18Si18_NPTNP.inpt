@@ -1,0 +1,37 @@
+# nprocs: 24
+
+# Test: Si18Al18
+LATVEC:
+0.5 0.5 0.0
+0.0 0.5 0.5
+0.5 0.0 0.5
+LATVEC_SCALE: 30.96 30.96 20.64 # 3 3 2 Si8(2) cell
+MESH_SPACING: 0.35
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+EXCHANGE_CORRELATION: LDA_PW
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 1000
+TOL_SCF: 5e-7
+CALC_STRESS: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+MIXING_VARIABLE: potential
+MIXING_PRECOND: kerker
+# NSTATES: 135
+
+# MD
+MD_FLAG: 1                    # 1 = MD, 0 = no MD (default)
+ION_TEMP: 1000            # kelvin
+# ION_TEMP_END: 1120
+MD_METHOD: NPT_NP          # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+#QMASS: 1600                # mass for NH thermostat
+MD_TIMESTEP: 0.4              # fs 0.6
+MD_NSTEP: 10              # run MD for MD_NSTEP steps or TWTIME minutes, whichever comes first
+#TWTIME: 1400
+RESTART_FLAG: 0               # 1 = restart MD from .restart file if present, 0 = start new
+# ION_VEL_DSTR: 1               # Initial velocities: 1 = uniform, 2 = Maxwell-Boltzmann (default)
+TARGET_PRESSURE: 12 GPa
+NPT_NP_QMASS: 500.0
+NPT_NP_BMASS: 0.05

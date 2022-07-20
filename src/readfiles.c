@@ -532,6 +532,15 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->d3Flag);         
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_RTHR:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->d3Rthr);         
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"D3_CN_THR:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->d3Cn_thr);         
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"CALC_STRESS:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Calc_stress);  
             fscanf(input_fp, "%*[^\n]\n");
@@ -539,6 +548,38 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d",&pSPARC_Input->Calc_pres);  
             fscanf(input_fp, "%*[^\n]\n");
             printf("WARNING: \"CALC_PRES\" is obsolete, use \"CALC_STRESS\" instead!\n");
+        } else if (strcmpi(str,"NPT_SCALE_VECS:") == 0) {
+            int dir[3] = {0, 0, 0};
+            pSPARC_Input->NPTscaleVecs[0] = 0; pSPARC_Input->NPTscaleVecs[1] = 0; pSPARC_Input->NPTscaleVecs[2] = 0; 
+            int scanfResult;
+            scanfResult = fscanf(input_fp,"%d %d %d",&dir[0], &dir[1], &dir[2]);
+            if (scanfResult == -1) {
+                scanfResult = fscanf(input_fp,"%d %d",&dir[0], &dir[1]);
+            }
+            if (scanfResult == -1) {
+                scanfResult = fscanf(input_fp,"%d",&dir[0]);
+            }
+            for (int i = 0; i < 3; i++) {
+                if (dir[i] > 0) pSPARC_Input->NPTscaleVecs[dir[i] - 1] = 1;
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NPT_NH_QMASS:") == 0) { 
+            fscanf(input_fp,"%d",&pSPARC_Input->NPT_NHnnos);
+            for (int subscript_NPTNH_qmass = 0; subscript_NPTNH_qmass < pSPARC_Input->NPT_NHnnos; subscript_NPTNH_qmass++){
+                fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NHqmass[subscript_NPTNH_qmass]);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NPT_NH_BMASS:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NHbmass);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"TARGET_PRESSURE:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->prtarget);
+            fscanf(input_fp, "%*[^\n]\n");
+	    } else if (strcmpi(str,"NPT_NP_QMASS:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NP_qmass);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NPT_NP_BMASS:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NP_bmass);
         } else if(strcmpi(str,"VERBOSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Verbosity);
             fscanf(input_fp, "%*[^\n]\n");
