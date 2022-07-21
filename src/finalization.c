@@ -235,6 +235,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->k3_hf);
         free(pSPARC->kpthf_ind);
         free(pSPARC->kpthf_ind_red);
+        free(pSPARC->kpthfred2kpthf);
         free(pSPARC->kpthf_pn);
         free(pSPARC->kpts_hf_red_list);
         free(pSPARC->k1_shift);

@@ -23,7 +23,7 @@
  *          for each k-point. 
  */
 void ACE_operator_kpt(SPARC_OBJ *pSPARC, 
-    double _Complex *psi_outer, double _Complex *psi, double *occ_outer, int spn_i, double _Complex *Xi_kpt);
+    double _Complex *psi, double *occ_outer, int spn_i, double _Complex *Xi_kpt);
 
 
 /**
@@ -144,7 +144,6 @@ void kshift_phasefactor(SPARC_OBJ *pSPARC);
  */
 void find_local_kpthf(SPARC_OBJ *pSPARC);
 
-
 /**
  * @brief   Apply phase factor by Bloch wave vector shifts. 
  * 
@@ -157,10 +156,37 @@ void find_local_kpthf(SPARC_OBJ *pSPARC);
  */
 void apply_phase_factor(SPARC_OBJ *pSPARC, double _Complex *vec, int ncol, char *NorP, int *kpt_k_list, int *kpt_q_list);
 
-
 /**
  * @brief   Allocate memory space for ACE operator and check its size for each outer loop
  */
 void allocate_ACE_kpt(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   Gather orbitals shape vectors across blacscomm
+ */
+void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec);
+
+/**
+ * @brief   Gather orbitals shape vectors across kpt_bridge_comm
+ */
+void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec);
+
+/**
+ * @brief   transfer orbitals in a cyclic rotation way to save memory
+ */
+void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, 
+        double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs);
+
+/**
+ * @brief   transfer orbitals in a cyclic rotation way to save memory
+ */
+void transfer_orbitals_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, 
+        double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs);
+
+/**
+ * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
+ */
+void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC, 
+    int ncol, double complex *psi, double complex *psi_storage, double *occ, double complex *Xi_kpt, int kpt_q, int shift, int Ns_occ);
 
 #endif // EXACTEXCHANGEPOTENTIAL_KPT_H 

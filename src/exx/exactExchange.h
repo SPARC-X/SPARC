@@ -31,18 +31,6 @@ void init_exx(SPARC_OBJ *pSPARC);
 void free_exx(SPARC_OBJ *pSPARC);
 
 /**
- * @brief   Create ACE operator in dmcomm
- *
- *          Using occupied + extra orbitals to construct the ACE operator 
- *          Due to the symmetry of ACE operator, only Ns_occ(Ns_occ+1)/2
- *          Poisson's equations need to be solved.
- *          Note: there is no band parallelization when usign ACE, so there 
- *          is only 1 dmcomm for each k-point. 
- */
-void ACE_operator(SPARC_OBJ *pSPARC, double *psi_outer, double *occ_outer, int spn_i, double *Xi);
-
-
-/**
  * @brief   Evaluating Exact Exchange potential
  *          
  *          This function basically prepares different variables for kptcomm_topo and dmcomm
@@ -209,7 +197,38 @@ double ecut_estimate(double hx, double hy, double hz);
 void allocate_ACE(SPARC_OBJ *pSPARC);
 
 /**
+ * @brief   Create ACE operator in dmcomm
+ *
+ *          Using occupied + extra orbitals to construct the ACE operator 
+ *          Due to the symmetry of ACE operator, only half Poisson's 
+ *          equations need to be solved.
+ */
+void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double *Xi);
+
+/**
+ * @brief   Gather orbitals shape vectors across blacscomm
+ */
+void gather_blacscomm(SPARC_OBJ *pSPARC, int Ncol, double *vec);
+
+/**
+ * @brief   Solve half of poissons equation locally and apply to Xi
+ */
+void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, double *psi, double *occ, double *Xi);
+
+/**
+ * @brief   transfer orbitals in a cyclic rotation way to save memory
+ */
+void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, double *sendbuff, double *recvbuff, int shift, MPI_Request *reqs);
+
+/**
+ * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
+ */
+void solve_allpair_poissons_equation_apply2Xi(
+    SPARC_OBJ *pSPARC, int ncol, double *psi, double *psi_storage, double *occ, double *Xi, int shift, int Ns_occ);
+
+/**
  * @brief   Compute exact exchange energy density
  */
 void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho);
+
 #endif // EXACTEXCHANGEPOTENTIAL_H 

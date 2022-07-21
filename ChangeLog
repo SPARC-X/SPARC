@@ -4,6 +4,15 @@
 -changes
 
 --------------
+June 09, 2022
+Name: Xin Jing
+Changes: (exx/)
+1. Enable band parallelization in exact exchange
+2. Fix a bug in parallelization when Nd_blacscomm are not the same in all blacscomm, 
+   leading to different dims in blacs_ctxt. 
+3. update test suits 
+
+--------------
 May 17, 2022
 Name: Xin Jing
 Changes: (sq.c, initialization.c, sqProperties.c, energyDensity.c)
