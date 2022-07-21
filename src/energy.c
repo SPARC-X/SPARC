@@ -78,7 +78,10 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
 
         if (pSPARC->mGGAflag == 1) {
             double Emgga;
-            VectorDotProduct(pSPARC->KineticTauPhiDomain, pSPARC->vxcMGGA3, pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
+            if (pSPARC->spin_typ == 0)
+                VectorDotProduct(pSPARC->KineticTauPhiDomain, pSPARC->vxcMGGA3, pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
+            else
+                VectorDotProduct(pSPARC->KineticTauPhiDomain + pSPARC->Nd_d, pSPARC->vxcMGGA3, 2*pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
             Emgga *= pSPARC->dV;
             E3 += Emgga;
         }

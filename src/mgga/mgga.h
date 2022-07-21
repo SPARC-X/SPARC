@@ -23,14 +23,7 @@ void initialize_MGGA(SPARC_OBJ *pSPARC);
 void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC);
 
 /**
- * @brief   the main function in the file, compute needed xc energy density and its potentials, then transfer them to needed communicators
- *          
- * @param rho               electron density vector
- */
-void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
-
-/**
- * @brief   compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
+ * @brief   the main function in the file, compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
  *          
  * @param rho               electron density vector
  */
@@ -50,14 +43,6 @@ void Calculate_Exc_MGGA(SPARC_OBJ *pSPARC,  double *rho);
  * @param vxcMGGA3_psi_domain               the vxcMGGA3 vector in psi-domain
  */
 void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, double *vxcMGGA3_psi_domain);
-
-/**
- * @brief   Transfer vxcMGGA3 (d(n epsilon)/d(tau)) from psi-domain to k-point topology.
- *          
- * @param vxcMGGA3_psi_domain               the vxcMGGA3 vector in psi-domain
- * @param vxcMGGA3_kpt_topo               the vxcMGGA3 vector in k-point topology
- */
-void Transfer_vxcMGGA3_psi_kptTopo(SPARC_OBJ *pSPARC, double *vxcMGGA3_psi_domain, double *vxcMGGA3_kpt_topo);
 
 /**
  * @brief   the function to compute the mGGA term in Hamiltonian, called by Hamiltonian_vectors_mult
@@ -97,6 +82,10 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC);
  * @brief   compute the metaGGA psi stress term, k-point
  */
 void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC);
+
+// void Calculate_XC_Pres_mGGA_psi_term(SPARC_OBJ *pSPARC);
+
+void Calculate_XC_Pres_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC);
 
 /**
  * @brief   free space allocated to MGGA variables

@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include "scan.h"
+#include "Sscan.h"
 #include "mgga.h"
 
 #include "isddft.h"
@@ -26,6 +27,7 @@
 #include "lapVecRoutines.h"
 #include "energyDensity.h"
 
+
 void initialize_MGGA(SPARC_OBJ *pSPARC) { // allocate space to variables
     int DMnx, DMny, DMnz, DMnd;
     
@@ -33,17 +35,19 @@ void initialize_MGGA(SPARC_OBJ *pSPARC) { // allocate space to variables
     pSPARC->KineticTauPhiDomain = (double *) calloc(DMnd * (2*pSPARC->Nspin-1), sizeof(double)); // different from pSPARC->KineticRho, which is in dmcomm
     assert(pSPARC->KineticTauPhiDomain != NULL);
     
-    pSPARC->vxcMGGA1 = (double*)malloc(sizeof(double)*DMnd); // d(n\epsilon)/dn in dmcomm_phi
+    pSPARC->vxcMGGA1 = (double*)malloc(sizeof(double)*DMnd * pSPARC->Nspin); // d(n\epsilon)/dn in dmcomm_phi
     assert(pSPARC->vxcMGGA1 != NULL);
-    pSPARC->vxcMGGA2 = (double*)malloc(sizeof(double)*DMnd); // d(n\epsilon)/d|grad n| in dmcomm_phi
+    pSPARC->vxcMGGA2 = (double*)malloc(sizeof(double)*DMnd * (2*pSPARC->Nspin-1)); // d(n\epsilon)/d|grad n| in dmcomm_phi
     assert(pSPARC->vxcMGGA2 != NULL);
-    pSPARC->vxcMGGA3 = (double*)calloc(DMnd, sizeof(double)); // d(n\epsilon)/d\tau in dmcomm_phi
+    pSPARC->vxcMGGA3 = (double*)calloc(DMnd * pSPARC->Nspin, sizeof(double)); // d(n\epsilon)/d\tau in dmcomm_phi
     assert(pSPARC->vxcMGGA3 != NULL);
     if (pSPARC->dmcomm != MPI_COMM_NULL && pSPARC->bandcomm_index >= 0) { // d(n\epsilon)/d\tau in dmcomm
-        pSPARC->vxcMGGA3_loc_dmcomm = (double *)calloc( pSPARC->Nd_d_dmcomm * pSPARC->Nspin, sizeof(double) );
+        pSPARC->vxcMGGA3_loc_dmcomm = (double *)calloc( pSPARC->Nd_d_dmcomm * pSPARC->Nspin, sizeof(double) ); // spin polarization, every processor in dmcomm has potential of both spin up and spin dn
         assert(pSPARC->vxcMGGA3_loc_dmcomm != NULL);
     }
-    pSPARC->vxcMGGA3_loc_kptcomm = (double *)calloc( pSPARC->Nd_d_kptcomm, sizeof(double) ); // d(n\epsilon)/d\tau in kptcomm
+    pSPARC->vxcMGGA3_loc_kptcomm = (double *)calloc( pSPARC->Nd_d_kptcomm, sizeof(double) ); // d(n\epsilon)/d\tau in kptcomm 
+    // space can only contain potential of one spin. TODO: move the transferring function to eigensolver.c. 
+    // If the processor in dmcomm contains both spin up and dn, potential up and dn need to be transferred separately. Reference: electronicGroundState.c, 574
     assert(pSPARC->vxcMGGA3_loc_kptcomm != NULL);
 
     pSPARC->countSCF = 0;
@@ -54,17 +58,32 @@ void initialize_MGGA(SPARC_OBJ *pSPARC) { // allocate space to variables
  *          
  */
 void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC) {
-    double *Krho;
+    double *Krho = (double *) calloc(pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
+    assert(Krho != NULL);
+    int i;
     if (!(pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL)) {
-        Krho = (double *) calloc(pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
-        assert(Krho != NULL);
         compute_Kinetic_Density_Tau(pSPARC, Krho);
-        TransferDensity(pSPARC, Krho, pSPARC->KineticTauPhiDomain); // D2D from dmcomm to dmcomm_phi
-        free(Krho);
+        if (pSPARC->Nspin == 1) // unpolarized
+            TransferDensity(pSPARC, Krho, pSPARC->KineticTauPhiDomain); // D2D from dmcomm to dmcomm_phi
+        else { // polarized
+            for (i = 0; i < pSPARC->Nspin; i++)
+                TransferDensity(pSPARC, Krho + i * pSPARC->Nd_d_dmcomm, pSPARC->KineticTauPhiDomain + pSPARC->Nd_d*(i+1)); // D2D from dmcomm to dmcomm_phi
+            for (i = 0; i < pSPARC->Nd_d; i++) 
+                pSPARC->KineticTauPhiDomain[i] = pSPARC->KineticTauPhiDomain[i+pSPARC->Nd_d] + pSPARC->KineticTauPhiDomain[i+2*pSPARC->Nd_d]; // tau total = tau up + tau dn
+        }
     }
     else {
-        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) TransferDensity(pSPARC, Krho, pSPARC->KineticTauPhiDomain); // D2D from dmcomm to dmcomm_phi
+        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) { // but in dmcomm_phi, they are receivers of the transferring
+            if (pSPARC->Nspin == 1) // unpolarized
+                TransferDensity(pSPARC, Krho, pSPARC->KineticTauPhiDomain); // D2D from dmcomm to dmcomm_phi
+            else { // polarized
+                for (i = 0; i < pSPARC->Nspin; i++)
+                    TransferDensity(pSPARC, Krho + i * pSPARC->Nd_d_dmcomm, pSPARC->KineticTauPhiDomain + pSPARC->Nd_d*(i+1)); // D2D from dmcomm to dmcomm_phi
+                for (i = 0; i < pSPARC->Nd_d; i++) pSPARC->KineticTauPhiDomain[i] = pSPARC->KineticTauPhiDomain[i+pSPARC->Nd_d] + pSPARC->KineticTauPhiDomain[i+2*pSPARC->Nd_d]; // tau total = tau up + tau dn
+            }
+        } 
     }
+    free(Krho);
 }
 
 /**
@@ -73,18 +92,19 @@ void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC) {
  * @param rho               electron density vector
  */
 void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (pSPARC->countSCF != 0) {
         compute_Kinetic_Density_Tau_Transfer_phi(pSPARC);
     }
     Calculate_Vxc_MGGA(pSPARC, rho);
-    // printf("rank %d reached the beginning of transfer_Vxc\n", rank);
+    // printf("rank %d, Nspin %d, spincomm_index %d, reached the beginning of transfer_Vxc\n", rank, pSPARC->Nspin, pSPARC->spincomm_index);
     if (pSPARC->countSCF != 0) { // not the first SCF step
-        Transfer_vxcMGGA3_phi_psi(pSPARC, pSPARC->vxcMGGA3, pSPARC->vxcMGGA3_loc_dmcomm);
-        if (!(pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo)) { // the conditional judge whether this computation is necessary to do that
-            if (pSPARC->kptcomm != MPI_COMM_NULL) // the conditional judge whether this processor can join the transfer
-                Transfer_vxcMGGA3_psi_kptTopo(pSPARC, pSPARC->vxcMGGA3_loc_dmcomm, pSPARC->vxcMGGA3_loc_kptcomm);
-        }
+        Transfer_vxcMGGA3_phi_psi(pSPARC, pSPARC->vxcMGGA3, pSPARC->vxcMGGA3_loc_dmcomm); // only transfer the potential they are going to use
+        // if (!(pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo)) { // the conditional judge whether this computation is necessary to do that. 
+        // This function is moved to file eigenSolver.c and eigenSolverKpt.c
     }
+    // printf("rank %d reached the end of transfer_Vxc\n", rank);
     pSPARC->countSCF++;
 }
 
@@ -101,8 +121,10 @@ void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
         // Initialize constants    
         XCCST_OBJ xc_cst;
         xc_constants_init(&xc_cst, pSPARC);
-        
-        Calculate_Vxc_GGA_PBE(pSPARC, &xc_cst, rho);
+        if (pSPARC->Nspin == 1)
+            Calculate_Vxc_GGA_PBE(pSPARC, &xc_cst, rho);
+        else
+            Calculate_Vxc_GSGA_PBE(pSPARC, &xc_cst, rho);
         // printf("finished first SCF PBE!\n");
         return;
     }
@@ -117,90 +139,91 @@ void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
     int DMnx, DMny, DMnz, DMnd;
     DMnd = pSPARC->Nd_d;
 
-    if (pSPARC->spin_typ == 0) { // spin unpolarized
-        int i;
-        double *Drho_x, *Drho_y, *Drho_z, *normDrho, *lapcT;
-        Drho_x = (double *) malloc(DMnd * sizeof(double));
-        assert(Drho_x != NULL);
-        Drho_y = (double *) malloc(DMnd * sizeof(double));
-        assert(Drho_y != NULL);
-        Drho_z = (double *) malloc(DMnd * sizeof(double));
-        assert(Drho_z != NULL);
-        normDrho = (double *) malloc(DMnd * sizeof(double));
-        assert(normDrho != NULL);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
-        if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-            lapcT = (double *) malloc(6 * sizeof(double));
-            lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-            lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-            for(i = 0; i < DMnd; i++){
-                normDrho[i] = sqrt(Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
-                           Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i])); 
-            }
-            free(lapcT);
-        } else {
-            for(i = 0; i < DMnd; i++){
-                normDrho[i] = sqrt(Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i]);
-            }
+    int i;
+    double *Drho_x, *Drho_y, *Drho_z, *normDrho, *lapcT;
+    Drho_x = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(Drho_x != NULL);
+    Drho_y = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(Drho_y != NULL);
+    Drho_z = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(Drho_z != NULL);
+    normDrho = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(normDrho != NULL);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
+        lapcT = (double *) malloc(6 * sizeof(double));
+        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
+        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
+        for(i = 0; i < DMnd * (2*pSPARC->Nspin-1); i++){
+            normDrho[i] = sqrt(Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
+                       Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i])); 
         }
-        
-        if (strcmpi(pSPARC->XC, "SCAN") == 0) {
+        free(lapcT);
+    } else {
+        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
+            normDrho[i] = sqrt(Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i]);
+        }
+    }
+
+    if (strcmpi(pSPARC->XC, "SCAN") == 0) {
+        if (pSPARC->Nspin == 1)
             SCAN_EnergyDens_Potential(pSPARC, rho, normDrho, pSPARC->KineticTauPhiDomain, pSPARC->e_xc, pSPARC->vxcMGGA1, pSPARC->vxcMGGA2, pSPARC->vxcMGGA3);
+        else
+            SSCAN_EnergyDens_Potential(pSPARC, rho, normDrho, pSPARC->KineticTauPhiDomain, pSPARC->e_xc, pSPARC->vxcMGGA1, pSPARC->vxcMGGA2, pSPARC->vxcMGGA3);
+    }
+
+    for (i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++) {
+        pSPARC->Dxcdgrho[i] = pSPARC->vxcMGGA2[i] / normDrho[i]; // to unify with the variable in GGA
+    } 
+
+    double *DDrho_x, *DDrho_y, *DDrho_z;
+    DDrho_x = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(DDrho_x != NULL);
+    DDrho_y = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(DDrho_y != NULL);
+    DDrho_z = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
+    assert(DDrho_z != NULL);
+    double temp1, temp2, temp3;
+    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
+        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
+            temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * pSPARC->Dxcdgrho[i];
+            temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * pSPARC->Dxcdgrho[i];
+            temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * pSPARC->Dxcdgrho[i];
+            Drho_x[i] = temp1;
+            Drho_y[i] = temp2;
+            Drho_z[i] = temp3;
         }
-        
-        // double *vxcMGGA2 = pSPARC->vxcMGGA2;
-
-        for (i = 0; i < DMnd; i++) {
-            pSPARC->Dxcdgrho[i] = pSPARC->vxcMGGA2[i] / normDrho[i]; // to unify with the variable in GGA
-        } 
-
-        double *DDrho_x, *DDrho_y, *DDrho_z;
-        DDrho_x = (double *) malloc(DMnd * sizeof(double));
-        assert(DDrho_x != NULL);
-        DDrho_y = (double *) malloc(DMnd * sizeof(double));
-        assert(DDrho_y != NULL);
-        DDrho_z = (double *) malloc(DMnd * sizeof(double));
-        assert(DDrho_z != NULL);
-        double temp1, temp2, temp3;
-        if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-            for(i = 0; i < DMnd; i++){
-                temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * pSPARC->Dxcdgrho[i];
-                temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * pSPARC->Dxcdgrho[i];
-                temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * pSPARC->Dxcdgrho[i];
-                Drho_x[i] = temp1;
-                Drho_y[i] = temp2;
-                Drho_z[i] = temp3;
-            }
-        } else {
-            for(i = 0; i < DMnd; i++){
-                Drho_x[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dx / |grad n|
-                Drho_y[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dy / |grad n|
-                Drho_z[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dz / |grad n|
-            }
+    } else {
+        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
+            Drho_x[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dx / |grad n|
+            Drho_y[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dy / |grad n|
+            Drho_z[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dz / |grad n|
         }
-        
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    }
 
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+
+    if (pSPARC->Nspin == 1) {
         for (i = 0; i < DMnd; i++) {
             // epsilon has been computed in function SCAN_EnergyDens_Potential
             pSPARC->XCPotential[i] = pSPARC->vxcMGGA1[i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i];
             // pSPARC->vxcMGGA3[i] has been computed in function SCAN_EnergyDens_Potential
         }
-        
-        free(Drho_x); free(Drho_y); free(Drho_z); free(normDrho);
-        free(DDrho_x); free(DDrho_y); free(DDrho_z);
     }
-    else { // spin polarized
-        if (rank == 0)
-            printf(RED "ERROR: SCAN functional for polarized spin is not available yet.\n" RESET);
-        exit(EXIT_FAILURE); 
+    else {
+        for (i = 0; i < DMnd; i++) {
+            pSPARC->XCPotential[i] = pSPARC->vxcMGGA1[i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[DMnd + i] - DDrho_y[DMnd + i] - DDrho_z[DMnd + i];
+            pSPARC->XCPotential[DMnd + i] = pSPARC->vxcMGGA1[DMnd + i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[2*DMnd + i] - DDrho_y[2*DMnd + i] - DDrho_z[2*DMnd + i];
+        }
     }
     
-    // pSPARC->countSCF++;
+    free(Drho_x); free(Drho_y); free(Drho_z); free(normDrho);
+    free(DDrho_x); free(DDrho_y); free(DDrho_z);
+
     t2 = MPI_Wtime();
     #ifdef DEBUG
         if (rank == 0) printf("end of Calculating Vxc_MGGA, took %.3f ms\n", (t2 - t1)*1000);
@@ -212,8 +235,14 @@ void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
  */
 void Calculate_Exc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
     if (pSPARC->countSCF == 1) {
-        Calculate_Exc_GGA_PBE(pSPARC, rho);
-        return;
+        if (pSPARC->Nspin == 1) {
+            Calculate_Exc_GGA_PBE(pSPARC, rho);
+            return;
+        }
+        else {
+            Calculate_Exc_GSGA_PBE(pSPARC, rho);
+            return;
+        }
     }
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
 
@@ -237,23 +266,24 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
 {
     double t1, t2;
     
-    int rank;
+    int rank, spin;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     #ifdef DEBUG
         if (rank == 0) printf("Transmitting vxcMGGA3 from phi-domain to psi-domain (LOCAL) ...\n");
     #endif    
-    //void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, double *sdata, int *rDMVert, double *rdata, 
-    //       MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims)
+    
     int gridsizes[3], sdims[3], rdims[3];
     gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
     sdims[0] = pSPARC->npNdx_phi; sdims[1] = pSPARC->npNdy_phi; sdims[2] = pSPARC->npNdz_phi;
     rdims[0] = pSPARC->npNdx; rdims[1] = pSPARC->npNdy; rdims[2] = pSPARC->npNdz;
 
     t1 = MPI_Wtime();
-    D2D(&pSPARC->d2d_dmcomm_phi, &pSPARC->d2d_dmcomm, gridsizes, pSPARC->DMVertices, vxcMGGA3_phi_domain, 
-        pSPARC->DMVertices_dmcomm, vxcMGGA3_psi_domain, pSPARC->dmcomm_phi, sdims, 
-        (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, 
-        rdims, MPI_COMM_WORLD);
+    for (spin = 0; spin < pSPARC->Nspin; spin++) {
+        D2D(&pSPARC->d2d_dmcomm_phi, &pSPARC->d2d_dmcomm, gridsizes, pSPARC->DMVertices, vxcMGGA3_phi_domain + spin*pSPARC->Nd_d, 
+            pSPARC->DMVertices_dmcomm, vxcMGGA3_psi_domain + spin*pSPARC->Nd_d_dmcomm, pSPARC->dmcomm_phi, sdims, 
+            (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, 
+            rdims, MPI_COMM_WORLD);
+    }
     t2 = MPI_Wtime();
     #ifdef DEBUG
         if (rank == 0) printf("---Transfer_vxcMGGA3_phi_psi: D2D took %.3f ms\n",(t2-t1)*1e3);
@@ -263,7 +293,7 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
     
     // Broadcast phi from the dmcomm that contain root process to all dmcomms of the first kptcomms in each spincomm
     if (pSPARC->npspin > 1 && pSPARC->spincomm_index >= 0 && pSPARC->kptcomm_index == 0) {
-        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->spin_bridge_comm);
+        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm * pSPARC->Nspin, MPI_DOUBLE, 0, pSPARC->spin_bridge_comm);
     }
     
     t2 = MPI_Wtime();
@@ -275,7 +305,7 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
     
     // Broadcast phi from the dmcomm that contain root process to all dmcomms of the first bandcomms in each kptcomm
     if (pSPARC->spincomm_index >= 0 && pSPARC->npkpt > 1 && pSPARC->kptcomm_index >= 0 && pSPARC->bandcomm_index == 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
-        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->kpt_bridge_comm);
+        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm * pSPARC->Nspin, MPI_DOUBLE, 0, pSPARC->kpt_bridge_comm);
     }
     
     t2 = MPI_Wtime();
@@ -288,7 +318,7 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
     
     // Bcast phi from first bandcomm to all other bandcomms
     if (pSPARC->npband > 1 && pSPARC->kptcomm_index >= 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
-        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->blacscomm);    
+        MPI_Bcast(vxcMGGA3_psi_domain, pSPARC->Nd_d_dmcomm * pSPARC->Nspin, MPI_DOUBLE, 0, pSPARC->blacscomm);    
     }
     // pSPARC->req_veff_loc = MPI_REQUEST_NULL; // it seems that it is unnecessary to use the variable in vxcMGGA3?
     
@@ -300,37 +330,6 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
     
 }
 
-/**
- * @brief   Transfer vxcMGGA3 (d(n epsilon)/d(tau)) from psi-domain to k-point topology.   
- */
-void Transfer_vxcMGGA3_psi_kptTopo(SPARC_OBJ *pSPARC, double *vxcMGGA3_psi_domain, double *vxcMGGA3_kpt_topo) 
-{
-    double t1, t2;
-    
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG
-    if (rank == 0) printf("Transmitting vxcMGGA3 from psi-domain (LOCAL) to k-point topology ...\n");
-#endif    
-
-    int gridsizes[3], sdims[3], rdims[3];
-    gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
-    sdims[0] = pSPARC->npNdx; sdims[1] = pSPARC->npNdy; sdims[2] = pSPARC->npNdz; 
-    rdims[0] = pSPARC->npNdx_kptcomm; rdims[1] = pSPARC->npNdy_kptcomm; rdims[2] = pSPARC->npNdz_kptcomm;
-    // int sg  = pSPARC->spin_start_indx + spn_i; // currently there is no spin polarization
-
-    t1 = MPI_Wtime();
-
-    D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, pSPARC->DMVertices_dmcomm, vxcMGGA3_psi_domain, 
-        pSPARC->DMVertices_kptcomm, pSPARC->vxcMGGA3_loc_kptcomm, pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
-        sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
-
-    t2 = MPI_Wtime();
-    #ifdef DEBUG
-        if (rank == 0) printf("---Transfer_vxcMGGA3_psi_kptTopo: D2D from psi domain to kpt topology took %.3f ms\n",(t2-t1)*1e3);
-    #endif
-    
-}
 
 /**
  * @brief   the function to compute the mGGA term in Hamiltonian, called by Hamiltonian_vectors_mult
@@ -524,6 +523,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
 
     double *vxcMGGA3_loc = pSPARC->vxcMGGA3_loc_dmcomm; // local rho*d\epsilon_{xc} / d\tau array
     for(spn_i = 0; spn_i < nspin; spn_i++) {
+        int sg = pSPARC->spin_start_indx + spn_i;
         count = 0;
         for (dim = 0; dim < 3; dim++) {
             // find dPsi in direction dim
@@ -539,7 +539,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_1p + spn_i * size_s + n * DMnd; // dpsi_1p
                     dpsi1_dpsi1 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi1 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi1_dpsi1 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[0] += dpsi1_dpsi1 * g_nk; // component (1,1)
@@ -552,7 +552,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_2
                     dpsi1_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi2 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi1_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[1] += dpsi1_dpsi2 * g_nk; // component (1,2)
@@ -566,7 +566,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_3
                     dpsi1_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi3 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi1_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[2] += dpsi1_dpsi3 * g_nk; // component (1,3)
@@ -581,7 +581,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_3p + spn_i * size_s + n * DMnd; // dpsi_3
                     dpsi2_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi2_dpsi3 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi2_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[4] += dpsi2_dpsi3 * g_nk; // component (2,3)
@@ -595,7 +595,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_2p + spn_i * size_s + n * DMnd; // dpsi_1p
                     dpsi2_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi2_dpsi2 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[3] += dpsi2_dpsi2 * g_nk; // component (2,2)
@@ -609,7 +609,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     dpsi_ptr2 = dpsi_3p + spn_i * size_s + n * DMnd; // dpsi_1p
                     dpsi3_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi3_dpsi3 += vxcMGGA3_loc[i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[5] += dpsi3_dpsi3 * g_nk; // component (3,3)
@@ -775,6 +775,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
 
     count = 0;
     for(spn_i = 0; spn_i < nspin; spn_i++) {
+        int sg = pSPARC->spin_start_indx + spn_i;
         for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
             k1 = pSPARC->k1_loc[kpt];
             k2 = pSPARC->k2_loc[kpt];
@@ -795,9 +796,9 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                         dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
                         dpsi1_dpsi1 = dpsi1_dpsi2 = dpsi2_dpsi2 = 0.0;
                         for(i = 0; i < DMnd; i++){
-                            dpsi1_dpsi1 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i)));
-                            dpsi1_dpsi2 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
-                            dpsi2_dpsi2 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
+                            dpsi1_dpsi1 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i)));
+                            dpsi1_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
+                            dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
                         g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
                         temp_k[0] += dpsi1_dpsi1 * g_nk;
@@ -816,8 +817,8 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                         dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                         dpsi1_dpsi3 = dpsi3_dpsi3 = 0.0;
                         for(i = 0; i < DMnd; i++){
-                            dpsi1_dpsi3 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
-                            dpsi3_dpsi3 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
+                            dpsi1_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
+                            dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
                         g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
                         temp_k[2] += dpsi1_dpsi3 * g_nk;
@@ -832,7 +833,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                         dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                         dpsi2_dpsi3 = 0.0;
                         for(i = 0; i < DMnd; i++){
-                            dpsi2_dpsi3 += vxcMGGA3_loc[i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
+                            dpsi2_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
                         temp_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
                     }

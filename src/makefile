@@ -14,7 +14,7 @@ USE_DP_SUBEIG = 1
 USE_FFTW      = 0
 
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 0
+DEBUG_MODE    = 1
 
 USE_PCE := 1
 ifeq ($(USE_PCE), 1)
@@ -155,7 +155,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o energyDensity.o                \
         vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o vdW/vdWDF/vdWDFGenerateKernelSpline.o \
         vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o mgga/scan.o mgga/mgga.o   \
-        exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o                       \
+        mgga/Sscan.o exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o          \
         sq/sq.o sq/sqNlocVecRoutines.o sq/sqParallelization.o sq/sqProperties.o sq/sqtool.o 
 
 ifeq ($(USE_PCE), 1)
