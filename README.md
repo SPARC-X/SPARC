@@ -3,15 +3,14 @@
 ### (1) Brief:
 SPARC is an open-source software package for the accurate, effcient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem. The main features of SPARC currently include
 
-* Isolated systems such as molecules and clusters as well as extended systems such as crystals, surfaces, and wires.
+* Applicable to isolated systems such as molecules as well as extended systems such as crystals, surfaces, and wires.
+* Local, semilocal, and nonlocal (including hybrid) exchange-correlation functionals.
+* Standard ONCV pseudopotentials, including nonlinear core corrections.
 * Calculation of ground state energy, atomic forces, and stress tensor.
-* Unconstrained collinear magnetization via spin polarized calculations.
-* Structural relaxation and quantum molecular dynamics (QMD). 
-* Local and semilocal exchange correlation functionals.
-* ONCV and TM pseudopotentials in psp8 (ABINIT) format. 
-* Spectral Quadrature method.
-* Hybrid calculation with PBE0, HF and HSE.
-* Spin-orbit coupling calculation.
+* Structural relaxation and ab initio molecular dynamics (NVE, NVT, and NPT).
+* Spin polarized and unpolarized calculations.
+* Spin-orbit coupling.
+* Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
 
 SPARC is straightforward to install/use and highly competitive with state-of-the-art planewave codes, demonstrating comparable performance on a small number of processors and order-of-magnitude advantages as the number of processors increases. Notably, the current version of SPARC brings solution times down to a few seconds for systems with O(100-500) atoms on large-scale parallel computers, outperforming planewave counterparts by an order of magnitude and more. Additional details regarding the formulation and implementation of SPARC can be found in the paper referenced below. Future versions will target similar solution times for large-scale systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
 
@@ -158,11 +157,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 - `.restart` file  
 
   Information necessary to perform a restarted QMD calculation. 
-  
-### (6) Acknowledgement:
-  
-* U.S. Department of Energy, Office of Science: DE-SC0019410 
-* U.S. National Science Foundation: 1553212, 1663244, and 1333500 
+
 
 ### (7) Citation:
 
@@ -173,3 +168,11 @@ If you publish work using/regarding SPARC, please cite some of the following art
 * **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
 * **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
 * **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
+
+
+### (6) Acknowledgement:
+  
+* **U.S. Department of Energy, Office of Science: DE-SC0019410** 
+
+  * Preliminary developments
+    * U.S. National Science Foundation: 1553212, 1663244, and 1333500
