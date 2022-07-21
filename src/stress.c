@@ -34,7 +34,7 @@
 #include "mgga.h"
 #include "vdWDF.h"
 #include "d3Correction.h"
-#include "exactExchangeProperties.h"
+#include "exactExchangeStress.h"
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
 #include "d3Correction.h"

@@ -20,11 +20,11 @@
 #include "tools.h"
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
-#include "exactExchange.h"
+#include "exactExchangeFinalization.h"
 #include "d3Correction.h"
 #include "vdWDF.h"
 #include "mgga.h"
-#include "sq.h"
+#include "sqFinalization.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*

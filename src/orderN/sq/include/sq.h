@@ -11,11 +11,7 @@
 #ifndef SQ_H
 #define SQ_H 
 
-
-/**
- * @brief   Initialize SQ variables and create necessary communicators
- */
-void init_SQ(SPARC_OBJ *pSPARC);
+#include "isddft.h"
 
 /**
  * @brief   Compute nodal Hamiltonian times a vector
@@ -60,13 +56,25 @@ void TridiagEigenSolve_gauss(SPARC_OBJ *pSPARC, double *diag, double *subdiag, i
 void LanczosAlgorithm_gauss(SPARC_OBJ *pSPARC, double ***vkm1, int i, int j, int k, double *lambda_min, double *lambda_max, int nd);
 
 /**
- * @brief   Free all allocated memory spaces and communicators 
+ * @brief   Compute chebyshev coefficients Ci (length npl_c+1) to fit the function "func"
+ * 
+ * NOTE:    THIS FUNCTION CURRENTLY USES DISCRETE ORTHOGONALITY PROPERTY OF CHEBYSHEV POLYNOMIALS WHICH ONLY GIVE "approximate" 
+ *          COEFFICIENTS. SO IF THE FUNCTION IS NOT SMOOTH ENOUGH THE COEFFICIENTS WILL NOT BE ACCURATE ENOUGH. 
+ *          SO THIS FUNCTION HAS TO BE REPLACED WITH ITS CONTINUOUS COUNTER PART WHICH EVALUATES OSCILLATORY INTEGRALS AND USES FFT.
  */
-void Free_SQ(SPARC_OBJ *pSPARC);
+void ChebyshevCoeff_SQ(int npl_c, double *Ci, double *d, double (*fun)(double, double, double, int), 
+                const double beta, const double lambda_f, const int type);
 
 /**
- * @brief   Free SCF variables for SQ methods.
+ * @brief   Lanczos algorithm computing only minimal eigenvales
+ * 
+ * TODO:    There are 2 different Lanczos algorithm with confusing names. Change them or combine them
  */
-void Free_scfvar_SQ(SPARC_OBJ *pSPARC);
+void LanczosAlgorithm_new(SPARC_OBJ *pSPARC, int i, int j, int k, double *lambda_min, int nd, int choice);
+
+/**
+ * @brief   Tridiagonal solver for eigenvalues. Part of Lanczos algorithm.
+ */
+void TridiagEigenSolve_new(SPARC_OBJ *pSPARC, double *diag, double *subdiag, int n, double *lambda_min, int choice, int nd);
 
 #endif // SQ_H

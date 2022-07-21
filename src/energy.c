@@ -19,7 +19,7 @@
 #include "occupation.h"
 #include "tools.h"
 #include "isddft.h"
-#include "sqProperties.h"
+#include "sqEnergy.h"
 
 #define TEMP_TOL (1e-14)
 

@@ -40,18 +40,13 @@
 #endif
 
 #include "exactExchange.h"
+#include "lapVecRoutines.h"
+#include "linearSolver.h"
 #include "exactExchangeKpt.h"
 #include "tools.h"
 #include "parallelization.h"
 #include "electronicGroundState.h"
 #include "exchangeCorrelation.h"
-#include "lapVecRoutines.h"
-#include "lapVecOrth.h"
-#include "lapVecNonOrth.h"
-#include "nlocVecRoutines.h"
-#include "linearSolver.h"
-#include "electrostatics.h"
-
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -303,138 +298,6 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     #endif  
 }
 
-
-/**
- * @brief   Initialization of all variables for exact exchange.
- */
-void init_exx(SPARC_OBJ *pSPARC) {
-    int i, j, rank, DMnd, Nband, len_full_tot, Ns_full_total, blacs_size, kpt_bridge_size;
-    
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
-    MPI_Comm_size(pSPARC->kpt_bridge_comm, &kpt_bridge_size);
-
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nband = pSPARC->Nband_bandcomm;
-    
-    find_local_kpthf(pSPARC);                                                                           // determine local number kpts for HF
-    Ns_full_total = pSPARC->Nstates * pSPARC->Nkpts_sym * pSPARC->Nspin_spincomm;                           // total length across all kpts.
-
-    if (pSPARC->ACEFlag == 0) {
-        len_full_tot = DMnd * pSPARC->Nstates * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm;                  // total length across all kpts.
-        if (pSPARC->isGammaPoint == 1) {
-            // Storage of psi_outer in dmcomm
-            pSPARC->psi_outer = (double *)calloc( len_full_tot , sizeof(double) ); 
-            // Storage of psi_outer in kptcomm_topo
-            pSPARC->psi_outer_kptcomm_topo = 
-                    (double *)calloc(pSPARC->Nd_d_kptcomm * pSPARC->Nstates * pSPARC->Nspin_spincomm , sizeof(double));
-            assert (pSPARC->psi_outer != NULL && pSPARC->psi_outer_kptcomm_topo != NULL);
-            
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
-            assert(pSPARC->occ_outer != NULL);
-        } else {
-            // Storage of psi_outer_kpt in dmcomm
-            pSPARC->psi_outer_kpt = (double _Complex *)calloc( len_full_tot , sizeof(double _Complex) ); 
-            // Storage of psi_outer in kptcomm_topo
-            pSPARC->psi_outer_kptcomm_topo_kpt = 
-                    (double _Complex *)calloc(pSPARC->Nd_d_kptcomm * pSPARC->Nstates * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm, sizeof(double _Complex));
-            assert (pSPARC->psi_outer_kpt != NULL && pSPARC->psi_outer_kptcomm_topo_kpt != NULL);
-            
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
-            assert(pSPARC->occ_outer != NULL);
-        }
-    } else {
-        len_full_tot = DMnd * Nband * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm;                  // total length across all kpts.
-        if (pSPARC->isGammaPoint == 1) {
-            pSPARC->Nstates_occ[0] = pSPARC->Nstates_occ[1] = 0;
-        } else {
-            pSPARC->Nstates_occ[0] = pSPARC->Nstates_occ[1] = 0;
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
-            assert(pSPARC->occ_outer != NULL);
-        }
-    }
-    
-    find_k_shift(pSPARC);
-    kshift_phasefactor(pSPARC);
-
-    if (pSPARC->EXXMeth_Flag == 0) {
-        if (pSPARC->EXXDiv_Flag == 1) 
-            auxiliary_constant(pSPARC);
-
-        // compute the constant coefficients for solving Poisson's equation using FFT
-        // For even conjugate space (FFT), only half of the coefficients are needed
-        if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-            if (pSPARC->isGammaPoint == 1) {
-                compute_pois_fft_const(pSPARC);
-            } else {
-                compute_pois_fft_const_kpt(pSPARC);
-            }
-        }
-    }
-
-    // create kpttopo_dmcomm_inter
-    pSPARC->flag_kpttopo_dm = 0;
-    create_kpttopo_dmcomm_inter(pSPARC);
-}
-
-/**
- * @brief   Memory free of all variables for exact exchange.
- */
-void free_exx(SPARC_OBJ *pSPARC) {
-    int blacs_size, kpt_bridge_size;
-    MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
-    MPI_Comm_size(pSPARC->kpt_bridge_comm, &kpt_bridge_size);
-    
-    free(pSPARC->kpthf_flag_kptcomm);
-    free(pSPARC->Nkpts_hf_list);
-    free(pSPARC->kpthf_start_indx_list);
-    if (pSPARC->ACEFlag == 0) {
-        if (pSPARC->isGammaPoint == 1) {
-            free(pSPARC->psi_outer);
-            free(pSPARC->psi_outer_kptcomm_topo);
-            free(pSPARC->occ_outer);
-        } else {
-            free(pSPARC->psi_outer_kpt);
-            free(pSPARC->psi_outer_kptcomm_topo_kpt);
-            free(pSPARC->occ_outer);
-        }
-    } else {
-        if (pSPARC->isGammaPoint == 1) {
-            if (pSPARC->spincomm_index >= 0) {
-                free(pSPARC->Xi);
-                free(pSPARC->Xi_kptcomm_topo);
-            }
-        } else {
-            free(pSPARC->occ_outer);
-            if (pSPARC->spincomm_index >= 0 && pSPARC->kptcomm_index >= 0) {
-                free(pSPARC->Xi_kpt);
-                free(pSPARC->Xi_kptcomm_topo_kpt);
-            }
-        }
-    }
-
-    if (pSPARC->EXXMeth_Flag == 0) {
-        if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-            free(pSPARC->pois_FFT_const);
-            if (pSPARC->Calc_stress == 1) {
-                free(pSPARC->pois_FFT_const_stress);
-                if (pSPARC->EXXDiv_Flag == 0)
-                    free(pSPARC->pois_FFT_const_stress2);
-            } else if (pSPARC->Calc_pres == 1) {
-                if (pSPARC->EXXDiv_Flag != 0)
-                    free(pSPARC->pois_FFT_const_press);
-            }
-        }
-    }
-
-    if (pSPARC->Nkpts_shift > 1) {
-        free(pSPARC->neg_phase);
-        free(pSPARC->pos_phase);
-    }
-
-    if (pSPARC->kpttopo_dmcomm_inter != MPI_COMM_NULL)
-        MPI_Comm_free(&pSPARC->kpttopo_dmcomm_inter);
-}
 
 /**
  * @brief   Evaluating Exact Exchange potential
@@ -1438,449 +1301,42 @@ void gather_psi_occ_outer(SPARC_OBJ *pSPARC, double *psi_outer, double *occ_oute
 }
 
 
-/**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
- * 
- *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
- *          DOI: 10.1103/PhysRevB.77.193110
- *          Auxiliary function - Method by Gygi and Baldereschi
- *          DOI: 10.1103/PhysRevB.34.4405
- */
-void compute_pois_fft_const(SPARC_OBJ *pSPARC) {
-#define alpha(i,j,k) pSPARC->pois_FFT_const[(k)*Nxy+(j)*Nxh+(i)]
-#define alpha1(i,j,k) pSPARC->pois_FFT_const_stress[(k)*Nxy+(j)*Nxh+(i)]
-#define alpha2(i,j,k) pSPARC->pois_FFT_const_stress2[(k)*Nxy+(j)*Nxh+(i)]
-#define beta(i,j,k) pSPARC->pois_FFT_const_press[(k)*Nxy+(j)*Nxh+(i)]
-    int i, j, k, Nx, Nxh, Ny, Nz, Ndc, Nxy;
-    double L1, L2, L3, V, R_c, G[3], g[3], G2, omega, omega2;
-
-    Nx = pSPARC->Nx;
-    Nxh = pSPARC->Nx / 2 + 1;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-    Ndc = Nz * Ny * Nxh;
-    Nxy = Ny * Nxh;
-
-    // When BC is Dirichelet, one more FD node is incldued.
-    // Real length of each side has to be added by 1 mesh length.
-    L1 = pSPARC->delta_x * Nx;
-    L2 = pSPARC->delta_y * Ny;
-    L3 = pSPARC->delta_z * Nz;
-
-    V =  L1 * L2 * L3 * pSPARC->Jacbdet * pSPARC->Nkpts_hf;       // Nk_hf * unit cell volume
-    R_c = pow(3*V/(4*M_PI),(1.0/3));
-    omega = pSPARC->hyb_range_fock;
-    omega2 = omega * omega;
-
-    pSPARC->pois_FFT_const = (double *)malloc(sizeof(double) * Ndc);
-    assert(pSPARC->pois_FFT_const != NULL);
-    // allocate space for stress
-    if (pSPARC->Calc_stress == 1) {
-        pSPARC->pois_FFT_const_stress = (double *)malloc(sizeof(double) * Ndc);
-        assert(pSPARC->pois_FFT_const_stress != NULL);
-        if (pSPARC->EXXDiv_Flag == 0) {
-            pSPARC->pois_FFT_const_stress2 = (double *)malloc(sizeof(double) * Ndc);
-            assert(pSPARC->pois_FFT_const_stress2 != NULL);
-        }
-    } else if (pSPARC->Calc_pres == 1) {
-        if (pSPARC->EXXDiv_Flag != 0) {
-            pSPARC->pois_FFT_const_press = (double *)malloc(sizeof(double) * Ndc);
-            assert(pSPARC->pois_FFT_const_press != NULL);
-        }
-    }
-    /********************************************************************/
-
-    // spherical truncation
-    if (pSPARC->EXXDiv_Flag == 0) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
-                    // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                    g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
-                    G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                    G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = R_c*sqrt(G2);
-                    if (fabs(G2) > 1e-4) {
-                        alpha(i,j,k) = 4*M_PI*(1-cos(x))/G2;
-                        if (pSPARC->Calc_stress == 1) {
-                            double G4 = G2*G2;
-                            alpha1(i,j,k) = 4*M_PI*( 1-cos(x)- x/2*sin(x) )/G4;
-                            alpha2(i,j,k) = 4*M_PI*( x/2*sin(x) )/G2/3;
-                        }
-                    } else {
-                        alpha(i,j,k) = 2*M_PI*(R_c * R_c);
-                        if (pSPARC->Calc_stress == 1) {
-                            alpha1(i,j,k) = 4*M_PI*pow(R_c,4)/24;
-                            alpha2(i,j,k) = 4*M_PI*( R_c*R_c/2 )/3;
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    // auxiliary function
-    if (pSPARC->EXXDiv_Flag == 1) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
-                    // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                    g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
-                    G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                    G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = -0.25/omega2*G2;
-                    if (fabs(G2) > 1e-4) {
-                        if (omega > 0) {
-                            alpha(i,j,k) = 4*M_PI/G2 * (1 - exp(x));
-                            if (pSPARC->Calc_stress == 1) {
-                                double G4 = G2*G2;
-                                alpha1(i,j,k) = 4*M_PI*(1 - exp(x)*(1-x))/G4 /4;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 4*M_PI*(1 - exp(x)*(1-x))/G2 /4;
-                            }
-                        } else {
-                            alpha(i,j,k) = 4*M_PI/G2;
-                            if (pSPARC->Calc_stress == 1) {
-                                double G4 = G2*G2;
-                                alpha1(i,j,k) = 4*M_PI/G4 /4;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 4*M_PI/G2 /4;
-                            }
-                        }
-                    } else {
-                        if (omega > 0) {
-                            alpha(i,j,k) = 4*M_PI*(pSPARC->const_aux + 0.25/omega2);
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k) = 0;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 0;
-                            }
-                        } else {
-                            alpha(i,j,k) = 4*M_PI*pSPARC->const_aux;
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k) = 0;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    // ERFC short ranged screened 
-    if (pSPARC->EXXDiv_Flag == 2) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
-                    // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                    g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
-                    G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                    G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = -G2/4.0/omega2;
-                    if (fabs(G2) > 1e-4) {
-                        alpha(i,j,k) = 4*M_PI*(1-exp(x))/G2;
-                        if (pSPARC->Calc_stress == 1) {
-                            double G4 = G2*G2;
-                            alpha1(i,j,k) = 4*M_PI*( 1-exp(x)*(1-x) )/G4;
-                        } else if (pSPARC->Calc_pres == 1) {
-                            beta(i,j,k) = 4*M_PI*( 1-exp(x)*(1-x) )/G2;
-                        }
-                    } else {
-                        alpha(i,j,k) = M_PI/omega2;
-                        if (pSPARC->Calc_stress == 1) {
-                            alpha1(i,j,k) = 0;
-                        } else if (pSPARC->Calc_pres == 1) {
-                            beta(i,j,k) = 0;
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-#undef alpha
-#undef alpha1
-#undef alpha2
-#undef beta
-}
 
 /**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
- * 
- *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
- *          DOI: 10.1103/PhysRevB.77.193110
- * 
- *          Note: using Finite difference approximation of G2
- *          Note: it's not used in the code. Only use exact G2. 
+ * @brief   Gather orbitals shape vectors across blacscomm
  */
-void compute_pois_fft_const_FD(SPARC_OBJ *pSPARC) 
+void gather_blacscomm(SPARC_OBJ *pSPARC, int Ncol, double *vec)
 {
-#define alpha(i,j,k) alpha[(k)*Nxy+(j)*Nxh+(i)]
-    int FDn, i, j, k, p, Nx, Nxh, Ny, Nz, Ndc, Nxy;
-    double *w2_x, *w2_y, *w2_z, V, R_c, *alpha;
+    if (pSPARC->blacscomm == MPI_COMM_NULL) return;
+    int i, grank, lrank, lsize, DMnd;
+    int sendcount, *recvcounts, *displs, NB;
 
-    Nx = pSPARC->Nx;
-    Nxh = pSPARC->Nx / 2 + 1;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-    Ndc = Nz * Ny * Nxh;
-    Nxy = Ny * Nxh;
-    FDn = pSPARC->order / 2;
-    // scaled finite difference coefficients
-    w2_x = pSPARC->D2_stencil_coeffs_x;
-    w2_y = pSPARC->D2_stencil_coeffs_y;
-    w2_z = pSPARC->D2_stencil_coeffs_z;
+    MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+    MPI_Comm_rank(pSPARC->blacscomm, &lrank);
+    MPI_Comm_size(pSPARC->blacscomm, &lsize);
 
-    pSPARC->pois_FFT_const = (double *)malloc(sizeof(double) * Ndc);
-    assert(pSPARC->pois_FFT_const != NULL);
-    alpha = pSPARC->pois_FFT_const;
-    /********************************************************************/
+    DMnd = pSPARC->Nd_d_dmcomm;
 
-    for (k = 0; k < Nz; k++) {
-        for (j = 0; j < Ny; j++) {
-            for (i = 0; i < Nxh; i++) {
-                alpha(i,j,k) = w2_x[0] + w2_y[0] + w2_z[0];
-                for (p = 1; p < FDn + 1; p++){
-                    alpha(i,j,k) += 2*(w2_x[p]*cos(2*M_PI/Nx*p*i) 
-                        + w2_y[p]*cos(2*M_PI/Ny*p*j) + w2_z[p]*cos(2*M_PI/Nz*p*k));
-                }
-            }
+    if (lsize > 1) {
+        recvcounts = (int*) malloc(sizeof(int)* lsize);
+        displs = (int*) malloc(sizeof(int)* lsize);
+        assert(recvcounts != NULL && displs != NULL);
+
+        // gather all bands, this part of code copied from parallelization.c
+        NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
+        displs[0] = 0;
+        for (i = 0; i < lsize; i++){
+            recvcounts[i] = (i < (Ncol / NB) ? NB : (i == (Ncol / NB) ? (Ncol % NB) : 0)) * DMnd;
+            if (i != (lsize-1))
+                displs[i+1] = displs[i] + recvcounts[i];
         }
-    }
-    alpha[0] = -1;                                                  // For taking sqrt, will change in the end 
-    V = pSPARC->range_x * pSPARC->range_y * pSPARC->range_z;        // Volume of the domain
-    R_c = pow(3*V/(4*M_PI),(1.0/3));
 
-    // For singularity issue, use (1-cos(R_c*sqrt(G^2)))/G^2
-    for (k = 0; k < Nz; k++) {
-        for (j = 0; j < Ny; j++) {
-            for (i = 0; i < Nxh; i++) {
-                alpha(i,j,k) = -4*M_PI*(1-cos(R_c*sqrt(-alpha(i,j,k))))/alpha(i,j,k);
-            }
-        }
-    }
-    alpha[0] = 2*M_PI*(R_c * R_c);
-#undef alpha
-}
-
-
-/**
- * @brief   Create communicators between k-point topology and dmcomm.
- * 
- * Notes:   Occupations are only correct within all dmcomm processes.
- *          When not using ACE method, this communicator might be required. 
- */
-void create_kpttopo_dmcomm_inter(SPARC_OBJ *pSPARC) 
-{
-    int i, rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->ACEFlag == 0) {
-        int nproc_kptcomm;
-        int nproc_kptcomm_topo = pSPARC->npNdx_kptcomm * pSPARC->npNdy_kptcomm * pSPARC->npNdz_kptcomm;
-        MPI_Comm_size(pSPARC->kptcomm, &nproc_kptcomm);
-
-        int size_bandcomm = nproc_kptcomm / pSPARC->npband;
-        int npNd = pSPARC->npNdx * pSPARC->npNdy * pSPARC->npNdz;
-        int *ndm_list = (int *) calloc(sizeof(int), nproc_kptcomm_topo);
-        assert(ndm_list != NULL);
-
-    #ifdef DEBUG
-        double t1, t2;
-        t1 = MPI_Wtime();
-    #endif
-        int count_ndm = 0;
-        for (i = 0; i < nproc_kptcomm_topo; i++) {
-            if (i >= pSPARC->npband * size_bandcomm || i % size_bandcomm >= npNd) 
-                ndm_list[count_ndm++] = i;
-        }
-        if (count_ndm == 0) {
-            pSPARC->kpttopo_dmcomm_inter = MPI_COMM_NULL;
-            pSPARC->flag_kpttopo_dm = 0;
-        } else {
-            pSPARC->flag_kpttopo_dm = 1;
-            MPI_Group kpttopo_group, kpttopo_group_excl, kpttopo_group_incl;
-            MPI_Comm kpttopo_excl, kpttopo_incl;
-            MPI_Comm_group(pSPARC->kptcomm_topo, &kpttopo_group);
-            MPI_Group_incl(kpttopo_group, count_ndm, ndm_list, &kpttopo_group_excl);
-            MPI_Group_excl(kpttopo_group, count_ndm, ndm_list, &kpttopo_group_incl);
-
-            MPI_Comm_create_group(pSPARC->kptcomm_topo, kpttopo_group_excl, 110, &kpttopo_excl);
-            MPI_Comm_create_group(pSPARC->kptcomm_topo, kpttopo_group_incl, 110, &kpttopo_incl);
-            // yong excl zhiyao yige list
-            if (kpttopo_excl != MPI_COMM_NULL) {
-                MPI_Intercomm_create(kpttopo_excl, 0, pSPARC->kptcomm_topo, 0, 111, &pSPARC->kpttopo_dmcomm_inter);
-                pSPARC->flag_kpttopo_dm_type = 2;               // - recv
-            } else {
-                MPI_Intercomm_create(kpttopo_incl, 0, pSPARC->kptcomm_topo, ndm_list[0], 111, &pSPARC->kpttopo_dmcomm_inter);
-                pSPARC->flag_kpttopo_dm_type = 1;               // - send
-            }
-
-            if (kpttopo_excl != MPI_COMM_NULL)
-                MPI_Comm_free(&kpttopo_excl);
-            if (kpttopo_incl != MPI_COMM_NULL)
-                MPI_Comm_free(&kpttopo_incl);
-            MPI_Group_free(&kpttopo_group);
-            MPI_Group_free(&kpttopo_group_excl);
-            MPI_Group_free(&kpttopo_group_incl);
-        }
-    #ifdef DEBUG
-        t2 = MPI_Wtime();
-        if(!rank && count_ndm > 0) {
-            printf("\nThere are %d processes need to get correct occupations in each kptcomm_topo.\n",count_ndm);
-            printf("\n--set up kpttopo_dmcomm_inter took %.3f ms\n",(t2-t1)*1000);
-        }
-    #endif  
-
-        free(ndm_list);
-    } else {
-        pSPARC->kpttopo_dmcomm_inter = MPI_COMM_NULL;
-        pSPARC->flag_kpttopo_dm = 0;
-    }
-}
-
-/**
- * @brief   Compute the coefficient for G = 0 term in auxiliary function method
- * 
- *          Note: Using QE's method. Not the original one by Gygi 
- */
-void auxiliary_constant(SPARC_OBJ *pSPARC) 
-{
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    int Nx, Ny, Nz, i, j, k, ihf, jhf, khf, Kx_hf, Ky_hf, Kz_hf;
-    double L1, L2, L3, V, alpha, scaled_intf, sumfGq;
-    double tpiblx, tpibly, tpiblz, q[3], g[3], G[3], modGq, omega, omega2;
-
-    Nx = pSPARC->Nx;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-
-    Kx_hf = pSPARC->Kx_hf;
-    Ky_hf = pSPARC->Ky_hf;
-    Kz_hf = pSPARC->Kz_hf;
-
-    // When BC is Dirichelet, one more FD node is incldued.
-    // Real length of each side has to be added by 1 mesh length.
-    L1 = pSPARC->delta_x * Nx;
-    L2 = pSPARC->delta_y * Ny;
-    L3 = pSPARC->delta_z * Nz;
-
-    tpiblx = 2 * M_PI / L1;
-    tpibly = 2 * M_PI / L2;
-    tpiblz = 2 * M_PI / L3;
-
-    int N[3] = {Nx, Ny, Nz};
-    double tpibl[3] = {tpiblx, tpibly, tpiblz};
-    int nkpt[3] = {pSPARC->Kx, pSPARC->Ky, pSPARC->Kz};
-    double ecut = ecut_estimate(pSPARC->delta_x, pSPARC->delta_y, pSPARC->delta_z);
-    alpha = 10.0/(2.0*ecut);
-
-#ifdef DEBUG
-    if(!rank)
-        printf("Ecut estimation is %.2f Ha (%.2f Ry) and alpha within auxiliary function is %.6f\n", ecut, 2*ecut, alpha);
-#endif
-    
-    V =  L1 * L2 * L3 * pSPARC->Jacbdet;    // volume of unit cell
-    scaled_intf = V*pSPARC->Nkpts_hf/(4*M_PI*sqrt(M_PI*alpha));
-    omega = pSPARC->hyb_range_fock;
-    omega2 = omega * omega;
-
-    sumfGq = 0;
-    for (khf = 0; khf < Kz_hf; khf++) {
-        for (jhf = 0; jhf < Ky_hf; jhf++) {
-            for (ihf = 0; ihf < Kx_hf; ihf++) {
-                q[0] = ihf * tpiblx / Kx_hf;
-                q[1] = jhf * tpibly / Ky_hf;
-                q[2] = khf * tpiblz / Kz_hf;
-                
-                for (k = 0; k < Nz; k++) {
-                    for (j = 0; j < Ny; j++) {
-                        for (i = 0; i < Nx; i++) {
-                            // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                            g[0] = g[1] = g[2] = 0.0;
-                            G[0] = (i < Nx/2+1) ? (i*tpiblx) : ((i-Nx)*tpiblx);
-                            G[1] = (j < Ny/2+1) ? (j*tpibly) : ((j-Ny)*tpibly);
-                            G[2] = (k < Nz/2+1) ? (k*tpiblz) : ((k-Nz)*tpiblz);
-
-                            G[0] += q[0];
-                            G[1] += q[1];
-                            G[2] += q[2];
-                            matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                            modGq = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                            
-                            if (modGq > 1e-8) {
-                                if (omega < 0)
-                                    sumfGq += exp(-alpha*modGq)/modGq;
-                                else
-                                    sumfGq += exp(-alpha*modGq)/modGq*(1-exp(-modGq/4.0/omega2));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-
-    if (omega < 0) {
-        pSPARC->const_aux = scaled_intf + alpha - sumfGq;    
-    } else {
-        sumfGq += 0.25/omega2;
-        int nqq, iq;
-        double dq, q_, qq, aa;
-
-        nqq = 100000;
-        dq = 5.0/sqrt(alpha)/nqq;
-        aa = 0;
-        for (iq = 0; iq < nqq; iq++) {
-            q_ = dq*(iq+0.5);
-            qq = q_*q_;
-            aa = aa - exp( -alpha * qq) * exp(-0.25*qq/omega2)*dq;
-        }
-        aa = 2.0*aa/M_PI + 1.0/sqrt(M_PI*alpha);
-        scaled_intf = V*pSPARC->Nkpts_hf/(4*M_PI)*aa;
-        pSPARC->const_aux = scaled_intf - sumfGq;
-    }
+        MPI_Allgatherv(MPI_IN_PLACE, 1, MPI_DOUBLE, vec, 
+            recvcounts, displs, MPI_DOUBLE, pSPARC->blacscomm);   
         
-#ifdef DEBUG
-    if(!rank)
-        printf("The constant for zero G (auxiliary function) is %.6f\n", pSPARC->const_aux);
-#endif
-}
-
-
-/**
- * @brief   Estimation of Ecut by (pi/h)^2/2
- */
-double ecut_estimate(double hx, double hy, double hz)
-{
-    double dx2_inv, dy2_inv, dz2_inv, h_eff, ecut;
-
-    dx2_inv = 1.0/(hx * hx);
-    dy2_inv = 1.0/(hy * hy);
-    dz2_inv = 1.0/(hz * hz);
-    h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
-    
-    ecut = (M_PI/h_eff) * (M_PI/h_eff) / 2;     // Ecut rho
-    ecut = ecut / 4.0;                          // Ecut wfc
-    ecut = ecut * 0.9;                          // by experience
-    return ecut;
+        free(recvcounts);
+        free(displs); 
+    }
 }
 
 
@@ -1990,42 +1446,6 @@ void allocate_ACE(SPARC_OBJ *pSPARC) {
 #endif
 }
 
-/**
- * @brief   Gather orbitals shape vectors across blacscomm
- */
-void gather_blacscomm(SPARC_OBJ *pSPARC, int Ncol, double *vec)
-{
-    if (pSPARC->blacscomm == MPI_COMM_NULL) return;
-    int i, grank, lrank, lsize, DMnd;
-    int sendcount, *recvcounts, *displs, NB;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &grank);
-    MPI_Comm_rank(pSPARC->blacscomm, &lrank);
-    MPI_Comm_size(pSPARC->blacscomm, &lsize);
-
-    DMnd = pSPARC->Nd_d_dmcomm;
-
-    if (lsize > 1) {
-        recvcounts = (int*) malloc(sizeof(int)* lsize);
-        displs = (int*) malloc(sizeof(int)* lsize);
-        assert(recvcounts != NULL && displs != NULL);
-
-        // gather all bands, this part of code copied from parallelization.c
-        NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
-        displs[0] = 0;
-        for (i = 0; i < lsize; i++){
-            recvcounts[i] = (i < (Ncol / NB) ? NB : (i == (Ncol / NB) ? (Ncol % NB) : 0)) * DMnd;
-            if (i != (lsize-1))
-                displs[i+1] = displs[i] + recvcounts[i];
-        }
-
-        MPI_Allgatherv(MPI_IN_PLACE, 1, MPI_DOUBLE, vec, 
-            recvcounts, displs, MPI_DOUBLE, pSPARC->blacscomm);   
-        
-        free(recvcounts);
-        free(displs); 
-    }
-}
 
 
 /**

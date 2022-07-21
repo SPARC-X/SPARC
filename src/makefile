@@ -157,8 +157,11 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/vdW/vdWDF/vdWDFGenerateKernelSpline.o xc/vdW/vdWDF/vdWDFExchangeLinearCorre.o         \
         xc/vdW/vdWDF/vdWDFNonlinearCorre.o xc/mgga/scan.o xc/mgga/mgga.o xc/mgga/Sscan.o         \
         xc/mgga/energyDensity.o xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o                 \
-        xc/exx/exactExchangeProperties.o orderN/sq/sq.o orderN/sq/sqNlocVecRoutines.o            \
-        orderN/sq/sqParallelization.o orderN/sq/sqProperties.o orderN/sq/sqtool.o
+        xc/exx/exactExchangeInitialization.o xc/exx/exactExchangeFinalization.o                  \
+        xc/exx/exactExchangeStress.o xc/exx/exactExchangePressure.o orderN/sq/sq.o               \
+        orderN/sq/sqInitialization.o orderN/sq/sqFinalization.o orderN/sq/sqEnergy.o             \
+        orderN/sq/sqDensity.o orderN/sq/sqNlocVecRoutines.o orderN/sq/sqParallelization.o        \
+        orderN/sq/sqProperties.o orderN/sq/sqtool.o   
 
 ifeq ($(USE_PCE), 1)
 OBJSC += hamstruct.o pce_interface.o

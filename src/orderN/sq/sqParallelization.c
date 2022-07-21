@@ -14,24 +14,6 @@
 #include <math.h>
 #include <assert.h>
 #include <mpi.h>
-/** BLAS and LAPACK routines */
-#ifdef USE_MKL
-    #include <mkl.h>
-#else
-    #include <cblas.h>
-    #include <lapacke.h>
-#endif
-/** ScaLAPACK routines */
-#ifdef USE_MKL
-    #include "blacs.h"     // Cblacs_*
-    #include <mkl_blacs.h>
-    #include <mkl_pblas.h>
-    #include <mkl_scalapack.h>
-#endif
-#ifdef USE_SCALAPACK
-    #include "blacs.h"     // Cblacs_*
-    #include "scalapack.h" // ScaLAPACK functions
-#endif
 
 #include "isddft.h"
 #include "sqParallelization.h"
