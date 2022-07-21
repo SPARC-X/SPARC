@@ -53,7 +53,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Iexx/ -IvdW/d3 -IvdW/vdWDF -Imgga/ -Isq
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IorderN/sq/include
 LDLIBS   = -lrt
 
 LIBPCE_DEP = main.o # Dummy value for dependency
@@ -147,16 +147,18 @@ endif
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
 CFLAGS = -std=gnu99 -O3 -fopenmp
 
-OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o          \
-        electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o               \
-        occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o         \
-        hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o       \
-        linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o          \
-        forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o energyDensity.o                \
-        vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o vdW/vdWDF/vdWDFGenerateKernelSpline.o \
-        vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o mgga/scan.o mgga/mgga.o   \
-        mgga/Sscan.o exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o          \
-        sq/sq.o sq/sqNlocVecRoutines.o sq/sqParallelization.o sq/sqProperties.o sq/sqtool.o 
+OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o    \
+        electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o         \
+        occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o   \
+        hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o \
+        linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o    \
+        forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o                          \
+        xc/vdW/d3/d3Correction.o xc/vdW/d3/find_r0ab.o xc/vdW/d3/copyC6.o                        \
+        xc/vdW/vdWDF/vdWDFGenerateKernelSpline.o xc/vdW/vdWDF/vdWDFExchangeLinearCorre.o         \
+        xc/vdW/vdWDF/vdWDFNonlinearCorre.o xc/mgga/scan.o xc/mgga/mgga.o xc/mgga/Sscan.o         \
+        xc/mgga/energyDensity.o xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o                 \
+        xc/exx/exactExchangeProperties.o orderN/sq/sq.o orderN/sq/sqNlocVecRoutines.o            \
+        orderN/sq/sqParallelization.o orderN/sq/sqProperties.o orderN/sq/sqtool.o
 
 ifeq ($(USE_PCE), 1)
 OBJSC += hamstruct.o pce_interface.o
