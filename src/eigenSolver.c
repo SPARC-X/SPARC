@@ -748,13 +748,7 @@ void Chebyshevfilter_constants(
                     pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, 
                     pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
                     sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
-                if (strcmpi(pSPARC->XC, "SCAN") == 0 && pSPARC->countSCF > 1) { // transfer vxcMGGA3 of this spin to kptcomm, it is moved from file mgga/mgga.c to here.
-                    D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, 
-                    pSPARC->DMVertices_dmcomm, pSPARC->vxcMGGA3_loc_dmcomm + spn_i * pSPARC->Nd_d_dmcomm, // processors in dmcomm does not save vxcMGGA3 of both spins; they just saved which their spincomm needs 
-                    pSPARC->DMVertices_kptcomm, pSPARC->vxcMGGA3_loc_kptcomm, 
-                    pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
-                    sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
-                }
+                // If exchange-correlation is SCAN, GGA_PBE will be the exc used in 1st SCF; it is unnecessary to transform a zero vector
                 Lanczos(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, 
                         pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->nlocProj_kptcomm, 
                         eigmin, eigmax, x0, pSPARC->TOL_LANCZOS, pSPARC->TOL_LANCZOS, 
@@ -794,7 +788,9 @@ void Chebyshevfilter_constants(
     } else if (count >= pSPARC->rhoTrigger) {
         *eigmin = pSPARC->lambda_sorted[spn_i*pSPARC->Nstates]; // take previous eigmin
         
-        if (pSPARC->chefsibound_flag == 1) { // 1 - always call Lanczos on H
+        if (pSPARC->chefsibound_flag == 1 || ((count == pSPARC->rhoTrigger) && (strcmpi(pSPARC->XC, "SCAN") == 0))) { // 1 - always call Lanczos on H; the other condition is for SCAN
+        //the first SCF is PBE, the second is SCAN, so it is necessary to do Lanczos again in 2nd SCF
+            t1 = MPI_Wtime();
             // estimate both max eigenval of H using Lanczos
             if (pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo) {
                 Lanczos(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_dmcomm_phi, 
@@ -807,7 +803,14 @@ void Chebyshevfilter_constants(
                 D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, pSPARC->DMVertices_dmcomm, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
                     pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
                     sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
-             
+                if (strcmpi(pSPARC->XC, "SCAN") == 0) { // transfer vxcMGGA3 of this spin to kptcomm, it is moved from file mgga/mgga.c to here.
+                    // printf("rank %d, joined SCAN Lanczos, pSPARC->countSCF %d\n", rank, pSPARC->countSCF);
+                    D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, 
+                    pSPARC->DMVertices_dmcomm, pSPARC->vxcMGGA3_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, // processors in dmcomm does not save vxcMGGA3 of both spins; they just saved which their spincomm needs 
+                    pSPARC->DMVertices_kptcomm, pSPARC->vxcMGGA3_loc_kptcomm, 
+                    pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
+                    sdims, pSPARC->kptcomm_topo, rdims, pSPARC->kptcomm);
+                }
                 Lanczos(pSPARC, pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, 
                         pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->nlocProj_kptcomm, 
                         &temp, eigmax, x0, 1e10, pSPARC->TOL_LANCZOS, 
@@ -815,6 +818,13 @@ void Chebyshevfilter_constants(
                 // *eigmax += 10 * pSPARC->TOL_LANCZOS;
                 *eigmax *= 1.01; // add 1% buffer
             }
+            t2 = MPI_Wtime();
+            #ifdef DEBUG
+            if (rank == 0) {
+                printf("rank = %3d, Lanczos took %.3f ms, eigmin = %.12f, eigmax = %.12f\n", 
+                   rank, (t2-t1)*1e3, *eigmin, *eigmax);
+            }
+            #endif
         } 
     }
 

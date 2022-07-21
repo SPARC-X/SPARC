@@ -57,7 +57,7 @@ void SCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho,
 
     scanc(DMnd, rho, s_dsdn_dsddn, alpha_dadn_daddn_dadtau, epsilonc, vc1, vc2, vc3);
 
-    for (int i = 0; i < DMnd; i++) {
+    for (i = 0; i < DMnd; i++) {
         e_xc[i] = epsilonx[i] + epsilonc[i];
         vxcMGGA1[i] = vx1[i] + vc1[i];
         vxcMGGA2[i] = vx2[i] + vc2[i];

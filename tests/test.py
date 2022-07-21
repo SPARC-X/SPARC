@@ -3232,7 +3232,7 @@ if isAuto == False and temp_result == False:
 					# isorient_temp.remove(isorient_temp[j])
 					temp = False
 					break
-			time.sleep(30)
+				time.sleep(4)
 
 	print('\n')
 elif isAuto == True and temp_result == False:
