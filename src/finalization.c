@@ -21,9 +21,9 @@
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
 #include "exactExchangeFinalization.h"
-#include "d3Correction.h"
-#include "vdWDF.h"
-#include "mgga.h"
+#include "d3finalization.h"
+#include "vdWDFfinalization.h"
+#include "MGGAfinalization.h"
 #include "sqFinalization.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL

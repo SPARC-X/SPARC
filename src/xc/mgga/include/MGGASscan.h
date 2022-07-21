@@ -1,6 +1,6 @@
 /**
- * @file    Sscan.h
- * @brief   This file contains the function declarations for SCAN functional.
+ * @file    MGGASscan.h
+ * @brief   This file contains the function declarations for spin-polarized SCAN functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
@@ -10,6 +10,9 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+#ifndef SSCAN_H
+#define SSCAN_H 
 
 /**
  * @brief   the main function in scan.c, compute \epsilon and potentials of SCAN functional
@@ -83,3 +86,4 @@ void basic_MGSGA_variables_correlation(int length, double *rho, double *normDrho
  */
 void sscanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadnup_dadndn_daddn_dadtau, double **zeta_dzetadnup_dzetadndn, double *epsilonc, double *vc1, double *vc2, double *vc3);
 
+#endif

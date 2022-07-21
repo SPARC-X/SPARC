@@ -1,5 +1,5 @@
 /**
- * @file    Sscan.c
+ * @file    MGGASscan.c
  * @brief   This file contains the functions for spin-polarized scan functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
@@ -18,7 +18,7 @@
 #include <assert.h>
 
 #include "isddft.h"
-#include "Sscan.h"
+#include "MGGASscan.h"
 
 
 void SSCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho, double *tau, double *e_xc, double *vxcMGGA1, double *vxcMGGA2, double *vxcMGGA3) { 
