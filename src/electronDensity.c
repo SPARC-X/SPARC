@@ -23,7 +23,7 @@
 #include "eigenSolverKpt.h" 
 #include "isddft.h"
 
-#if USE_PCE
+#if USE_PCE /* Include PCE Headers */
 #include <libpce.h>
 #include "hamstruct.h"
 #endif
@@ -31,7 +31,7 @@
 /*
 @ brief: Main function responsible to find electron density
 */
-#if USE_PCE
+#if USE_PCE /* PCE Requires some additional data for reuse */
 void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
                         Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
                         Our_Hamiltonian_Struct *ham_struct, 
@@ -48,22 +48,22 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
     // Currently only involves Chebyshev filtering eigensolver
     if (pSPARC->isGammaPoint){
 
-#if USE_PCE
-        eigSolve_CheFSI(rank, pSPARC, SCFcount, error,
-                        hd, cheb, Eigvals,
-                        ham_struct, 
-                        Psi1, Psi2, Psi3,
-                        kptcomm, dmcomm, blacscomm);
-#else
-        eigSolve_CheFSI(rank, pSPARC, SCFcount, error);
-#endif
+        #if USE_PCE
+            eigSolve_CheFSI(rank, pSPARC, SCFcount, error,
+                            hd, cheb, Eigvals,
+                            ham_struct, 
+                            Psi1, Psi2, Psi3,
+                            kptcomm, dmcomm, blacscomm);
+        #else
+            eigSolve_CheFSI(rank, pSPARC, SCFcount, error);
+        #endif
 
         if(pSPARC->spin_typ == 0) {
-#if USE_PCE
-         PCE_Density_Calculate(rho, Eigvals, hd, Psi1, pSPARC->dV, ham_struct->communication_device, ham_struct->compute_device, blacscomm);
-#else /* USE_PCE */
+        #if USE_PCE
+            PCE_Density_Calculate(rho, Eigvals, hd, Psi1, pSPARC->dV, ham_struct->communication_device, ham_struct->compute_device, blacscomm);
+        #else /* USE_PCE */
          CalculateDensity_psi(pSPARC, rho);
-#endif /* USE_PCE */
+        #endif /* USE_PCE */
         }
         else
             CalculateDensity_psi_spin(pSPARC, rho);     
