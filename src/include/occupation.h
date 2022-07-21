@@ -29,7 +29,8 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
  * @ref     W.H. Press, Numerical recepies 3rd edition: The art of scientific 
  *          computing, Cambridge university press, 2007.
  */
-double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter);
+double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter, 
+    double (*constraint)(SPARC_OBJ*, double));
 
 
 /**

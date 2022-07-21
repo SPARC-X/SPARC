@@ -605,8 +605,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"OUTPUT_FILE:") == 0) {    
             fscanf(input_fp,"%s",pSPARC_Input->filename_out);
             fscanf(input_fp, "%*[^\n]\n");
-        
-        // exact exchange input options
+        /* exact exchange input options */
         } else if (strcmpi(str,"TOL_FOCK:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->TOL_FOCK);
             fscanf(input_fp, "%*[^\n]\n");
@@ -655,7 +654,6 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
-
         } else if (strcmpi(str,"EXX_RANGE_FOCK:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->hyb_range_fock);
             fscanf(input_fp, "%*[^\n]\n");
@@ -664,6 +662,60 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MINIT_FOCK:") == 0) {    
             fscanf(input_fp,"%d",&pSPARC_Input->MINIT_FOCK);
+            fscanf(input_fp, "%*[^\n]\n");
+        /* SQ input options */
+        } else if (strcmpi(str,"SQ_FLAG:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->SQFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_TYPE_DM:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"CC") == 0 || strcmpi(temp,"cc") == 0) {
+                pSPARC_Input->SQ_typ_dm = 1;
+            } else if (strcmpi(temp,"GAUSS") == 0 || strcmpi(temp,"gauss") == 0) {
+                pSPARC_Input->SQ_typ_dm = 2;
+            } else {
+                printf("Cannot recognize the SQ type for density matrix: \"%s\"\n", temp);
+                printf("Please use GAUSS (gauss) for Gauss quadrature or CC (cc) for Clenshaw-Curtis\n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_GAUSS_MEM:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"LOW") == 0 || strcmpi(temp,"low") == 0) {
+                pSPARC_Input->SQ_gauss_mem = 0;
+            } else if (strcmpi(temp,"HIGH") == 0 || strcmpi(temp,"high") == 0) {
+                pSPARC_Input->SQ_gauss_mem = 1;
+            } else {
+                printf("Cannot recognize the memory option for Gauss Quadrature in density matrix using SQ method: \"%s\"\n", temp);
+                printf("Please use HIGH (high) for high memory option or LOW (low) for low memory option\n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_NPL_C:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->SQ_npl_c);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_NPL_G:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->SQ_npl_g);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_EIGSHIFT_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->SQ_EigshiftFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_RCUT:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_rcut);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_FAC_G2C:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_fac_g2c);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_TOL_OCC:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_tol_occ);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_EIGSHIFT:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_eigshift);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NP_DOMAIN_SQ_PARAL:") == 0) {
+            fscanf(input_fp,"%d", &pSPARC_Input->npNdx_SQ);
+            fscanf(input_fp,"%d", &pSPARC_Input->npNdy_SQ);
+            fscanf(input_fp,"%d", &pSPARC_Input->npNdz_SQ);
             fscanf(input_fp, "%*[^\n]\n");
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);

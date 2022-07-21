@@ -41,16 +41,15 @@
 
 #include "exactExchange.h"
 #include "exactExchangeKpt.h"
+#include "exactExchangeProperties.h"
 #include "tools.h"
-#include "parallelization.h"
-#include "electronicGroundState.h"
-#include "exchangeCorrelation.h"
 #include "lapVecRoutines.h"
 #include "lapVecOrth.h"
 #include "lapVecNonOrth.h"
 #include "nlocVecRoutines.h"
-#include "linearSolver.h"
-#include "electrostatics.h"
+#include "gradVecRoutines.h"
+#include "gradVecRoutinesKpt.h"
+#include "stress.h"
 
 
 #define max(a,b) ((a)>(b)?(a):(b))

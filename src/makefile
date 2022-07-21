@@ -10,7 +10,6 @@ USE_SCALAPACK = 0
 # (USE_DP_SUBEIG = 1 is required if both USE_MKL = 0 and USE_SCALAPACK = 0)
 # Set USE_DP_SUBEIG = 0 to use ScaLAPACK rather than SPARC routines
 USE_DP_SUBEIG = 1
-
 # Set USE_FFTW = 1 to use FFTW for fast Fourier transform in vdWDF. Don't open it together with USE_MKL
 USE_FFTW      = 0
 
@@ -20,13 +19,13 @@ DEBUG_MODE    = 1
 USE_PCE := 1
 ifeq ($(USE_PCE), 1)
 ifeq ($(USE_DP_SUBEIG), 0)
-	$(error USE_PCE=1 is currently only tested with USE_DP_SUBEIG=1)
+$(error USE_PCE=1 is currently only tested with USE_DP_SUBEIG=1)
 endif
 ifeq ($(ACCEL), 1)
-	$(error USE_PCE=1 is currently only tested with ACCEL=0)
+$(error USE_PCE=1 is currently only tested with ACCEL=0)
 endif
 ifeq ($(USE_EVA_MODULE), 1)
-	$(error USE_PCE=1 is currently only tested with USE_EVA_MODULE=0)
+$(error USE_PCE=1 is currently only tested with USE_EVA_MODULE=0)
 endif
 USE_GPU    := 1
 USE_ELPA := 1
@@ -54,8 +53,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-#CPPFLAGS = -Iinclude/ -I ../Hamiltonian/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
-CPPFLAGS = -Iinclude/ -Iexx/ -IvdW/d3 -IvdW/vdWDF -Imgga
+CPPFLAGS = -Iinclude/ -Iexx/ -IvdW/d3 -IvdW/vdWDF -Imgga/ -Isq
 LDLIBS   = -lrt
 
 LIBPCE_DEP = main.o # Dummy value for dependency
@@ -154,10 +152,11 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         occupation.o lapVecRoutines.o gradVecRoutines.o gradVecRoutinesKpt.o nlocVecRoutines.o         \
         hamiltonianVecRoutines.o lapVecOrth.o lapVecOrthKpt.o lapVecNonOrth.o lapVecNonOrthKpt.o       \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o          \
-        forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o                                \
+        forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o energyDensity.o                \
         vdW/d3/d3Correction.o vdW/d3/find_r0ab.o vdW/d3/copyC6.o vdW/vdWDF/vdWDFGenerateKernelSpline.o \
         vdW/vdWDF/vdWDFExchangeLinearCorre.o vdW/vdWDF/vdWDFNonlinearCorre.o mgga/scan.o mgga/mgga.o   \
-        exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o 
+        exx/exactExchange.o exx/exactExchangeKpt.o exx/exactExchangeProperties.o                       \
+        sq/sq.o sq/sqNlocVecRoutines.o sq/sqParallelization.o sq/sqProperties.o sq/sqtool.o 
 
 ifeq ($(USE_PCE), 1)
 OBJSC += hamstruct.o pce_interface.o
