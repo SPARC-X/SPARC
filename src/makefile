@@ -14,7 +14,7 @@ USE_DP_SUBEIG = 1
 USE_FFTW      = 0
 
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 1
+DEBUG_MODE    = 0
 
 USE_PCE := 1
 ifeq ($(USE_PCE), 1)
@@ -136,7 +136,7 @@ endif
 
 # to compile with DEBUG mode
 ifeq ($(DEBUG_MODE), 1)
-CPPFLAGS += -Wall -g -DDEBUG
+CPPFLAGS += -Wall -g -DDEBUG -Werror-implicit-function-declaration
 endif
 
 # to enable SIMD for complex stencil routines
