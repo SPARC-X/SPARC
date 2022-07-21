@@ -37,6 +37,22 @@ void Lap_plus_diag_vec_mult_orth_kpt(
         const int *dims, int kpt
 );
 
+
+
+/**
+ * @brief   Calculate (a * Lap + c * I) times vectors.
+ *
+ *          This is only for orthogonal discretization.
+ *
+ */
+void Lap_vec_mult_orth_kpt(
+        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
+        const int ncol, const double a, const double c, const double complex *x, 
+        double complex *y, MPI_Comm comm, const int *dims, const int kpt
+);
+
+
+
 /**
  * @brief   Kernel for calculating y = (a * Lap + b * diag(v0) + c * I) * x.
  *          For the input & output domain, z/x index is the slowest/fastest running index
@@ -68,45 +84,22 @@ void Lap_plus_diag_vec_mult_orth_kpt(
  *          Edmond Chow <echow@cc.gatech.edu>
  *
  * @modified by Abhiraj Sharma <asharma424@gatech.edu>, April 2019, Georgia Tech
+ * @modified by Qimen Xu <qimenxu@gatech.edu>, Jul 2022, Georgia Tech
  *
  * Copyright (c) 2018-2019 Edmond Group at Georgia Tech.
  */
- 
- 
- 
- 
- /**
- * @brief   Calculate (a * Lap + c * I) times vectors.
- *
- *          This is only for orthogonal discretization.
- *
- */
-void Lap_vec_mult_orth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double complex *x, 
-        double complex *y, MPI_Comm comm, const int *dims, const int kpt
-);
- 
- 
- 
- 
- 
- 
- 
-void stencil_3axis_thread_kpt(
-    const SPARC_OBJ *pSPARC,   const double complex *x0,
-    const int *DMVertices,     const int radius,
-    const int stride_y,        const int stride_y_ex, 
-    const int stride_z,        const int stride_z_ex,
-    int x_spos,                int x_epos, 
-    int y_spos,                int y_epos,
-    int z_spos,                int z_epos,
-    int x_ex_spos,             int y_ex_spos,  // this allows us to give x as x0 for 
-    int z_ex_spos,                       // calc inner part of Lx
+void stencil_3axis_thread_complex_v2(
+    const double complex *x0, const int radius,
+    const int stride_y,  const int stride_y_ex,
+    const int stride_z,  const int stride_z_ex,
+    const int x_spos,    const int x_epos,
+    const int y_spos,    const int y_epos,
+    const int z_spos,    const int z_epos,
+    const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for
+    const int z_ex_spos,                       // calc inner part of Lx
     const double *stencil_coefs, 
-    const double coef_0,       const double b,   
-    const double *v0,          double complex *y,
-    const int kpt
+    const double coef_0, const double b,
+    const double *v0,    double complex *y
 );
 
 
