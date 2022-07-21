@@ -16,8 +16,11 @@ USE_FFTW      = 0
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
 DEBUG_MODE    = 1
 
+# Set USE_PCE=1 to use PCE, or =0 to not use PCE
 USE_PCE := 1
+
 ifeq ($(USE_PCE), 1)
+# Run some sanity checks to ensure multiple accelerators aren't enabled
 ifeq ($(USE_DP_SUBEIG), 0)
 $(error USE_PCE=1 is currently only tested with USE_DP_SUBEIG=1)
 endif
@@ -27,8 +30,15 @@ endif
 ifeq ($(USE_EVA_MODULE), 1)
 $(error USE_PCE=1 is currently only tested with USE_EVA_MODULE=0)
 endif
+
+# Set USE_GPU =1 to enable PCE GPU support. 
+# If set, you can use the environment variable LIBPCE_USE_GPU to control at 
+# runtime if it is ran on the CPU or GPU
 USE_GPU    := 1
+
+# Set USE_EPLA=1 to enable ELPA support for PCE Eigensolves
 USE_ELPA := 1
+
 else
 USE_GPU    := 0
 USE_ELPA := 0
@@ -62,22 +72,31 @@ CPPFLAGS += -DUSE_PCE=1
 LIBPCE_DIR=../Hamiltonian/
 CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
 
+# Make sure you have ELPA_ROOT set in the environment variable
+# This is set by the elpa modulefile by PACE
+
 ELPA_DIR = $(ELPA_ROOT)
-#This may need to be changed depending on the installed elpa
+
+# This may need to be changed depending on the installed elpa
+# The one used by the elpa module is currently elpa_openmp
 ELPA_LIB = elpa
 #ELPA_LIB = elpa_openmp
 
-# Uses gcc
+# Select which makefile should be used for LIBPCE
+# On PACE with MKL you cane use Makefile.pace.icc, the most well tested option
 LIBPCE_MAKEFILE=Makefile.pace.icc
 
+# PCE uses CA3DMM for matrix-matrix products, so we must make sure to compile with CA3DMM support
+# SPARC_COMPILATION indicates that PCE is being compiled within SPARC, and so doesn't need to redefine certain structs
 CPPFLAGS += -I $(LIBPCE_DIR)/include -I ../Hamiltonian/CA3DMM/include -DSPARC_COMPILATION
 LDLIBS += -L $(LIBPCE_DIR)/lib -L $(CA3DMM_DIR)/lib  -lpce -lca3dmm
 
+#If we are to use GPUs setup the flags for GPU
 ifeq ($(USE_GPU), 1)
-
 LFLAGS_GPU_HOST = -std=gnu++98,-MMD,-MP,-O3,-g,-march=native,-fopenmp
 CPPFLAGS += -I $(CUDA_ROOT)/include
 LFLAGS_GPU:=-lcudart -ccbin=mpicxx  -O3 -L$(CUDA_ROOT)/lib64 -lcurand -lcusparse -lcublas -lcusolver -arch=sm_70 -gencode=arch=compute_70,code=sm_70 -G $(LDLIBS)
+
 ifeq ($(USE_MKL), 1)
 LFLAGS_GPU_HOST:=$(LFLAGS_GPU_HOST)
 LFLAGS_GPU   += -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_blacs_intelmpi_lp64 -lpthread -lm -ldl
@@ -183,6 +202,7 @@ all: sparc
 # %.o : %.c
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
+# Use either nvcc or $(CC) depending on if PCE GPU support is requested
 sparc: $(OBJSC) $(LIBPCE_DEP) 
 	if [ "$(USE_GPU)" == "1" ]; then \
 		nvcc -DUSE_GPU $(LFLAGS_GPU) $(LDFLAGS) -o $(LIBBASE) $^; \

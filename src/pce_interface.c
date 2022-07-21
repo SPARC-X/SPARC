@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+/** @brief This file contains a function to interface the pSPARC object into
+ * an object used by PCE for nonlocal calculations */
+
 
 void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, const Hybrid_Decomp* hd, NonLocal_Info *nl, device_type device)
 {
@@ -18,7 +21,9 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, const Hybrid_Decomp* hd, 
     min_SPARC_OBJ *min_SPARC = nl->pSPARC;
 
     min_SPARC->n_atom = pSPARC->n_atom;
+#if DEBUG
     printf("NAtom: %i\n", nl->pSPARC->n_atom);
+#endif
     min_SPARC->dV = pSPARC->dV;
     min_SPARC->Ntypes = pSPARC->Ntypes;
 
@@ -57,14 +62,16 @@ void SPARC2NONLOCAL_interface(const SPARC_OBJ *pSPARC, const Hybrid_Decomp* hd, 
     nl->nlocProj = pSPARC->nlocProj;
 
 #if USE_GPU
-  if(device == DEVICE_TYPE_DEVICE) {
-//TODO Garbage collection
-    printf("GPUUUUUUUU\n");
-     
-    nl->gpu_vnl = (vnl_info*) malloc(sizeof(vnl_info));
-    interface_gpu(min_SPARC, nl->Atom_Influence_nloc, nl->nlocProj, nl->gpu_vnl, hd->local_num_cols, hd->local_num_fd);
-     
-}
+    if(device == DEVICE_TYPE_DEVICE) {
+#if DEBUG
+      printf("Using GPU\n");
+#endif
+
+      //TODO Garbage collection
+      nl->gpu_vnl = (vnl_info*) malloc(sizeof(vnl_info));
+      interface_gpu(min_SPARC, nl->Atom_Influence_nloc, nl->nlocProj, nl->gpu_vnl, hd->local_num_cols, hd->local_num_fd);
+
+    }
 #endif
 
 
