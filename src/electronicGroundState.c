@@ -47,6 +47,7 @@
 
 #include "exactExchange.h"
 #include "d3Correction.h"
+#include "spinOrbitCoupling.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -335,6 +336,12 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         CalculateNonlocalProjectors_kpt(pSPARC, &pSPARC->nlocProj, pSPARC->Atom_Influence_nloc, 
     	                                pSPARC->DMVertices_dmcomm, pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);	                            
     
+    if (pSPARC->SOC_Flag) {
+        CalculateNonlocalProjectors_SOC(pSPARC, pSPARC->nlocProj, pSPARC->Atom_Influence_nloc, 
+                                        pSPARC->DMVertices_dmcomm, pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+        CreateChiSOMatrix(pSPARC, pSPARC->nlocProj, pSPARC->Atom_Influence_nloc, 
+                        pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+    }
 #ifdef DEBUG
     t2 = MPI_Wtime();
     if (rank == 0) printf("\nCalculating nonlocal projectors in psi-domain took %.3f ms\n",(t2-t1)*1000);
@@ -361,6 +368,13 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
 								        pSPARC->DMVertices_kptcomm, 
 								        pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);								    
     
+    if (pSPARC->SOC_Flag) {
+        CalculateNonlocalProjectors_SOC(pSPARC, pSPARC->nlocProj_kptcomm, pSPARC->Atom_Influence_nloc_kptcomm, 
+                                        pSPARC->DMVertices_kptcomm, 
+                                        pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
+        CreateChiSOMatrix(pSPARC, pSPARC->nlocProj_kptcomm, pSPARC->Atom_Influence_nloc_kptcomm, 
+                        pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
+    }
 #ifdef DEBUG
     t2 = MPI_Wtime();
     if (rank == 0) printf("\nCalculating nonlocal projectors in kptcomm_topo took %.3f ms\n",(t2-t1)*1000);   
@@ -1002,7 +1016,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                             Ns - nocc_print + i + 1, 
                             pSPARC->lambda_sorted[spn_i*Ns*Nk + k*Ns + Ns - nocc_print + i],
                             Ns - nocc_print + i + 1, 
-                            (3.0-pSPARC->Nspin) * pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + Ns - nocc_print + i]);
+                            (3.0-pSPARC->Nspin)/pSPARC->Nspinor * pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + Ns - nocc_print + i]);
                 }
             }
     		#endif
@@ -1036,8 +1050,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                "Occupation of state %d = %.15f.\n"
                "Occupation of state %d = %.15f.\n",
                k1_red, k2_red, k3_red,
-               ind_90percent+1, (3.0-pSPARC->Nspin) * g_ind_90percent,
-               ind_100percent+1, (3.0-pSPARC->Nspin) * g_ind_100percent);
+               ind_90percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_90percent,
+               ind_100percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_100percent);
         fclose(output_fp);
     }
 

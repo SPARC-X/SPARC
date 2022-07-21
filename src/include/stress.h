@@ -43,7 +43,7 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC);
  * @brief    Calculate nonlocal stress components.
  */
 void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC);
-
+void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC);
 void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC);
 
 /*

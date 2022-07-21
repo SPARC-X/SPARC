@@ -30,10 +30,11 @@
 #include "eigenSolverKpt.h"  // init_GTM_CheFSI_kpt()
 #include "parallelization.h"
 #include "isddft.h"
-
 #include "d3Correction.h"
 #include "vdWDF.h"
 #include "mgga.h"
+#include "exactExchange.h"
+#include "spinOrbitCoupling.h"
 
 #define TEMP_TOL 1e-12
 
@@ -273,6 +274,8 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
 
     // calculate indices for storing nonlocal inner product
     CalculateNonlocalInnerProductIndex(pSPARC);
+    if (pSPARC->SOC_Flag == 1)
+        CalculateNonlocalInnerProductIndexSOC(pSPARC);
 
 #ifdef DEBUG
     t1 = MPI_Wtime();
@@ -600,6 +603,10 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->EXXDiv_Flag = -1;           // default setting for singularity in exact exchange, default spherical trucation    
     pSPARC_Input->hyb_range_fock = 0.1587;    // default using VASP's HSE03 value
     pSPARC_Input->hyb_range_pbe = 0.1587;     // default using VASP's HSE03 value
+
+    /* Default parameter for spin-orbit coupling */
+    pSPARC->Nspinor = 1;
+    pSPARC->SOC_Flag = 0;
 }
 
 
@@ -609,7 +616,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
  */
 void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     int i, l, rank, position, l_buff, Ntypes, n_atom, nproj, lmax_sum, size_sum, nprojsize_sum, nproj_sum;
-    int *tempbuff, *is_r_uniformv, *pspxcv, *lmaxv, *sizev, *pplv, *ppl_sdispl;
+    int *tempbuff, *is_r_uniformv, *pspxcv, *pspsocv, *lmaxv, *sizev, *pplv, *pplv_soc, *ppl_sdispl, *ppl_soc_sdispl;
     char *buff;
 
 #ifdef DEBUG
@@ -624,28 +631,35 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     sizev = (int *)malloc( Ntypes * sizeof(int) );
     is_r_uniformv = (int *)malloc( Ntypes * sizeof(int) );
     pspxcv = (int *)malloc( Ntypes * sizeof(int) );
+    pspsocv = (int *)malloc( Ntypes * sizeof(int) );
     ppl_sdispl = (int *)malloc( (Ntypes+1) * sizeof(int) );
-    tempbuff = (int *)malloc( (4*Ntypes+1) * sizeof(int) );
+    tempbuff = (int *)malloc( (5*Ntypes+3) * sizeof(int) );
     assert(lmaxv != NULL && sizev != NULL && is_r_uniformv != NULL 
-        && pspxcv!= NULL && ppl_sdispl != NULL && tempbuff != NULL);
+        && pspxcv!= NULL && pspsocv!= NULL && ppl_sdispl != NULL 
+        && tempbuff != NULL);
 
     // send n_atom, lmax, size
     if (rank == 0) {
         // pack the info. into temp. buffer
         tempbuff[0] = pSPARC->n_atom;
+        tempbuff[1] = pSPARC->Nspinor;
+        tempbuff[2] = pSPARC->SOC_Flag;
         for (i = 0; i < Ntypes; i++) {
             lmaxv[i] = pSPARC->psd[i].lmax;
             sizev[i] = pSPARC->psd[i].size;
             pspxcv[i] = pSPARC->psd[i].pspxc;
             is_r_uniformv[i] = pSPARC->psd[i].is_r_uniform;
+            pspsocv[i] = pSPARC->psd[i].pspsoc;
             //pplv[i] = pSPARC->psd[i].ppl;
-            tempbuff[i+1] = lmaxv[i];
-            tempbuff[i+Ntypes+1] = sizev[i];
-            tempbuff[i+2*Ntypes+1] = pspxcv[i];
-            tempbuff[i+3*Ntypes+1] = is_r_uniformv[i];
+            tempbuff[i+3] = lmaxv[i];
+            tempbuff[i+Ntypes+3] = sizev[i];
+            tempbuff[i+2*Ntypes+3] = pspxcv[i];
+            tempbuff[i+3*Ntypes+3] = is_r_uniformv[i];
+            tempbuff[i+4*Ntypes+3] = pspsocv[i];
+
             //tempbuff[i+2*Ntypes+1] = pplv[i];
         }
-        MPI_Bcast( tempbuff, 4*Ntypes+1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast( tempbuff, 5*Ntypes+3, MPI_INT, 0, MPI_COMM_WORLD);
 
         // pack psd[i].ppl[l] and bcast
         ppl_sdispl[0] = 0;
@@ -666,7 +680,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 #ifdef DEBUG
         t1 = MPI_Wtime();
 #endif
-        MPI_Bcast( tempbuff, 4*Ntypes+1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast( tempbuff, 5*Ntypes+3, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -674,16 +688,20 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 #endif
         // unpack info.
         pSPARC->n_atom = tempbuff[0];
+        pSPARC->Nspinor = tempbuff[1];
+        pSPARC->SOC_Flag = tempbuff[2];
         for (i = 0; i < Ntypes; i++) {
-            lmaxv[i] = tempbuff[i+1];
-            sizev[i] = tempbuff[i+Ntypes+1];
-            pspxcv[i] = tempbuff[i+2*Ntypes+1];
-            is_r_uniformv[i] = tempbuff[i+3*Ntypes+1];
+            lmaxv[i] = tempbuff[i+3];
+            sizev[i] = tempbuff[i+Ntypes+3];
+            pspxcv[i] = tempbuff[i+2*Ntypes+3];
+            is_r_uniformv[i] = tempbuff[i+3*Ntypes+3];
+            pspsocv[i] = tempbuff[i+4*Ntypes+3];
             //pplv[i] = tempbuff[i+2*Ntypes+1];
             pSPARC->psd[i].lmax = lmaxv[i];
             pSPARC->psd[i].size = sizev[i];
             pSPARC->psd[i].pspxc = pspxcv[i];
             pSPARC->psd[i].is_r_uniform = is_r_uniformv[i];
+            pSPARC->psd[i].pspsoc = pspsocv[i];
             //pSPARC->psd[i].ppl = pplv[i];
         }
 
@@ -705,6 +723,34 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     }
     n_atom = pSPARC->n_atom;
 
+    if (pSPARC->SOC_Flag == 1) {
+        ppl_soc_sdispl = (int *)malloc( (Ntypes+1) * sizeof(int) );
+        // pack psd[i].ppl[l] and bcast
+        ppl_soc_sdispl[0] = 0;
+        for (i = 0; i < Ntypes; i++) {
+            ppl_soc_sdispl[i+1] = ppl_soc_sdispl[i] + pspsocv[i] * lmaxv[i]; // l from 1 to lmax
+        }
+        pplv_soc = (int *)malloc( ppl_soc_sdispl[Ntypes] * sizeof(int) );
+        
+        if (rank == 0) {
+            for (i = 0; i < Ntypes; i++) {
+                if (!pspsocv[i]) continue;
+                for (l = 1; l <= lmaxv[i]; l++) {
+                    pplv_soc[ppl_soc_sdispl[i]+l-1] = pSPARC->psd[i].ppl_soc[l-1];
+                }
+            }
+            MPI_Bcast( pplv_soc, ppl_soc_sdispl[Ntypes], MPI_INT, 0, MPI_COMM_WORLD);
+        } else {
+            MPI_Bcast( pplv_soc, ppl_soc_sdispl[Ntypes], MPI_INT, 0, MPI_COMM_WORLD);
+            for (i = 0; i < Ntypes; i++) {
+                pSPARC->psd[i].ppl_soc = (int *)malloc(lmaxv[i] * sizeof(int));
+                for (l = 1; l <= lmaxv[i]; l++) {
+                    pSPARC->psd[i].ppl_soc[l-1] = pplv_soc[ppl_soc_sdispl[i]+l-1];
+                }
+            }
+        }
+    }
+
     // allocate memory for buff, the extra 16*(Ntypes+3*n_atom) byte is spare memory
     lmax_sum = 0;
     size_sum = 0;
@@ -722,7 +768,22 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         nproj_sum += nproj;
         nprojsize_sum += nproj * sizev[i];
     }
-    l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + n_atom) * sizeof(double)
+
+    int nprojso, nprojso_sum, nprojsosize_sum;
+    nprojso_sum = nprojsosize_sum = 0;
+    if (pSPARC->SOC_Flag == 1) {
+        for (i = 0; i < Ntypes; i++) {
+            if (!pSPARC->psd[i].pspsoc) continue;
+            nprojso = 0;
+            for (l = 1; l <= lmaxv[i]; l++) {
+                nprojso += pSPARC->psd[i].ppl_soc[l-1];
+            }
+            nprojso_sum += nprojso;
+            nprojsosize_sum += nprojso * sizev[i];
+        }
+    }
+
+    l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + nprojsosize_sum + nprojsosize_sum + n_atom) * sizeof(double)
              + (5*Ntypes + 3*n_atom) * sizeof(int)
              + Ntypes * (L_PSD + L_ATMTYPE) * sizeof(char)
              + 0*(Ntypes+3*n_atom) *16; // last term is spare memory in case
@@ -757,6 +818,15 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             MPI_Pack(pSPARC->psd[i].rc, lmaxv[i]+1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].Gamma, nproj, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             MPI_Pack(pSPARC->psd[i].rho_c_table, sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+               
+            if (pSPARC->psd[i].pspsoc) {
+                nprojso = 0;
+                for (l = 1; l <= lmaxv[i]; l++) {
+                    nprojso += pSPARC->psd[i].ppl_soc[l-1];
+                }
+                MPI_Pack(pSPARC->psd[i].Gamma_soc, nprojso, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+                MPI_Pack(pSPARC->psd[i].UdV_soc, nprojso*sizev[i], MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+            }
         }
         // broadcast the packed buffer
         MPI_Bcast(buff, l_buff, MPI_PACKED, 0, MPI_COMM_WORLD);
@@ -802,11 +872,19 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             // check if memory is allocated successfully!
             if (pSPARC->psd[i].RadialGrid == NULL || pSPARC->psd[i].UdV == NULL ||
                 pSPARC->psd[i].rVloc == NULL || pSPARC->psd[i].rhoIsoAtom == NULL ||
-                pSPARC->psd[i].rc == NULL || pSPARC->psd[i].Gamma == NULL || 
+                pSPARC->psd[i].rc == NULL || pSPARC->psd[i].Gamma == NULL ||
                 pSPARC->psd[i].rho_c_table == NULL)
             {
                 printf("\nmemory cannot be allocated5\n");
                 exit(EXIT_FAILURE);
+            }
+            if (pSPARC->psd[i].pspsoc) {
+                nprojso = 0;
+                for (l = 1; l <= lmaxv[i]; l++) {
+                    nprojso += pSPARC->psd[i].ppl_soc[l-1];
+                }
+                pSPARC->psd[i].Gamma_soc = (double *)malloc(nprojso * sizeof(double));
+                pSPARC->psd[i].UdV_soc = (double *)malloc(nprojso * sizev[i] * sizeof(double));
             }
         }
 #ifdef DEBUG
@@ -845,6 +923,14 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rc,  lmaxv[i]+1, MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].Gamma,  nproj, MPI_DOUBLE, MPI_COMM_WORLD);
             MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].rho_c_table, sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
+            if (pSPARC->psd[i].pspsoc) {
+                nprojso = 0;
+                for (l = 1; l <= lmaxv[i]; l++) {
+                    nprojso += pSPARC->psd[i].ppl_soc[l-1];
+                }
+                MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].Gamma_soc,  nprojso, MPI_DOUBLE, MPI_COMM_WORLD);
+                MPI_Unpack(buff, l_buff, &position, pSPARC->psd[i].UdV_soc, nprojso*sizev[i], MPI_DOUBLE, MPI_COMM_WORLD);
+            }
         }
     }
 
@@ -853,10 +939,15 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     free(ppl_sdispl);
     free(is_r_uniformv);
     free(pspxcv);
+    free(pspsocv);
     free(pplv);
     free(lmaxv);
     free(sizev);
     free(buff);
+    if (pSPARC->SOC_Flag == 1) {
+        free(ppl_soc_sdispl);
+        free(pplv_soc);
+    }
 }
 
 
@@ -1151,12 +1242,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     // estimate Nstates if not provided
     if (pSPARC->Nstates == -1) {
         // estimate Nstates using the linear function y = 1.2 * x + 5
-        pSPARC->Nstates = (int) ((pSPARC->Nelectron / 2) * 1.2) + 5;
+        pSPARC->Nstates = (int) ((pSPARC->Nelectron / 2) * 1.2 + 5) * pSPARC->Nspinor;
     }
 
-    if (pSPARC->Nstates < (pSPARC->Nelectron / 2)) {
-        if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
-        exit(EXIT_FAILURE);
+    if (pSPARC->Nspinor == 1) {
+        if (pSPARC->Nstates < (pSPARC->Nelectron / 2)) {
+            if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
+            exit(EXIT_FAILURE);
+        }
+    } else if (pSPARC->Nspinor == 2) {
+        if (pSPARC->Nstates < pSPARC->Nelectron) {
+            if (!rank) printf("\nERROR: number of states is less than Nelectron!\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     // filenames
@@ -1987,7 +2085,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->isGammaPoint = (int)(pSPARC->Nkpts_sym == 1 
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
         && fabs(pSPARC->k2[0]) < TEMP_TOL 
-        && fabs(pSPARC->k3[0]) < TEMP_TOL);
+        && fabs(pSPARC->k3[0]) < TEMP_TOL
+        && pSPARC->SOC_Flag == 0);
 
     if (pSPARC->vdWDFFlag != 0){
         if ((pSPARC->BCx)||(pSPARC->BCy)||(pSPARC->BCz)) {
@@ -2127,6 +2226,20 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->ACEFlag = 0;
         pSPARC->EXXMem_batch = 0;
         pSPARC->EXXACEVal_state = 0;
+    }
+
+    // constrains on SOC 
+    if (pSPARC->SOC_Flag == 1) {
+        if (pSPARC->usefock) {
+            if (rank == 0) 
+                printf(RED "ERROR: Hybrid functional is not supported in this version of spin-orbit coupling implementation.\n" RESET);
+            exit(EXIT_FAILURE);
+        }
+        if (pSPARC->spin_typ == 1) {
+            if (rank == 0) 
+                printf(RED "ERROR: Spin-polarized calculation is not supported in this version of spin-orbit coupling implementation.\n" RESET);
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -2603,6 +2716,28 @@ void Calculate_SplineDerivRadFun(SPARC_OBJ *pSPARC) {
                 lcount++; lcount2++;
             }
         }
+        if (pSPARC->psd[ityp].pspsoc) {
+            ppl_sum = 0;
+            for (l = 1; l <= pSPARC->psd[ityp].lmax; l++) {
+                //if (l == pSPARC->localPsd[ityp]) continue; // this fails under -O3, -O2 optimization
+                if (l == lloc) continue;
+                ppl_sum += pSPARC->psd[ityp].ppl_soc[l-1];
+            }
+            pSPARC->psd[ityp].SplineFitUdV_soc = (double *)malloc(sizeof(double)*psd_len * ppl_sum);
+            assert(pSPARC->psd[ityp].SplineFitUdV_soc != NULL);
+            lcount = lcount2 = 0;
+            for (l = 1; l <= pSPARC->psd[ityp].lmax; l++) {
+                if (l == lloc) {
+                    lcount2 += pSPARC->psd[ityp].ppl_soc[l-1];
+                    continue;
+                }
+                for (np = 0; np < pSPARC->psd[ityp].ppl_soc[l-1]; np++) {
+                    // note that UdV is of size (psd_len, lmax+1), while SplineFitUdV has size (psd_len, lmax)
+                    getYD_gen(pSPARC->psd[ityp].RadialGrid, pSPARC->psd[ityp].UdV_soc+lcount2*psd_len, pSPARC->psd[ityp].SplineFitUdV_soc+lcount*psd_len, psd_len);
+                    lcount++; lcount2++;
+                }
+            }
+        }
     }
 }
 
@@ -2798,7 +2933,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version May 09, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version May 11, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -2840,7 +2975,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"NSTATES: %d\n",pSPARC->Nstates);
 
     // this should depend on temperature and preconditoner used
-    if (pSPARC->Nstates < (int)(1.2*(pSPARC->Nelectron/2))+5 ) { // with kerker a factor of 1.1 might be needed
+    if (pSPARC->Nstates < (int)(1.2*(pSPARC->Nelectron/2)+5)*pSPARC->Nspinor ) { // with kerker a factor of 1.1 might be needed
         fprintf(output_fp,"#WARNING: Number of bands may be insufficient for efficient SCF convergence.\n");
     }
 

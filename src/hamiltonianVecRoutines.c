@@ -28,6 +28,7 @@
 #include "exactExchange.h"
 #include "exactExchangeKpt.h"
 #include "mgga.h"
+#include "spinOrbitCoupling.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -145,67 +146,135 @@ void Hamiltonian_vectors_mult_kpt(
         MPI_Cart_get(comm, 3, dims, periods, my_coords);
     else 
         dims[0] = dims[1] = dims[2] = 1;
-        
-    // first find (-0.5 * Lap + Veff + c) * x
-    if (pSPARC->cell_typ == 0) { // orthogonal cell
-        for (i = 0; i < ncol; i++) {
-            Lap_plus_diag_vec_mult_orth_kpt(
-                pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
-                x+i*(unsigned)DMnd, Hx+i*(unsigned)DMnd, comm, dims, kpt
-            );
-        }
-        // Lap_plus_diag_vec_mult_orth(
-        //         pSPARC, DMnd, DMVertices, ncol, -0.5, 1.0, c, Veff_loc,
-        //         x, Hx, comm, dims
-        // ); // slower than the for loop above
-    } else {  // non-orthogonal cell
-        MPI_Comm comm2;
-        if (comm == pSPARC->kptcomm_topo)
-            comm2 = pSPARC->kptcomm_topo_dist_graph;
-        else    
-            comm2 = pSPARC->comm_dist_graph_psi;
-  
-        for (i = 0; i < ncol; i++) {
-            Lap_plus_diag_vec_mult_nonorth_kpt(
-                pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
-                x+i*(unsigned)DMnd, Hx+i*(unsigned)DMnd, comm, comm2, dims, kpt
-            );
-        }
-    }
-
-    // adding Exact Exchange potential  
-    if (pSPARC->usefock > 1){
-        exact_exchange_potential_kpt((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, kpt, comm);
-    }
-
-    // adding metaGGA term
-    if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
-        // ATTENTION: now SCAN does not have polarized spin!
-        int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
-        double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : pSPARC->vxcMGGA3_loc_dmcomm;
-        double _Complex *mGGAterm = (double _Complex *)malloc(DMnd*ncol * sizeof(double _Complex));
-        compute_mGGA_term_hamil_kpt(pSPARC, x, ncol, DMnd, DMVertices, vxcMGGA3_dm, mGGAterm, spin, kpt, comm);
-        for (i = 0; i < ncol; i++) {
-            for (j = 0; j < DMnd; j++) {
-                // Hx[j+i*(unsigned)DMnd] -= 0.5*(Dvxc3Dx_x[j] + Dvxc3Dx_y[j] + Dvxc3Dx_z[j]);
-                Hx[j+i*(unsigned)DMnd] -= 0.5*(mGGAterm[j+i*(unsigned)DMnd]);
+    
+    if (pSPARC->Nspinor == 1) {
+        // first find (-0.5 * Lap + Veff + c) * x
+        if (pSPARC->cell_typ == 0) { // orthogonal cell
+            for (i = 0; i < ncol; i++) {
+                Lap_plus_diag_vec_mult_orth_kpt(
+                    pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                    x+i*(unsigned)DMnd, Hx+i*(unsigned)DMnd, comm, dims, kpt
+                );
+            }
+            // Lap_plus_diag_vec_mult_orth(
+            //         pSPARC, DMnd, DMVertices, ncol, -0.5, 1.0, c, Veff_loc,
+            //         x, Hx, comm, dims
+            // ); // slower than the for loop above
+        } else {  // non-orthogonal cell
+            MPI_Comm comm2;
+            if (comm == pSPARC->kptcomm_topo)
+                comm2 = pSPARC->kptcomm_topo_dist_graph;
+            else    
+                comm2 = pSPARC->comm_dist_graph_psi;
+    
+            for (i = 0; i < ncol; i++) {
+                Lap_plus_diag_vec_mult_nonorth_kpt(
+                    pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                    x+i*(unsigned)DMnd, Hx+i*(unsigned)DMnd, comm, comm2, dims, kpt
+                );
             }
         }
-        free(mGGAterm);
-    }
 
-    // apply nonlocal projectors
-    #ifdef USE_EVA_MODULE
-    t1 = MPI_Wtime();
-    #endif
+        // adding Exact Exchange potential  
+        if (pSPARC->usefock > 1){
+            exact_exchange_potential_kpt((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, kpt, comm);
+        }
+
+        // apply nonlocal projectors
+        #ifdef USE_EVA_MODULE
+        t1 = MPI_Wtime();
+        #endif
+        
+        Vnl_vec_mult_kpt(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, x, Hx, kpt, comm);
+        
+        #ifdef USE_EVA_MODULE
+        t2 = MPI_Wtime();
+        EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
+        EVA_buff_rhs_add(0, ncol);
+        #endif
+
+        // adding metaGGA term
+        if(pSPARC->mGGAflag == 1 && pSPARC->countSCF > 1) {
+            // ATTENTION: now SCAN does not have polarized spin!
+            int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
+            double *vxcMGGA3_dm = (Lanczos_flag == 1) ? pSPARC->vxcMGGA3_loc_kptcomm : pSPARC->vxcMGGA3_loc_dmcomm;
+            double _Complex *mGGAterm = (double _Complex *)malloc(DMnd*ncol * sizeof(double _Complex));
+            compute_mGGA_term_hamil_kpt(pSPARC, x, ncol, DMnd, DMVertices, vxcMGGA3_dm, mGGAterm, spin, kpt, comm);
+            for (i = 0; i < ncol; i++) {
+                for (j = 0; j < DMnd; j++) {
+                    // Hx[j+i*(unsigned)DMnd] -= 0.5*(Dvxc3Dx_x[j] + Dvxc3Dx_y[j] + Dvxc3Dx_z[j]);
+                    Hx[j+i*(unsigned)DMnd] -= 0.5*(mGGAterm[j+i*(unsigned)DMnd]);
+                }
+            }
+            free(mGGAterm);
+        }
+
+    } else if (pSPARC->Nspinor == 2) {
+
+        // spin-orbit coupling
+        int spinor, DMndbyNspinor;
+        DMndbyNspinor = DMnd / pSPARC->Nspinor;
+
+        // first find (-0.5 * Lap + Veff + c) * x
+        if (pSPARC->cell_typ == 0) { // orthogonal cell
+            for (i = 0; i < ncol; i++) {
+                for (spinor = 0; spinor < pSPARC->Nspinor; spinor++) {
+                    Lap_plus_diag_vec_mult_orth_kpt(
+                        pSPARC, DMndbyNspinor, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                        x+i*(unsigned)DMnd+spinor*DMndbyNspinor,
+                        Hx+i*(unsigned)DMnd+spinor*DMndbyNspinor, comm, dims, kpt
+                    );
+                }
+            }
+        } else {  // non-orthogonal cell
+            MPI_Comm comm2;
+            if (comm == pSPARC->kptcomm_topo)
+                comm2 = pSPARC->kptcomm_topo_dist_graph;
+            else    
+                comm2 = pSPARC->comm_dist_graph_psi;
     
-    Vnl_vec_mult_kpt(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, x, Hx, kpt, comm);
-    
-    #ifdef USE_EVA_MODULE
-    t2 = MPI_Wtime();
-    EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
-    EVA_buff_rhs_add(0, ncol);
-    #endif
+            for (i = 0; i < ncol; i++) {
+                for (spinor = 0; spinor < pSPARC->Nspinor; spinor++) {
+                    Lap_plus_diag_vec_mult_nonorth_kpt(
+                        pSPARC, DMndbyNspinor, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                        x+i*(unsigned)DMnd+spinor*DMndbyNspinor,
+                        Hx+i*(unsigned)DMnd+spinor*DMndbyNspinor, comm, comm2, dims, kpt
+                    );
+                }
+            }
+        }
+
+        // TODO: implement exact exchange with spin-orbit coupling. Should be easy.
+        // adding Exact Exchange potential  
+        // if (pSPARC->usefock > 1){
+        //     exact_exchange_potential_kpt((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, kpt, comm);
+        // }
+
+        #ifdef USE_EVA_MODULE
+        t1 = MPI_Wtime();
+        #endif
+
+        // apply nonlocal projectors
+        for (spinor = 0; spinor < pSPARC->Nspinor; spinor++) {
+            // Apply scalar-relativistic part
+            Vnl_vec_mult_kpt(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+                             x+spinor*DMndbyNspinor, Hx+spinor*DMndbyNspinor, kpt, comm);
+
+            // Apply spin-orbit onto the same spinor
+            Vnl_vec_mult_SOC1(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+                             x+spinor*DMndbyNspinor, Hx+spinor*DMndbyNspinor, spinor, kpt, comm);
+
+            // Apply spin-orbit onto the opposite spinor
+            Vnl_vec_mult_SOC2(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+                             x+(1-spinor)*DMndbyNspinor, Hx+spinor*DMndbyNspinor, spinor, kpt, comm);
+        }
+
+        #ifdef USE_EVA_MODULE
+        t2 = MPI_Wtime();
+        EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
+        EVA_buff_rhs_add(0, ncol);
+        #endif
+    }
 }
 
 

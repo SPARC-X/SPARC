@@ -268,11 +268,12 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
 {
     if (pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     
-    int i, n, k, Ns, count, nstart, nend;
-    double g_nk;
+    int i, n, k, Ns, count, nstart, nend, spinor;
+    double g_nk, occfac;
     Ns = pSPARC->Nstates;
     nstart = pSPARC->band_start_indx;
     nend = pSPARC->band_end_indx;
+    occfac = 2.0/pSPARC->Nspinor;
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -286,9 +287,13 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
     
     for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
         for (n = nstart; n <= nend; n++) {
-            g_nk = 2.0 * (pSPARC->kptWts_loc[k] / pSPARC->Nkpts) * pSPARC->occ[k*Ns+n];
-            for (i = 0; i < pSPARC->Nd_d_dmcomm; i++, count++) {
-                rho[i] += g_nk * (pow(creal(pSPARC->Xorb_kpt[count]), 2.0) + pow(cimag(pSPARC->Xorb_kpt[count]), 2.0));
+            g_nk = occfac * (pSPARC->kptWts_loc[k] / pSPARC->Nkpts) * pSPARC->occ[k*Ns+n];
+            for (spinor = 0; spinor < pSPARC->Nspinor; spinor ++) {
+                for (i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
+                    rho[i] += g_nk * (pow(creal(pSPARC->Xorb_kpt[count]), 2.0) 
+                                    + pow(cimag(pSPARC->Xorb_kpt[count]), 2.0));
+                    count++;
+                }
             }
         }
     }

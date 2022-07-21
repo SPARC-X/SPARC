@@ -392,7 +392,13 @@ void formatBytes(double bytes, int n, char *size_format);
 void RealSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, 
                            const int l, const int m, double *Ylm);
 
-
+/**
+ * @brief   Calculate Complex spherical harmonics for given positions and given l and m. 
+ *
+ *          Only for l = 0, 1, ..., 6.
+ */
+void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, 
+                            const int l, const int m, double complex *Ylm);
 
 
 void Calc_dist(SPARC_OBJ *pSPARC, int nxp, int nyp, int nzp, double x0_i_shift, double y0_i_shift, double z0_i_shift, double *R, double rchrg, int *count_interp);

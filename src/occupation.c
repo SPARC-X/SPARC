@@ -201,7 +201,6 @@ double occ_constraint(SPARC_OBJ *pSPARC, double lambda_f)
     if (pSPARC->isGammaPoint) { // for gamma-point systems
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
             for (n = 0; n < Ns; n++) {
-                // g += 2.0 * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n], lambda_f);
                 g += (2.0/pSPARC->Nspin) * smearing_function(
                     pSPARC->Beta, pSPARC->lambda[n+spn_i*Ns], lambda_f, pSPARC->elec_T_type
                 );
@@ -215,8 +214,7 @@ double occ_constraint(SPARC_OBJ *pSPARC, double lambda_f)
             for (k = 0; k < Nk; k++) {
                 // TODO: each k-point group should access its local kpoints!
                 for (n = 0; n < Ns; n++) {
-                    // g += 2.0 * pSPARC->kptWts_loc[k] * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n+k*Ns], lambda_f);
-                    g += (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[k] * smearing_function(
+                    g += (2.0/pSPARC->Nspin/pSPARC->Nspinor) * pSPARC->kptWts_loc[k] * smearing_function(
                         pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], lambda_f, pSPARC->elec_T_type
                     );
                 }

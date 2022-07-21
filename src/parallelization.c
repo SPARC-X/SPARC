@@ -633,6 +633,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
 
     size_blacscomm = pSPARC->is_domain_uniform ? (pSPARC->npband*pSPARC->npNd) : pSPARC->npband;
     Nd_blacscomm = pSPARC->is_domain_uniform ? pSPARC->Nd : pSPARC->Nd_d_dmcomm;
+    Nd_blacscomm *= pSPARC->Nspinor;
 
     if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
         usermap = (int *)malloc(sizeof(int)*size_blacscomm);
@@ -718,10 +719,10 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     // get coord of each process in original context
     Cblacs_gridinfo( pSPARC->ictxt_blacs, &nprow, &npcol, &myrow, &mycol );
     int ZERO = 0, mb, nb, llda;
-    mb = max(1, pSPARC->Nd_d_dmcomm);
+    mb = max(1, Nd_blacscomm);
     nb = (pSPARC->Nstates - 1) / pSPARC->npband + 1; // equal to ceil(Nstates/npband), for int only
     // set up descriptor for storage of orbitals in ictxt_blacs (original)
-    llda = max(1, pSPARC->Nd_d_dmcomm);
+    llda = max(1, Nd_blacscomm);
     if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
         descinit_(&pSPARC->desc_orbitals[0], &Nd_blacscomm, &pSPARC->Nstates,
                   &mb, &nb, &ZERO, &ZERO, &pSPARC->ictxt_blacs, &llda, &info);
@@ -733,7 +734,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     temp_r = numroc_( &Nd_blacscomm, &mb, &myrow, &ZERO, &nprow);
     temp_c = numroc_( &pSPARC->Nstates, &nb, &mycol, &ZERO, &npcol);
 #ifdef DEBUG
-    if (!rank) printf("rank = %2d, my blacs rank = %d, BLCYC size (%d, %d), actual size (%d, %d)\n", rank, pSPARC->bandcomm_index, temp_r, temp_c, pSPARC->Nd_d_dmcomm, pSPARC->Nband_bandcomm);
+    if (!rank) printf("rank = %2d, my blacs rank = %d, BLCYC size (%d, %d), actual size (%d, %d)\n", rank, pSPARC->bandcomm_index, temp_r, temp_c, Nd_blacscomm, pSPARC->Nband_bandcomm);
 #endif
     // get coord of each process in block cyclic topology context
     Cblacs_gridinfo( pSPARC->ictxt_blacs_topo, &nprow, &npcol, &myrow, &mycol );
@@ -1035,7 +1036,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     }
 
     if (pSPARC->isGammaPoint != 1 && pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-        pSPARC->Lanczos_x0_complex = (double complex *)malloc(pSPARC->Nd_d_kptcomm * sizeof(double complex));
+        pSPARC->Lanczos_x0_complex = (double complex *)malloc(pSPARC->Nd_d_kptcomm * pSPARC->Nspinor * sizeof(double complex));
         assert(pSPARC->Lanczos_x0_complex != NULL);
     }
 

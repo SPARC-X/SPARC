@@ -1245,7 +1245,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
 #ifdef DEBUG
     printf("Reading pseudopotential (PSP) file.\n");
 #endif
-    int jj, kk, l, ityp, *lpos, lmax, nproj;
+    int jj, kk, l, ityp, *lpos, *lpos_soc, lmax, nproj, nproj_soc;
     char *str          = malloc(L_PSD * sizeof(char));
     char *INPUT_DIR    = malloc(L_PSD * sizeof(char));
     char *psd_filename = malloc(L_PSD * sizeof(char));
@@ -1346,6 +1346,21 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         pSPARC->psd[ityp].ppl = (int *)calloc((lmax+1), sizeof(int));
         lpos = (int *)calloc((lmax+2), sizeof(int)); // the last value stores the total number of projectors for this l
         pSPARC->psd[ityp].rc = (double *)malloc((lmax+1) * sizeof(double));        
+        pSPARC->psd[ityp].pspsoc = 0;   // default no spin-orbit coupling
+
+        // check spin-orbit coupling (SOC)
+        do {
+            fscanf(psd_fp,"%s",str);
+        } while (strcmpi(str,"nproj"));
+        int ext_sw;
+        fscanf(psd_fp,"%d",&ext_sw); 
+        if (ext_sw == 2 || ext_sw == 3) {
+            pSPARC->psd[ityp].pspsoc = 1;
+        #ifdef DEBUG
+            printf(GRN "This pseudopotential includes spin-orbit coupling.\n" RESET);
+        #endif
+            lpos_soc = (int *)calloc((lmax+1), sizeof(int)); // the last value stores the total number of projectors for this l
+        }
         
         // Check the scientific notation of floating point number 
         char notation = '\0';
@@ -1360,7 +1375,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
                    "       pseudopotential directory to convert to a compatible scientific notation\n"RESET, notation, notation);
             exit(EXIT_FAILURE);
         }
-
+        
         // reset file pointer to the start of the file
         fseek(psd_fp, 0L, SEEK_SET);  // returns 0 if succeeded, can use to check status
         
@@ -1386,16 +1401,29 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         }
         nproj = lpos[lmax+1]; 
         
-        do {
-            fscanf(psd_fp,"%s",str);
-        } while (strcmpi(str,"extension_switch"));
-        
         // allocate memory
         pSPARC->psd[ityp].RadialGrid = (double *)calloc(pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].UdV = (double *)calloc(nproj * pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].rVloc = (double *)calloc(pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].rhoIsoAtom = (double *)calloc(pSPARC->psd[ityp].size , sizeof(double)); 
         pSPARC->psd[ityp].Gamma = (double *)calloc(nproj , sizeof(double)); 
+
+        do {
+            fscanf(psd_fp,"%s",str);
+        } while (strcmpi(str,"extension_switch"));
+
+        if (pSPARC->psd[ityp].pspsoc == 1) {
+            pSPARC->psd[ityp].ppl_soc = (int *)calloc(lmax, sizeof(int));
+            lpos_soc[0] = 0;
+            for (l = 1; l <= lmax; l++) {
+                fscanf(psd_fp,"%d",&pSPARC->psd[ityp].ppl_soc[l-1]);
+                lpos_soc[l] = lpos_soc[l-1] + pSPARC->psd[ityp].ppl_soc[l-1];
+            }
+            nproj_soc = lpos_soc[lmax]; 
+            pSPARC->psd[ityp].Gamma_soc = (double *)calloc(nproj_soc , sizeof(double)); 
+            pSPARC->psd[ityp].UdV_soc = (double *)calloc(nproj_soc * pSPARC->psd[ityp].size , sizeof(double)); 
+            fscanf(psd_fp, "%*[^\n]\n"); // skip current line
+        }
         
         // start reading projectors
         int l_read = 0;
@@ -1454,6 +1482,29 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         } else {
             fseek (psd_fp, -1*4, SEEK_CUR ); // move back 4 columns
         }  
+
+        if (pSPARC->psd[ityp].pspsoc == 1) {
+            for (l = 1; l <= pSPARC->psd[ityp].lmax; l++) {
+                fscanf(psd_fp,"%d",&l_read); 
+                if (l != pSPARC->localPsd[ityp]) {
+                    for (kk = 0; kk < pSPARC->psd[ityp].ppl_soc[l-1]; kk++) {
+                        fscanf(psd_fp,"%lf", &vtemp);
+                        pSPARC->psd[ityp].Gamma_soc[lpos_soc[l-1]+kk] = vtemp;
+                    }
+                    for (jj = 0; jj < pSPARC->psd[ityp].size; jj++) {
+                        fscanf(psd_fp,"%lf", &vtemp);
+                        fscanf(psd_fp,"%lf", &vtemp);
+                        pSPARC->psd[ityp].RadialGrid[jj] = vtemp;
+                        for (kk = 0; kk < pSPARC->psd[ityp].ppl_soc[l-1]; kk++) {
+                            fscanf(psd_fp,"%lf",&vtemp);
+                            pSPARC->psd[ityp].UdV_soc[(lpos_soc[l-1]+kk)*pSPARC->psd[ityp].size+jj] = vtemp/pSPARC->psd[ityp].RadialGrid[jj];
+                        }
+                    }
+                    for (kk = 0; kk < pSPARC->psd[ityp].ppl_soc[l-1]; kk++)
+                        pSPARC->psd[ityp].UdV_soc[(lpos_soc[l-1]+kk)*pSPARC->psd[ityp].size] = pSPARC->psd[ityp].UdV_soc[(lpos[l-1]+kk)*pSPARC->psd[ityp].size+1];
+                }
+            }
+        }
 
         // read model core charge for NLCC
         pSPARC->psd[ityp].rho_c_table = (double *)calloc(pSPARC->psd[ityp].size, sizeof(double));
@@ -1525,9 +1576,27 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         // close the file
         fclose(psd_fp);
         free(lpos);
+        if (pSPARC->psd[ityp].pspsoc == 1)
+            free(lpos_soc);
     }
     free(str);
     free(INPUT_DIR);
     free(psd_filename);
     free(simp_path);
+
+    // check spin-orbit coupling psps.
+    int soc_count = 0;
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        soc_count += pSPARC->psd[ityp].pspsoc;
+    }
+    if (soc_count == 0) {
+        pSPARC->Nspinor = 1;
+        pSPARC->SOC_Flag = 0;
+    } else if (soc_count == pSPARC->Ntypes) {
+        pSPARC->Nspinor = 2;
+        pSPARC->SOC_Flag = 1;
+    } else {
+        printf(RED "ERROR: Please provide fully relativistic pseudopotential for all types of atoms!\n" RESET);
+        exit(EXIT_FAILURE);
+    }
 }
