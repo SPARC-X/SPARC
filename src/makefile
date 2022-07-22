@@ -75,7 +75,9 @@ CA3DMM_DIR=$(LIBPCE_DIR)/CA3DMM
 # Make sure you have ELPA_ROOT set in the environment variable
 # This is set by the elpa modulefile by PACE
 
+#ELPA_ROOT =/usr/lib/elpa/
 ELPA_DIR = $(ELPA_ROOT)
+#ELPA_DIR =/usr/include/elpa_openmp-2020.11.001/elpa/
 
 # This may need to be changed depending on the installed elpa
 # The one used by the elpa module is currently elpa_openmp

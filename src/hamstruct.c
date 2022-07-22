@@ -1,9 +1,9 @@
+#include "isddft.h"
 #include "hamstruct.h"
 
 #include <libpce.h>
 #include <math.h>
 
-#include "isddft.h"
 
 /**
  * @brief This file contains information about a struct used with PCE
