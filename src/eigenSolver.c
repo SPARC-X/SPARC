@@ -46,7 +46,7 @@
 #include "isddft.h"
 #include "parallelization.h"
 
-#if USE_PCE
+#if USE_PCE /* Add PCE headers */
 #include <libpce.h>
 #include "hamstruct.h"
 #include "ca3dmm.h"
@@ -106,7 +106,7 @@ typedef struct DP_CheFSI_s* DP_CheFSI_t;
  * @ brief: Main function of Chebyshev filtering 
  */
 
-#if USE_PCE
+#if USE_PCE /* PCE Requires some persistent structures to allow memory reuse */
 void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error,
                      Hybrid_Decomp *hd, Chebyshev_Info *cheb, Eig_Info *Eigvals,
                      Our_Hamiltonian_Struct *ham_struct, 
@@ -241,15 +241,15 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
         // 2) Chebyshev filtering,          3) Projection, 
         // 4) Solve projected eigenproblem, 5) Subspace rotation
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++)
-#if USE_PCE
-            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i, 
-                   hd, cheb, Eigvals,
-                   ham_struct,
-                   Psi1, Psi2, Psi3,
-                   kptcomm, dmcomm, blacscomm);
-#else
-            CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
-#endif
+            #if USE_PCE /* PCE Requires some persistent structures to allow memory reuse */
+                CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i, 
+                       hd, cheb, Eigvals,
+                       ham_struct,
+                       Psi1, Psi2, Psi3,
+                       kptcomm, dmcomm, blacscomm);
+            #else
+                CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
+            #endif
 
         t1 = MPI_Wtime();
         
@@ -274,13 +274,11 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
         //    MPI_Allreduce(MPI_IN_PLACE, &eigmax_g, 1, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
         //}
         
-        //PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
-
         pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
 
-#if USE_PCE
-        PCE_Occ_Set(Eigvals, hd, pSPARC->occ);
-#endif
+        #if USE_PCE /* Set the occupation by PCE */
+            PCE_Occ_Set(Eigvals, hd, pSPARC->occ);
+        #endif
 
         
         // check occupation (if Nstates is large enough) for every SCF
@@ -360,7 +358,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // determine the constants for performing chebyshev filtering
     Chebyshevfilter_constants(pSPARC, x0, &lambda_cutoff, &pSPARC->eigmin[spn_i], &pSPARC->eigmax[spn_i], count, k, spn_i);
    
-#if USE_PCE
+#if USE_PCE /* PCE must know the chebyshevfilter constants */ 
     cheb->filter_left = lambda_cutoff;
     cheb->filter_right = pSPARC->eigmax[spn_i];
     cheb->min_eig = pSPARC->eigmin[spn_i];
@@ -405,39 +403,21 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #endif
     
     #if USE_PCE
-      printf("spn_i: %i, size_s: %i\n", spn_i, size_s);
-      const char* s_libpce_use_scalapack_matmats = getenv("LIBPCE_USE_SCALAPACK_MATMATS");
-      int libpce_use_scalapack_matmats = 0;
-      if(s_libpce_use_scalapack_matmats != NULL) {
-          libpce_use_scalapack_matmats = atoi(s_libpce_use_scalapack_matmats);
-      }
-      printf("LIBPCE USE SCALAPACK MATMATS: %i\n", libpce_use_scalapack_matmats);
+        /* Deterimne if PCE should use SCALAPACK for MATMATS 
+         * (as an alternative to CA3DMM) */
+        const char* s_libpce_use_scalapack_matmats = getenv("LIBPCE_USE_SCALAPACK_MATMATS");
+        int libpce_use_scalapack_matmats = 0;
+        if(s_libpce_use_scalapack_matmats != NULL) {
+            libpce_use_scalapack_matmats = atoi(s_libpce_use_scalapack_matmats);
+        }
+        printf("LIBPCE USE SCALAPACK MATMATS: %i\n", libpce_use_scalapack_matmats);
 
-         // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
-         //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
-         //   if(res > 1e-12) {
-         //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
-         //     exit(-1);
-         //   }
-         // }
-         // printf("local num_fd: %i, num_cols: %i, comm dev: %i, comp dev: %i\n",
-         //     hd->local_num_fd, hd->local_num_cols, ham_struct->communication_device,
-         //     ham_struct->compute_device);
-         //pSPARC->ChebDegree=1;
-         //cheb->order=1;
+        /* On entrance Psi1->data should be pSPARC->Xorb */
+        /* On entrance Psi3->data is work space */
         PCE_Chebyshev_Filter(cheb, (void*)ham_struct, Our_Hamiltonian, hd->local_num_fd,
                              hd->local_num_cols, Psi1, Psi2,
                              ham_struct->communication_device, ham_struct->compute_device, Psi3);
-    
-
-        // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
-        //   double res = fabs(pSPARC->Yorb[i]- Psi2->data[i]);
-        //   if(res > 1e-12) {
-        //     printf("Yorb EEEK!: %i , %f, %f\n", i, pSPARC->Yorb[i], Psi2->data[i]);
-        //     exit(-1);
-        //   }
-        // }
-        // memcpy(pSPARC->Yorb, Psi2->data, hd->local_num_cols * hd->local_num_fd * sizeof(double));
+        /* On exit Psi2->data should be pSPARC->Yorb */
     #else /*USE_PCE */
 
         ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
@@ -460,79 +440,81 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // ** calculate projected Hamiltonian and overlap matrix ** //
 #ifdef USE_DP_SUBEIG
 
-#if USE_PCE
-      double b_HY = MPI_Wtime();
-      Our_Hamiltonian(ham_struct, Psi2, Psi1, 0);
-      double a_HY = MPI_Wtime();
-
-#ifdef DEBUG
-      if (rank == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, calc HY used %.3lf ms\n", 1000.0 * (a_HY - b_HY));
-#endif
-
-      // Perform Psi^T*Psi
-      ca3dmm_engine_p mult_ptp;
-      scalapack_engine se;
-      eigensolve_engine ee;
-      Mat_Info        M_s;
-      PCE_Scalapack_Init(&se);
-      PCE_Mat_Init(&M_s);
-
-      // M_s= Psi^T Psi
-      //TODO: Fix comm
-
-
-      if(libpce_use_scalapack_matmats) {
-        PCE_Internal_Calculate_Eigval_Dist(hd, &se, ham_struct->compute_device, kptcomm, dmcomm);
-        PCE_PsiTPsi_Scalapack(hd, Psi2, &se, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
-      } else {
-        PCE_Calc_eigenvalue_dist(hd, &ee, kptcomm);
-        PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
-      }
-
-
-#if USE_GPU
-      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
-        gpuErrchk( cudaPeekAtLastError() );
-        gpuErrchk(cudaDeviceSynchronize());
-      }
-#endif
-
-      if(!libpce_use_scalapack_matmats) {
-        ca3dmm_engine_free(&mult_ptp);
-      }
-
-      // Perform Psi^T*HPsi
-      ca3dmm_engine_p mult_pthp;
-      Mat_Info        H_s;
-      PCE_Mat_Init(&H_s);
-
-      // H_s= Psi^T Psi
-      if(libpce_use_scalapack_matmats) {
-      PCE_PsiTHPsi_Scalapack(hd, Psi2, Psi1, &H_s, &se, ham_struct->communication_device, ham_struct->compute_device,
-                   kptcomm, dmcomm);
-      } else {
-      PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, &ee, ham_struct->communication_device, ham_struct->compute_device,
-                   kptcomm, dmcomm);
-      }
-#if USE_GPU
-      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
-        gpuErrchk( cudaPeekAtLastError() );
-        gpuErrchk(cudaDeviceSynchronize());
-      }
-#endif
-
-      if(!libpce_use_scalapack_matmats) {
-          if(mult_pthp != NULL) {
-              ca3dmm_engine_free(&mult_pthp);
+          #if USE_PCE
+          /* Psi1 <- H * Psi2 */
+          double b_HY = MPI_Wtime();
+          Our_Hamiltonian(ham_struct, Psi2, Psi1, 0);
+          double a_HY = MPI_Wtime();
+    
+          #ifdef DEBUG
+              if (rank == 0 && spn_i == 0) printf("DP_Project_Hamiltonian, rank 0, calc HY used %.3lf ms\n", 1000.0 * (a_HY - b_HY));
+          #endif
+    
+          // Perform Psi^T*Psi
+          ca3dmm_engine_p mult_ptp;
+          scalapack_engine se;
+          eigensolve_engine ee;
+          Mat_Info        M_s;
+          PCE_Scalapack_Init(&se);
+          PCE_Mat_Init(&M_s);
+    
+          /* First, calculate what distribution to use for the eigenvalues */
+          /* Then, perform M_s = Psi2^T Psi2 = Psi^T Psi */
+          if(libpce_use_scalapack_matmats) {
+            PCE_Internal_Calculate_Eigval_Dist(hd, &se, ham_struct->compute_device, kptcomm, dmcomm);
+            PCE_PsiTPsi_Scalapack(hd, Psi2, &se, &M_s, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
+          } else {
+            PCE_Calc_eigenvalue_dist(hd, &ee, kptcomm);
+            PCE_PsiTPsi(hd, Psi2, &mult_ptp, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm, dmcomm);
           }
-      }
-
-      double a_PsiTPsi = MPI_Wtime();
-    #ifdef DEBUG
-    if (rank == 0 && spn_i == 0) 
-        printf("DP_Project_Hamiltonian, rank 0, DP_Project_Hamiltonian used %.3lf ms\n", 1000.0 * (a_PsiTPsi - b_HY));
-    #endif
-      MPI_Barrier(kptcomm);
+    
+    
+          #if USE_GPU
+              if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+                gpuErrchk( cudaPeekAtLastError() );
+                gpuErrchk(cudaDeviceSynchronize());
+              }
+          #endif
+    
+          /* If we allocated CA3DMM space, free it */ 
+          if(!libpce_use_scalapack_matmats) {
+            ca3dmm_engine_free(&mult_ptp);
+          }
+    
+          // Perform Psi^T*HPsi
+          ca3dmm_engine_p mult_pthp;
+          Mat_Info        H_s;
+          PCE_Mat_Init(&H_s);
+    
+          // H_s= Psi2^T * Psi1 = Psi^T (H Psi)
+          if(libpce_use_scalapack_matmats) {
+          PCE_PsiTHPsi_Scalapack(hd, Psi2, Psi1, &H_s, &se, ham_struct->communication_device, ham_struct->compute_device,
+                       kptcomm, dmcomm);
+          } else {
+          PCE_PsiTHPsi(hd, Psi2, Psi1, &mult_pthp, &H_s, &ee, ham_struct->communication_device, ham_struct->compute_device,
+                       kptcomm, dmcomm);
+          }
+          #if USE_GPU
+              if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+                gpuErrchk( cudaPeekAtLastError() );
+                gpuErrchk(cudaDeviceSynchronize());
+              }
+          #endif
+    
+          /* If we allocated CA3DMM space, free it */
+          if(!libpce_use_scalapack_matmats) {
+              if(mult_pthp != NULL) {
+                  ca3dmm_engine_free(&mult_pthp);
+              }
+          }
+    
+          double a_PsiTPsi = MPI_Wtime();
+          #ifdef DEBUG
+              if (rank == 0 && spn_i == 0) 
+                  printf("DP_Project_Hamiltonian, rank 0, DP_Project_Hamiltonian used %.3lf ms\n", 1000.0 * (a_PsiTPsi - b_HY));
+          #endif
+          MPI_Barrier(kptcomm);
+          /* At this point, roughly DP_CheFSI->Hp_local = H_s.data */
 #else /* USE_LIBPCE */
 
     DP_Project_Hamiltonian(
@@ -541,16 +523,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     );
 #endif /* USE_LIBPCE */
 
-    // DP_CheFSI_t DP_CheFSI = (DP_CheFSI_t) pSPARC->DP_CheFSI;
-    // if(rank == 0) {
-    //     for(int i = 0;  i < hd->local_num_cols * hd->local_num_cols; i++) {
-    //       double res = fabs(DP_CheFSI->Hp_local[i]- H_s.data[i]);
-    //       if(res > 1e-12) {
-    //         printf("Hp EEEK!: %i , %.15f, %.15f\n", i, DP_CheFSI->Hp_local[i], H_s.data[i]);
-    //         exit(-1);
-    //       }
-    //     }
-    // }
     #else /* USE_DP_SUBEIG */
     // allocate memory for block cyclic format of the wavefunction
     if (pSPARC->npband > 1) {
@@ -570,35 +542,23 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
-#if USE_PCE
-    if(libpce_use_scalapack_matmats) {
-    PCE_Eigensolve_Scalapack(Eigvals, hd, &H_s, &M_s, &se,  ham_struct->communication_device, ham_struct->compute_device, kptcomm);
-    } else {
-    PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
-    }
-#if USE_GPU
-      if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
-        gpuErrchk( cudaPeekAtLastError() );
-        gpuErrchk(cudaDeviceSynchronize());
-      }
-#endif
+        #if USE_PCE
+            if(libpce_use_scalapack_matmats) {
+              PCE_Eigensolve_Scalapack(Eigvals, hd, &H_s, &M_s, &se,  ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+            } else {
+              PCE_Eigensolve(Eigvals, hd, &H_s, &M_s, &ee, ham_struct->communication_device, ham_struct->compute_device, kptcomm);
+            }
+            #if USE_GPU
+                  if(ham_struct->compute_device == DEVICE_TYPE_DEVICE) {
+                    gpuErrchk( cudaPeekAtLastError() );
+                    gpuErrchk(cudaDeviceSynchronize());
+                  }
+            #endif
+            /* At this point, roughly Eigvals->eigval = pSPARC->lambda */
 
-
-
-    //PCE_Eig_Get(Eigvals, hd, pSPARC->lambda);
-
-    // if(rank == 0) {
-    //     for(int i = 0;  i < hd->local_num_cols; i++) {
-    //       double res = fabs(Eigvals->eigval[i]- pSPARC->lambda[i]);
-    //       if(res > 1e-12) {
-    //         printf("Eigvals EEEK!: %i , %.15f, %.15f\n", i, Eigvals->eigval[i], pSPARC->lambda[i]);
-    //         exit(-1);
-    //       }
-    //     }
-    // }
-    if(!libpce_use_scalapack_matmats) {
-      PCE_Mat_Destroy(&M_s);
-    }
+            if(!libpce_use_scalapack_matmats) {
+              PCE_Mat_Destroy(&M_s);
+            }
 #else /* USE_PCE */
      DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
 #endif /* USE_PCE */
@@ -610,9 +570,10 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #endif
     
     t3 = MPI_Wtime();
-#if USE_PCE
-    PCE_Eig_Get(Eigvals, hd, pSPARC->lambda, kptcomm);
-#else /* USE_PCE */
+    #if USE_PCE
+        PCE_Eig_Get(Eigvals, hd, pSPARC->lambda, kptcomm);
+    #else /* USE_PCE */
+
     // SPARCX_ACCEL_NOTE Need to add this to propagate GPU calculated eigenvalues back to the other MPI tasks
     #ifdef SPARCX_ACCEL
     if (pSPARC->useACCEL == 1 && nproc_kptcomm > 1) 
@@ -623,7 +584,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
                   MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
     }
     #endif //SPARCX_ACCEL
-#endif /* USE_PCE */
+    #endif /* USE_PCE */
     
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -651,23 +612,24 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     // ** subspace rotation ** //
     #ifdef USE_DP_SUBEIG
-#if USE_PCE
-    ca3dmm_engine_p mult_subsp;
-    if(libpce_use_scalapack_matmats) {
-      PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
-                            ham_struct->compute_device, kptcomm, dmcomm);
-      MPI_Barrier(kptcomm);
-      PCE_Scalapack_Destroy(&se);
-    } else {
-      PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, &ee, ham_struct->communication_device,
-                            ham_struct->compute_device, kptcomm, dmcomm);
-      PCE_Mat_Destroy(&H_s);
-      ca3dmm_engine_free(&mult_subsp);
-    }
-      printf("ABCD\n");
-#else /* USE_PCE */
+    #if USE_PCE
+        ca3dmm_engine_p mult_subsp;
+        if(libpce_use_scalapack_matmats) {
+          PCE_Subspace_Rotation_Scalapack(hd, Psi2, &H_s, Psi1, &se, ham_struct->communication_device,
+                                ham_struct->compute_device, kptcomm, dmcomm);
+          MPI_Barrier(kptcomm);
+          PCE_Scalapack_Destroy(&se);
+        } else {
+          PCE_Subspace_Rotation(hd, &mult_subsp, Psi2, &H_s, Psi1, &ee, ham_struct->communication_device,
+                                ham_struct->compute_device, kptcomm, dmcomm);
+          PCE_Mat_Destroy(&H_s);
+          ca3dmm_engine_free(&mult_subsp);
+        }
+          printf("ABCD\n");
+          /* At this point, roughly Psi1->data = pSPARC->Xorb */
+    #else /* USE_PCE */
        DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
-#endif
+    #endif /* USE_PCE */
 
     #else /* USE_DP_SUBEIG */
     double *YQ_BLCYC;
@@ -693,15 +655,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     if(!rank) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
     #endif
 
-    // for(int i = 0;  i < hd->local_num_cols * hd->local_num_fd; i++) {
-    //   double res = fabs(fabs(pSPARC->Xorb[i])- fabs(Psi1->data[i]));
-    //   if(res > 1e-12) {
-    //     printf("Xorb EEEK!: %i , %f, %f\n", i, pSPARC->Xorb[i], Psi1->data[i]);
-    //     exit(-1);
-    //   }
-    // }
-
-    //PCE_Psi_Get(Psi1, hd, pSPARC->Xorb);
 }
 
 

@@ -38,7 +38,7 @@
 #include "stress.h"
 #include "pressure.h"
 
-#if USE_PCE
+#if USE_PCE /* Include PCE Headers */
 #include <libpce.h>
 #include <vnl_mod.h>
 #include "hamstruct.h"
@@ -589,17 +589,18 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
     // START OF INTEGRATION WITH LIBPCE
 #if USE_PCE
-    Psi_Info Psi1;
-    Psi_Info Psi2;
-    Psi_Info Psi3;
-    Eig_Info Eigvals;
-    Hybrid_Decomp hd;
-    FD_Info fd_raw;
-    NonLocal_Info nl;
-    Veff_Info veff_info;
-    Chebyshev_Info cheb;
+    Psi_Info Psi1; /* Primary input and output */
+    Psi_Info Psi2; /* Holds HPsi */
+    Psi_Info Psi3; /* Another temp variable */
+    Eig_Info Eigvals; /* Holds Eigenvalues */
+    Hybrid_Decomp hd; /* Holds information about the decomposition */
+    FD_Info fd_raw; /* Holds finite difference info without scaling */
+    NonLocal_Info nl; /* Holds nonlocal info */
+    Veff_Info veff_info; /* Hold Veff info */
+    Chebyshev_Info cheb; /* Holds info about chebyshev filter constants */
 
 #if USE_GPU
+    /* Determine if we should run on CPU or GPU based on environment variable */
     device_type compute_device = DEVICE_TYPE_HOST;
     int use_gpu = 0;
 
@@ -608,19 +609,23 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     {
       use_gpu = atoi(s_use_gpu);
     }
-    printf("TO USE GPU: %i\n", use_gpu);
+    #ifdef DEBUG
+        printf("TO USE GPU: %i\n", use_gpu);
+    #endif
 
     if (use_gpu)
     {
       compute_device = DEVICE_TYPE_DEVICE;
-      printf("USING GPU\n");
+      #ifdef DEBUG
+        printf("USING GPU\n");
+      #endif
     }
     else
     {
       compute_device = DEVICE_TYPE_HOST;
     }
 
-    if (use_gpu)
+    if (use_gpu) /* if we are to use GPUs, do a quick sanity check */
     {
       int n_dev = 0;
       gpuErrchk(cudaGetDeviceCount(&n_dev));
@@ -632,7 +637,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
       cudaFree(0);
     }
 
-    //Assume CAM. TODO: FIX
+    /* Assume that the communication device is the CPU */
     device_type communication_device = DEVICE_TYPE_HOST;
 
 #else
@@ -641,6 +646,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 #endif
 
 
+    /* Set up finite difference coefficients */
     int fd_radius = pSPARC->order / 2;
     double *fd_in_coeff = (double*) malloc(3*(fd_radius + 1) * sizeof(double));
     for (int ix = 0; ix < (fd_radius + 1); ix++)
@@ -658,12 +664,15 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     double veff_scaling = 1.0;
     int do_nonlocal = 1;
 
+    /* Potentially skip nonlocal calculations */
     const char* s_do_nonlocal = getenv("LIBPCE_DO_NONLOCAL");
     if (s_do_nonlocal != NULL)
     {
       do_nonlocal = atoi(s_do_nonlocal);
     }
+#ifdef DEBUG
     printf("TO DO NONLOCAL: %i\n", do_nonlocal);
+#endif
 
     int pxyz[3];
     int temp_cart1[3];
@@ -672,6 +681,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     MPI_Cart_get(pSPARC->dmcomm, 3, pxyz, temp_cart1, temp_cart2);
     MPI_Comm_size(pSPARC->blacscomm, &pc);
 
+    /* Initialize the variables and communicators */
     PCE_Init(pc, pxyz[0], pxyz[1], pxyz[2], pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, 
              pSPARC->BCx, pSPARC->BCy, pSPARC->BCz, pSPARC->Nstates, 
              pSPARC->order, fd_in_coeff, laplacian_scaling, 
@@ -689,6 +699,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                       (hd.local_fd_coords[3] - hd.local_fd_coords[2])*
                       (hd.local_fd_coords[5] - hd.local_fd_coords[4]);
 
+    /* Setup hamiltonian information */
     Our_Hamiltonian_Struct ham_struct = 
         (Our_Hamiltonian_Struct){.hd = &hd,
                                  .fd_info = &fd_raw,
@@ -702,23 +713,26 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                                  .do_nonlocal = do_nonlocal,
                                 };
 
+    /* libPCE currently (2022-07) only works for Gamma point, so if we aren't
+     * doing gamma point, skip it */
     if (pSPARC->isGammaPoint) {
-    PCE_Psi_Init(&Psi1);
-    PCE_Psi_Init(&Psi2);
-    PCE_Psi_Init(&Psi3);
+      /* Setup space for variables */
+      PCE_Psi_Init(&Psi1);
+      PCE_Psi_Init(&Psi2);
+      PCE_Psi_Init(&Psi3);
 
-    // Psi2 and Psi3 values necessarily get overwritten (initial values unused)
-    PCE_Psi_Set(&Psi1, &hd, pSPARC->Xorb);
-    PCE_Psi_Set(&Psi2, &hd, pSPARC->Xorb);
-    PCE_Psi_Set(&Psi3, &hd, pSPARC->Xorb);
+      // Psi2 and Psi3 values necessarily get overwritten (initial values unused)
+      PCE_Psi_Set(&Psi1, &hd, pSPARC->Xorb);
+      PCE_Psi_Set(&Psi2, &hd, pSPARC->Xorb);
+      PCE_Psi_Set(&Psi3, &hd, pSPARC->Xorb);
 
-    PCE_Eig_Init(&Eigvals);
+      /* Initialize eigenvalue memory */
+      PCE_Eig_Init(&Eigvals);
 
-    PCE_Veff_Init(&veff_info);
+      /* Initialize Veff memory */
+      PCE_Veff_Init(&veff_info);
 
-    // TODO: Add this line back in
-    //SPARC2NONLOCAL_interface(pSPARC, &nl, compute_device); 
-    SPARC2NONLOCAL_interface(pSPARC, &hd, &nl, compute_device);
+      SPARC2NONLOCAL_interface(pSPARC, &hd, &nl, compute_device);
     }
 #endif /* USE_PCE*/
 
@@ -997,6 +1011,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     }
 
 #if USE_PCE
+    /* Once finished, if PCE was used, destroy all the structs */
     if(pSPARC->isGammaPoint) {
       PCE_Psi_Get(&Psi1, &hd, pSPARC->Xorb);
       PCE_Psi_Destroy(&Psi1);
@@ -1009,7 +1024,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
     PCE_FD_Destroy(&fd_raw);
 
-    printf("DESTROYED\n");
 #endif
 
     
