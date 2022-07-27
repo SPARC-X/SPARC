@@ -1,0 +1,122 @@
+***************************************************************************
+*                       SPARC (version Jul 19, 2022)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Wed Jul 27 10:27:29 2022                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 10.32 10.32 10.32 
+LATVEC:
+0.5 0.5 0 
+0 0.5 0.5 
+0.5 0 0.5 
+FD_GRID: 21 21 21
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 2 2 2
+KPOINT_SHIFT: 0.5 0.5 0.5
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001000000336
+EXCHANGE_CORRELATION: LDA_PW
+NSTATES: 9
+CHEB_DEGREE: 27
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 3
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-03
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-05
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-05
+MIXING_VARIABLE: potential
+MIXING_PRECOND: none
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 0
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: Si8_kpt_valgrind/temp_run/Si8_kpt_valgrind
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+5.160000000000000 5.160000000000000 0.000000000000000 
+0.000000000000000 5.160000000000000 5.160000000000000 
+5.160000000000000 0.000000000000000 5.160000000000000 
+Volume: 2.7477619200E+02 (Bohr^3)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 4
+NP_BAND_PARAL: 3
+NP_DOMAIN_PARAL: 1 2 2
+NP_DOMAIN_PHI_PARAL: 3 3 3
+EIG_SERIAL_MAXNS: 10000
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.347492 (Bohr)
+Number of symmetry adapted k-points:  4
+Output printed to                  :  Si8_kpt_valgrind/temp_run/Si8_kpt_valgrind.out
+Total number of atom types         :  1
+Total number of atoms              :  2
+Total number of electrons          :  8
+Atom type 1  (valence electrons)   :  Si 4
+Pseudopotential                    :  psps_tests/Si_LDA.psp8
+Pseudocharge radii of atom type 1  :  7.30 7.30 7.30 (x, y, z dir)
+Number of atoms of type 1          :  2
+Estimated total memory usage       :  32.50 MB
+Estimated memory per processor     :  693.37 kB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -3.9610794646E+00        2.869E-02        56.787
+2            -3.9626381888E+00        1.679E-02        12.321
+3            -3.9631061562E+00        1.260E-03        12.334
+4            -3.9630878192E+00        7.163E-04        12.179
+Total number of SCF: 4     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.9630878192E+00 (Ha/atom)
+Total free energy                  : -7.9261756384E+00 (Ha)
+Band structure energy              :  1.8171567003E-01 (Ha)
+Exchange correlation energy        : -2.3892528481E+00 (Ha)
+Self and correction energy         : -2.5549933696E+01 (Ha)
+Entropy*kb*T                       : -1.4393673679E-07 (Ha)
+Fermi level                        :  2.5522400679E-01 (Ha)
+RMS force                          :  2.1631379933E-02 (Ha/Bohr)
+Maximum force                      :  2.1631379933E-02 (Ha/Bohr)
+Time for force calculation         :  0.607 (sec)
+Pressure                           : -1.3299015068E+00 (GPa)
+Maximum stress                     :  4.9205710319E+00 (GPa)
+Time for stress calculation        :  3.274 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  102.048 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 15, 2022)                      *
+*                       SPARC (version Jul 19, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Mon Jul 18 01:04:19 2022                  *
+*                   Start time: Tue Jul 26 17:00:01 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -64,12 +64,12 @@ Volume: 6.1581929101E+01 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
-NP_DOMAIN_SQ_PARAL: 4 6 6
-NP_DOMAIN_PHI_PARAL: 5 5 5
+NP_DOMAIN_SQ_PARAL: 4 4 6
+NP_DOMAIN_PHI_PARAL: 4 4 5
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  144
+Number of processors               :  96
 Mesh spacing                       :  0.131633 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  BN_SQ/temp_run/BN_SQ.out
@@ -84,20 +84,20 @@ Atom type 2  (valence electrons)   :  N 5
 Pseudopotential                    :  psps_tests/N.1.12.lda.psp8
 Pseudocharge radii of atom type 2  :  6.84 6.84 6.84 (x, y, z dir)
 Number of atoms of type 2          :  2
-Estimated total memory usage       :  29.43 MB
-Estimated memory per processor     :  209.26 kB
+Estimated total memory usage       :  43.49 MB
+Estimated memory per processor     :  463.93 kB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.6273050783E+01        2.911E-01        13.667
-2            -3.6239489437E+01        2.054E-01        11.539
-3            -3.6215828258E+01        1.026E-02        11.487
-4            -3.6214344550E+01        1.972E-03        11.908
-5            -3.6214577893E+01        1.287E-04        11.521
-6            -3.6214577356E+01        5.073E-06        8.315
-7            -3.6214577569E+01        1.855E-06        8.160
-8            -3.6214577556E+01        3.546E-08        12.081
+1            -3.6273050782E+01        2.911E-01        20.321
+2            -3.6239489437E+01        2.054E-01        19.129
+3            -3.6215828259E+01        1.026E-02        19.057
+4            -3.6214344550E+01        1.972E-03        16.866
+5            -3.6214577893E+01        1.287E-04        18.024
+6            -3.6214577356E+01        5.073E-06        11.009
+7            -3.6214577569E+01        1.855E-06        18.073
+8            -3.6214577556E+01        3.546E-08        10.793
 Total number of SCF: 8     
 ====================================================================
                     Energy and force calculation                    
@@ -111,14 +111,14 @@ Entropy*kb*T                       : -1.8220920902E+02 (Ha)
 Fermi level                        : -3.6914657241E+00 (Ha)
 RMS force                          :  3.0832448480E-01 (Ha/Bohr)
 Maximum force                      :  4.4903800374E-01 (Ha/Bohr)
-Time for force calculation         :  10.867 (sec)
+Time for force calculation         :  11.670 (sec)
 Pressure                           :  2.0826876283E+04 (GPa)
 Maximum stress                     :  2.0955737877E+04 (GPa)
-Time for stress calculation        :  0.066 (sec)
+Time for stress calculation        :  0.072 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  99.886 sec
+Total walltime                     :  145.358 sec
 ___________________________________________________________________________
 
 ***************************************************************************
