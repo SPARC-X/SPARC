@@ -1,4 +1,3 @@
-<div style="margin-right: 30px;">
 ## SPARC testing suite 
 
 ### (1) Brief:
@@ -78,4 +77,4 @@ A new test system can be added to the test suite. The input and reference output
 ### (5) Running on the cluster:
 
 The python script is capable of launching the tests on a cluster. First, the `samplepbs` file inside the `tests` folder needs to be replaced with the appropriate job submission script for the given cluster. Then, the lines 15-20 of the file `SPARC_testing_script.py` need to be chnaged for the given cluster. 
-</div>
+
