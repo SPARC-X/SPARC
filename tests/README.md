@@ -7,8 +7,7 @@ The test suite consists of a number of systems that are chosen to check differen
 
 The accuracy is with respect to well established plane wave codes ABINIT/Quantum Espresso.  A python script named `SPARC_testing_script.py` is provided which can launch the test systems and compare the results against the stored reference output files.
 
-### (2) Running the script:
-
+### (2) Running the script: 
 Prerequisite: python3
 
 The SPARC executable named `sparc` need to be placed in the `lib` folder or in the `tests` folder. Then, the tests can be run on a cluster by using the following command:
