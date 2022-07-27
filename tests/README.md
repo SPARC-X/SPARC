@@ -1,4 +1,4 @@
-## SPARC testing suite 
+##SPARC testing suite 
 
 ### (1) Brief:
 The test suite consists of a number of systems that are chosen to check different functionalities/features of SPARC. Each test system has its own directory inside of which the input files and the reference output files are stored. For each test system, two sets of reference output files are stored in folders named 'Standard' and 'High_accuracy' respectively: 
@@ -8,7 +8,7 @@ The test suite consists of a number of systems that are chosen to check differen
 
 The accuracy is with respect to well established plane wave codes ABINIT/Quantum Espresso.  A python script named `SPARC_testing_script.py` is provided which can launch the test systems and compare the results against the stored reference output files.
 
-### (2) Running the script: 
+###(2) Running the script: 
 Prerequisite: python3
 
 The SPARC executable named `sparc` need to be placed in the `lib` folder or in the `tests` folder. Then, the tests can be run on a cluster by using the following command:
@@ -39,7 +39,7 @@ $ python SPARC_testing_script.py only_compare
 
 The tag `only_compare` can be added along with other option to make the comparison for only the test systems corresponding to those tags.
 
-### (3) Tags:
+###(3) Tags:
 
 The systems in the testing suites are classified with a set of tags which describe the features which are being tested. The list of tags (highlighted) are given below:
 * Boundary conditions: `bulk`, `surface`, `wire`, `molecule`.
@@ -63,7 +63,7 @@ In addtion to the tags listed above, there are some tags which can be used to ru
 * `valgrind_all`: run with valgrind.
 * `update_reference`: update the reference files. 
 
-### (4) Add new test system:
+###(4) Add new test system:
 
 A new test system can be added to the test suite. The input and reference output files need to be generated and the python script `SPARC_testing_script.py` needs to be updated by following the steps as below:
 
@@ -74,7 +74,7 @@ A new test system can be added to the test suite. The input and reference output
 * Step 5: Place the input and reference output files inside the `standard` and `high_accuracy` folders
 * Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 268)
 
-### (5) Running on the cluster:
+###(5) Running on the cluster:
 
 The python script is capable of launching the tests on a cluster. First, the `samplepbs` file inside the `tests` folder needs to be replaced with the appropriate job submission script for the given cluster. Then, the lines 15-20 of the file `SPARC_testing_script.py` need to be chnaged for the given cluster. 
 
