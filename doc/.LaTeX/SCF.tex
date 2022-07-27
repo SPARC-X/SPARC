@@ -971,7 +971,7 @@ Double
 \end{block}
 
 \begin{block}{Default}
-Automatically set for $10^{-3}$ Ha/Bohr accuracy in force
+$0.2*$\hyperlink{TOL_SCF}{\texttt{TOL\_SCF}}
 \end{block}
 
 \column{0.4\linewidth}
@@ -985,7 +985,7 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-The tolerance on the Hartree-Fock outer loop, measured by the difference between the band energy in 2 consecutive outer loops.
+The tolerance on the Hartree-Fock outer loop, measured by the exact exchange energy difference per atom in 2 consecutive outer loops.
 \end{block}
 
 \begin{block}{Remark}
@@ -1041,7 +1041,7 @@ Integer
 \end{block}
 
 \begin{block}{Default}
-1
+2
 \end{block}
 
 \column{0.4\linewidth}

@@ -69,7 +69,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
 
     /************************ Exact exchange potential parameters ************************/
     int count_xx = 0;
-    double Eband_pre = pSPARC->Eband, err_Exx = pSPARC->TOL_FOCK + 1;
+    double Eexx_pre = pSPARC->Eexx, err_Exx = pSPARC->TOL_FOCK + 1;
     pSPARC->Exxtime = pSPARC->ACEtime = 0.0;
     
     // blacscomm contains all processes with the same rank_dmcomm
@@ -120,18 +120,11 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     #endif 
 
     /******************************* Hartre-Fock outer loop ******************************/
-    while ((err_Exx > pSPARC->TOL_FOCK && count_xx < pSPARC->MAXIT_FOCK) || count_xx < pSPARC->MINIT_FOCK) {
+    while (count_xx < pSPARC->MAXIT_FOCK) {
     #ifdef DEBUG
     if(!rank) 
         printf("\nHartree-Fock Outer Loop: %d \n",count_xx + 1);
     #endif  
-
-        if(!rank) {
-            // write to .out file
-            output_fp = fopen(pSPARC->OutFilename,"a");
-            fprintf(output_fp,"\nNo.%d Exx outer loop: \n", count_xx + 1);
-            fclose(output_fp);
-        }
 
         if (count_xx > 0) {
             if (pSPARC->MixingVariable == 1 && (pSPARC->BC == 2 || pSPARC->BC == 0)) { // potential mixing, add veff_mean back
@@ -245,19 +238,27 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
         else
             evaluate_exact_exchange_energy_kpt(pSPARC);
 
-        scf_loop(pSPARC);
-
-        err_Exx = fabs(Eband_pre - pSPARC->Eband)/pSPARC->n_atom;
-        MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
+        if(count_xx > 0) {
+            err_Exx = fabs(Eexx_pre - pSPARC->Eexx)/pSPARC->n_atom;
+            MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
+            if(!rank) {
+                // write to .out file
+                output_fp = fopen(pSPARC->OutFilename,"a");
+                fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
+                fclose(output_fp);
+            }
+            if (err_Exx < pSPARC->TOL_FOCK && count_xx >= pSPARC->MINIT_FOCK) break;
+        }
+        Eexx_pre = pSPARC->Eexx;
 
         if(!rank) {
             // write to .out file
             output_fp = fopen(pSPARC->OutFilename,"a");
-            fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
+            fprintf(output_fp,"\nNo.%d Exx outer loop: \n", count_xx + 1);
             fclose(output_fp);
         }
 
-        Eband_pre = pSPARC->Eband;
+        scf_loop(pSPARC);
         count_xx ++;
     }
 
@@ -265,6 +266,28 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     if(!rank) 
         printf("\nFinished outer loop in %d steps!\n", count_xx);
     #endif  
+
+    if (count_xx == pSPARC->MAXIT_FOCK) {
+        // update the final exact exchange energy if necessary
+        pSPARC->Exc -= pSPARC->Eexx;
+        pSPARC->Etot += 2 * pSPARC->Eexx;
+        if (pSPARC->isGammaPoint == 1)
+            evaluate_exact_exchange_energy(pSPARC);
+        else
+            evaluate_exact_exchange_energy_kpt(pSPARC);
+
+        pSPARC->Exc += pSPARC->Eexx;
+        pSPARC->Etot -= 2*pSPARC->Eexx;
+
+        err_Exx = fabs(Eexx_pre - pSPARC->Eexx)/pSPARC->n_atom;
+        MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
+        if(!rank && count_xx > 0) {
+            // write to .out file
+            output_fp = fopen(pSPARC->OutFilename,"a");
+            fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
+            fclose(output_fp);
+        }
+    }
 
     if (err_Exx > pSPARC->TOL_FOCK) {
         if(!rank) {
@@ -275,17 +298,6 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
             fclose(output_fp);
         }
     }
-
-    // update the converged exact exchange energy
-    pSPARC->Exc -= pSPARC->Eexx;
-    pSPARC->Etot += 2 * pSPARC->Eexx;
-    if (pSPARC->isGammaPoint == 1)
-        evaluate_exact_exchange_energy(pSPARC);
-    else
-        evaluate_exact_exchange_energy_kpt(pSPARC);
-
-    pSPARC->Exc += pSPARC->Eexx;
-    pSPARC->Etot -= 2*pSPARC->Eexx;
 
     #ifdef DEBUG
     if(!rank && pSPARC->ACEFlag == 1) {
