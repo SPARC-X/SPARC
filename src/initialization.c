@@ -608,7 +608,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->TOL_FOCK = -1.0;            // default tolerance for Fock operator 
     pSPARC_Input->TOL_SCF_INIT = -1.0;        // default tolerance for first PBE SCF
     pSPARC_Input->MAXIT_FOCK = 20;            // default maximum number of iterations for Hartree-Fock outer loop
-    pSPARC_Input->MINIT_FOCK = 1;             // default minimum number of iterations for Hartree-Fock outer loop
+    pSPARC_Input->MINIT_FOCK = 2;             // default minimum number of iterations for Hartree-Fock outer loop
     pSPARC_Input->EXXMeth_Flag = 0;           // default method to solve Poisson's equation of Exact Exchange in Fourier space
     pSPARC_Input->ACEFlag = 1;                // default setting for not using ACE operator
     pSPARC_Input->EXXMem_batch = 0;           // default setting for using high memory option
@@ -2215,45 +2215,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
         
         if (pSPARC->TOL_FOCK < 0.0) {
-            // TODO: This model is based on the results of 4 tests. Do more tests to improve the robustness. 
+            // TODO: This model is based on the results of 5 tests. Do more tests to improve the robustness. 
             // default FOCK outer loop tolerance based on accuracy_level
             // we use a model curve to correlate fock tolerance and energy and force accuracy
-            //     log10(y) = a * log10(x) + b' + c * log10(Nelectron/n_atom)
-            // (1) if y is energy accuracy (Ha/atom), a = 0.9636, b' = 0.5000, c = -2.5426
-            // (2) if y is force accuracy  (Ha/Bohr), a = 1.1626, b' = 1.7719, c = -2.5000
-            // if fock tol is not set, we'll use accuracy_level to find fock tol
-
-            const double log10_neatom = log10(pSPARC->Nelectron / (double) pSPARC->n_atom);
-            double target_force_accuracy = -1.0;
-            double target_energy_accuracy = -1.0;
-
-            // accuracy_levels      : 0 - minimal | 1 - low  | 2 - medium | 3 - high | 4 - extreme
-            // target force accuracy: 0 - 1e-1    | 1 - 1e-2 | 2 - 1e-3   | 3 - 1e-4 | 4 - 1e-5
-            if (pSPARC->accuracy_level >= 0) {
-                target_force_accuracy = pow(10.0, -(pSPARC->accuracy_level + 1.0));
-            } else if (pSPARC->target_force_accuracy > 0.0) {
-                target_force_accuracy = pSPARC->target_force_accuracy;
-            } else if (pSPARC->target_energy_accuracy > 0.0) {
-                target_energy_accuracy = pSPARC->target_energy_accuracy;
-            }
-
-            // if none of the accuracy levels are specified, set force_accuracy to 1e-3
-            if (target_force_accuracy < 0  && target_energy_accuracy < 0) {
-                target_force_accuracy = 1e-3;
-            }
-
-            // calculate FOCK TOL based on specified target accuracy
-            if (target_force_accuracy > 0.0) { // find fock tol based on target force accuracy
-                const double a = 1.1626;
-                const double b = 1.7719 - 2.5000 * log10_neatom;
-                double log10_target = log10(target_force_accuracy);
-                pSPARC->TOL_FOCK = pow(10.0, (log10_target - b)/a);
-            } else if (target_energy_accuracy > 0.0) { // find fock tol based on target energy accuracy
-                const double a = 0.9636;
-                const double b = 0.5000 - 2.5426 * log10_neatom;
-                double log10_target = log10(target_energy_accuracy);
-                pSPARC->TOL_FOCK = pow(10.0, (log10_target - b)/a);
-            }
+            //     log10(y) = a * log10(x) + b, a = 1, b = 0.3
+            // when related to TOL_SCF, this could be simplified as 0.2 * TOL_SCF for the same force accuracy.
+            pSPARC->TOL_FOCK = 0.2*pSPARC->TOL_SCF;
         }
     
         // If initial PBE SCF tolerance is not defined, use default 10*pSPARC->TOL_FOCK
@@ -3104,7 +3071,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jul 19, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jul 27, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

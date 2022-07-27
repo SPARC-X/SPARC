@@ -98,6 +98,9 @@ void init_exx(SPARC_OBJ *pSPARC) {
     // create kpttopo_dmcomm_inter
     pSPARC->flag_kpttopo_dm = 0;
     create_kpttopo_dmcomm_inter(pSPARC);
+
+    // initialize Eexx
+    pSPARC->Eexx = 0;
 }
 
 /**
