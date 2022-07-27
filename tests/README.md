@@ -1,178 +1,81 @@
-## SPARC installation and usage 
+## SPARC testing suite 
 
 ### (1) Brief:
-SPARC is an open-source software package for the accurate, effcient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem. The main features of SPARC currently include
+The test suite consists of a number of systems that are chosen to check different functionalities/features of SPARC. Each test system has its own directory inside of which the input files and the reference output files are stored. For each test system, two sets of reference output files are stored in folders named 'Standard' and 'High_accuracy' respectively: 
 
-* Applicable to isolated systems such as molecules as well as extended systems such as crystals, surfaces, and wires.
-* Local, semilocal, and nonlocal (including hybrid) exchange-correlation functionals.
-* Standard ONCV pseudopotentials, including nonlinear core corrections.
-* Calculation of ground state energy, atomic forces, and stress tensor.
-* Structural relaxation and ab initio molecular dynamics (NVE, NVT, and NPT).
-* Spin polarized and unpolarized calculations.
-* Spin-orbit coupling.
-* Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
+ * Standard case with an accuracy of around 1.0E-03 Ha/atom in energy. 
+ * High accuracy case with an accuracy of around 1.0E-05 Ha/atom in energy.
 
-SPARC is straightforward to install/use and highly competitive with state-of-the-art planewave codes, demonstrating comparable performance on a small number of processors and order-of-magnitude advantages as the number of processors increases. Notably, the current version of SPARC brings solution times down to a few seconds for systems with O(100-500) atoms on large-scale parallel computers, outperforming planewave counterparts by an order of magnitude and more. Additional details regarding the formulation and implementation of SPARC can be found in the paper referenced below. Future versions will target similar solution times for large-scale systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
+The accuracy is with respect to well established plane wave codes ABINIT/Quantum Espresso.  A python script named `SPARC_testing_script.py` is provided which can launch the test systems and compare the results against the stored reference output files.
 
-### (2) Installation:
+### (2) Running the script: 
+Prerequisite: python3
 
-Prerequisite: C compiler, MPI.
-
-There are several options to compile SPARC, depending on the available external libraries.
-
-* Option 1 (default): Compile with BLAS and LAPACK.
-
-  * Step 1: Install/Load OpenBLAS/BLAS and LAPACK.
-
-  * Step 2: Change directory to `src/` directory, there is an available `makefile`.
-
-  * Step 3 (optional): Edit `makefile`. If the BLAS library path and LAPACK library path are not in the search path, edit the `BLASROOT` and `LAPACKROOT` variables, and add them to `LDFLAGS`. If you are using BLAS instead of OpenBLAS, replace all `-lopenblas` flags with `-lblas`.
-
-  * Step 4 (optional): To turn on `DEBUG` mode, set `DEBUG_MODE` to 1 in the `makefile`.
-
-  * Step 5: Within the `src/` directory, compile the code by
-    ```shell     
-    $ make clean; make
-    ```
-**Remark**: make sure in the makefile `USE_MKL = 0`, `USE_SCALAPACK = 0`, and `USE_DP_SUBEIG = 1` for option 1.
-
-* Option 2 (recommended): Compile with MKL.
-  * Step 1: Install/Load MKL.
-
-  * Step 2: Change directory to `src/`  directory, there is an available `makefile`.
-
-  * Step 3: Edit `makefile` . Set `USE_MKL` to 1 to enable compilation with MKL. If the MKL library path is not in the search path, edit the `MKLROOT` variable to manually set the MKL path.
-
-  * Step 4 (optional): For the projection/subspace rotation step, to use SPARC routines for matrix data distribution rather than ScaLAPACK (through MKL), set `USE_DP_SUBEIG`  to 1. We found on some machines this option is faster.
-
-  * Step 5 (optional): To turn on `DEBUG` mode, set `DEBUG_MODE` to 1 in the `makefile` .
-
-  * Step 6: Within the `src/` directory, compile the code by
-
-    ```shell
-    $ make clean; make
-    ```
-**Remark**: make sure in the makefile `USE_MKL = 1` and `USE_SCALAPACK = 0` for option 2.
-
-* Option 3: Compile with BLAS, LAPACK, and ScaLAPACK.
-
-  * Step 1: Install/Load OpenBLAS/BLAS, LAPACK, and ScaLAPACK.
-
-  * Step 2: Change directory to `src/`  directory, there is an available `makefile`.
-
-  * Step 3 (optional): Edit `makefile`. If the BLAS library path, LAPACK library path, and/or ScaLAPACK library path are not in the search path, edit the `BLASROOT`, `LAPACKROOT` , and/or `SCALAPACKROOT` variables accordingly, and add them to `LDFLAGS`. If you are using BLAS instead of OpenBLAS, replace all `-lopenblas` flags with `-lblas`.
-
-  * Step 4 (optional): For the projection/subspace rotation step, to use SPARC routines for matrix data distribution rather than ScaLAPACK, set `USE_DP_SUBEIG`  to 1. We found on some machines this option is faster.
-
-  * Step 5 (optional): To turn on `DEBUG`  mode, set `DEBUG_MODE` to 1 in the `makefile`.
-
-  * Step 6: Within the `src/` directory, compile the code by
-
-    ```shell
-    $ make clean; make
-    ```
-**Remark**: make sure in the makefile `USE_MKL = 0` and `USE_SCALAPACK = 1` for option 3.
-
-Once compilation is done, a binary named `sparc` will be created in the `lib/` directory.
-
-### (3) Input files:
-The required input files to run a simulation with SPARC are (with shared names)  
-
-(a) ".inpt" -- User options and parameters.  
-
-(b) ".ion"  -- Atomic information.  
-
-It is required that the ".inpt" and ".ion" files are located in the same directory and share the same name. A detailed description of the input options is provided in the documentation located in doc/. Examples of input files can be found in the `SPARC/tests` directory .
-
-In addition, SPARC requires pseudopotential files of psp8 format which can be generated by D. R. Hamann's open-source pseudopotential code [ONCVPSP](http://www.mat-simresearch.com/). A large number of accurate and efficient pseudopotentials are already provided within the package. For access to more pseudopotentials, the user is referred to [pseudoDOJO ONCV potentials](http://www.pseudo-dojo.org) and the [SG15 ONCV potentials](http://www.quantum-simulation.org/potentials/sg15_oncv/). Note that using the [ONCVPSP](http://www.mat-simresearch.com/) input files included in the [SG15 ONCV potentials](http://www.quantum-simulation.org/potentials/sg15_oncv/), one can easily convert the [SG15 ONCV potentials](http://www.quantum-simulation.org/potentials/sg15_oncv/) from upf format to psp8 format. Paths to the pseudopotential files are specified in the ".ion" file.
-
-### (4) Execution:
-SPARC can be executed in parallel using the `mpirun` command. Sample PBS script files are available in "SPARC/tests" folder. It is required that the ".inpt" and ".ion" files are located in the same directory and share the same name. For example, to run a simulation with 8 processes with input files as "filename.inpt" and "filename.ion" in the root directory (`SPARC/`), use the following command:
-
+The SPARC executable named `sparc` need to be placed in the `lib` folder or in the `tests` folder. Then, the tests can be run on a cluster by using the following command:
 ```shell
-$ mpirun -np 24 ./lib/sparc -name filename
+$ python SPARC_testing_script.py
+```
+Each system in the testing suite is given a set of tags based on the funtionality/feature that the given test system is testing. All systems with a set of common tags can be executed by using the following command:
+```shell
+$ python SPARC_testing_script.py -tags <tag1> <tag2> <tag3> ...
+```
+Individual or a group of systems can be executed by using the following command:
+```shell
+$ python SPARC_testing_script.py -systems <system1> <system2> <system3> ...
 ```
 
-As an example, one can run one of the tests located in `SPARC/tests/`. First go to `SPARC/tests/Example_tests/` directory:
+Once the script is executed, a progress bar of completion is also shown in the terminal and after all the test systems have been run, the result of passed and failed tests is printed in the terminal and a file named 'Report.txt' is generated which contains details of the difference in energy, force, stress etc. from the reference files. 
 
+Output files generated during the execution of the tests can be deleted by the following commnad:
 ```shell
-$ cd tests/Example_tests/
+$ python SPARC_testing_script.py clean_temp
 ```
 
-The input file is available inside the folder. Run a DC silicon system by
+Comparison of the output files with the reference files once the tests have finished running can be done with the following command:
 
 ```shell
-$ mpirun -np 24 ../../../lib/sparc -name Si8_kpt
+$ python SPARC_testing_script.py only_compare
 ```
 
-The result is printed to output file "Si8_kpt.out", located in the same directory as the input files. If the file "Si8_kpt.out" is already present, the result will be printed to "Si8_kpt.out\_1" instead. The max number of ".out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the "Si8_kpt.out" file. One can compare the result with the reference out file named "Si8_kpt.refout".
+The tag `only_compare` can be added along with other option to make the comparison for only the test systems corresponding to those tags.
 
+### (3) Tags:
 
-In the `tests/` directory, we also provide a suite of tests which are arranged in a hierarchy of folders. Each test system has its own directory. A python script is also provided which launches the suite of test systems. To run a set of four quick tests locally on the CPU, simply run: 
+The systems in the testing suites are classified with a set of tags which describe the features which are being tested. The list of tags (highlighted) are given below:
 
-```shell
-$ python SPARC_testing_script.py quick_run
-```
+ * Boundary conditions: `bulk`, `surface`, `wire`, `molecule`.
+ * Cell type: `orth`, `nonorth`.
+ * Exchange correlation: `lda`, `gga`,`scan`,`pbe0`,`hse`,`soc`,`vdWDF`,`d3`.
+ * SCF Mixing and preconditioner: `potmix`,`denmix`,`kerker`.
+ * Calculation type: `scf`,`relax_atom`,`relax_cell`,`relax_full`,`md`.
+ * Relaxation type: `nlcg`,`lbfgs`,`fire`.
+ * MD type: `nvtnh`,`nvkg`,`nve`,`npt`.
+ * K-point sampling: `gamma`,`kpt`.
+ * Spin polarization: `spin`,`SOC`.
+ * Methods: `SQ`,`SQ3`.
+ * Smearing: `smear_fd`,`smear_gauss`.
+ * Bandgap: `bandgap`.
+ * Others: `nlcc`,`memcheck`.
 
-The result is stored in the corresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.
+In addtion to the tags listed above, there are some tags which can be used to run every test with extra features. These tags are described below:
 
-### (5) Output
+ * `VHQ`: run with high accuracy.
+ * `serial`: run in serial.
+ * `valgrind_all`: run with valgrind.
+ * `update_reference`: update the reference files. 
 
-Upon successful execution of the `sparc` code, depending on the calculations performed, some output files will be created in the same location as the input files.
+### (4) Add new test system:
 
-#### Single point calculations
+A new test system can be added to the test suite. The input and reference output files need to be generated and the python script `SPARC_testing_script.py` needs to be updated by following the steps as below:
 
-- ".out" file
+ * Step 1: Create a new directory in the `tests` folder with the same name as the system to be added 
+ * Step 2: Create two subdirectories named `standard` and `high_accuracy` inside the system directory created above
+ * Step 3: Generate the input files and the corresponding output files for the given system
+ * Step 4: The output files should be named as: `.refout`,`refstatic`,`refaimd`,`refgeopt`,`refeigen`
+ * Step 5: Place the input and reference output files inside the `standard` and `high_accuracy` folders
+ * Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 268)
 
-  General information about the test, including input parameters, SCF convergence progress, ground state properties and timing information.
+### (5) Running on the cluster:
 
-- ".static" file 
-
-  Atomic positions and atomic forces if the user chooses to print these information.
-
-#### Structural relaxation calculations
-
-- ".out" file 
-
-  See above.
-
-- ".geopt" file 
-
-  Atomic positions and atomic forces for atomic relaxation, cell lengths and stress tensor for volume relaxation, and atomic positions, atomic forces, cell lengths , and stress tensor for full relaxation.
-
-- ".restart" file 
-
-  Information necessary to perform a restarted structural relaxation calculation. Only created if atomic relaxation is performed.
-
-**Quantum molecular dynamics (QMD) calculations**
-
-- `.out` file  
-
-  See above.
-
-- `.aimd` file  
-
-  Atomic positions, atomic velocities, atomic forces, electronic temperature, ionic temperature and total energy for each QMD step.
-
-- `.restart` file  
-
-  Information necessary to perform a restarted QMD calculation. 
-
-
-### (7) Citation:
-
-If you publish work using/regarding SPARC, please cite some of the following articles, particularly those that are most relevant to your work:
-* **General**: https://doi.org/10.1016/j.softx.2021.100709, https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
-* **Non-orthogonal systems**: https://doi.org/10.1016/j.cplett.2018.04.018
-* **Linear solvers**: https://doi.org/10.1016/j.cpc.2018.07.007, https://doi.org/10.1016/j.jcp.2015.11.018
-* **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
-* **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
-* **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
-
-
-### (6) Acknowledgement:
-  
-* **U.S. Department of Energy, Office of Science: DE-SC0019410** 
-
-  * Preliminary developments
-    * U.S. National Science Foundation: 1553212, 1663244, and 1333500
+The python script is capable of launching the tests on a cluster. First, the `samplepbs` file inside the `tests` folder needs to be replaced with the appropriate job submission script for the given cluster. Then, the lines 15-20 of the file `SPARC_testing_script.py` need to be chnaged for the given cluster. 
+ 
