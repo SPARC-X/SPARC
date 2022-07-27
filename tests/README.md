@@ -3,8 +3,8 @@
 ### (1) Brief:
 The test suite consists of a number of systems that are chosen to check different functionalities/features of SPARC. Each test system has its own directory inside of which the input files and the reference output files are stored. For each test system, two sets of reference output files are stored in folders named 'Standard' and 'High_accuracy' respectively: 
 
-* Standard case with an accuracy of around 1.0E-03 Ha/atom in energy. 
-* High accuracy case with an accuracy of around 1.0E-05 Ha/atom in energy.
+ * Standard case with an accuracy of around 1.0E-03 Ha/atom in energy. 
+ * High accuracy case with an accuracy of around 1.0E-05 Ha/atom in energy.
 
 The accuracy is with respect to well established plane wave codes ABINIT/Quantum Espresso.  A python script named `SPARC_testing_script.py` is provided which can launch the test systems and compare the results against the stored reference output files.
 
@@ -42,37 +42,38 @@ The tag `only_compare` can be added along with other option to make the comparis
 ### (3) Tags:
 
 The systems in the testing suites are classified with a set of tags which describe the features which are being tested. The list of tags (highlighted) are given below:
-* Boundary conditions: `bulk`, `surface`, `wire`, `molecule`.
-* Cell type: `orth`, `nonorth`.
-* Exchange correlation: `lda`, `gga`,`scan`,`pbe0`,`hse`,`soc`,`vdWDF`,`d3`.
-* SCF Mixing and preconditioner: `potmix`,`denmix`,`kerker`.
-* Calculation type: `scf`,`relax_atom`,`relax_cell`,`relax_full`,`md`.
-* Relaxation type: `nlcg`,`lbfgs`,`fire`.
-* MD type: `nvtnh`,`nvkg`,`nve`,`npt`.
-* K-point sampling: `gamma`,`kpt`.
-* Spin polarization: `spin`,`SOC`.
-* Methods: `SQ`,`SQ3`.
-* Smearing: `smear_fd`,`smear_gauss`.
-* Bandgap: `bandgap`.
-* Others: `nlcc`,`memcheck`.
+
+ * Boundary conditions: `bulk`, `surface`, `wire`, `molecule`.
+ * Cell type: `orth`, `nonorth`.
+ * Exchange correlation: `lda`, `gga`,`scan`,`pbe0`,`hse`,`soc`,`vdWDF`,`d3`.
+ * SCF Mixing and preconditioner: `potmix`,`denmix`,`kerker`.
+ * Calculation type: `scf`,`relax_atom`,`relax_cell`,`relax_full`,`md`.
+ * Relaxation type: `nlcg`,`lbfgs`,`fire`.
+ * MD type: `nvtnh`,`nvkg`,`nve`,`npt`.
+ * K-point sampling: `gamma`,`kpt`.
+ * Spin polarization: `spin`,`SOC`.
+ * Methods: `SQ`,`SQ3`.
+ * Smearing: `smear_fd`,`smear_gauss`.
+ * Bandgap: `bandgap`.
+ * Others: `nlcc`,`memcheck`.
 
 In addtion to the tags listed above, there are some tags which can be used to run every test with extra features. These tags are described below:
 
-* `VHQ`: run with high accuracy.
-* `serial`: run in serial.
-* `valgrind_all`: run with valgrind.
-* `update_reference`: update the reference files. 
+ * `VHQ`: run with high accuracy.
+ * `serial`: run in serial.
+ * `valgrind_all`: run with valgrind.
+ * `update_reference`: update the reference files. 
 
 ### (4) Add new test system:
 
 A new test system can be added to the test suite. The input and reference output files need to be generated and the python script `SPARC_testing_script.py` needs to be updated by following the steps as below:
 
-* Step 1: Create a new directory in the `tests` folder with the same name as the system to be added 
-* Step 2: Create two subdirectories named `standard` and `high_accuracy` inside the system directory created above
-* Step 3: Generate the input files and the corresponding output files for the given system
-* Step 4: The output files should be named as: `.refout`,`refstatic`,`refaimd`,`refgeopt`,`refeigen`
-* Step 5: Place the input and reference output files inside the `standard` and `high_accuracy` folders
-* Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 268)
+ * Step 1: Create a new directory in the `tests` folder with the same name as the system to be added 
+ * Step 2: Create two subdirectories named `standard` and `high_accuracy` inside the system directory created above
+ * Step 3: Generate the input files and the corresponding output files for the given system
+ * Step 4: The output files should be named as: `.refout`,`refstatic`,`refaimd`,`refgeopt`,`refeigen`
+ * Step 5: Place the input and reference output files inside the `standard` and `high_accuracy` folders
+ * Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 268)
 
 ### (5) Running on the cluster:
 
