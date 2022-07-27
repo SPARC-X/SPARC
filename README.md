@@ -111,7 +111,7 @@ The result is printed to output file "Si8_kpt.out", located in the same director
 In the `tests/` directory, we also provide a suite of tests which are arranged in a hierarchy of folders. Each test system has its own directory. A python script is also provided which launches the suite of test systems. To run a set of four quick tests locally on the CPU, simply run: 
 
 ```shell
-$ python test.py quick_run
+$ python SPARC_testing_script.py quick_run
 ```
 
 The result is stored in the corresponding directory of the tests. A message is also printed in the terminal showing if the tests passed or failed. The tests can also be launched in parallel on a cluster by using the Python script. Detailed information on using the python script can be found in the 'ReadMe' file in the `tests/` directory.

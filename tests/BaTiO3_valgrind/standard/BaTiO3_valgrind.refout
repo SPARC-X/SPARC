@@ -1,0 +1,137 @@
+***************************************************************************
+*                       SPARC (version Jul 19, 2022)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Wed Jul 27 10:26:46 2022                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 7.63 7.63 7.63 
+LATVEC:
+1 0 0 
+0 1 0 
+0 0 1 
+FD_GRID: 25 25 25
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: LDA_PZ
+NSTATES: 29
+CHEB_DEGREE: 25
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 3
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-03
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-05
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-05
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 9.31E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+OUTPUT_FILE: BaTiO3_valgrind/temp_run/BaTiO3_valgrind
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+7.630000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 7.630000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 7.630000000000000 
+Volume: 4.4419494700E+02 (Bohr^3)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 6
+NP_DOMAIN_PARAL: 2 2 2
+NP_DOMAIN_PHI_PARAL: 3 4 4
+EIG_SERIAL_MAXNS: 10000
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.3052 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  BaTiO3_valgrind/temp_run/BaTiO3_valgrind.out
+Total number of atom types         :  3
+Total number of atoms              :  5
+Total number of electrons          :  40
+Atom type 1  (valence electrons)   :  Ba 10
+Pseudopotential                    :  psps_tests/Ba_LDA1.psp8
+Pseudocharge radii of atom type 1  :  6.41 6.41 6.41 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  Ti 12
+Pseudopotential                    :  psps_tests/Ti_LDA1.psp8
+Pseudocharge radii of atom type 2  :  5.80 5.80 5.80 (x, y, z dir)
+Number of atoms of type 2          :  1
+Atom type 3  (valence electrons)   :  O 6
+Pseudopotential                    :  psps_tests/O_LDA1.psp8
+Pseudocharge radii of atom type 3  :  6.41 6.41 6.41 (x, y, z dir)
+Number of atoms of type 3          :  3
+Estimated total memory usage       :  24.08 MB
+Estimated memory per processor     :  513.71 kB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.6523897533E+01        1.582E-01        10.112
+2            -2.6329818348E+01        5.330E-02        2.344
+3            -2.6286304320E+01        3.839E-02        2.298
+4            -2.6290378790E+01        3.176E-02        2.346
+5            -2.6264105609E+01        8.997E-03        2.256
+6            -2.6268331560E+01        3.913E-03        2.270
+7            -2.6263352866E+01        2.422E-03        2.158
+8            -2.6263652801E+01        6.400E-04        1.756
+Total number of SCF: 8     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.6263866467E+01 (Ha/atom)
+Total free energy                  : -1.3131933234E+02 (Ha)
+Band structure energy              : -1.1110296375E+01 (Ha)
+Exchange correlation energy        : -2.1381426876E+01 (Ha)
+Self and correction energy         : -2.0354903136E+02 (Ha)
+Entropy*kb*T                       : -2.1284739694E-07 (Ha)
+Fermi level                        :  2.9081239566E-01 (Ha)
+RMS force                          :  1.2350572399E-01 (Ha/Bohr)
+Maximum force                      :  2.7355869499E-01 (Ha/Bohr)
+Time for force calculation         :  0.491 (sec)
+Pressure                           :  2.7462802411E+01 (GPa)
+Maximum stress                     :  3.5595415436E+01 (GPa)
+Time for stress calculation        :  1.954 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  32.750 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           
