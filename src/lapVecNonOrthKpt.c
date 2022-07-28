@@ -29,6 +29,90 @@
 #endif
 
 
+/*  
+ * @brief: function to calculate derivative
+ */
+void Calc_DX_kpt_orig(
+    const double complex *X, double complex *DX,
+    const int m_DMVertex,    const int radius,
+    const int stride_X,      const int stride_y_X,
+    const int stride_y_DX,   const int stride_z_X,
+    const int stride_z_DX,   const int x_DX_spos,
+    const int x_DX_epos,     const int y_DX_spos,
+    const int y_DX_epos,     const int z_DX_spos,
+    const int z_DX_epos,     const int x_X_spos,
+    const int y_X_spos,      const int z_X_spos,
+    const double *stencil_coefs,
+    const double c,          const int shift1,
+    const int shift2,        const int shift3,
+    const double complex phase_fac_r_m,
+    const int m_spos,        const int m_epos,
+    const int l_m
+)
+{
+    int i, j, k, ii, jj, kk, r;
+    
+    double complex phase_fac_l_m = conj(phase_fac_r_m);
+    int sz = 2 * (m_epos - m_spos) * radius;
+    double complex *Phase_fac = (double complex *) malloc(sz * sizeof(double complex));
+    int count, global_i, init1, init2, init3;    
+    
+    count = 0;
+    for(i = m_spos; i < m_epos; i++){
+        global_i = i + m_DMVertex;
+        for (r = 1; r <= radius; r++){
+            if((global_i + r) >= l_m)
+                Phase_fac[count] = phase_fac_r_m;
+            else
+                Phase_fac[count] = 1.0;    
+            count++;
+            
+            if((global_i - r) < 0)
+                Phase_fac[count] = phase_fac_l_m;
+            else
+                Phase_fac[count] = 1.0;
+            count++;
+        }
+    }
+    
+    init3 = 0;
+    for (k = z_DX_spos, kk = z_X_spos; k < z_DX_epos; k++, kk++)
+    {
+        int kshift_DX = k * stride_z_DX;
+        int kshift_X = kk * stride_z_X;
+        init2 = 0;
+        for (j = y_DX_spos, jj = y_X_spos; j < y_DX_epos; j++, jj++)
+        {
+            int jshift_DX = kshift_DX + j * stride_y_DX;
+            int jshift_X = kshift_X + jj * stride_y_X;
+            const int niters = x_DX_epos - x_DX_spos;
+#ifdef ENABLE_SIMD_COMPLEX            
+#pragma omp simd
+#endif            
+            for (i = 0; i < niters; i++)
+            {
+                int ishift_DX = jshift_DX + i + x_DX_spos;
+                int ishift_X = jshift_X + i + x_X_spos;
+                init1 = i * shift1;
+                int countshift = init1 + init2 + init3;
+                double complex temp = X[ishift_X] * c;
+                for (r = 1; r <= radius; r++)
+                {
+                    int stride_X_r = r * stride_X;
+                    count = countshift + (r-1)*2;
+                    temp += (X[ishift_X + stride_X_r] * Phase_fac[count] - X[ishift_X - stride_X_r] * Phase_fac[count + 1]) * stencil_coefs[r];
+                }
+                DX[ishift_DX] = temp;
+            }
+            init2 += shift2;
+        }
+        init3 += shift3;
+    }
+    free(Phase_fac);
+}
+
+
+
 /**
  * @brief   Calculate (a * Lap + c * I) times vectors.
  */
@@ -243,7 +327,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x+n*DMnd, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty, pshifty, DMnx_ex, pshiftz, DMnxexny,
+                Calc_DX_kpt_orig(x+n*DMnd, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty, pshifty, DMnx_ex, pshiftz, DMnxexny,
                             FDn, DMnx_out, FDn, DMny_in, FDn, DMnz_in, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, FDn, DMny_in, pSPARC->Ny);
             }
@@ -267,7 +351,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x+n*DMnd, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz, pshifty, DMnx_ex, pshiftz, DMnxexny,
+                Calc_DX_kpt_orig(x+n*DMnd, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz, pshifty, DMnx_ex, pshiftz, DMnxexny,
                             FDn, DMnx_out, FDn, DMny_in, FDn, DMnz_in, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -290,7 +374,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x+n*DMnd, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz, pshifty, DMnx, pshiftz, DMnxnyex,
+                Calc_DX_kpt_orig(x+n*DMnd, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz, pshifty, DMnx, pshiftz, DMnxnyex,
                             FDn, DMnx_in, FDn, DMny_out, FDn, DMnz_in, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -396,7 +480,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
                                  FDn, DMnx_out, FDn, DMny_in, FDn, DMnz_in, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz,
                                  0, pSPARC->order, 0, 0, 0, pSPARC->order, phase_fac_m1, phase_fac_m2, FDn, DMny_in, FDn, DMnz_in, pSPARC->Ny, pSPARC->Nz);
 
-                Calc_DX_kpt(x+n*DMnd, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz, pshifty, DMnx, pshiftz, DMnxnyex,
+                Calc_DX_kpt_orig(x+n*DMnd, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz, pshifty, DMnx, pshiftz, DMnxnyex,
                             FDn, DMnx_in, FDn, DMny_out, FDn, DMnz_in, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m2, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -485,33 +569,33 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             //  df/dy
             // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
                             0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, 0, DMny, pSPARC->Ny);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, 0, DMny, pSPARC->Ny);
             }
 
             // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, 0, FDn, pSPARC->Ny);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, DMny_in, DMny, pSPARC->Ny);
             }
 
             // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, FDn, DMny_in, pSPARC->Ny);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, FDn, DMny_in, pSPARC->Ny);
             }
@@ -551,7 +635,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             }
         } else {
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[2], FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0,
                             0, pSPARC->order, 0, phase_fac_m1, 0, DMny, pSPARC->Ny);
             }
@@ -570,33 +654,33 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             //  df/dz
             // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
                             0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, 0, FDn, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, DMnz_in, DMnz, pSPARC->Nz);
             }
 
             // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
 
             // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -636,7 +720,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             }
         } else {
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                             0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, 0, DMnz, pSPARC->Nz);
             }
@@ -655,33 +739,33 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             //  df/dz
             // (0:DMnx, 0:DMny_ex, [0:FDn,DMnz_in:DMnz])
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                             0, DMnx, 0, DMny_ex, 0, FDn, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, 0, FDn, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                             0, DMnx, 0, DMny_ex, DMnz_in, DMnz, FDn, 0, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m1, DMnz_in, DMnz, pSPARC->Nz);
             }
 
             // (0:DMnx, [0:FDn,DMny_out:DMny_ex], FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, FDn, FDn, DMnz_in, FDn, 0, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, DMny_out, DMny_ex, FDn, DMnz_in, FDn, DMny_out, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
 
             // ([0:FDn,DMnx_in:DMnx], FDn:DMny_out, FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, FDn, FDn, DMny_out, FDn, DMnz_in, FDn, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         DMnx_in, DMnx, FDn, DMny_out, FDn, DMnz_in, DMnx, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m1, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -721,7 +805,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             }
         } else {
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m1, 0, DMnz, pSPARC->Nz);
             }
@@ -1010,33 +1094,33 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
             //  df/dz
             // (0:DMnx, 0:DMny_ex, [0:FDn,DMnz_in:DMnz])
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, DMny_ex, 0, FDn, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, 0, FDn, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, DMny_ex, DMnz_in, DMnz, FDn, 0, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, DMnz_in, DMnz, pSPARC->Nz);
             }
 
             // (0:DMnx, [0:FDn,DMny_out:DMny_ex], FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, FDn, FDn, DMnz_in, FDn, 0, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, DMny_out, DMny_ex, FDn, DMnz_in, FDn, DMny_out, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, FDn, DMnz_in, pSPARC->Nz);
             }
 
             // ([0:FDn,DMnx_in:DMnx], FDn:DMny_out, FDn:DMnz_in)
             for (n = 0; n < ncol; n++) {
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, FDn, FDn, DMny_out, FDn, DMnz_in, FDn, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, FDn, DMnz_in, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         DMnx_in, DMnx, FDn, DMny_out, FDn, DMnz_in, DMnx, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0,
                         0, 0, pSPARC->order, phase_fac_m2, FDn, DMnz_in, pSPARC->Nz);
             }
@@ -1086,7 +1170,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
                                  0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz,
                                  0, pSPARC->order, 0, 0, 0, pSPARC->order, phase_fac_m1, phase_fac_m2, 0, DMny, 0, DMnz, pSPARC->Ny, pSPARC->Nz);
 
-                Calc_DX_kpt(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                Calc_DX_kpt_orig(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, DMVertices[4], FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                             0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0,
                             0, 0, pSPARC->order, phase_fac_m2, 0, DMnz, pSPARC->Nz);
             }
