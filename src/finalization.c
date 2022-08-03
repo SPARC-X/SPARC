@@ -110,7 +110,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->XCPotential);
         free(pSPARC->e_xc);
         if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmp(pSPARC->XC,"PBE0") == 0 || strcmp(pSPARC->XC,"HF") == 0 || strcmp(pSPARC->XC,"HSE") == 0 || strcmp(pSPARC->XC,"SCAN") == 0
+            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0
             || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0){
             free(pSPARC->Dxcdgrho);
         }    
