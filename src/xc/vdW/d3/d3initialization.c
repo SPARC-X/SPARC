@@ -69,18 +69,6 @@ void set_D3_coefficients(SPARC_OBJ *pSPARC) {
     3.57788113, 5.06446567, 4.56053862, 4.20778980, 3.98102289,
     3.82984466, 3.85504098, 3.88023730, 3.90543362};
 
-    int inputMaxci[95] = {0,
-        2,1,2,3,5,5,4,3,2,1,
-        2,3,4,5,4,3,2,1,2,3,
-        3,3,3,3,3,3,4,4,2,2,
-        4,5,4,3,2,1,2,3,3,3,
-        3,3,3,3,3,3,2,2,4,5,
-        4,3,2,1,2,3,3,1,2,2,
-        2,2,2,2,2,2,2,2,2,2,
-        2,3,3,3,3,3,3,3,2,2,
-        4,5,4,3,2,1,2,3,2,2,
-        2,2,2,2};
-
     pSPARC->d3Grads = (double*)malloc(sizeof(double) * 3 * pSPARC->n_atom);
 
     pSPARC->atomicNumbers = (int*)malloc(sizeof(int) * pSPARC->n_atom);
@@ -88,8 +76,6 @@ void set_D3_coefficients(SPARC_OBJ *pSPARC) {
     pSPARC->atomScaledRcov = (double*)malloc(sizeof(double) * pSPARC->n_atom);
     pSPARC->atomCN = (double*)malloc(sizeof(double) * pSPARC->n_atom);
     pSPARC->atomMaxci = (int*)malloc(sizeof(int) * pSPARC->n_atom);
-    int *ImageCN = pSPARC->nImageCN;
-    int *ImageEG = pSPARC->nImageEG;
     
     // double *selfAtomC6 = (double*)malloc(sizeof(double) * pSPARC->n_atom);
 

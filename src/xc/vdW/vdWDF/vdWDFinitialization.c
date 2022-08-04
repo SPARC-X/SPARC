@@ -198,9 +198,7 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
         zAxisDims[1] = 1;
         zAxisDims[2] = pSPARC->npNdz_phi;
         int periods[3] = {1, 1, 1};
-        int zAxisLabel = 0;
         if ((coord_dmcomm[0] == 0) && (coord_dmcomm[1] == 0)) { // to verify whether zAxisComm is set
-            zAxisLabel = 1;
             MPI_Cart_create(TempzAxisComm, 3, zAxisDims, periods, 1, &(pSPARC->zAxisComm));
             int FFTrank;
             MPI_Comm_rank(pSPARC->zAxisComm, &FFTrank);
@@ -239,7 +237,6 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
                        pSPARC->dmcomm_phi, phiDims, MPI_COMM_WORLD);
         free(zAxis_ranks);
 
-        int rigrid;
         pSPARC->vdWDFkernelReciPoints = (double**)malloc(sizeof(double*)*numberKernel);
         for (q1 = 0; q1 < nqs; q1++) {
             for (q2 = 0; q2 < q1 + 1; q2++) {
@@ -264,7 +261,6 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
 }
 
 int domain_index1D(int locali, int localj, int localk, int DMnx, int DMny, int DMnz) {
-    int DMnd = DMnx * DMny * DMnz;
     if (locali > DMnx - 1) {
         printf("mistake on local X index!\n");
         return 0;
@@ -312,7 +308,7 @@ void vdWDF_read_kernel(SPARC_OBJ *pSPARC, char *kernelFile) {
             }
         	exit(EXIT_FAILURE);
     	}
-    	int readIn;
+    	// int readIn;
     	char *readLines = (char*)malloc(sizeof(char)*40);
     	double *aLine = (double*)malloc(sizeof(double)*2);
     	for (q1 = 0; q1 < nqs; q1++) {
@@ -322,12 +318,14 @@ void vdWDF_read_kernel(SPARC_OBJ *pSPARC, char *kernelFile) {
     	        qpair = kernel_label(q1, q2, nqs);
     	        int ir;
     	        for (ir = 0; ir <= nrpoints; ir++) {
-    	            readIn = fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
+    	            // readIn = fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
+                    fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
     	            pSPARC->vdWDFkernelPhi[qpair][ir] = aLine[1];
     	        }
     	        fgets(readLines, 39, kernelRead); // 2nd derivative of Kernel function
     	        for (ir = 0; ir <= nrpoints; ir++) {
-    	            readIn = fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
+    	            // readIn = fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
+                    fscanf(kernelRead, "%lf %lf\n", aLine, aLine + 1);
     	            pSPARC->vdWDFd2Phidk2[qpair][ir] = aLine[1];
     	        }
     	    }
@@ -350,7 +348,7 @@ void read_spline_d2_qmesh(SPARC_OBJ *pSPARC, char *splineD2QmeshFile) {
 	int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // rank 0 reads the two files and save them in its own vdWDFd2Splineydx2
-    int nqs = pSPARC->vdWDFnqs; int readIn;
+    int nqs = pSPARC->vdWDFnqs; // int readIn;
     int q1, q2;
     if (rank == 0) {
         errno = 0;
@@ -370,7 +368,9 @@ void read_spline_d2_qmesh(SPARC_OBJ *pSPARC, char *splineD2QmeshFile) {
     	char *readLines = (char*)malloc(sizeof(char)*40);
     	fgets(readLines, 39, splineD2Read);
     	for (q1 = 0; q1 < nqs; q1++) {
-    	    readIn = fscanf(splineD2Read, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", aLine, aLine+1, aLine+2, aLine+3, aLine+4, aLine+5,
+    	    // readIn = fscanf(splineD2Read, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", aLine, aLine+1, aLine+2, aLine+3, aLine+4, aLine+5,
+    	    //     aLine+6, aLine+7, aLine+8, aLine+9, aLine+10, aLine+11, aLine+12, aLine+13, aLine+14, aLine+15, aLine+16, aLine+17, aLine+18, aLine+19);
+            fscanf(splineD2Read, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", aLine, aLine+1, aLine+2, aLine+3, aLine+4, aLine+5,
     	        aLine+6, aLine+7, aLine+8, aLine+9, aLine+10, aLine+11, aLine+12, aLine+13, aLine+14, aLine+15, aLine+16, aLine+17, aLine+18, aLine+19);
     	    for (q2 = 0; q2 < nqs; q2++) {
     	        d2Splineydx2[q1][q2] = aLine[q2];

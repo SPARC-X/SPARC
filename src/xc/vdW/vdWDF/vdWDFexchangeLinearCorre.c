@@ -212,7 +212,7 @@ void Calculate_Vx_PW86(int DMnd, double *rho, double *sigma, double *vdWDFVx1, d
 */
 void Calculate_Vc_PW91(int DMnd, double *rho, double *vdWDFVcLinear, double *vdWDFecLinear) {
     int i;
-    double p, A, alpha1, beta1, beta2, beta3, beta4, C3, C31; // parameters (constants)
+    double p, A, alpha1, beta1, beta2, beta3, beta4, C31; // parameters (constants)
     double rs, G1, G2, rho_cbrt, rs_sqrt, rs_pow_1p5, rs_pow_p, rs_pow_pplus1;
 
     C31 = 0.6203504908993999; // (3/4pi)^(1/3)

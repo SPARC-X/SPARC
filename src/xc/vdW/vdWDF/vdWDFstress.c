@@ -113,7 +113,6 @@ void vdWDF_stress_gradient(SPARC_OBJ *pSPARC, double *stressGrad) {
 void interpolate_dKerneldK(SPARC_OBJ *pSPARC, double **dKerneldLength) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int nnr = pSPARC->Nd;
     int nqs = pSPARC->vdWDFnqs;
     int DMnx, DMny, DMnz, DMnd;
     DMnx = pSPARC->DMVertices[1] - pSPARC->DMVertices[0] + 1;
@@ -158,7 +157,6 @@ void interpolate_dKerneldK(SPARC_OBJ *pSPARC, double **dKerneldLength) {
 void vdWDF_stress_kernel(SPARC_OBJ *pSPARC, double *stressKernel) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int nnr = pSPARC->Nd;
     int nqs = pSPARC->vdWDFnqs;
     int DMnx, DMny, DMnz, DMnd;
     DMnx = pSPARC->DMVertices[1] - pSPARC->DMVertices[0] + 1;
@@ -210,8 +208,8 @@ void vdWDF_stress_kernel(SPARC_OBJ *pSPARC, double *stressKernel) {
             localStressKernel[3*col + row] = localStressKernel[3*row + col];
         }
     }
-
-    for (int dir = 0; dir < 9; dir++) {
+    int dir;
+    for (dir = 0; dir < 9; dir++) {
         MPI_Allreduce(&(localStressKernel[dir]), &(stressKernel[dir]), 1, MPI_DOUBLE,
             MPI_SUM, pSPARC->dmcomm_phi);
     }
@@ -237,8 +235,8 @@ void Calculate_XC_stress_vdWDF(SPARC_OBJ *pSPARC) {
     double stressKernelArray[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
     double *stressKernel = stressKernelArray;
     vdWDF_stress_kernel(pSPARC, stressKernel); // compute the stress term containing derivative of kernel functions
-
-    for (int sigmaDir = 0; sigmaDir < 9; sigmaDir++) {
+    int sigmaDir;
+    for (sigmaDir = 0; sigmaDir < 9; sigmaDir++) {
         stress[sigmaDir] = stressGradArray[sigmaDir] + stressKernelArray[sigmaDir]; // comparing with QE, SPARC has opposite sign of stress
     }
     #ifdef DEBUG

@@ -32,14 +32,12 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return; // mimic Calculate_nonlocal_kinetic_stress_linear in stress.c ???
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int nspin, ncol, Ns, DMnd, DMnx, DMny, size_s, dim, count, spn_i, n, i, j;
+    int nspin, ncol, Ns, DMnd, size_s, dim, count, spn_i, n, i, j;
     double *dpsi_ptr, *dpsi_ptr2, dpsi1_dpsi1, g_nk, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi3, dpsi2_dpsi2, dpsi3_dpsi3;
     nspin = pSPARC->Nspin_spincomm; // number of spin in my spin communicator
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates; // total number of bands
     DMnd = pSPARC->Nd_d_dmcomm;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
     size_s = ncol * DMnd;
     int len_psi = DMnd * ncol * nspin;
     double *stress_mGGA_psi, *stress_mGGA_psi_cartesian, *dpsi_full; // the metaGGA term directly related to all wave functions psi
@@ -229,7 +227,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
             if(pSPARC->BCz == 0)
                 cell_measure *= pSPARC->range_z;
             printf("\npSPARC->dV=%12.9E, cell_measure=%12.9E\n", pSPARC->dV, cell_measure);
-            for(int i = 0; i < 6; i++) {
+            for(i = 0; i < 6; i++) {
                 stress_mGGA_psi_cartesian[i] /= cell_measure;
             }
             #ifdef DEBUG
@@ -269,7 +267,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int i, j, k, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, dim, count, l, m, kpt, Nk, size_k, spn_i, nspin, size_s;
+    int i, j, n, ncol, Ns, DMnd, dim, count, kpt, Nk, size_k, spn_i, nspin, size_s;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     DMnd = pSPARC->Nd_d_dmcomm;
@@ -277,14 +275,11 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     nspin = pSPARC->Nspin_spincomm;
     size_k = DMnd * ncol;
     size_s = size_k * Nk;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
 
-    double complex *psi_ptr, *dpsi_ptr, *dpsi_ptr2, *dpsi_full;
-    double *temp_k, *stress_mGGA_psi, *stress_mGGA_psi_cartesian, g_nk, kptwt;
+    double complex *dpsi_ptr, *dpsi_ptr2, *dpsi_full;
+    double *temp_k, *stress_mGGA_psi, *stress_mGGA_psi_cartesian, g_nk;
     double dpsi1_dpsi1, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi2, dpsi2_dpsi3, dpsi3_dpsi3;
 
-    double energy_nl = 0.0;
     temp_k = (double*) malloc(6 * sizeof(double));
     stress_mGGA_psi = (double*) calloc(6, sizeof(double));
     stress_mGGA_psi_cartesian = (double*) calloc(6, sizeof(double));
@@ -298,11 +293,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
 
     double *vxcMGGA3_loc = pSPARC->vxcMGGA3_loc_dmcomm; // local rho*d\epsilon_{xc} / d\tau array
     
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, kpt_vec;
-    double complex bloch_fac, a, b;
+    double k1, k2, k3, kpt_vec;
 
 
     count = 0;
@@ -449,7 +440,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
             if(pSPARC->BCz == 0)
                 cell_measure *= pSPARC->range_z;
             printf("\npSPARC->dV=%12.9E, cell_measure=%12.9E\n", pSPARC->dV, cell_measure);
-            for(int i = 0; i < 6; i++) {
+            for(i = 0; i < 6; i++) {
                 stress_mGGA_psi_cartesian[i] /= cell_measure;
             }
             #ifdef DEBUG

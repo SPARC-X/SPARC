@@ -212,10 +212,8 @@ void d3_energy_gradient(SPARC_OBJ *pSPARC) {
     double s6 = 1.0;
     double rs6 = pSPARC->d3Rs6;
     double rs8 = 1.0;
-    double rs10 = rs8;
     double alp6 = 14.0;
     double alp8 = alp6 + 2;
-    double alp10 = alp8 + 2;
     double K1 = 16.0;
     double K3 = -4.0;
     double cn_thr = pSPARC->d3Cn_thr;
@@ -297,7 +295,7 @@ void d3_energy_gradient(SPARC_OBJ *pSPARC) {
     }
     
     double setC6dC6pairIJ[3]; double *C6dC6pairIJ = setC6dC6pairIJ;
-    double c6, r0abNow, mulR2R4, rr, t6, t8, damp6, damp8, de6dr, de8dr, c8, FdivR6;
+    double c6, r0abNow, mulR2R4, rr, t6, t8, damp6, damp8, de6dr, de8dr, FdivR6;
     double iDist2, iDist, iDist6, iDist7, iDist8, iDist9; 
     for (i = 0; i < natom; i++) {
         for (j = 0; j < i + 1; j++) {
@@ -377,7 +375,6 @@ void d3_energy_gradient(SPARC_OBJ *pSPARC) {
     }
     double ijVec[3]; double ikVec[3]; double jkVec[3]; 
     int scopeImageIK[3][2]; // the array saves the scope of image cells of the 3rd atom k. If a cell out of the scope, we will not compute interactions between the atom i, j and any atom in this cell
-    int imageIndexIJ[3];
     double ijDist, ikDist, jkDist, ijDist2, ikDist2, jkDist2, r0abij, r0abik, r0abjk, rr0ij, rr0ik, rr0jk;
     double c9, geoMean, damp3, t1, t2, t3, tDenomin, ang;
     int k, imageIJindex, imageIKindex, imageIndexEsIJ, imageIndexEsJK, imageIndexEsIK;
