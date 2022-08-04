@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include "gradVecRoutinesKpt.h"
+#include "tools.h"
 #include "isddft.h"
 
 
