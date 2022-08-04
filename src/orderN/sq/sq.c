@@ -54,7 +54,7 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
     int i, j, k, ii, jj, kk, nd, rank, count;
     int *nloc, DMnx, DMny, DMnz, DMnxny, DMnd;
     double lambda_min, lambda_max, lambda_min_MIN, lambda_max_MAX, x1, x2;
-    double ***Hv, ***t0, ***t1, ***t2;
+    double ***t0;
     double time1, time2;
     SQ_OBJ  *pSQ = pSPARC->pSQ;
 
@@ -311,8 +311,7 @@ void LanczosAlgorithm_gauss(SPARC_OBJ *pSPARC, double ***vkm1, int i, int j, int
     int rank, ii, jj, kk;
     MPI_Comm_rank(MPI_COMM_WORLD, & rank);
 
-    SQ_OBJ* pSQ  = pSPARC->pSQ;
-    SQIND *SqInd = pSQ->SqInd;
+    SQ_OBJ* pSQ  = pSPARC->pSQ;    
 
     int *nloc = pSQ->nloc;
     double ***vk, ***vkp1, val, *aa, *bb;
@@ -744,7 +743,7 @@ void LanczosAlgorithm_new(SPARC_OBJ *pSPARC, int i, int j, int k, double *lambda
 void TridiagEigenSolve_new(SPARC_OBJ *pSPARC, double *diag, double *subdiag, 
                             int n, double *lambda_min, int choice, int nd) {
 
-    int i, j, k, m, l, iter, index;
+    int i, k, m, l, iter, index;
     double s, r, p, g, f, dd, c, b;
     // d has diagonal and e has subdiagonal
     double *d, *e, **z; 

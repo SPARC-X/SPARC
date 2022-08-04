@@ -24,9 +24,8 @@
  */
 void init_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
-    SQIND *SqInd = pSPARC->pSQ->SqInd;
     if (pSQ->dmcomm_SQ == MPI_COMM_NULL) return;
-    int i, j, k, rank, size, FDn, DMnx, DMny, DMnz, DMnd;
+    int i, j, k, rank, FDn, DMnx, DMny, DMnz;
     MPI_Comm_rank(pSQ->dmcomm_SQ, &rank);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,8 +33,7 @@ void init_SQ(SPARC_OBJ *pSPARC) {
     pSQ->SqInd = (SQIND *) malloc(sizeof(SQIND));
     DMnx = pSQ->Nx_d_SQ;
     DMny = pSQ->Ny_d_SQ;
-    DMnz = pSQ->Nz_d_SQ;
-    DMnd = pSQ->Nd_d_SQ;
+    DMnz = pSQ->Nz_d_SQ;    
 
     // start to get variables
     pSQ->nloc[0] = ceil(pSPARC->SQ_rcut / pSPARC->delta_x);

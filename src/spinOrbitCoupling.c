@@ -190,16 +190,11 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
     
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    double t1, t2, t_tot;
-    t_tot = 0.0;
+
 #ifdef DEBUG
     if (rank == 0) printf("Extracting nonlocal spin-orbit (SO) projectors for 2 terms... \n");
 #endif    
-    int l, np, m, psd_len, indx, ityp, iat, ipos, ndc, lloc, lmax, pspsoc, count1, count2;
-    int DMnx, DMny, i_DM, j_DM, k_DM;
-    double x0_i, y0_i, z0_i, *rc_pos_x, *rc_pos_y, *rc_pos_z, *rc_pos_r, *UdV_sort, x2, y2, z2, x, y, z;
-    double complex *Ylm;
+    int l, np, m, ityp, iat, ipos, ndc, lloc, lmax, pspsoc, count1, count2;    
 
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
         pspsoc = pSPARC->psd[ityp].pspsoc;
@@ -553,7 +548,7 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, DMnd, dim, atom_index, count, kpt, Nk;
+    int i, ncol, DMnd, dim, count, kpt, Nk;
     int spinor, Nspinor, DMndbyNspinor, size_k, spn_i, nspin, size_s;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
@@ -573,11 +568,7 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
     alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double complex));
 
     force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, x0_i, y0_i, z0_i, kpt_vec;
-    double complex bloch_fac, a, b;
+    double k1, k2, k3, kpt_vec;
     
     // Comment: all these changes are made for calculating Dpsi only for one time
 #ifdef DEBUG 
@@ -694,25 +685,23 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
  */
 void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int spn_i, int kpt, char *option) 
 {
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, DMnd, dim, atom_index, l, m, lmax, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, nspin, size_s, nproj, spinorshift, *IP_displ;
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index, Nk;
+    int spinor, Nspinor, DMndbyNspinor, size_k, size_s, nproj, spinorshift, *IP_displ;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;
     Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
     Nspinor = pSPARC->Nspinor;
     size_k = DMnd * ncol;    
     size_s = size_k * Nk;
 
-    double complex *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr, *beta_x, *beta_y, *beta_z;
-    double *force_nloc, fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk;
+    double complex *x_ptr, *x_rc, *x_rc_ptr;
 
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double complex bloch_fac, a, b, **Chi;
+    double complex bloch_fac, a, b, **Chi = NULL;
 
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -768,23 +757,19 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int s
  */
 void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, double complex *beta, int spn_i, int kpt, char *option) 
 {
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, DMnd, dim, atom_index, l, m, lmax, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, nspin, size_s, spinorshift, *IP_displ, nproj, ispinor;
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndbyNspinor, spinorshift, *IP_displ, nproj, ispinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    Nspinor = pSPARC->Nspinor;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
+    DMndbyNspinor = pSPARC->Nd_d_dmcomm;    
+    Nspinor = pSPARC->Nspinor;    
 
-    double complex *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr;
+    double complex *dx_ptr, *dx_rc, *dx_rc_ptr;
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double complex bloch_fac, a, b, **Chi;
+    double complex bloch_fac, b, **Chi = NULL;
 
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -845,15 +830,15 @@ void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, doub
  */
 void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, double complex *alpha, char *option) 
 {
-    int i, k, n, np, ldispl, ityp, iat, ncol, atom_index, count, l, m, lmax, Nk;
+    int k, n, np, ldispl, ityp, iat, ncol, atom_index, count, l, m, lmax, Nk;
     int spinor, Nspinor, spn_i, nspin, l_start, mexclude, ppl, *IP_displ;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Nk = pSPARC->Nkpts_kptcomm;
     nspin = pSPARC->Nspin_spincomm;
     Nspinor = pSPARC->Nspinor;
 
-    double complex *beta, *beta_x, *beta_y, *beta_z;
-    double fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk, scaled_gamma_Jl;
+    double complex *beta_x, *beta_y, *beta_z;
+    double fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk, scaled_gamma_Jl = 0;
 
     // go over all atoms and find nonlocal force components
     int Ns = pSPARC->Nstates;
@@ -938,8 +923,8 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);   
-    int i, j, k, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMndbyNspinor, DMnx, DMny, indx, i_DM, j_DM, k_DM;
-    int dim, dim2, atom_index, count, count2, l, m, lmax, kpt, Nk, size_k, spn_i, nspin, size_s, spinor, Nspinor, spinorshift;
+    int i, n, ncol, Ns, DMnd, DMndbyNspinor;
+    int dim, dim2, count, count2, kpt, Nk, size_k, spn_i, nspin, size_s, spinor, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;
@@ -948,17 +933,14 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     nspin = pSPARC->Nspin_spincomm;
     size_k = DMnd * ncol;
     size_s = size_k * Nk;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
     
-    double complex *alpha, *alpha_so1, *alpha_so2, *beta, *psi_ptr, *dpsi_ptr, *psi_rc, *psi_rc_ptr, *dpsi_full;
-    double complex *beta1_x1, *beta2_x1, *beta2_x2, *beta3_x1, *beta3_x2, *beta3_x3;
-    double complex *dpsi_xi, *dpsi_xj, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv, *dpsi_xi_rc, *dpsi_xi_rc_ptr;
-    double SJ[6], eJ, temp_k, temp_e, temp_s[6], temp2_e, temp2_s[6], g_nk, gamma_jl, kptwt,  R1, R2, R3, x1_R1, x2_R2, x3_R3;
-    double dpsii_dpsij, energy_nl = 0.0, stress_k[6], stress_nl[6], StXmRjp;
+    double complex *alpha, *alpha_so1, *alpha_so2, *beta, *dpsi_full;
+    double complex *dpsi_xi, *dpsi_xj, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv;
+    double temp_k, g_nk;
+    double dpsii_dpsij, energy_nl = 0.0, stress_k[6], stress_nl[6];
     
-    for (i = 0; i < 6; i++) SJ[i] = temp_s[i] = temp2_s[i] = stress_nl[i] = stress_k[i] = 0;
+    for (i = 0; i < 6; i++) stress_nl[i] = stress_k[i] = 0;
 
     dpsi_full = (double complex *)malloc( 3 * size_s * nspin * sizeof(double complex) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
     assert(dpsi_full != NULL);
@@ -967,11 +949,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     alpha_so1 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double complex));
     alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double complex));
     assert(alpha != NULL && alpha_so1 != NULL && alpha_so2 != NULL);
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, kpt_vec;
-    double complex bloch_fac, a, b;
+    double k1, k2, k3, kpt_vec;
 #ifdef DEBUG 
     if (!rank) printf("Start calculating stress contributions from kinetic and nonlocal psp. \n");
 #endif
@@ -1203,16 +1181,12 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
  */
 void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi_xi, double complex *beta, int spn_i, int kpt, int dim2, char *option) 
 {
-    int i, n, ndc, ityp, iat, ncol, DMnd, dim, atom_index, l, m, lmax, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, nspin, size_s, spinorshift, nproj, ispinor, *IP_displ;
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndbyNspinor, spinorshift, nproj, ispinor, *IP_displ;
     int indx, i_DM, j_DM, k_DM, DMnx, DMny;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
     DMnx = pSPARC->Nx_d_dmcomm;
     DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
@@ -1222,7 +1196,7 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double comple
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, StXmRjp;
-    double complex bloch_fac, a, b, **Chi;
+    double complex bloch_fac, b, **Chi = NULL;
     
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -1291,8 +1265,8 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double comple
  */
 double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double complex *alpha, double complex *alpha_so1, double complex *alpha_so2)
 {
-    int i, j, k, n, np, ldispl, ityp, iat, ncol, Ns;
-    int count, count2, l, m, lmax, kpt, Nk, spn_i, nspin, spinor, Nspinor, shift;
+    int k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, count2, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor, shift;
     double eJ, temp_e, temp2_e, g_nk, gamma_jl, kptwt, spinorfac, energy_nl, alpha_r, alpha_i, beta_r, beta_i;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
@@ -1417,10 +1391,10 @@ double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double complex *a
  */
 void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_nl, double complex *alpha, char *option)
 {
-    int i, j, k, n, np, ldispl, ityp, iat, ncol, Ns;
-    int count, count2, l, m, lmax, kpt, Nk, spn_i, nspin, spinor, Nspinor;
+    int i, k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor;
     int l_start, mexclude, ppl, *IP_displ;
-    double g_nk, gamma_jl, kptwt, alpha_r, alpha_i, SJ[6], temp_s, temp2_s[6], scaled_gamma_Jl;
+    double g_nk, kptwt, alpha_r, alpha_i, SJ[6], temp2_s[6], scaled_gamma_Jl = 0;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
@@ -1508,22 +1482,18 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, i_DM, j_DM, k_DM;
-    int dim, count, count2, l, m, lmax, atom_index, kpt, Nk, size_k, spn_i, nspin, size_s, spinor, DMndbyNspinor, Nspinor, spinorshift;
+    int ncol, DMnd;
+    int dim, count, count2, kpt, Nk, size_k, spn_i, nspin, size_s, spinor, DMndbyNspinor, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    Ns = pSPARC->Nstates;
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     Nk = pSPARC->Nkpts_kptcomm;
     nspin = pSPARC->Nspin_spincomm;
     size_k = DMnd * ncol;
     size_s = size_k * Nk;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
     
-    double complex *alpha, *alpha_so1, *alpha_so2, *beta;
-    double R1, R2, R3, pJ, eJ, temp_e, temp_p, temp2_e, temp2_p, g_nk;
+    double complex *alpha, *alpha_so1, *alpha_so2, *beta;    
     double pressure_nloc = 0.0, energy_nl;
 
     alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double complex));
@@ -1531,11 +1501,7 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
     alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double complex));
     assert(alpha != NULL && alpha_so1 != NULL && alpha_so2 != NULL);
 
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, kpt_vec;
-    double complex bloch_fac, a, b;
+    double k1, k2, k3, kpt_vec;    
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal pressure\n");
 #endif
@@ -1649,16 +1615,12 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
  */
 void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi_xi, double complex *beta, int spn_i, int kpt, int dim2, char *option) 
 {
-    int i, n, ndc, ityp, iat, ncol, DMnd, dim, atom_index, l, m, lmax, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, nspin, size_s, spinorshift, nproj, ispinor, *IP_displ;
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndbyNspinor, spinorshift, nproj, ispinor, *IP_displ;
     int indx, i_DM, j_DM, k_DM, DMnx, DMny;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
     DMnx = pSPARC->Nx_d_dmcomm;
     DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
@@ -1668,7 +1630,7 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex 
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
-    double complex bloch_fac, a, b, **Chi;
+    double complex bloch_fac, b, **Chi = NULL;
     
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -1740,10 +1702,10 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex 
  */
 void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc, double complex *alpha, char *option)
 {
-    int i, j, k, n, np, ldispl, ityp, iat, ncol, Ns;
-    int count, count2, l, m, lmax, kpt, Nk, spn_i, nspin, spinor, Nspinor;
+    int k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor;
     int l_start, mexclude, ppl, *IP_displ;
-    double g_nk, gamma_jl, kptwt, alpha_r, alpha_i, temp_p, pJ, scaled_gamma_Jl;
+    double g_nk, kptwt, alpha_r, alpha_i, temp_p, pJ, scaled_gamma_Jl = 0;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
