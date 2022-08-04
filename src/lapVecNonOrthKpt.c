@@ -22,6 +22,7 @@
 #include "lapVecNonOrthKpt.h"
 #include "lapVecNonOrth.h"
 #include "gradVecRoutinesKpt.h"
+#include "tools.h"
 #include "isddft.h"
 
 #ifdef USE_EVA_MODULE

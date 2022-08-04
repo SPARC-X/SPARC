@@ -17,6 +17,7 @@
 #include <mpi.h>
 
 #include "lapVecOrthKpt.h"
+#include "tools.h"
 #include "isddft.h"
 
 #ifdef USE_EVA_MODULE
@@ -133,20 +134,6 @@ void stencil_3axis_thread_complex_v2(
             }
         }
     }
-}
-
-
-int is_grid_outside(int ip, int jp, int kp,
-    int origin_shift_i, int origin_shift_j, int origin_shift_k,
-    int DMVerts[6], int gridsizes[3])
-{
-    int i_global = ip + origin_shift_i + DMVerts[0];
-    int j_global = jp + origin_shift_j + DMVerts[2];
-    int k_global = kp + origin_shift_k + DMVerts[4];
-    int is_out = (i_global < 0) || (i_global >= gridsizes[0]) ||
-                 (j_global < 0) || (j_global >= gridsizes[1]) ||
-                 (k_global < 0) || (k_global >= gridsizes[2]);
-    return is_out;
 }
 
 

@@ -5,6 +5,14 @@
 
 
 --------------
+Aug 04, 2022
+Name: Qimen Xu
+Changes: (tools.c, gradVecRoutinesKpt.c, lapVecOrthKpt.c, lapVecNonOrthKpt.c)
+1. Fix a bug introduced by missing a function declaration under -Werror-implicit-function-declaration.
+2. Remove the `-Werror-implicit-function-declaration` flag in makefile.
+
+
+--------------
 Aug 03, 2022
 Name: Qimen Xu
 Changes: (initialization.c, parallelization.c, finalization.c)
