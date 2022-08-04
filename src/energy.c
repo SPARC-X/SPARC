@@ -33,15 +33,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int n, Ns, k, spn_i, Nk;
     double Etot, Eband, Entropy, E1, E2, E3;
-    double dEtot, dEband, occfac; // this is for temp use
+    double dEtot, dEband; // this is for temp use
     
     Etot = Eband = Entropy = E1 = E2 = E3 = 0.0; // initialize energies
-    Ns = pSPARC->Nstates;
-    Nk = pSPARC->Nkpts_kptcomm;
     dEtot = dEband = 0.0;
-    occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
 
     // exchange-correlation energy
     Calculate_Exc(pSPARC, electronDens);

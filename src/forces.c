@@ -941,25 +941,18 @@ void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
     int rank;
     MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
 
-    int ityp, iat, i, j, k, p, ip, jp, kp, ip2, jp2, kp2, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
-        DMnx, DMny, DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
+    int ityp, iat, i, j, k, p, ip, jp, kp, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
+        DMnx, DMny, nx, ny, nz, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
         icor, jcor, kcor, *pshifty, *pshiftz, *pshifty_ex, *pshiftz_ex, *ind_interp;
     double x0_i, y0_i, z0_i, x0_i_shift, y0_i_shift, z0_i_shift, x, y, z, *R,
-           *VJ, *VJ_ref, *bJ, *bJ_ref, 
-           DbJ_x_val, DbJ_ref_x_val, DbJ_y_val, DbJ_ref_y_val, DbJ_z_val, DbJ_ref_z_val, 
-           DVJ_x_val, DVJ_y_val, DVJ_z_val, DVJ_ref_x_val, DVJ_ref_y_val, DVJ_ref_z_val,
            *R_interp, *VJ_interp;
-    double inv_4PI = 0.25 / M_PI, w2_diag, rchrg;
-    double temp1, temp2, temp3, temp_x, temp_y, temp_z;
-    double x1_R1, x2_R2, x3_R3;
+    double rchrg;
     double t1, t2, t_sort = 0.0;
 
     FDn = pSPARC->order / 2;
     
     DMnx = pSPARC->Nx_d;
     DMny = pSPARC->Ny_d;
-    // DMnz = pSPARC->Nz_d;
-    DMnd = pSPARC->Nd_d * (2*pSPARC->Nspin - 1);
 
     // Create indices for laplacian
     pshifty = (int *)malloc( (FDn+1) * sizeof(int));
@@ -972,8 +965,6 @@ void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
         printf("\nMemory allocation failed in local forces!\n");
         exit(EXIT_FAILURE);
     }
-
-    double *Drho_x, *Drho_y, *Drho_z;
 
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         rchrg = pSPARC->psd[ityp].RadialGrid[pSPARC->psd[ityp].size-1];
@@ -990,7 +981,7 @@ void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
             nx = pSPARC->Atom_Influence_local[ityp].xe[iat] - pSPARC->Atom_Influence_local[ityp].xs[iat] + 1;
             ny = pSPARC->Atom_Influence_local[ityp].ye[iat] - pSPARC->Atom_Influence_local[ityp].ys[iat] + 1;
             nz = pSPARC->Atom_Influence_local[ityp].ze[iat] - pSPARC->Atom_Influence_local[ityp].zs[iat] + 1;
-            nd = nx * ny * nz;
+
             // number of finite-difference nodes in each direction of extended_rb (rb + order/2) region
             nxp = nx + pSPARC->order;
             nyp = ny + pSPARC->order;
@@ -1094,8 +1085,6 @@ void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
                 pshifty_ex[p] = p * nx2p;
                 pshiftz_ex[p] = pshifty_ex[p] *ny2p;
             }
-            
-            double xin = pSPARC->xin + pSPARC->Atom_Influence_local[ityp].xs[iat] * pSPARC->delta_x;
 
             // calculate gradient of bJ, bJ_ref, VJ, VJ_ref in the rb-domain
             dk = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->DMVertices[4];
@@ -1137,16 +1126,13 @@ void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
             force_xc_x = force_xc_y = force_xc_z = 0.0;
             for (k = 0, kp = FDn, k_DM = dk; k < nz; k++, kp++, k_DM++) {
                 int kshift_DM = k_DM * DMnx * DMny;
-                int kshift_p = kp * nxp * nyp;
-                int kshift = k * nx * ny;  
+                int kshift_p = kp * nxp * nyp; 
                 for (j = 0, jp = FDn, j_DM = dj; j < ny; j++, jp++, j_DM++) {
                     int jshift_DM = kshift_DM + j_DM * DMnx;
                     int jshift_p = kshift_p + jp * nxp;
-                    int jshift = kshift + j * nx;
                     for (i = 0, ip = FDn, i_DM = di; i < nx; i++, ip++, i_DM++) {
                         int ishift_DM = jshift_DM + i_DM;
                         int ishift_p = jshift_p + ip;
-                        int ishift = jshift + i;
                         double drhocJ_x_val = drhocJ_x[ishift_p];
                         double drhocJ_y_val = drhocJ_y[ishift_p];
                         double drhocJ_z_val = drhocJ_z[ishift_p];

@@ -279,7 +279,7 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
     }
     
     // calculate total density and magnetization density for spin-calculation
-    double *f_tot, *f_mag, sum_f_tot = 0.0, sum_f_mag = 0.0;
+    double *f_tot, *f_mag = NULL, sum_f_tot = 0.0, sum_f_mag = 0.0;
     if (pSPARC->spin_typ != 0) {
         f_tot = (double *)malloc(pSPARC->Nd_d * sizeof(double));
         f_mag = (double *)malloc(pSPARC->Nd_d * sizeof(double));

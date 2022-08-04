@@ -19,7 +19,7 @@
  * @brief   allocate space to MGGA variables
  */
 void initialize_MGGA(SPARC_OBJ *pSPARC) {
-    int DMnx, DMny, DMnz, DMnd;
+    int DMnd;
     
     DMnd = pSPARC->Nd_d;
     pSPARC->KineticTauPhiDomain = (double *) calloc(DMnd * (2*pSPARC->Nspin-1), sizeof(double)); // different from pSPARC->KineticRho, which is in dmcomm

@@ -59,12 +59,11 @@
  * @brief   Outer loop of SCF using Vexx (exact exchange potential)
  */
 void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
-    int i, k, n, rank, DMnd, Nband, blacs_size, kpt_size, spn_i;
+    int i, rank, DMnd, blacs_size, kpt_size, spn_i;
     double t1, t2;
     FILE *output_fp;
 
     DMnd = pSPARC->Nd_d_dmcomm;
-    Nband = pSPARC->Nband_bandcomm;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     /************************ Exact exchange potential parameters ************************/
@@ -317,7 +316,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
  *          This function basically prepares different variables for kptcomm_topo and dmcomm
  */
 void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, int DMnd, double *Hx, int spin, MPI_Comm comm) {        
-    int i, j, k, rank, Lanczos_flag, dims[3];
+    int rank, Lanczos_flag, dims[3];
     double *psi, *Xi, t1, t2, *occ;
     
     MPI_Comm_rank(comm, &rank);
@@ -659,18 +658,18 @@ if(!grank)
 void poissonSolve(SPARC_OBJ *pSPARC, double *rhs, double *pois_FFT_const, 
                     int ncol, int DMnd, int *dims, double *Vi, MPI_Comm comm) 
 {
-    int i, j, k, lsize, lrank, size_s, ncolp;
+    int i, k, lsize, lrank, ncolp;
     int *sendcounts, *sdispls, *recvcounts, *rdispls, **DMVertices, *ncolpp;
-    int coord_comm[3], gridsizes[3], DNx, DNy, DNz, DNd, Nd, Nx, Ny, Nz, Ns, Ndc;
+    int coord_comm[3], gridsizes[3], DNx, DNy, DNz, Nd, Nx, Ny, Nz;
     double *rhs_loc, *Vi_loc, *rhs_loc_order, *Vi_loc_order, *f;
+    sendcounts = sdispls = recvcounts = rdispls = ncolpp = NULL;
+    rhs_loc = Vi_loc = rhs_loc_order = Vi_loc_order = f = NULL;
+    DMVertices = NULL;
 
     MPI_Comm_size(comm, &lsize);
-    MPI_Comm_rank(comm, &lrank);
-    Ns = pSPARC->Nstates;
-    size_s = DMnd * ncol;                                                                     // it is DMnd * Nband in other parts
+    MPI_Comm_rank(comm, &lrank);    
     Nd = pSPARC->Nd;
-    Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz; 
-    Ndc = Nz * Ny * (Nx/2+1);
+    Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz;     
     ncolp = ncol / lsize + ((lrank < ncol % lsize) ? 1 : 0);
     /********************************************************************/
 
@@ -712,7 +711,6 @@ void poissonSolve(SPARC_OBJ *pSPARC, double *rhs, double *pois_FFT_const,
             DNx = block_decompose(gridsizes[0], dims[0], coord_comm[0]);
             DNy = block_decompose(gridsizes[1], dims[1], coord_comm[1]);
             DNz = block_decompose(gridsizes[2], dims[2], coord_comm[2]);
-            DNd = DNx * DNy * DNz;
             // Here DMVertices [1][3][5] is not the same as they are in parallelization
             DMVertices[i][0] = block_decompose_nstart(gridsizes[0], dims[0], coord_comm[0]);
             DMVertices[i][1] = DNx;                                                                                     // stores number of nodes instead of coordinates of end nodes
@@ -804,7 +802,7 @@ void rearrange_Vi(void *Vi_full, int ncol, int **DMVertices, int size_comm,
                     int Nx, int Ny, int Nd, void *Vi_full_order, int unit_size) {
 #define Vi_full_(i,j,k, l) Vi_full_[(i) + (j) * (Nx)+ (k) * (Nx) * (Ny) + (l) * (Nd)]
     if (ncol == 0) return;
-    int ii, i, j, k, l, t, p, seg, *coord;
+    int i, j, k, l, t, p, *coord;
     /********************************************************************/
     if (unit_size == 8) {
         double *Vi_full_order_ = (double *) Vi_full_order;
@@ -851,7 +849,7 @@ void rearrange_rhs(void *rhs_full, int ncol, int **DMVertices, int *displs, int 
                     int Nx, int Ny, int Nd, void *rhs_full_order, int unit_size) {
 #define rhs_full_order_(i,j,k,l) rhs_full_order_[(i) + (j) * (Nx)+ (k) * (Nx) * (Ny) + (l) * (Nd)]
     if (ncol == 0) return;
-    int ii, i, j, k, l, t, p, q, *coord, start, end, seg;
+    int ii, i, j, k, l, t, p, q, *coord, start, seg;
     /********************************************************************/
 
     if (unit_size == 8) {
@@ -1020,9 +1018,9 @@ void MultipoleExpansion_phi_local(SPARC_OBJ *pSPARC, double *f, double *d_cor, i
     
     int LMAX = 6, l, m, n, i, j, k, p, count, index, Q_len, Nx, Ny, Nz,
         FDn, nbr_i, is, ie, js, je,
-        ks, ke, nx_cor, ny_cor, nz_cor, nd_cor, is_phi, ie_phi, js_phi, je_phi,
+        ks, ke, is_phi, ie_phi, js_phi, je_phi,
         ks_phi, ke_phi, nx_phi, ny_phi, nz_phi, nd_phi, i_phi, j_phi, k_phi,
-        i_DM, j_DM, k_DM, DMCorVert[6][6];
+        DMCorVert[6][6];
     double *Qlm, Lx, Ly, Lz, *r_pos_x, *r_pos_y, *r_pos_z, *r_pos_r, *r_pow_l,
            *Ylm, *phi, x, y, z, r, x2, y2, z2;
     
@@ -1269,16 +1267,14 @@ void Transfer_dmcomm_to_kptcomm_topo(SPARC_OBJ *pSPARC, int ncols, double *psi_o
  */
 void gather_psi_occ_outer(SPARC_OBJ *pSPARC, double *psi_outer, double *occ_outer) 
 {
-    int i, j, k, grank, lrank, lsize, size_s, Ns, DMnd, Nband, spn_i;
-    int sendcount, *recvcounts, *displs, NB;
+    int i, grank, lrank, lsize, Ns, DMnd, Nband, spn_i;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
     MPI_Comm_rank(pSPARC->blacscomm, &lrank);
     MPI_Comm_size(pSPARC->blacscomm, &lsize);
 
     DMnd = pSPARC->Nd_d_dmcomm;
-    Nband = pSPARC->Nband_bandcomm;
-    size_s = DMnd * Nband;
+    Nband = pSPARC->Nband_bandcomm;    
     Ns = pSPARC->Nstates;
 
     int DMndNband = DMnd * Nband;
@@ -1321,7 +1317,7 @@ void gather_blacscomm(SPARC_OBJ *pSPARC, int Ncol, double *vec)
 {
     if (pSPARC->blacscomm == MPI_COMM_NULL) return;
     int i, grank, lrank, lsize, DMnd;
-    int sendcount, *recvcounts, *displs, NB;
+    int *recvcounts, *displs, NB;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
     MPI_Comm_rank(pSPARC->blacscomm, &lrank);
@@ -1469,9 +1465,8 @@ void allocate_ACE(SPARC_OBJ *pSPARC) {
  */
 void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double *Xi) 
 {
-    int i, j, k, rank, nproc_dmcomm, Ns, dims[3], Nband_M, DMnd, ONE = 1, Ns_occ;
-    int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
-    double occ_i, occ_j, *rhs, *Vi, *M, t1, t2, alpha = 1.0, beta = 0.0, *Xi_, *psi_storage1, *psi_storage2, t_comm;
+    int i, rank, nproc_dmcomm, Nband_M, DMnd, ONE = 1, Ns_occ;    
+    double *M, t1, t2, alpha = 1.0, beta = 0.0, *Xi_, *psi_storage1, *psi_storage2, t_comm;
     /******************************************************************************/
 
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
@@ -1480,9 +1475,7 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
 
     Nband_M = pSPARC->Nband_bandcomm_M[spn_i];
     DMnd = pSPARC->Nd_d_dmcomm;
-    Ns_occ = pSPARC->Nstates_occ[spn_i];
-    Ns = pSPARC->Nstates;
-    dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
+    Ns_occ = pSPARC->Nstates_occ[spn_i];    
 
     memset(Xi, 0, sizeof(double) * Ns_occ*DMnd);
     // if Nband==0 here, Xi_ won't be used anyway
@@ -1493,6 +1486,7 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
     int Nband_max = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
 
     MPI_Request reqs[2];
+    psi_storage1 = psi_storage2 = NULL;
     if (reps > 0) {
         psi_storage1 = (double *) calloc(sizeof(double), DMnd * Nband_max);
         psi_storage2 = (double *) calloc(sizeof(double), DMnd * Nband_max);
@@ -1615,14 +1609,13 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
  */
 void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, double *psi, double *occ, double *Xi)
 {
-    int i, j, k, rank, Ns, dims[3], Nband, DMnd;
+    int i, j, k, rank, dims[3], Nband, DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
     double occ_i, occ_j, *rhs, *Vi, t1, t2;
     /******************************************************************************/
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Ns = pSPARC->Nstates;
+    DMnd = pSPARC->Nd_d_dmcomm;    
     dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
     Nband = pSPARC->Nband_bandcomm;
     if (ncol == 0) return;
@@ -1708,8 +1701,7 @@ void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, double *sendbuff, double *re
     MPI_Comm_size(blacscomm, &size);
     MPI_Comm_rank(blacscomm, &rank);
 
-    int DMnd = pSPARC->Nd_d_dmcomm;
-    int Nband = pSPARC->Nband_bandcomm;
+    int DMnd = pSPARC->Nd_d_dmcomm;    
     int Ns = pSPARC->Nstates;
     int NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1; // this is equal to ceil(Nstates/npband), for int inputs only
     int srank = (rank-shift+size)%size;
@@ -1741,15 +1733,14 @@ void solve_allpair_poissons_equation_apply2Xi(
     int reps = (size - 2) / 2 + 1;
     if (size%2 == 0 && rank >= size/2 && shift == reps) return;
 
-    int i, j, k, nproc_dmcomm, Ns, dims[3], Nband, DMnd;
+    int i, j, k, nproc_dmcomm, Ns, dims[3], DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
     double occ_i, occ_j, *rhs, *Vi, t1, t2, *Xi_l, *Xi_r;
     /******************************************************************************/
 
     if (ncol == 0) return;
     MPI_Comm_size(pSPARC->dmcomm, &nproc_dmcomm);
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nband = pSPARC->Nband_bandcomm;
+    DMnd = pSPARC->Nd_d_dmcomm;    
     Ns = pSPARC->Nstates;
     dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
 

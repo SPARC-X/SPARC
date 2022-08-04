@@ -1248,7 +1248,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
 #ifdef DEBUG
     printf("Reading pseudopotential (PSP) file.\n");
 #endif
-    int jj, kk, l, ityp, *lpos, *lpos_soc, lmax, nproj, nproj_soc;
+    int jj, kk, l, ityp, *lpos, *lpos_soc = NULL, lmax, nproj, nproj_soc;
     char *str          = malloc(L_PSD * sizeof(char));
     char *INPUT_DIR    = malloc(L_PSD * sizeof(char));
     char *psd_filename = malloc(L_PSD * sizeof(char));

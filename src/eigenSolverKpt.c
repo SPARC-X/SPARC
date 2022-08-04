@@ -989,7 +989,7 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
 
     double t1, t2, t3, t4;
 
-    int gridsizes[2], my_nproc, my_dims[2], Nd_blacscomm;
+    int Nd_blacscomm;
     int sg  = pSPARC->spin_start_indx + spn_i;
     Nd_blacscomm = pSPARC->is_domain_uniform ? pSPARC->Nd : pSPARC->Nd_d_dmcomm;
     Nd_blacscomm *= pSPARC->Nspinor;

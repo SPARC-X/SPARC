@@ -483,15 +483,11 @@ void scf(SPARC_OBJ *pSPARC)
         fclose(output_fp);
     }
     
-    double t1, t2, t_scf_s, t_scf_e, t_cum_scf;
-    t_cum_scf = 0.0;
+    double t1, t2;
     
     int DMnd = pSPARC->Nd_d;
     int NspinDMnd = pSPARC->Nspin * DMnd;
-    int sindx_rho = (pSPARC->Nspin == 2) ? DMnd : 0;
-    int i, k, SCFcount, spn_i;
-    int Nk = pSPARC->Nkpts_kptcomm;
-    int Ns = pSPARC->Nstates;
+    int i;
     // solve the poisson equation for electrostatic potential, "phi"
     Calculate_elecstPotential(pSPARC);
 
@@ -564,7 +560,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     int Nk = pSPARC->Nkpts_kptcomm;
     int Ns = pSPARC->Nstates;
 
-    double error, dEtot, dEband, temp, veff_mean;
+    double error, dEtot, dEband, veff_mean;
     double t1, t2, t_scf_s, t_scf_e, t_cum_scf;
     
     FILE *output_fp;
@@ -888,7 +884,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         SQ_OBJ *pSQ = pSPARC->pSQ;
         if (pSQ->dmcomm_SQ != MPI_COMM_NULL) {
             // Find occupation corresponding to maximum eigenvalue
-            double maxeig, temp, occ_maxeig;
+            double maxeig, occ_maxeig;
             maxeig = pSQ->maxeig[0];
             for (k = 1; k < pSQ->Nd_d_SQ; k++) {
                 if (pSQ->maxeig[k] > maxeig)

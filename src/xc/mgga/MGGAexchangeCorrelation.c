@@ -112,7 +112,7 @@ void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
     double t1, t2;
     t1 = MPI_Wtime();
 
-    int DMnx, DMny, DMnz, DMnd;
+    int DMnd;
     DMnd = pSPARC->Nd_d;
 
     int i;
