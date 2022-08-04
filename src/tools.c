@@ -2263,6 +2263,10 @@ void MKL_MDFFT_real(double *r2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_
     status = DftiCommitDescriptor(my_desc_handle);
     status = DftiComputeForward(my_desc_handle, r2c_3dinput, r2c_3doutput);
     status = DftiFreeDescriptor(&my_desc_handle);
+    
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
 }
 
 /**
@@ -2284,6 +2288,10 @@ void MKL_MDFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *stri
     status = DftiCommitDescriptor(my_desc_handle);
     status = DftiComputeForward(my_desc_handle, c2c_3dinput, c2c_3doutput);
     status = DftiFreeDescriptor(&my_desc_handle);
+    
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
 }
 
 
@@ -2304,6 +2312,10 @@ void MKL_MDiFFT_real(double _Complex *c2r_3dinput, MKL_LONG *dim_sizes, MKL_LONG
     status = DftiCommitDescriptor(my_desc_handle);
     status = DftiComputeBackward(my_desc_handle, c2r_3dinput, c2r_3doutput);
     status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
 
     // scale the result to make it the same as definition of IFFT
     int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];
@@ -2331,6 +2343,10 @@ void MKL_MDiFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *str
     status = DftiCommitDescriptor(my_desc_handle);
     status = DftiComputeBackward(my_desc_handle, c2c_3dinput, c2c_3doutput);
     status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
 
     // scale the result to make it the same as definition of IFFT
     int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];

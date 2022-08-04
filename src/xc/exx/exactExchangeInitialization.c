@@ -31,7 +31,7 @@
  * @brief   Initialization of all variables for exact exchange.
  */
 void init_exx(SPARC_OBJ *pSPARC) {
-    int i, j, rank, DMnd, Nband, len_full_tot, Ns_full_total, blacs_size, kpt_bridge_size;
+    int rank, DMnd, Nband, len_full_tot, Ns_full_total, blacs_size, kpt_bridge_size;
     
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
@@ -449,10 +449,7 @@ void auxiliary_constant(SPARC_OBJ *pSPARC)
     tpiblx = 2 * M_PI / L1;
     tpibly = 2 * M_PI / L2;
     tpiblz = 2 * M_PI / L3;
-
-    int N[3] = {Nx, Ny, Nz};
-    double tpibl[3] = {tpiblx, tpibly, tpiblz};
-    int nkpt[3] = {pSPARC->Kx, pSPARC->Ky, pSPARC->Kz};
+    
     double ecut = ecut_estimate(pSPARC->delta_x, pSPARC->delta_y, pSPARC->delta_z);
     alpha = 10.0/(2.0*ecut);
 
@@ -893,7 +890,7 @@ void kshift_phasefactor(SPARC_OBJ *pSPARC) {
  */
 void find_local_kpthf(SPARC_OBJ *pSPARC) 
 {
-    int k, nk, nk_hf, count, *list, kpt_bridge_size, kpt_bridge_rank, rank;
+    int k, nk_hf, count, kpt_bridge_size, kpt_bridge_rank, rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_rank(pSPARC->kpt_bridge_comm, &kpt_bridge_rank);

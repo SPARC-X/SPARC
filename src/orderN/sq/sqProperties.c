@@ -45,9 +45,9 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ; 
     if (pSQ->dmcomm_SQ == MPI_COMM_NULL) return;
 
-    int rank, size, i, j, k, ii, jj, kk, a, atom_count, JJ, JJ_typ, count;
+    int rank, size, i, j, k, ii, jj, kk, a, count;
     int DMnx, DMny, DMnz, FDn, *nloc;
-    double ***t0, ***DMcol, ***gradx_DM, ***grady_DM, ***gradz_DM, ***psipsi, lambda_min, lambda_max, *di, delta_lmin, delta_lmax;
+    double ***t0 = NULL, ***DMcol, ***gradx_DM, ***grady_DM, ***gradz_DM, ***psipsi, lambda_min, lambda_max, delta_lmin, delta_lmax;
     double time1, time2, time_lan;
 
 	MPI_Comm_rank(pSQ->dmcomm_SQ, &rank);

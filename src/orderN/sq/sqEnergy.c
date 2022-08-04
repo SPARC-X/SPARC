@@ -39,7 +39,7 @@
  */
 double Calculate_Eband_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
-    double Eband;
+    double Eband = 0;
     int DMnd = pSQ->Nd_d_SQ;
 
     // TODO: add Clenshaw Curtis method
@@ -54,7 +54,7 @@ double Calculate_Eband_SQ(SPARC_OBJ *pSPARC) {
  */
 double Calculate_electronicEntropy_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
-    double Entropy;
+    double Entropy = 0;
     int DMnd = pSQ->Nd_d_SQ;
 
     // TODO: add Clenshaw Curtis method

@@ -199,8 +199,8 @@ void Vnl_vec_mult_SQ(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ 
                   NLOC_PROJ_OBJ *nlocProj, double *x, double *Hx)
 {
     int i, np, count;
-    int ityp, iat, l, m, ldispl, lmax, ndc, atom_index, nproj, lloc;
-    double *alpha, *x_rc, *Vnlx;
+    int ityp, iat, l, m, ldispl, lmax, ndc, nproj, lloc;
+    double *alpha, *x_rc;
 
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         nproj = nlocProj[ityp].nproj;
@@ -256,11 +256,11 @@ void Vnl_vec_mult_SQ(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ 
 void Vnl_vec_mult_J_SQ(const SPARC_OBJ *pSPARC, int DMnd, int i_dm, int j_dm, int k_dm, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
                   NLOC_PROJ_OBJ *nlocProj, double *x, double *Vx)
 {
-    int i, np, icol, count, counter_cp, indx;
+    int i, np, icol, count, counter_cp = 0, indx;
     int ityp, iat, l, m, ldispl, lmax, ndc, atom_index, nproj, *nloc;
     int i_g, j_g, k_g, lloc;
     double x0_i, y0_i, z0_i, x2, y2, z2, rc, rc2;
-    double *alpha, *x_rc, *Vnlx;
+    double *alpha, *x_rc;
     SQ_OBJ *pSQ = pSPARC->pSQ;
 
     nloc = pSQ->nloc;
@@ -342,11 +342,11 @@ void Vnl_vec_mult_J_SQ(const SPARC_OBJ *pSPARC, int DMnd, int i_dm, int j_dm, in
 void Vnl_vec_mult_dir_SQ(const SPARC_OBJ *pSPARC, int DMnd, int i_dm, int j_dm, int k_dm, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
                   NLOC_PROJ_OBJ *nlocProj, int dir, double *x, double *Vx)
 {
-    int i, n, np, icol, count, counter_cp, indx, pos;
+    int i, np, icol, count, counter_cp = 0, indx, pos;
     int ityp, iat, l, m, ldispl, lmax, ndc, nproj, *nloc;
-    int i_g, j_g, k_g, DMnx, DMny, DMnz, lloc;
+    int i_g, j_g, k_g, DMnx, DMny, lloc;
     double x0_i, y0_i, z0_i, x2, y2, z2, rc, rc2;
-    double *alpha, *x_rc, *Vnlx, *disp;
+    double *alpha, *x_rc, *disp;
     SQ_OBJ *pSQ = pSPARC->pSQ;
 
     if (dir < 1 || dir > 3) {
@@ -357,8 +357,7 @@ void Vnl_vec_mult_dir_SQ(const SPARC_OBJ *pSPARC, int DMnd, int i_dm, int j_dm, 
 
     nloc = pSQ->nloc;
     DMnx = 2 * nloc[0] + 1;
-    DMny = 2 * nloc[1] + 1;
-    DMnz = 2 * nloc[2] + 1;
+    DMny = 2 * nloc[1] + 1;    
     indx = nloc[0] + nloc[1] * DMnx + nloc[2] * DMnx*DMny;
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         nproj = nlocProj[ityp].nproj;

@@ -187,8 +187,9 @@ void Calculate_exact_exchange_stress_linear_ACE(SPARC_OBJ *pSPARC,
         double *psi, double *occ, double *stress_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int grank, DMnd, reps, NB, Ns, source, Nband_source, band_start_indx_source;
+    int grank, DMnd, rep, reps, NB, Ns, source, Nband_source, band_start_indx_source;
     double *psi_storage1, *psi_storage2, *sendbuff, *recvbuff;
+    psi_storage1 = psi_storage2 = sendbuff = recvbuff = NULL;
     MPI_Request reqs[2];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -208,7 +209,7 @@ void Calculate_exact_exchange_stress_linear_ACE(SPARC_OBJ *pSPARC,
         psi_storage2 = (double *) calloc(sizeof(double), NB*DMnd);
     }
 
-    for (int rep = 0; rep <= reps; rep ++) {
+    for (rep = 0; rep <= reps; rep ++) {
         source = (rank-rep+size)%size;
         Nband_source = source < (Ns / NB) ? NB : (source == (Ns / NB) ? (Ns % NB) : 0);
         band_start_indx_source = source * NB;
@@ -247,15 +248,14 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
     MPI_Comm blacscomm = pSPARC->blacscomm;
     MPI_Comm comm = pSPARC->dmcomm;
     int i, j, k, grank, rank, size;
-    int Ns, Nband, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base, mflag, band_start_indx;
-    double occ_i, occ_j, *rhs, *phi, temp, *Drhs, *Dphi_1, *Dphi_2;
+    int Nband, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base, mflag, band_start_indx;
+    double occ_i, occ_j, *rhs, *phi, *Drhs, *Dphi_1, *Dphi_2;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
     MPI_Comm_rank(blacscomm, &rank);
     MPI_Comm_size(blacscomm, &size);
 
     DMnd = pSPARC->Nd_d_dmcomm;
-    Ns = pSPARC->Nstates;
     Nband = pSPARC->Nband_bandcomm;
     mflag = pSPARC->EXXDiv_Flag;
     band_start_indx = pSPARC->band_start_indx;
@@ -442,7 +442,7 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC)
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, grank, rank, size, spn_i;
     int Ns, Nband, DMnd, mflag;
-    double *occ_outer, stress_exx[7], kpt_vec;
+    double *occ_outer, stress_exx[7];
     double _Complex *psi_outer, *psi;
     MPI_Comm comm = pSPARC->dmcomm;
     
@@ -608,12 +608,13 @@ void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC,
     double complex *psi, double *occ_outer, double *stress_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, j, k, grank, kpt_q;
-    int Ns, DMnd, Nband, NB, size_k, count;
+    int i, k, grank, kpt_q;
+    int Ns, DMnd, Nband, NB, size_k, count, rep_kpt, rep_band;
     int source, Nband_source, band_start_indx_source;
     double complex *psi_storage1_kpt, *psi_storage2_kpt, *psi_storage1_band, *psi_storage2_band;
     double complex *sendbuff_kpt, *recvbuff_kpt, *sendbuff_band, *recvbuff_band;
-    MPI_Comm blacscomm = pSPARC->blacscomm;
+    psi_storage1_kpt = psi_storage2_kpt = psi_storage1_band = psi_storage2_band = NULL;
+    sendbuff_kpt = recvbuff_kpt = sendbuff_band = recvbuff_band = NULL;
     MPI_Request reqs_kpt[2], reqs_band[2];
 
     DMnd = pSPARC->Nd_d_dmcomm;
@@ -658,7 +659,7 @@ void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC,
         assert(psi_storage1_band != NULL && psi_storage2_band != NULL);
     }
 
-    for (int rep_kpt = 0; rep_kpt <= reps_kpt; rep_kpt++) {
+    for (rep_kpt = 0; rep_kpt <= reps_kpt; rep_kpt++) {
 
         // transfer the orbitals in the rotation way across kpt_bridge_comm
         if (rep_kpt == 0) {
@@ -684,7 +685,7 @@ void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC,
             int k_indx = k + kpthf_start_indx;
             int counts = pSPARC->kpthfred2kpthf[k_indx][0];
 
-            for (int rep_band = 0; rep_band <= reps_band; rep_band++) {
+            for (rep_band = 0; rep_band <= reps_band; rep_band++) {
                 // transfer the orbitals in the rotation way across blacscomm
                 if (rep_band == 0) {
                     sendbuff_band = sendbuff_kpt + k*size_k;
@@ -731,7 +732,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double comple
     double complex *psi, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *stress_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, j, k, l, ll, grank, rank, size, n, kpt_k;
+    int i, j, k, ll, grank, rank, size, n, kpt_k;
     int Ns, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base, mflag;
     double occ_i, occ_j, kpt_vec;
     double _Complex *rhs, *phi, *Drhs,*Dphi_1, *Dphi_2;

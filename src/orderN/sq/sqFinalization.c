@@ -21,9 +21,8 @@
  */
 void Free_SQ(SPARC_OBJ *pSPARC) {
     
-    int i, j, k, DMnx, DMny, DMnz;
+    int i, j, k, DMny, DMnz;
     SQ_OBJ  *pSQ = pSPARC->pSQ;
-    SQIND *SqInd = pSPARC->pSQ->SqInd;
     
     // Free variables in all processors
     free(pSPARC->forces);
@@ -139,8 +138,7 @@ void Free_SQ(SPARC_OBJ *pSPARC) {
         free(pSPARC->pSQ);
         return;
     }
-    // Following variables are all only in dmcomm_SQ
-    DMnx = pSQ->Nx_d_SQ;
+    // Following variables are all only in dmcomm_SQ    
     DMny = pSQ->Ny_d_SQ;
     DMnz = pSQ->Nz_d_SQ;
 

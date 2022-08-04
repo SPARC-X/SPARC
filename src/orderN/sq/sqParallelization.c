@@ -38,7 +38,7 @@
 void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
     pSPARC->pSQ = (SQ_OBJ *) malloc(sizeof(SQ_OBJ));
     SQ_OBJ* pSQ  = pSPARC->pSQ;
-    int i, j, dims[3] = {0, 0, 0}, periods[3], ierr;
+    int i, dims[3] = {0, 0, 0}, periods[3], ierr;
     int nproc, rank;
     int npNd, gridsizes[3], minsize, coord_dmcomm[3], rank_dmcomm;
     int DMnx, DMny, DMnz, DMnd;
@@ -411,7 +411,6 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
     int neigh_coords[3], sources = 0, destinations = 0, max_layer;
     int *nloc, *coords, *rem;
     int *send_neighs, *rec_neighs, *send_counts, *rec_counts, *send_layers, *rec_layers;
-    double t0, t1;
     MPI_Comm_rank(cart, &rank); 
     //////////////////////////////////////////////////////////////////////
 
@@ -536,10 +535,8 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
 #undef send_layers
 #undef rec_layers
 
-    t0 = MPI_Wtime();
     MPI_Dist_graph_create_adjacent(cart, sources, rec_neighs, (int *)MPI_UNWEIGHTED, 
         destinations, send_neighs, (int *)MPI_UNWEIGHTED, MPI_INFO_NULL, reorder, comm_sq); 
-	t1 = MPI_Wtime();
 
     SqInd->scounts = (int*) calloc(destinations, sizeof(int));                                 // send counts of elements
     SqInd->rcounts = (int*) calloc(sources,      sizeof(int));                                 // receive counts of elements
@@ -662,7 +659,7 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
     MPI_Wait(&request, MPI_STATUS_IGNORE);
 
     // assemble x_in        
-    int start[3];
+    int start[3] = {0,0,0};
     int end[3];
 
     count = 0;

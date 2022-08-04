@@ -62,11 +62,12 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
     double _Complex *psi, double *occ_outer, int spn_i, double _Complex *Xi_kpt)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, k, ll, kpt_k, kpt_q, count, rank, Ns, Ns_occ, dims[3], DMnd, ONE = 1;
-    int Nkpts_hf, DMndNs, DMndNsocc, Nband, Nband_M, size_k;
+    int i, k, ll, kpt_k, kpt_q, count, rank, Ns, Ns_occ, DMnd, ONE = 1;
+    int DMndNsocc, Nband, Nband_M, size_k;
     double *occ, t1, t2, t_comm;
-    double _Complex *M, *Xi_kpt_, *psi_storage_hf;
+    double _Complex *M, *Xi_kpt_;
     double _Complex *psi_storage1_kpt, *psi_storage2_kpt, *psi_storage1_band, *psi_storage2_band;
+    psi_storage1_kpt = psi_storage2_kpt = psi_storage1_band = psi_storage2_band = NULL;
     double _Complex *sendbuff_kpt, *recvbuff_kpt, *sendbuff_band, *recvbuff_band;
     MPI_Request reqs_kpt[2], reqs_band[2];
     /******************************************************************************/
@@ -75,10 +76,7 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
     Nband = pSPARC->Nband_bandcomm;
     Ns = pSPARC->Nstates;
     Nband_M = pSPARC->Nband_bandcomm_M[spn_i];
-    DMnd = pSPARC->Nd_d_dmcomm;
-    dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
-    Nkpts_hf = pSPARC->Nkpts_hf;
-    DMndNs = DMnd * Ns;
+    DMnd = pSPARC->Nd_d_dmcomm;     
     Ns_occ = pSPARC->Nstates_occ[spn_i];
     size_k = DMnd * Nband;
     DMndNsocc = DMnd * Ns_occ;
@@ -301,7 +299,7 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
 void exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, 
         double _Complex *X, int ncol, int DMnd, double _Complex *Hx, int spin, int kpt, MPI_Comm comm) 
 {        
-    int i, j, k, rank, Lanczos_flag, dims[3];
+    int rank, Lanczos_flag, dims[3];
     double _Complex *psi_outer, *Xi;
     double t1, t2, *occ_outer;
     
@@ -352,14 +350,13 @@ void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X
         double _Complex *psi_outer, double _Complex *Hx, int kpt_k, MPI_Comm comm) 
 {
     int i, j, k, l, ll, ll_red, rank, Ns, num_rhs;
-    int size, batch_num_rhs, NL, base, loop, Nkpts_hf, Nkpts_hf_red;
+    int size, batch_num_rhs, NL, base, loop, Nkpts_hf;
     int *rhs_list_i, *rhs_list_j, *rhs_list_l, *kpt_k_list, *kpt_q_list;
     double occ, hyb_mixing, occ_alpha;
     double _Complex *rhs, *Vi;
 
     Ns = pSPARC->Nstates;
     Nkpts_hf = pSPARC->Nkpts_hf;
-    Nkpts_hf_red = pSPARC->Nkpts_hf_red;
     hyb_mixing = pSPARC->hyb_mixing;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(comm, &size);
@@ -536,8 +533,7 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
     comm = pSPARC->dmcomm;
     pSPARC->Eexx = 0.0;
 
-    int Nkpts_hf = pSPARC->Nkpts_hf;
-    int Nkpts_hf_red = pSPARC->Nkpts_hf_red;
+    int Nkpts_hf = pSPARC->Nkpts_hf;    
     /********************************************************************/
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);    
@@ -737,15 +733,16 @@ if(!grank)
 void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_FFT_const, int ncol, int DMnd, 
                 int *dims, double _Complex *Vi, int *kpt_k_list, int *kpt_q_list, MPI_Comm comm) 
 {
-    int i, j, k, lsize, lrank, size_s, ncolp;
+    int i, k, lsize, lrank, ncolp;
     int *sendcounts, *sdispls, *recvcounts, *rdispls, **DMVertices, *ncolpp;
-    int coord_comm[3], gridsizes[3], DNx, DNy, DNz, DNd, Nd, Nx, Ny, Nz, Ns, kq_shift;
+    int coord_comm[3], gridsizes[3], DNx, DNy, DNz, Nd, Nx, Ny, Nz, kq_shift;
     double _Complex *rhs_loc, *Vi_loc, *rhs_loc_order, *Vi_loc_order, *f;
+    sendcounts = sdispls = recvcounts = rdispls = ncolpp = NULL;
+    rhs_loc = Vi_loc = rhs_loc_order = Vi_loc_order = f = NULL;
+    DMVertices = NULL;
 
     MPI_Comm_size(comm, &lsize);
     MPI_Comm_rank(comm, &lrank);
-    Ns = pSPARC->Nstates;
-    size_s = DMnd * ncol;                                                   // it is DMnd * Nband in other parts
     Nd = pSPARC->Nd;
     Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz; 
     ncolp = ncol / lsize + ((lrank < ncol % lsize) ? 1 : 0);
@@ -792,8 +789,7 @@ void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_FFT_
             // find size of distributed domain over comm
             DNx = block_decompose(gridsizes[0], dims[0], coord_comm[0]);
             DNy = block_decompose(gridsizes[1], dims[1], coord_comm[1]);
-            DNz = block_decompose(gridsizes[2], dims[2], coord_comm[2]);
-            DNd = DNx * DNy * DNz;
+            DNz = block_decompose(gridsizes[2], dims[2], coord_comm[2]);            
             // Here DMVertices [1][3][5] is not the same as they are in parallelization
             DMVertices[i][0] = block_decompose_nstart(gridsizes[0], dims[0], coord_comm[0]);
             DMVertices[i][1] = DNx;                                                                                     // stores number of nodes instead of coordinates of end nodes
@@ -988,9 +984,9 @@ void Transfer_dmcomm_to_kptcomm_topo_complex(SPARC_OBJ *pSPARC,
  *          communication for occupations is required. 
  */
 void gather_psi_occ_outer_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_outer_kpt, double *occ_outer) {
-    int i, j, k, grank, blacs_rank, blacs_size, kpt_bridge_rank, kpt_bridge_size;
+    int i, k, grank, blacs_rank, blacs_size, kpt_bridge_rank, kpt_bridge_size;
     int Ns, DMnd, Nband, Nkpts_hf_kptcomm, spn_i;
-    int sendcount, *recvcounts, *displs, NB;
+    int sendcount, *recvcounts, *displs;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
     MPI_Comm_rank(pSPARC->blacscomm, &blacs_rank);
@@ -1005,12 +1001,12 @@ void gather_psi_occ_outer_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_outer_kpt,
 
     int size_k = DMnd * Nband;
     int size_k_ = DMnd * Ns;
-    int shift_k = pSPARC->kpthf_start_indx * Nband * DMnd;
+    // int shift_k = pSPARC->kpthf_start_indx * Nband * DMnd;
     int shift_k_ = pSPARC->kpthf_start_indx * Ns * DMnd;
     int shift_s = pSPARC->band_start_indx * DMnd;
     int shift_k_occ = pSPARC->kpt_start_indx * Ns;                  // gather all occ for all kpts
     
-    int shift_spn_psi_outer = DMnd * Nband * pSPARC->Nkpts_hf_red;
+    // int shift_spn_psi_outer = DMnd * Nband * pSPARC->Nkpts_hf_red;
     int shift_spn_psi_outer_ = DMnd * Ns * pSPARC->Nkpts_hf_red;
     int shift_spn_psi = DMnd * Nband * pSPARC->Nkpts_kptcomm;
     int shift_spn_occ_outer = Ns * pSPARC->Nkpts_sym;
@@ -1107,16 +1103,12 @@ void apply_phase_factor(SPARC_OBJ *pSPARC, double _Complex *vec, int ncol, char 
 {
 #define Kptshift_map(i,j) Kptshift_map[i+j*pSPARC->Nkpts_sym]
 
-    int i, l, col, Nd, Nx, Ny, Nz, Nxy, rank;
+    int i, l, col, Nd, rank;
     int *Kptshift_map;
     double _Complex *phase;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     Nd = pSPARC->Nd;
-    Nx = pSPARC->Nx;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-    Nxy = Nx * Ny;
 
     if (*NorP == 'N') {
         phase = pSPARC->neg_phase;
@@ -1271,7 +1263,7 @@ void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec)
 {
     if (pSPARC->blacscomm == MPI_COMM_NULL) return;
 
-    int i, j, k, grank, blacs_rank, blacs_size, DMnd;
+    int i, grank, blacs_rank, blacs_size, DMnd;
     int sendcount, *recvcounts, *displs, NB;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -1346,8 +1338,7 @@ void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, double complex *sendbuff
     MPI_Comm_size(blacscomm, &size);
     MPI_Comm_rank(blacscomm, &rank);
 
-    int DMnd = pSPARC->Nd_d_dmcomm;
-    int Nband = pSPARC->Nband_bandcomm;
+    int DMnd = pSPARC->Nd_d_dmcomm;    
     int Ns = pSPARC->Nstates;
     int NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1; // this is equal to ceil(Nstates/npband), for int inputs only
     int srank = (rank-shift+size)%size;
@@ -1403,8 +1394,8 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     MPI_Comm_size(blacscomm, &size);
     MPI_Comm_rank(blacscomm, &rank);
 
-    int i, j, k, l, ll, ll_red, kpt_k, Ns, dims[3], DMnd, ONE = 1;
-    int num_rhs, count, loop, batch_num_rhs, NL, base, Nkpts_hf, Nkpts_kptcomm, Nband, DMndNs, DMndNsocc;
+    int i, j, k, kpt_k, Ns, dims[3], DMnd;
+    int num_rhs, count, loop, batch_num_rhs, NL, base, Nkpts_kptcomm, Nband, DMndNsocc;
     int *rhs_list_i, *rhs_list_j, *rhs_list_k, *kpt_k_list, *kpt_q_list;
     double occ_j, t1, t2;
     double _Complex *rhs, *Vi, *Xi_kpt_ki;
@@ -1413,8 +1404,6 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     Ns = pSPARC->Nstates;
     DMnd = pSPARC->Nd_d_dmcomm;
     dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
-    Nkpts_hf = pSPARC->Nkpts_hf;
-    DMndNs = DMnd * Ns;
     DMndNsocc = DMnd * Ns_occ;
     Nkpts_kptcomm = pSPARC->Nkpts_kptcomm;
     Nband = pSPARC->Nband_bandcomm;

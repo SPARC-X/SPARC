@@ -53,7 +53,7 @@ void Calculate_elecDens_SQ(SPARC_OBJ *pSPARC, int SCFcount) {
 void Gauss_density_matrix_col(SPARC_OBJ *pSPARC, int Nd, int npl, double ***DMcol, double *V, double *w, double *D) 
 {
     SQ_OBJ *pSQ = pSPARC->pSQ;
-    int i, j, *nloc, FDn;
+    int j, *nloc, FDn;
     double *wte1, *gdwte1, *wgdwte1;
     
     double *DMcol_vec;
