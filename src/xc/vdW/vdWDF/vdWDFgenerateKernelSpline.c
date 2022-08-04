@@ -109,7 +109,7 @@ void vdWDF_generate_kernel(char *filename) { // let the function unrelated to pS
     double *aPoints = (double*)malloc(sizeof(double)*nIntegratePoints); // imagine frequency points
     double *aPoints2 = (double*)malloc(sizeof(double)*nIntegratePoints); // imagine frequency points
     double *weights = (double*)malloc(sizeof(double)*nIntegratePoints);
-    int intpoint, intpoint2;
+    int intpoint;
 
     prepare_Gauss_quad(nIntegratePoints, aMin, aMax, aPoints, aPoints2, weights); // Gaussian quadrature integration points and weights
     double sin_a[256]; double cos_a[256];
@@ -289,7 +289,7 @@ void radial_FT(double* realKernel, int nrpoints, double vdWdr, double vdWdk, dou
             r = ir*vdWdr;
             reciKernel[ik] += 4*M_PI*realKernel[ir - 1]*r*sin(k*r)/k; // spherical Bessel function
         }
-        reciKernel[ik] -= 4*M_PI*0.5*realKernel[ir - 1]*r*sin(k*r)/k;
+        reciKernel[ik] -= 4*M_PI*0.5*realKernel[nrpoints - 1]*r*sin(k*r)/k;
         reciKernel[ik] *= vdWdr;
     }
 }

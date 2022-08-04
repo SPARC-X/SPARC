@@ -33,8 +33,8 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
     int i, n, DMnd, Ns, Nk, nstart, nend, spn_i, sg, kpt;
     int size_s, size_k, count, spinDMnd, Nband;
     // double *LapX, *X, g_nk, t1, t2, *Dx, *Dy, *Dz, *Krho;
-    double *LapX, *X, g_nk, t1, t2, *Dx, *Dy, *Dz;
-    double _Complex *LapX_kpt, *X_kpt, *Dx_kpt, *Dy_kpt, *Dz_kpt;
+    double *X, g_nk, t1, t2, *Dx, *Dy, *Dz;
+    double _Complex *X_kpt, *Dx_kpt, *Dy_kpt, *Dz_kpt;
 
     DMnd = pSPARC->Nd_d_dmcomm;
     Nband = pSPARC->Nband_bandcomm;
@@ -52,9 +52,9 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
         assert(Dy != NULL);
         Dz = (double *) calloc(DMnd * Nband, sizeof(double));
         assert(Dz != NULL);
-        int lapcT[6];
-        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
+        // int lapcT[6];
+        // lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
+        // lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
             sg  = pSPARC->spin_start_indx + spn_i;
             X = pSPARC->Xorb + spn_i*size_s;
@@ -92,9 +92,9 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
         assert(Dy_kpt != NULL);
         Dz_kpt = (double _Complex *) calloc(DMnd * Nband, sizeof(double _Complex));
         assert(Dz_kpt != NULL);
-        int lapcT[6];
-        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
+        // int lapcT[6];
+        // lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
+        // lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
             sg  = pSPARC->spin_start_indx + spn_i;
             for (kpt = 0; kpt < Nk; kpt++) {

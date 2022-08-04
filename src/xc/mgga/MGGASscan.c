@@ -280,7 +280,6 @@ void sscanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadnu
     double betaRsInf = betaConst*0.1/0.1778;
     double f0 = -0.9;
     // constants for epsilon_c LSDA1
-    double p = 1.0;
     double ecrs0_q0, ecrs0_q1, ecrs0_q1p, ecrs0_den, ecrs0_log, ecrs0, Decrs0_Drs;
     double AA0 = 0.0310907 ;
 	double alpha10 = 0.21370 ;

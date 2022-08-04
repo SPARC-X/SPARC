@@ -224,16 +224,13 @@ void scanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_d
         double ec0 = (ecLDA0 + H0)*Gc;
         // epsilon_c^1 (\alpha approach 1)
         double sqrRs = sqrt(rs);
-        double rsmHalf = 1.0/sqrRs;
         double beta = betaConst * (1.0 + 0.1*rs) / (1.0 + 0.1778*rs);
         // epsilon_c LSDA1
         double ec_q0 = -2.0*AA*(1.0 + alpha1*rs);
         double ec_q1 = 2.0*AA*(beta1*sqrRs + beta2*rs + beta3*rs*sqrRs + beta4*rs*rs);
-        double ec_q1p = AA*(beta1*rsmHalf + 2.0*beta2 + 3.0*beta3*sqrRs + 4.0*beta4*rs);
         double ec_den = 1.0 / (ec_q1*ec_q1 + ec_q1);
         double ec_log = -log(ec_q1*ec_q1*ec_den);
         double ec_lsda1 = ec_q0*ec_log;
-        double Dec_lsda1Drs = -2.0*AA*alpha1*ec_log - ec_q0*ec_q1p*ec_den;
         // H1
         double rPhi3 = r*phi*phi*phi;
         double w1 = exp(-ec_lsda1/rPhi3) - 1.0;

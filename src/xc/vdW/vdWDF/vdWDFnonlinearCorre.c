@@ -150,7 +150,6 @@ void get_q0_Grid(SPARC_OBJ *pSPARC, double* rho) {
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, pSPARC->Drho[0], 0, pSPARC->dmcomm_phi);
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, pSPARC->Drho[1], 1, pSPARC->dmcomm_phi);
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, pSPARC->Drho[2], 2, pSPARC->dmcomm_phi); // optimize this part? in exchange and linear correlation function, it has be solved
-    double **Drho = pSPARC->Drho;
     double *Drho_x = pSPARC->Drho[0];
     double *Drho_y = pSPARC->Drho[1];
     double *Drho_z = pSPARC->Drho[2];
@@ -293,7 +292,7 @@ void compute_Gvectors(SPARC_OBJ *pSPARC) {
     }
     // Secondly, compose the index of these lattice vectors and make a permutation. This part is moved to initialization functions
     // Thirdly, compute the coordinates of reciprocal lattice vectors, and the length of them
-    int igrid, rigrid; 
+    int rigrid; 
     double **reciLatticeGrid = pSPARC->vdWDFreciLatticeGrid;
     for (row = 0; row < 3; row++) { // cartesian direction
         for (rigrid = 0; rigrid < DMnd; rigrid++) { // reciprocal grid points // 000 100 200 ... 010 110 210 ... 001 101 201 ... 011 111 211 ...
@@ -549,11 +548,11 @@ void theta_generate_FT(SPARC_OBJ *pSPARC, double* rho) { // solve thetas (p(q)*r
     double *thetaFTreal = (double*)malloc(sizeof(double)*DMnd);
     double *thetaFTimag = (double*)malloc(sizeof(double)*DMnd);
     double _Complex **thetaFTs = pSPARC->vdWDFthetaFTs;
-    double *gatheredTheta;
-    double _Complex *gatheredThetaCompl;
-    double _Complex *gatheredThetaFFT;
-    double *gatheredThetaFFT_real;
-    double *gatheredThetaFFT_imag;
+    double *gatheredTheta = NULL;
+    double _Complex *gatheredThetaCompl = NULL;
+    double _Complex *gatheredThetaFFT = NULL;
+    double *gatheredThetaFFT_real = NULL;
+    double *gatheredThetaFFT_imag = NULL;
     int igrid, rigrid; 
     if (pSPARC->zAxisComm != MPI_COMM_NULL) { // the processors on z axis (0, 0, z) receive the theta vectors from all other processors (x, y, z) on its z plane
         // printf("rank %d. pSPARC->zAxisComm not NULL!\n", rank);
@@ -683,8 +682,7 @@ void vdWDF_energy(SPARC_OBJ *pSPARC) {
     double _Complex **thetaFTs = pSPARC->vdWDFthetaFTs;
     double _Complex **uFTs = pSPARC->vdWDFuFTs;
     double _Complex vdWenergyLocal = 0.0;
-    int q1, q2, qpair, rigrid, i, j, k;
-    double _Complex q1riThetaFTs, q2riThetaFTs, uValue;
+    int q1, q2, qpair, rigrid;
 
     // compose u vectors in reciprocal space
     for (q1 = 0; q1 < nqs; q1++) {
@@ -808,7 +806,6 @@ void u_generate_iFT(SPARC_OBJ *pSPARC) {
     MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
     int size;
     MPI_Comm_size(pSPARC->dmcomm_phi, &size);
-    int nnr = pSPARC->Nd;
     int DMnx, DMny, DMnz, DMnd;
     DMnx = pSPARC->DMVertices[1] - pSPARC->DMVertices[0] + 1;
     DMny = pSPARC->DMVertices[3] - pSPARC->DMVertices[2] + 1;
@@ -829,14 +826,14 @@ void u_generate_iFT(SPARC_OBJ *pSPARC) {
     int nqs = pSPARC->vdWDFnqs;
     double _Complex **uFTs = pSPARC->vdWDFuFTs;
     double **u = pSPARC->vdWDFu;
-    int rigrid, igrid, q1;
+    int rigrid, q1;
     double *uFTreal = (double*)malloc(sizeof(double)*DMnd);
     double *uFTimag = (double*)malloc(sizeof(double)*DMnd);
-    double *gathereduFT_real;
-    double *gathereduFT_imag;
-    double _Complex *gathereduFT;
-    double _Complex *gathereduCompl;
-    double *gatheredu;
+    double *gathereduFT_real = NULL;
+    double *gathereduFT_imag = NULL;
+    double _Complex *gathereduFT = NULL;
+    double _Complex *gathereduCompl = NULL;
+    double *gatheredu = NULL;
     if (pSPARC->zAxisComm != MPI_COMM_NULL) {
         gathereduFT_real = (double*)malloc(sizeof(double) * gridsizes[0] * gridsizes[1] * DMnz);
         gathereduFT_imag = (double*)malloc(sizeof(double) * gridsizes[0] * gridsizes[1] * DMnz);
@@ -904,7 +901,6 @@ void u_generate_iFT(SPARC_OBJ *pSPARC) {
 void vdWDF_potential(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int nnr = pSPARC->Nd;
     int nqs = pSPARC->vdWDFnqs;
     int DMnx, DMny, DMnz, DMnd;
     DMnx = pSPARC->DMVertices[1] - pSPARC->DMVertices[0] + 1;

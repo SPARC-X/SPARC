@@ -52,7 +52,6 @@ void compute_mGGA_term_hamil(const SPARC_OBJ *pSPARC, double *x, int ncol, int c
 
         if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){ // transform for unorthogonal cell
             double DxAfter[3], DxBefore[3];
-            double *lapcT = (double *)pSPARC->lapcT;
 
             DxAfter[0] = 0.0; DxAfter[1] = 0.0; DxAfter[2] = 0.0;
             for (j = 0; j < colLength; j++) {
@@ -124,7 +123,6 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
         double _Complex DxAfter[3] = {0.0};
         for (j = 0; j < size_k; j++) {
             double _Complex DxBefore[3] = {Dx_x_kpt[j], Dx_y_kpt[j], Dx_z_kpt[j]};
-            double *lapcT = (double *)pSPARC->lapcT;
             // matrixTimesVec_3d_complex(lapcT, DxBefore, DxAfter);
             DxAfter[0] = DxBefore[0] * pSPARC->lapcT[0] + DxBefore[1] * pSPARC->lapcT[1] + DxBefore[2] * pSPARC->lapcT[2];
             DxAfter[1] = DxBefore[0] * pSPARC->lapcT[3] + DxBefore[1] * pSPARC->lapcT[4] + DxBefore[2] * pSPARC->lapcT[5];
