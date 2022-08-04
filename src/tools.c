@@ -974,9 +974,9 @@ void SetUnitOnesVector(double *Vec, int n_loc, int n_global, double pert_fac, MP
  * @param gridsizes Global grid sizes.
  * @return int
  */
-int is_grid_outside(int ip, int jp, int kp,
-    int origin_shift_i, int origin_shift_j, int origin_shift_k,
-    int DMVerts[6], int gridsizes[3])
+int is_grid_outside(const int ip, const int jp, const int kp,
+    const int origin_shift_i, const int origin_shift_j, const int origin_shift_k,
+    const int DMVerts[6], const int gridsizes[3])
 {
     int i_global = ip + origin_shift_i + DMVerts[0];
     int j_global = jp + origin_shift_j + DMVerts[2];
@@ -1530,8 +1530,7 @@ void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, dou
 {
     // only l=0,1,2,3,4,5,6 implemented for now
 
-    //double pi=M_PI;
-    double p;                   	  
+    //double pi=M_PI;                 	  
     int i; 
     
     /* l = 0 */

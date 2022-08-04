@@ -1375,7 +1375,7 @@ void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_
     double DHs4,DHs72,DHs92,d1sDHs,DHsw,DHsw2,DHsw52,DHsw72,d1rDHsw;
     double G_a, d1sG_a, G_b, d1sG_b, EG, d1sEG;
     double term2, d1sterm2, term3, d1sterm3, d1rterm3, term4, d1sterm4, d1rterm4, term5, d1sterm5, d1rterm5;
-    double t10, t10d1, d1st10, d1rt10, piexperf, expei;
+    double t10 = 0.0, t10d1, d1st10 = 0.0, d1rt10 = 0.0, piexperf, expei;
     double piexperfd1, d1spiexperf, d1rpiexperf, expeid1, d1sexpei, d1rexpei;
     double t1, d1st1, d1rt1, term1, d1sterm1, d1rterm1, term1d1;
     double np1, d1rnp1, np2, d1rnp2, f2, f2d1, d1sf2, d1rf2;

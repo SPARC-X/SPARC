@@ -294,7 +294,6 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
 	}
 	// Variables for NPT_NP
 	if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0 && pSPARC->RestartFlag != 1){
-		int i;
 		int rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -345,7 +344,6 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
 		pSPARC->Pm_NPT_NP[2] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_z*pSPARC->range_z_velo/pSPARC->G_NPT_NP[2];
     }
     else if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0) { // restart
-    	int i;
 		int rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

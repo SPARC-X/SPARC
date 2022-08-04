@@ -648,6 +648,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     int i, l, rank, position, l_buff, Ntypes, n_atom, nproj, lmax_sum, size_sum, nprojsize_sum, nproj_sum;
     int *tempbuff, *is_r_uniformv, *pspxcv, *pspsocv, *lmaxv, *sizev, *pplv, *pplv_soc, *ppl_sdispl, *ppl_soc_sdispl;
+    ppl_soc_sdispl = NULL, pplv_soc = NULL;
     char *buff;
 
 #ifdef DEBUG
@@ -3791,7 +3792,7 @@ double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN) {
     t1 = MPI_Wtime();
 #endif
     int atm1, atm2;
-    double nn, dist;
+    double nn, dist = 0.0;
     nn = 100000000000;
     if (CorN == 'N') {           // Non-Cartesian coordinates
         for (atm1 = 0; atm1 < pSPARC->n_atom-1; atm1++) {

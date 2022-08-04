@@ -342,9 +342,9 @@ void SeededRandVec_complex (
  * @param gridsizes Global grid sizes.
  * @return int
  */
-int is_grid_outside(int ip, int jp, int kp,
-    int origin_shift_i, int origin_shift_j, int origin_shift_k,
-    int DMVerts[6], int gridsizes[3]);
+int is_grid_outside(const int ip, const int jp, const int kp,
+    const int origin_shift_i, const int origin_shift_j, const int origin_shift_k,
+    const int DMVerts[6], const int gridsizes[3]);
 
 
 /**
