@@ -1530,7 +1530,6 @@ void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, dou
 {
     // only l=0,1,2,3,4,5,6 implemented for now
 
-    //double pi=M_PI;                 	  
     int i; 
     
     /* l = 0 */
