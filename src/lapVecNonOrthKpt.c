@@ -51,7 +51,7 @@ void Calc_DX_kpt_orig(
     const int l_m
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
     
     double complex phase_fac_l_m = conj(phase_fac_r_m);
     int sz = 2 * (m_epos - m_spos) * radius;
@@ -1228,7 +1228,7 @@ void Calc_DX1_DX2_kpt(
     const int l_m1,          const int l_m2
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
 
     int sz_m1 = 2 * (m1_epos - m1_spos) * radius;
     int sz_m2 = 2 * (m2_epos - m2_spos) * radius;
@@ -1347,7 +1347,7 @@ void stencil_4comp_kpt(
     const int l_m
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, r;
+    int i, j, k, jj, kk, jjj, kkk, r;
 
     double complex phase_fac_l_x = cos(pSPARC->k1_loc[kpt] * pSPARC->range_x) - sin(pSPARC->k1_loc[kpt] * pSPARC->range_x) * I;
     double complex phase_fac_l_y = cos(pSPARC->k2_loc[kpt] * pSPARC->range_y) - sin(pSPARC->k2_loc[kpt] * pSPARC->range_y) * I;
@@ -1535,7 +1535,7 @@ void stencil_5comp_kpt(
 
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, iiii, jjjj, kkkk, r;
+    int i, j, k, jj, kk, jjj, kkk, jjjj, kkkk, r;
 
     double complex phase_fac_l_x = cos(pSPARC->k1_loc[kpt] * pSPARC->range_x) - sin(pSPARC->k1_loc[kpt] * pSPARC->range_x) * I;
     double complex phase_fac_l_y = cos(pSPARC->k2_loc[kpt] * pSPARC->range_y) - sin(pSPARC->k2_loc[kpt] * pSPARC->range_y) * I;
