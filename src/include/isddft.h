@@ -731,6 +731,8 @@ typedef struct _SPARC_OBJ{
     int vdWDFKernelGenFlag;
     int vdWDFnrpoints;
     int vdWDFnqs;
+    double *vdWDFecLinear;
+    double *vdWDFVcLinear;
     double vdWDFdr;
     double vdWDFdk;
     double vdWDFZab;

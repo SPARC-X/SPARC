@@ -227,6 +227,14 @@ SYSTEMS["systemname"].append('Si4_kpt_vdWDF2')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
+SYSTEMS["systemname"].append('Fe2_spin_gamma_ortho_vdWDF1')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'orth', 'gamma','vdWDF'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Fe2_spin_kpt_nonOrtho_vdWDF2')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'nonorth', 'kpt','vdWDF'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 SYSTEMS["systemname"].append('Si2_kpt_PBE0')
 SYSTEMS["Tags"].append(['bulk', 'PBE0','kpt' 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)

@@ -11,6 +11,11 @@
  * Román-Pérez, Guillermo, and José M. Soler. 
  * "Efficient implementation of a van der Waals density functional: application to double-wall carbon nanotubes." 
  * Physical review letters 103, no. 9 (2009): 096102.
+ * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth.
+ * "Higher-accuracy van der Waals density functional." Physical Review B 82, no. 8 (2010): 081101.
+ * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard.
+ * "Spin signature of nonlocal correlation binding in metal-organic frameworks."
+ * Physical review letters 115, no. 13 (2015): 136402.
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
@@ -22,12 +27,6 @@
 #include "vdWDFinitialization.h"
 
 /**
- * @brief compute exchange-correlation energy of LDA_PW on every grid point, called by get_q0_Grid
- * @param dq0drhoPosi: dq0/drho, an output of the function
- */
-double pw(double rs, double *dq0drhoPosi);
-
-/**
  * @brief modify qp to let it less than qCut based on (5) of Soler, called by get_q0_Grid
  * @param qp: the input energy ratio, to be modified
  * @param qCut: largest accepted energy ratio, which is the largest model energy ratio, qmesh[19]
@@ -37,9 +36,15 @@ void saturate_q(double qp, double qCut, double *saturateq0dq0dq);
 
 /**
  * @brief compute q0, the energy ratio on every grid point
- rho: the electron density on real grid
+ * @param rho: the electron density on real grid
  */
 void get_q0_Grid(SPARC_OBJ *pSPARC, double* rho);
+
+/**
+ * @brief compute q0, the energy ratio on every grid point, spin-polarized case
+ * @param rho: the electron density on real grid
+ */
+void spin_get_q0_Grid(SPARC_OBJ *pSPARC, double* rho);
 
 /**
  * @brief get the component of "model energy ratios" on every grid point, based on the computed q0. The ps array is its output
@@ -117,9 +122,19 @@ void u_generate_iFT(SPARC_OBJ *pSPARC);
 void vdWDF_potential(SPARC_OBJ *pSPARC);
 
 /**
+ * @brief compute the potential of vdW_DF, and add onto Vxc, spin-polarized case
+ */
+void spin_vdWDF_potential(SPARC_OBJ *pSPARC);
+
+/**
  * @brief The main function to be called by function Calculate_Vxc_GGA in exchangeCorrelation.c, compute the energy and potential of non-linear correlation part of vdW-DF
  */
 void Calculate_nonLinearCorr_E_V_vdWDF(SPARC_OBJ *pSPARC, double *rho);
+
+/**
+ * @brief The main function to be called by function Calculate_Vxc_GGA in exchangeCorrelation.c, spin-polarized case, compute the energy and potential of non-linear correlation part of vdW-DF
+ */
+void Calculate_nonLinearCorr_E_V_SvdWDF(SPARC_OBJ *pSPARC, double *rho);
 
 /**
  * @brief add the computed vdWDF energy into Exc

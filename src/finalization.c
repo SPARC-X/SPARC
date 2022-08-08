@@ -306,6 +306,16 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         Free_D2D_Target(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo,
                        pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL, pSPARC->kptcomm_topo);
     }
+
+    if (pSPARC->d3Flag == 1) {
+        free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
+    }
+    if (pSPARC->vdWDFFlag != 0){
+        vdWDF_free(pSPARC);
+    }
+    if(pSPARC->mGGAflag == 1) {
+        free_MGGA(pSPARC);
+    }
                      
     // free communicators
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
@@ -344,15 +354,6 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         MPI_Comm_free(&pSPARC->spincomm);
     if (pSPARC->spin_bridge_comm != MPI_COMM_NULL)
         MPI_Comm_free(&pSPARC->spin_bridge_comm);     
-    if (pSPARC->d3Flag == 1) {
-        free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
-    }
-    if (pSPARC->vdWDFFlag != 0){
-        vdWDF_free(pSPARC);
-    }
-    if(pSPARC->mGGAflag == 1) {
-        free_MGGA(pSPARC);
-    }
 
     #if defined(USE_MKL) || defined(USE_SCALAPACK)
     Cblacs_gridexit(pSPARC->ictxt_blacs);

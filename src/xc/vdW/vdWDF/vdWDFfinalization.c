@@ -13,6 +13,9 @@
  * Physical review letters 103, no. 9 (2009): 096102.
  * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth. 
  * "Higher-accuracy van der Waals density functional." Physical Review B 82, no. 8 (2010): 081101.
+ * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard. 
+ * "Spin signature of nonlocal correlation binding in metal-organic frameworks." 
+ * Physical review letters 115, no. 13 (2015): 136402.
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
@@ -44,13 +47,14 @@ void vdWDF_free(SPARC_OBJ *pSPARC) {
         MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
         int size;
         MPI_Comm_size(pSPARC->dmcomm_phi, &size);
-        // if (rank == size - 1) fclose(pSPARC->vdWDFOutput);
         int direction;
         for (direction = 0; direction < 3; direction++){
             free(pSPARC->Drho[direction]);
         }
         free(pSPARC->Drho);
         free(pSPARC->gradRhoLen);
+        free(pSPARC->vdWDFecLinear);
+        free(pSPARC->vdWDFVcLinear);
         free(pSPARC->vdWDFq0);
         free(pSPARC->vdWDFdq0drho);
         free(pSPARC->vdWDFdq0dgradrho);

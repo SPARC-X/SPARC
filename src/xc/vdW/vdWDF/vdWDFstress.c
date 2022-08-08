@@ -13,6 +13,9 @@
  * Physical review letters 103, no. 9 (2009): 096102.
  * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth. 
  * "Higher-accuracy van der Waals density functional." Physical Review B 82, no. 8 (2010): 081101.
+ * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard. 
+ * "Spin signature of nonlocal correlation binding in metal-organic frameworks." 
+ * Physical review letters 115, no. 13 (2015): 136402.
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
@@ -85,12 +88,13 @@ void vdWDF_stress_gradient(SPARC_OBJ *pSPARC, double *stressGrad) {
         }
     }
     for (igrid = 0; igrid < DMnd; igrid++) {
-        if (gradRhoLen[igrid] > 1e-15) {
+        if (gradRhoLen[igrid] > 1e-15)
             prefactor[igrid] /= gradRhoLen[igrid];
-        }
+        else
+            prefactor[igrid] = 0.0;
     }
 
-    int row, col, dir;
+    int row, col;
     double localStressGrad[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     for (row = 0; row < 3; row++) {
         for (col = 0; col <= row; col++) {
@@ -101,13 +105,54 @@ void vdWDF_stress_gradient(SPARC_OBJ *pSPARC, double *stressGrad) {
             localStressGrad[3*col + row] = localStressGrad[3*row + col];
         }
     }
-    for (dir = 0; dir < 9; dir++) {
-        MPI_Allreduce(&(localStressGrad[dir]), &(stressGrad[dir]), 1, MPI_DOUBLE,
-            MPI_SUM, pSPARC->dmcomm_phi);
-    }
+    MPI_Allreduce(localStressGrad, stressGrad, 9, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     free(prefactor);
 }
 
+
+void spin_vdWDF_stress_gradient(SPARC_OBJ *pSPARC, double *stressGrad) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int nnr = pSPARC->Nd; // total number of grid points in the system
+    int nqs = pSPARC->vdWDFnqs;
+    int DMnd = pSPARC->Nd_d;
+    double *gradRhoLen = pSPARC->gradRhoLen;
+    double *dq0dgradrho = pSPARC->vdWDFdq0dgradrho;
+    double **Drho = pSPARC->Drho;
+    double **dpdq0s = pSPARC->vdWDFdpdq0s; // used for solving potential
+    double **u = pSPARC->vdWDFu;
+    double *prefactor = (double*)malloc(2*DMnd*sizeof(double));
+    int i, igrid, q1;
+    for (i = 0; i < 2*DMnd; i++) {
+        prefactor[i] = 0.0;
+    }
+    for (q1 = 0; q1 < nqs; q1++) {
+        for (i = 0; i < 2*DMnd; i++) {
+            igrid = i%DMnd;
+            prefactor[i] += u[q1][igrid] * dpdq0s[q1][igrid] * dq0dgradrho[i];
+        }
+    }
+    for (i = 0; i < 2*DMnd; i++) {
+        if (gradRhoLen[i] > 1e-15) 
+            prefactor[i] /= gradRhoLen[i];
+        else
+            prefactor[i] = 0.0;
+    }
+
+    int row, col;
+    double localStressGrad[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    for (row = 0; row < 3; row++) {
+        for (col = 0; col <= row; col++) {
+            for (i = 0; i < 2*DMnd; i++) {
+                localStressGrad[3*row + col] -= prefactor[i] * Drho[row][i] * Drho[col][i];
+            }
+            localStressGrad[3*row + col] /= nnr;
+            localStressGrad[3*col + row] = localStressGrad[3*row + col];
+        }
+    }
+    MPI_Allreduce(localStressGrad, stressGrad, 9, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+    free(prefactor);
+}
 
 
 void interpolate_dKerneldK(SPARC_OBJ *pSPARC, double **dKerneldLength) {
@@ -208,11 +253,7 @@ void vdWDF_stress_kernel(SPARC_OBJ *pSPARC, double *stressKernel) {
             localStressKernel[3*col + row] = localStressKernel[3*row + col];
         }
     }
-    int dir;
-    for (dir = 0; dir < 9; dir++) {
-        MPI_Allreduce(&(localStressKernel[dir]), &(stressKernel[dir]), 1, MPI_DOUBLE,
-            MPI_SUM, pSPARC->dmcomm_phi);
-    }
+    MPI_Allreduce(localStressKernel, stressKernel, 9, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
 
     for (q1 = 0; q1 < numberKernel; q1++) {
         free(dKerneldLength[q1]);
@@ -230,7 +271,12 @@ void Calculate_XC_stress_vdWDF(SPARC_OBJ *pSPARC) {
     double stress[9];
     double stressGradArray[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
     double *stressGrad = stressGradArray;
-    vdWDF_stress_gradient(pSPARC, stressGrad); // compute the stress term containing grad(rho)
+    if (pSPARC->spin_typ == 0)
+        vdWDF_stress_gradient(pSPARC, stressGrad); // compute the stress term containing grad(rho)
+    else if (pSPARC->spin_typ == 1)
+        spin_vdWDF_stress_gradient(pSPARC, stressGrad); // compute the stress term containing grad(rho)
+    else if (pSPARC->spin_typ == 2)
+        assert(pSPARC->Nspin <= 2 && pSPARC->spin_typ <= 1);
 
     double stressKernelArray[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
     double *stressKernel = stressKernelArray;
