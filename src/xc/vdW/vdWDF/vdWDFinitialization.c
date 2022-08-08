@@ -13,6 +13,9 @@
  * Physical review letters 103, no. 9 (2009): 096102.
  * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth. 
  * "Higher-accuracy van der Waals density functional." Physical Review B 82, no. 8 (2010): 081101.
+ * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard. 
+ * "Spin signature of nonlocal correlation binding in metal-organic frameworks." 
+ * Physical review letters 115, no. 13 (2015): 136402.
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
@@ -117,10 +120,10 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
     read_spline_d2_qmesh(pSPARC, splineD2FileRoute);
     pSPARC->zAxisComm = MPI_COMM_NULL;
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-    	int rank;
-    	MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
-    	int size;
-    	MPI_Comm_size(pSPARC->dmcomm_phi, &size);
+        int rank;
+        MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
+        int size;
+        MPI_Comm_size(pSPARC->dmcomm_phi, &size);
         int DMnx, DMny, DMnz, DMnd;
         DMnx = pSPARC->DMVertices[1] - pSPARC->DMVertices[0] + 1;
         DMny = pSPARC->DMVertices[3] - pSPARC->DMVertices[2] + 1;
@@ -129,12 +132,14 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
         pSPARC->Drho = (double**)malloc(sizeof(double*)*3);
         int direction; // now only consider 3D cases
         for (direction = 0; direction < 3; direction++) {
-            pSPARC->Drho[direction] = (double*)malloc(sizeof(double)*DMnd);
+            pSPARC->Drho[direction] = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double)); assert(pSPARC->Drho[direction] != NULL);
         }
-        pSPARC->gradRhoLen = (double*)malloc(sizeof(double)*DMnd);
+        pSPARC->gradRhoLen = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double));
+        pSPARC->vdWDFecLinear = (double*)malloc(DMnd * sizeof(double)); assert(pSPARC->vdWDFecLinear != NULL); // \epsilon_cl
+        pSPARC->vdWDFVcLinear = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double)); assert(pSPARC->vdWDFVcLinear != NULL); // d(n\epsilon_cl)/dn in dmcomm_phi
         pSPARC->vdWDFq0 = (double*)malloc(sizeof(double)*DMnd);
-        pSPARC->vdWDFdq0drho = (double*)malloc(sizeof(double)*DMnd);
-        pSPARC->vdWDFdq0dgradrho = (double*)malloc(sizeof(double)*DMnd);
+        pSPARC->vdWDFdq0drho = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double)); assert(pSPARC->vdWDFdq0drho != NULL);
+        pSPARC->vdWDFdq0dgradrho = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double)); assert(pSPARC->vdWDFdq0dgradrho != NULL);
         pSPARC->vdWDFps = (double**)malloc(sizeof(double*)*nqs);
         pSPARC->vdWDFdpdq0s = (double**)malloc(sizeof(double*)*nqs);
         pSPARC->vdWDFthetaFTs = (double _Complex**)malloc(sizeof(double*)*nqs);
@@ -241,16 +246,16 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
         for (q1 = 0; q1 < nqs; q1++) {
             for (q2 = 0; q2 < q1 + 1; q2++) {
                 qpair = kernel_label(q1, q2, nqs);
-                pSPARC->vdWDFkernelReciPoints[qpair] = (double*)malloc(sizeof(double)*DMnd);
+                pSPARC->vdWDFkernelReciPoints[qpair] = (double*)malloc(sizeof(double)*DMnd); assert(pSPARC->vdWDFkernelReciPoints[qpair] != NULL);
             }
         }
         pSPARC->vdWDFuFTs = (double _Complex**)malloc(sizeof(double _Complex*)*nqs);
         pSPARC->vdWDFu = (double**)malloc(sizeof(double)*nqs);
         for (q1 = 0; q1 < nqs; q1++) {
-            pSPARC->vdWDFuFTs[q1] = (double _Complex*)malloc(sizeof(double _Complex)*DMnd);
-            pSPARC->vdWDFu[q1] = (double*)malloc(sizeof(double)*DMnd);
+            pSPARC->vdWDFuFTs[q1] = (double _Complex*)malloc(sizeof(double _Complex)*DMnd); assert(pSPARC->vdWDFuFTs[q1] != NULL);
+            pSPARC->vdWDFu[q1] = (double*)malloc(sizeof(double)*DMnd); assert(pSPARC->vdWDFu[q1] != NULL);
         }
-        pSPARC->vdWDFpotential = (double*)malloc(sizeof(double)*DMnd);
+        pSPARC->vdWDFpotential = (double*)malloc(DMnd * pSPARC->Nspin * sizeof(double)); assert(pSPARC->vdWDFpotential != NULL);
         // if (rank == size - 1) {
     	// 	char vdWDFoutputRoute[L_STRING];
         //     snprintf(vdWDFoutputRoute,       L_STRING, "%svdWDFoutput.txt"  ,     folderRoute);
@@ -371,12 +376,12 @@ void read_spline_d2_qmesh(SPARC_OBJ *pSPARC, char *splineD2QmeshFile) {
     	    // readIn = fscanf(splineD2Read, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", aLine, aLine+1, aLine+2, aLine+3, aLine+4, aLine+5,
     	    //     aLine+6, aLine+7, aLine+8, aLine+9, aLine+10, aLine+11, aLine+12, aLine+13, aLine+14, aLine+15, aLine+16, aLine+17, aLine+18, aLine+19);
             fscanf(splineD2Read, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", aLine, aLine+1, aLine+2, aLine+3, aLine+4, aLine+5,
-    	        aLine+6, aLine+7, aLine+8, aLine+9, aLine+10, aLine+11, aLine+12, aLine+13, aLine+14, aLine+15, aLine+16, aLine+17, aLine+18, aLine+19);
-    	    for (q2 = 0; q2 < nqs; q2++) {
-    	        d2Splineydx2[q1][q2] = aLine[q2];
-    	    }
-    	}
-    	fclose(splineD2Read);
+                aLine+6, aLine+7, aLine+8, aLine+9, aLine+10, aLine+11, aLine+12, aLine+13, aLine+14, aLine+15, aLine+16, aLine+17, aLine+18, aLine+19);
+            for (q2 = 0; q2 < nqs; q2++) {
+                d2Splineydx2[q1][q2] = aLine[q2];
+            }
+        }
+        fclose(splineD2Read);
         free(aLine);
         free(readLines);
     }

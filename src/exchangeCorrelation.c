@@ -395,8 +395,8 @@ void Calculate_Vxc_GGA(SPARC_OBJ *pSPARC, double *rho)
             // Perdew-Burke Ernzerhof exchange-correlation 
             Calculate_Vxc_GSGA_PBE(pSPARC, &xc_cst, rho);
         else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) {
-            printf("ERROR: vdWDF1 and vdWDF2 currently do not support spin-polarization!\n");
-            exit(EXIT_FAILURE);
+            Calculate_Vxc_vdWExchangeLinearCorre(pSPARC, &xc_cst, rho); // compute energy and potential of Zhang-Yang revised PBE exchange + LDA PW91 correlation
+            Calculate_nonLinearCorr_E_V_SvdWDF(pSPARC, rho); // the function is in /vdW/vdWDF/vdWDF.c
         }
         else {
             printf("Cannot recognize the XC option provided!\n");
@@ -1270,6 +1270,9 @@ void Calculate_Exc_GGA(SPARC_OBJ *pSPARC, double *electronDens)
             || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) {
             // Perdew-Burke-Ernzerhof exchange correlation 
             Calculate_Exc_GSGA_PBE(pSPARC, electronDens);
+        } else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) {
+            Calculate_Exc_GSGA_vdWDF_ExchangeLinearCorre(pSPARC, electronDens); // actually the function has no difference from Calculate_Exc_GSGA_PBE. Maybe thery can be unified.
+            Add_Exc_vdWDF(pSPARC); // the function is in /vdW/vdWDF/vdWDF.c
         } else {
             printf("Cannot recognize the XC option provided!\n");
             exit(EXIT_FAILURE);
