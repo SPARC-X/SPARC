@@ -990,6 +990,41 @@ int is_grid_outside(const int ip, const int jp, const int kp,
 
 
 /**
+ * @brief Check if a grid lies outside the global domain and returns which region it
+ * lies in (indexed from 0 to 25, center region is indexed -1).
+ *
+ * @param ip Grid local coordinate index in the 1st dir.
+ * @param jp Grid local coordinate index in the 2nd dir.
+ * @param kp Grid local coordinate index in the 3rd dir.
+ * @param origin_shift_i Shift of the origin of the above local index in the 1st dir.
+ * @param origin_shift_j Shift of the origin of the above local index in the 2nd dir.
+ * @param origin_shift_k Shift of the origin of the above local index in the 3rd dir.
+ * @param DMVerts Local domain vertices.
+ * @param gridsizes Global grid sizes.
+ * @return int The index of region the grid lies in. The index goes from bottom left
+ * corner (0-based) to upper right corner (25). We skip the center region, which is
+ * inside the domain, and continues after that. The index goes from 0 to 25. If grid
+ * is at the center region (i.e., within the domain), -1 is returned.
+ */
+int grid_outside_region(const int ip, const int jp, const int kp,
+    const int origin_shift_i, const int origin_shift_j, const int origin_shift_k,
+    const int DMVerts[6], const int gridsizes[3])
+{
+    int i_global = ip + origin_shift_i + DMVerts[0];
+    int j_global = jp + origin_shift_j + DMVerts[2];
+    int k_global = kp + origin_shift_k + DMVerts[4];
+    int i_ind = (0 <= i_global) - (i_global < gridsizes[0]); // -1 - left, 0 - center, 1 - right
+    int j_ind = (0 <= j_global) - (j_global < gridsizes[1]); // -1 - left, 0 - center, 1 - right
+    int k_ind = (0 <= k_global) - (k_global < gridsizes[2]); // -1 - left, 0 - center, 1 - right
+    int region_ind = (k_ind+1) * 9 + (j_ind+1) * 3 + (i_ind+1);
+    if (region_ind == 13) return -1; // grid is not outside the domain
+    else if (region_ind < 13) return region_ind; // region before the center (original domain)
+    else return region_ind - 1; // region after the center, we skip the center index 13
+}
+
+
+
+/**
  * @brief   Create a rectangular grid in n-d space. 
  *
  *          This function tries to achieve the same objective as the
