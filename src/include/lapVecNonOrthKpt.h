@@ -50,10 +50,8 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 /*
  @ brief: function to calculate two derivatives together
 */
-
 void Calc_DX1_DX2_kpt(
     const double complex *X, double complex *DX,
-    const int m1_DMVertex,   const int m2_DMVertex,
     const int radius,
     const int stride_X_1,    const int stride_X_2,
     const int stride_y_X,    const int stride_y_DX,
@@ -64,28 +62,16 @@ void Calc_DX1_DX2_kpt(
     const int x_X_spos,      const int y_X_spos,
     const int z_X_spos,
     const double *stencil_coefs1,
-    const double *stencil_coefs2,
-    const int shift1_m1,     const int shift2_m1,
-    const int shift3_m1,     const int shift1_m2,
-    const int shift2_m2,     const int shift3_m2,
-    const double complex phase_fac_r_m1,
-    const double complex phase_fac_r_m2,
-    const int m1_spos,       const int m1_epos,
-    const int m2_spos,       const int m2_epos,
-    const int l_m1,          const int l_m2
+    const double *stencil_coefs2
 );
-
 
 
 
 /*
  @ brief: function to perform 4 component stencil operation
 */
-
 void stencil_4comp_kpt(
-    const SPARC_OBJ *pSPARC,   const double complex *x0,
-    const double complex *DX,
-    const int *DMVertices,     const int m_DMVertex,
+    const double complex *X,   const double complex *DX,
     const int radius,
     const int stride_DX,       const int stride_y_X1,
     const int stride_y_X,      const int stride_y_DX,
@@ -97,25 +83,18 @@ void stencil_4comp_kpt(
     const int y_X_spos,        const int z_X_spos,
     const int x_DX_spos,       const int y_DX_spos,
     const int z_DX_spos,       const double *stencil_coefs, // ordered [x0 y0 z0 Dx0 x1 y1 y2 ... x_radius y_radius z_radius Dx_radius]
-    const double coef_0,       const double b,   
-    const double *v0,          double complex *X1,
-    const int kpt,             const int shift1,
-    const int shift2,          const int shift3,
-    const double complex phase_fac_r_m,
-    const int m_spos,          const int m_epos,
-    const int l_m
+    const double coef_0,       const double b,
+    const double *v0,          double complex *X1
 );
+
 
 
 /*
  @ brief: function to perform 5 component stencil operation
 */
-
 void stencil_5comp_kpt(
-    const SPARC_OBJ *pSPARC,   const double complex *x0,
-    const double complex *DX1, const double complex *DX2,
-    const int *DMVertices,     const int m1_DMVertex,
-    const int m2_DMVertex,     const int radius,
+    const double complex *X,   const double complex *DX1,
+    const double complex *DX2, const int radius,
     const int stride_DX1,      const int stride_DX2,
     const int stride_y_X1,     const int stride_y_X,
     const int stride_y_DX1,    const int stride_y_DX2,
@@ -128,20 +107,9 @@ void stencil_5comp_kpt(
     const int z_X_spos,        const int x_DX1_spos,
     const int y_DX1_spos,      const int z_DX1_spos,
     const int x_DX2_spos,      const int y_DX2_spos,
-    const int z_DX2_spos,
-    const double *stencil_coefs,
+    const int z_DX2_spos,      const double *stencil_coefs,
     const double coef_0,       const double b,
-    const double *v0,          double complex *X1,
-    const int kpt,             const int shift1_m1,
-    const int shift2_m1,       const int shift3_m1,
-    const int shift1_m2,       const int shift2_m2,
-    const int shift3_m2,
-    const double complex phase_fac_r_m1,
-    const double complex phase_fac_r_m2,
-    const int m1_spos,         const int m1_epos,
-    const int m2_spos,         const int m2_epos,
-    const int l_m1,            const int l_m2
-    
+    const double *v0,          double complex *X1
 );
 
 
