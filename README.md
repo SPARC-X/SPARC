@@ -20,7 +20,7 @@ Prerequisite: C compiler, MPI.
 
 There are several options to compile SPARC, depending on the available external libraries.
 
-* Option 1 (default): Compile with BLAS and LAPACK.
+* Option 1: Compile with BLAS and LAPACK.
 
   * Step 1: Install/Load OpenBLAS/BLAS and LAPACK.
 
@@ -36,7 +36,7 @@ There are several options to compile SPARC, depending on the available external 
     ```
 **Remark**: make sure in the makefile `USE_MKL = 0`, `USE_SCALAPACK = 0`, and `USE_DP_SUBEIG = 1` for option 1.
 
-* Option 2 (recommended): Compile with MKL.
+* Option 2 (default): Compile with MKL.
   * Step 1: Install/Load MKL.
 
   * Step 2: Change directory to `src/`  directory, there is an available `makefile`.
