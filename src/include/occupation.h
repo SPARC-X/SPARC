@@ -32,7 +32,19 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
 double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter, 
     double (*constraint)(SPARC_OBJ*, double));
 
+/**
+ * @brief   Collect all eigenvalues from other k-points and the other spin
+ */
+void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray);
 
+/**
+ * @brief   Find fermi level using Brent's method, but calling local_occ_constraint to replace occ_constraint
+ *
+ * @ref     W.H. Press, Numerical recepies 3rd edition: The art of scientific 
+ *          computing, Cambridge university press, 2007.
+ */
+double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double *totalLambdaArray, double tol, int max_iter,
+                                  double (*constraint)(SPARC_OBJ *, double));
 /**
  * @brief   Fermi Dirac function.
  */
@@ -68,6 +80,12 @@ double smearing_function(double beta, double lambda, double lambda_f, int type);
  *
  */
 double occ_constraint(SPARC_OBJ *pSPARC, double lambda_f);
+
+/**
+ * @brief   Similar usage to occ_constraint, but this function does not need Allreduce
+ *
+ */
+double local_occ_constraint(SPARC_OBJ *pSPARC, double lambda_f);
 
 
 #endif // OCCUPATION_H
