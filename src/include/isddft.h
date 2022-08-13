@@ -439,6 +439,7 @@ typedef struct _SPARC_OBJ{
     double *occ_sorted;           // occupations corresponding to sorted lambda
     double *lambda;               // eigenvalues of the Hamiltonian
     double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion
+    double *totalLambdaArray;     // all eigenvalues of the system, collected for computing lambda_f
     double *Xorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Yorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Xorb_BLCYC;           // block-cyclically distributed orbitals (LOCAL)

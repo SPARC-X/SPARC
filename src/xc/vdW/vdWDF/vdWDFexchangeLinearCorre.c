@@ -201,6 +201,7 @@ void Calculate_Vx_ZhangYangrevPBE(int DMnd, XCCST_OBJ *xc_cst, double *rho, doub
 
     for(int i = 0; i < DMnd; i++){
         // the code below comes from Quantum Espresso
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
         agrho = sqrt(sigma[i]);
         kf = pow(3.0*M_PI*M_PI*rho[i], 1.0/3.0);
         dsg = 0.5 / kf;
@@ -238,6 +239,7 @@ void Calculate_Vx_SZhangYangrevPBE(int DMnd, XCCST_OBJ *xc_cst, double *rho, dou
 
     for(i = 0; i < 2*DMnd; i++){
         // the code below comes from Quantum Espresso
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
         arho = 2.0*rho[DMnd + i];
         agrho = 2.0*sqrt(sigma[i]);  // arho and agrho multiplied by 2 to compute epsilon(2*rho_up dn)
         kf = pow(3.0*M_PI*M_PI*arho, 1.0/3.0);
@@ -278,6 +280,7 @@ void Calculate_Vx_PW86(int DMnd, double *rho, double *sigma, double *vdWDFVx1, d
     double four_thirds = 4.0/3.0;
     
     for (int i = 0; i < DMnd; i++) {
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
         grad_rho = sqrt(sigma[i]);
         s = grad_rho / (s_prefactor*pow(rho[i], four_thirds));
         s_2 = s*s;
@@ -310,6 +313,7 @@ void Calculate_Vx_SPW86(int DMnd, double *rho, double *sigma, double *vdWDFVx1, 
     double two_pow13 = pow(2.0, 1.0/3.0);
     
     for (i = 0; i < 2*DMnd; i++) {
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
         grad_rho = sqrt(sigma[i]);
         s = grad_rho / (two_pow13 * s_prefactor*pow(rho[DMnd + i], four_thirds));
         s_2 = s*s;
@@ -472,6 +476,10 @@ void Calculate_Exc_GSGA_vdWDF_ExchangeLinearCorre(SPARC_OBJ *pSPARC, double *ele
     for (i = 0; i < pSPARC->Nd_d; i++) {
         //if(electronDens[i] != 0)
         Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        #ifdef DEBUG
+        if (isnan(electronDens[i])) // for debugging
+            printf("i = %d, electronDens is NaN\n", i);
+        #endif
     }
     
     Exc *= pSPARC->dV;
