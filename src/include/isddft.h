@@ -175,13 +175,23 @@ typedef struct _SPARC_OBJ{
     char OutFilename[L_STRING];
     char StaticFilename[L_STRING];
     char AtomFilename[L_STRING];
-    char DensFilename[L_STRING];
     char EigenFilename[L_STRING];
     char MDFilename[L_STRING];
     char RelaxFilename[L_STRING];  
     char restart_Filename[L_STRING];
     char restartC_Filename[L_STRING];
     char restartP_Filename[L_STRING];  
+    char DensTCubFilename[L_STRING];
+    char DensDCubFilename[L_STRING];
+    char DensUCubFilename[L_STRING];
+    char OrbitalsFilename[L_STRING];
+    char KinEnDensTCubFilename[L_STRING];
+    char KinEnDensUCubFilename[L_STRING];
+    char KinEnDensDCubFilename[L_STRING];
+    char XcEnDensCubFilename[L_STRING];
+    char ExxEnDensTCubFilename[L_STRING];
+    char ExxEnDensUCubFilename[L_STRING];
+    char ExxEnDensDCubFilename[L_STRING];
     
     /* Parallelizing parameters */
     int num_node;       // number of processor nodes
@@ -543,6 +553,7 @@ typedef struct _SPARC_OBJ{
                             // each type of atom. 0 for s, 1 for p, 2 for d, 3 for f                  
     double *Mass;           // atomic mass (for MD)
     char *atomType;         // atom type name for every type of atom    
+    int *Zatom;             // atom number
     int *Znucl;             // valence charge of each type
     int *nAtomv;            // number of atoms of each type
     char *psdName;          // pseudopotential file name for each type of atom
@@ -891,8 +902,15 @@ typedef struct _SPARC_OBJ{
     int PrintRelaxout;
     int Printrestart;
     int Printrestart_fq;
-    int suffixNum;  // the number appended to the output filename, only used if it's greater than 0
+    int suffixNum;  // the number appended to the output filename, only used if it's greater than 0    
+    int PrintPsiFlag[7];
+    int PrintEnergyDensFlag;
     
+    /* Energy density */
+    double *KineticRho;         // Kinetic energy density
+    double *ExxRho;             // Exact exchange energy density
+    double *ExcRho;             // Exchange correlation energy density
+
     /* Timing */
     double time_start;
     
@@ -1008,6 +1026,8 @@ typedef struct _SPARC_INPUT_OBJ{
     int PrintRelaxout;
     int Printrestart;
     int Printrestart_fq;
+    int PrintPsiFlag[7];
+    int PrintEnergyDensFlag;
     
     /* Smearing */
     int elec_T_type;    // electronic temperature (smearing) type, 0 - fermi-dirac, 1 - gaussian

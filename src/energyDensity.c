@@ -23,10 +23,50 @@
 #include "tools.h"
 
 /**
+ * @brief  Calculate exchange correlation energy density
+ **/
+void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho)
+{
+    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
+
+    double *rho;
+    int sz_rho, i, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    sz_rho = pSPARC->Nd_d;
+    rho = (double *)malloc(sz_rho * sizeof(double) );
+    for (i = 0; i < sz_rho; i++){
+        rho[i] = pSPARC->electronDens[i];
+        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+        if (pSPARC->NLCC_flag)
+            rho[i] += pSPARC->electronDens_core[i];
+        if(rho[i] < pSPARC->xc_rhotol)
+            rho[i] = pSPARC->xc_rhotol;
+    }
+
+    // TODO: Add ExcRho for spin-up and down
+    for (i = 0; i < pSPARC->Nd_d; i++) {
+        ExcRho[i] = pSPARC->e_xc[i] * rho[i];
+    }
+
+    free(rho);
+#ifdef DEBUG
+    double Exc = 0;
+    for (i = 0; i < pSPARC->Nd_d; i++)
+        Exc += ExcRho[i];
+    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+    Exc *= pSPARC->dV;
+    if (!rank) printf("Exchange correlation energy (without hybrid) from Exc energy density: %f\n", Exc);
+#endif
+}
+
+
+/**
  * @brief   compute kinetic energy density \tau
  */
 void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
 {
+    if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

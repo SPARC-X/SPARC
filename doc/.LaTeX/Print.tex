@@ -296,3 +296,191 @@ If an output file with the same name already exist, the results will be written 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_EIGEN}} \label{PRINT_EIGEN}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+int
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_EIGEN}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing eigenvalues and occupations into .eigen file.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_DENSITY}} \label{PRINT_DENSITY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+int
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_DENSITY}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing electron density into cube format. For spin-unpolarized calculation, electron density is printed into .dens file. For collinear spin calculation, total, spin-up and spin-down electron density are printed into .dens, .densUp and .densDwn file, respectively.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_ORBITAL}} \label{PRINT_ORBITAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+int
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_ORBITAL}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing Kohn-Sham orbitals into a binary file. 
+\end{block}
+
+\begin{block}{Remark}
+It consists of headers with system information and the orbitals. 
+First define a few variables and their types. 
+\begin{table}[]
+\begin{tabular}{|m{1.8cm}|m{2cm}|m{6.3cm}|}
+\hline
+name         & type, length       & description                                                                                                   \\ \hline
+Nx Ny Nz     & int, 1             & Number of FD nodes in x,y,z directions                                                                        \\ \hline
+Nd           & int, 1             & Total number of FD nodes                                                                                      \\ \hline
+dx, dy,dz     & double, 1         & mesh size in x,y,z directions
+                    \\ \hline
+dV           & double, 1          & unit Volume                                                                                                   \\ \hline
+isReal       & int, 1             & Flag for orbitals being real or complex                                                                       \\ \hline
+nspin        & int, 1             & Number of spin channel printed                                                                                \\ \hline
+nkpt         & int, 1             & Number of k-point printed                                                                                     \\ \hline
+nband        & int, 1             & Number of bands printed   
+                    \\ \hline
+\end{tabular}
+\end{table}
+\end{block}
+
+\begin{block}{Remark -- cont.}
+\begin{table}[]
+\begin{tabular}{|m{1.7cm}|m{3.2cm}|m{5cm}|}
+\hline
+name         & type, length       & description 
+                     \\ \hline
+spin\_index  & int, 1             & spin index of specific orbital                                                                                \\ \hline
+kpt\_index   & int, 1             & k-point index of specific orbital 
+                     \\ \hline
+kpt\_vec     & double, 3          & k-point in reduced coordinates                                                                                \\ \hline
+band\_index  & int, 1             & band index of specific orbital                                                                                \\ \hline
+psi\_real    & double, Nd         & real Kohn-Sham orbitals                                                                                       \\ \hline
+psi\_complex & double complex, Nd & complex Kohn-Sham orbitals                                                                                    \\ \hline
+\end{tabular}
+\end{table}
+The header is organized as: Nx, Ny, Nz, Nd, dx, dy, dz, dV, isReal, nspin, nkpt, nband, followed by the data for real or complex Kohn-sham orbital. Below is the pseudo-code to read orbitals after reading variables in headers. 
+\end{block}
+
+\begin{block}{Remark -- cont.}
+\begin{algorithm}[H]
+\begin{algorithmic}
+\For{ispin = 1:nspin}
+\For{ikpt = 1:nkpt}
+\For{iband = 1:nband}
+    \State spin\_index, kpt\_index, kpt\_vec, band\_index
+    \If{isReal == 1}
+        \State psi\_real
+    \Else
+        \State psi\_complex
+    \EndIf
+\EndFor
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_ENERGY\_DENSITY}} \label{PRINT_ENERGY_DENSITY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+int
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_ENERGY\_DENSITY}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing a few energy densities into cube format. Currently, only kinetic energy density, exchange correlation energy density (without exact exchange contribution) and exact exchange energy density (if any) are implemented. 
+\end{block}
+
+\begin{block}{Remark}
+For spin-unpolarized calculation, kinetic energy density is written into .kedens, exchange correlation energy density is written into .xcedens, and exact exchange energy density is written into .exxedens. For collinear spin calculation, total, spin-up, spin-down kinetic energy density are written into .kedens, kedensUp, kedensDwn files, total, spin-up, spin-down exact exchange energy density are writted into .exxedens, .exxedensUp, .exxedensDwn files, respectively. 
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

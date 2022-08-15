@@ -182,6 +182,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     free(pSPARC->localPsd);
     free(pSPARC->Mass);
     free(pSPARC->atomType);
+    free(pSPARC->Zatom);
     free(pSPARC->Znucl);
     free(pSPARC->nAtomv);
     free(pSPARC->psdName);
