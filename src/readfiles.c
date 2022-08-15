@@ -85,7 +85,8 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     printf("Reading input file %s\n",input_filename);
 #endif
     while (!feof(input_fp)) {
-        fscanf(input_fp,"%s",str);
+        int count = fscanf(input_fp,"%s",str);
+        if (count < 0) continue;  // for some specific cases
         
         // enable commenting with '#'
         if (str[0] == '#' || str[0] == '\n'|| strcmpi(str,"undefined") == 0) {
@@ -529,6 +530,23 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"PRINT_RESTART_FQ:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Printrestart_fq);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"PRINT_ORBITAL:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintPsiFlag[0]);
+            if (pSPARC_Input->PrintPsiFlag[0] == 1) {
+                fscanf(input_fp,"%[^\n]", str);
+                int count = sscanf(str,"%d %d %d %d %d %d", 
+                    &pSPARC_Input->PrintPsiFlag[1], &pSPARC_Input->PrintPsiFlag[2], &pSPARC_Input->PrintPsiFlag[3],
+                    &pSPARC_Input->PrintPsiFlag[4], &pSPARC_Input->PrintPsiFlag[5], &pSPARC_Input->PrintPsiFlag[6]);
+                if (count > 0 && count != 6) {
+                    printf(RED "ERROR: PRINT_ORBITAL option, please either provide flag, spin start/end index, k-point start/end index,\n"
+                               "       band start/end index (7 inputs) or only provide flag and ignore all start/end indexes (1 input).\n" RESET);
+                    exit(EXIT_FAILURE);
+                }
+            }    
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"PRINT_ENERGY_DENSITY:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintEnergyDensFlag);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");
@@ -721,7 +739,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
         }
-    }
+    }    
 
     // copy filename into pSPARC struct
     snprintf(pSPARC->filename, L_STRING, "%s", pSPARC_Input->filename);
@@ -1000,12 +1018,14 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC->localPsd = (int *)malloc( pSPARC->Ntypes * sizeof(int) );
     pSPARC->Mass = (double *)malloc( pSPARC->Ntypes * sizeof(double) );
     pSPARC->atomType = (char *)calloc( pSPARC->Ntypes * L_ATMTYPE, sizeof(char) ); 
+    pSPARC->Zatom = (int *)malloc( pSPARC->Ntypes * sizeof(int) );
     pSPARC->Znucl = (int *)malloc( pSPARC->Ntypes * sizeof(int) );
     pSPARC->nAtomv = (int *)malloc( pSPARC->Ntypes * sizeof(int) );
     pSPARC->psdName = (char *)calloc( pSPARC->Ntypes * L_PSD, sizeof(char) );
     if (pSPARC->localPsd == NULL || pSPARC->Mass == NULL || 
         pSPARC->atomType == NULL || pSPARC->psdName == NULL ||
-        pSPARC->Znucl == NULL || pSPARC->nAtomv == NULL) {
+        pSPARC->Zatom == NULL || pSPARC->Znucl == NULL || 
+        pSPARC->nAtomv == NULL) {
         printf("\nmemory cannot be allocated\n");
         exit(EXIT_FAILURE);
     }
@@ -1325,6 +1345,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         
         // read valence charge zion
         fscanf(psd_fp,"%lf %lf",&vtemp,&vtemp2);
+        pSPARC->Zatom[ityp] = (int)vtemp;
         pSPARC->Znucl[ityp] = (int)vtemp2;
         fscanf(psd_fp, "%*[^\n]\n"); // skip current line
         

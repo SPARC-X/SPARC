@@ -20,5 +20,10 @@
  */
 void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho);
 
+/**
+ * @brief  Calculate exchange correlation energy density
+ **/
+void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho);
+
 
 #endif

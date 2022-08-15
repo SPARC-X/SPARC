@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 162
+#define N_MEMBR 164
 
 
 
@@ -601,6 +601,11 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->PrintRelaxout = 1;          // Flag for printing relax output in a .relax file
     pSPARC_Input->Printrestart = 1;           // Flag for printing output needed for restarting a simulation
     pSPARC_Input->Printrestart_fq = 1;        // Steps after which the output is written in the restart file
+    pSPARC_Input->PrintPsiFlag[0] = 0;        // Flag for printing Kohn-Sham orbitals
+    for (int i = 1; i < 7; i++) 
+        pSPARC_Input->PrintPsiFlag[i] = -1;   // defualt spin, kpt, band start and end index for printing psi
+    pSPARC_Input->PrintEnergyDensFlag = 0;    // flag for printing kinetic energy density
+    
     /* Default pSPARC members */
     pSPARC->is_default_psd = 0;               // default pseudopotential path is disabled
 
@@ -816,7 +821,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     }
 
     l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + nprojsosize_sum + nprojsosize_sum + n_atom) * sizeof(double)
-             + (5*Ntypes + 3*n_atom) * sizeof(int)
+             + (6*Ntypes + 3*n_atom) * sizeof(int)
              + Ntypes * (L_PSD + L_ATMTYPE) * sizeof(char)
              + 0*(Ntypes+3*n_atom) *16; // last term is spare memory in case
     buff = (char *)malloc( l_buff*sizeof(char) );
@@ -826,6 +831,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         // pack the variables
         position = 0;
         MPI_Pack(pSPARC->localPsd, Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
+        MPI_Pack(pSPARC->Zatom, Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
         MPI_Pack(pSPARC->Znucl, Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
         MPI_Pack(pSPARC->nAtomv, Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
         MPI_Pack(pSPARC->Mass, Ntypes, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
@@ -865,6 +871,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     } else {
         /* allocate memory for receiver processes */
         pSPARC->localPsd = (int *)malloc( Ntypes * sizeof(int) );
+        pSPARC->Zatom = (int *)malloc( Ntypes * sizeof(int) );
         pSPARC->Znucl = (int *)malloc( Ntypes * sizeof(int) );
         pSPARC->nAtomv = (int *)malloc( Ntypes * sizeof(int) );
         pSPARC->IsFrac = (int *)malloc( Ntypes * sizeof(int) );
@@ -873,9 +880,10 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         pSPARC->atomType = (char *)malloc( Ntypes * L_ATMTYPE * sizeof(char) );
         pSPARC->psdName = (char *)malloc( Ntypes * L_PSD * sizeof(char) );
 
-        if (pSPARC->localPsd == NULL || pSPARC->Znucl == NULL ||
-            pSPARC->nAtomv == NULL || pSPARC->Mass == NULL ||
-            pSPARC->atomType == NULL || pSPARC->psdName == NULL) {
+        if (pSPARC->localPsd == NULL || pSPARC->Zatom == NULL ||
+            pSPARC->Znucl == NULL || pSPARC->nAtomv == NULL || 
+            pSPARC->Mass == NULL || pSPARC->atomType == NULL || 
+            pSPARC->psdName == NULL) {
             printf("\nmemory cannot be allocated3\n");
             exit(EXIT_FAILURE);
         }
@@ -931,6 +939,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         // unpack the variables
         position = 0;
         MPI_Unpack(buff, l_buff, &position, pSPARC->localPsd, Ntypes, MPI_INT, MPI_COMM_WORLD);
+        MPI_Unpack(buff, l_buff, &position, pSPARC->Zatom, Ntypes, MPI_INT, MPI_COMM_WORLD);
         MPI_Unpack(buff, l_buff, &position, pSPARC->Znucl, Ntypes, MPI_INT, MPI_COMM_WORLD);
         MPI_Unpack(buff, l_buff, &position, pSPARC->nAtomv, Ntypes, MPI_INT, MPI_COMM_WORLD);
         MPI_Unpack(buff, l_buff, &position, pSPARC->Mass, Ntypes, MPI_DOUBLE, MPI_COMM_WORLD);
@@ -1095,6 +1104,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->npNdx_SQ = pSPARC_Input->npNdx_SQ;
     pSPARC->npNdy_SQ = pSPARC_Input->npNdy_SQ;
     pSPARC->npNdz_SQ = pSPARC_Input->npNdz_SQ;
+    for (i = 0; i < 7; i++)
+        pSPARC->PrintPsiFlag[i] = pSPARC_Input->PrintPsiFlag[i];
+    pSPARC->PrintEnergyDensFlag = pSPARC_Input->PrintEnergyDensFlag;
+    
     // double type values
     pSPARC->range_x = pSPARC_Input->range_x;
     pSPARC->range_y = pSPARC_Input->range_y;
@@ -1176,6 +1189,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         if (!rank) printf("\nERROR: Please specify XC type!\n");
         exit(EXIT_FAILURE);
     }
+    strncpy(pSPARC->filename , pSPARC_Input->filename,sizeof(pSPARC->filename));
+    strncpy(pSPARC->filename_out , pSPARC_Input->filename_out,sizeof(pSPARC->filename_out));
+    strncpy(pSPARC->SPARCROOT , pSPARC_Input->SPARCROOT,sizeof(pSPARC->SPARCROOT));
 
     // check XC compatibility with pseudopotential
     pSPARC->usefock = 0;                    // default: no fock operator 
@@ -1236,10 +1252,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->hyb_range_fock = -1;
         pSPARC->hyb_range_pbe = -1;
     }
-    
-    strncpy(pSPARC->filename , pSPARC_Input->filename,sizeof(pSPARC->filename));
-    strncpy(pSPARC->filename_out , pSPARC_Input->filename_out,sizeof(pSPARC->filename_out));
-    strncpy(pSPARC->SPARCROOT , pSPARC_Input->SPARCROOT,sizeof(pSPARC->SPARCROOT));
 
     /* process the data read from input files */
     Ntypes = pSPARC->Ntypes;
@@ -1306,13 +1318,23 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         snprintf(pSPARC->OutFilename,       L_STRING, "%s.out"  ,     pSPARC->filename_out);
         snprintf(pSPARC->StaticFilename,    L_STRING, "%s.static",     pSPARC->filename_out);
         snprintf(pSPARC->AtomFilename,      L_STRING, "%s.atom",      pSPARC->filename_out);
-        snprintf(pSPARC->DensFilename,      L_STRING, "%s.dens",      pSPARC->filename_out);
         snprintf(pSPARC->EigenFilename,     L_STRING, "%s.eigen",     pSPARC->filename_out);
         snprintf(pSPARC->MDFilename,        L_STRING, "%s.aimd",      pSPARC->filename_out);
         snprintf(pSPARC->RelaxFilename,     L_STRING, "%s.geopt",     pSPARC->filename_out);
         snprintf(pSPARC->restart_Filename,  L_STRING, "%s.restart",   pSPARC->filename_out);
         snprintf(pSPARC->restartC_Filename, L_STRING, "%s.restart-0", pSPARC->filename_out);
         snprintf(pSPARC->restartP_Filename, L_STRING, "%s.restart-1", pSPARC->filename_out);
+        snprintf(pSPARC->DensTCubFilename,  L_STRING, "%s.dens",   pSPARC->filename_out);
+        snprintf(pSPARC->DensUCubFilename,  L_STRING, "%s.densUp",    pSPARC->filename_out);
+        snprintf(pSPARC->DensDCubFilename,  L_STRING, "%s.densDwn",   pSPARC->filename_out);
+        snprintf(pSPARC->OrbitalsFilename,  L_STRING, "%s.psi",       pSPARC->filename_out);
+        snprintf(pSPARC->KinEnDensTCubFilename,  L_STRING, "%s.kedens",       pSPARC->filename_out);
+        snprintf(pSPARC->KinEnDensUCubFilename,  L_STRING, "%s.kedensUp",     pSPARC->filename_out);
+        snprintf(pSPARC->KinEnDensDCubFilename,  L_STRING, "%s.kedensDwn",    pSPARC->filename_out);
+        snprintf(pSPARC->XcEnDensCubFilename,    L_STRING, "%s.xcedens",      pSPARC->filename_out);
+        snprintf(pSPARC->ExxEnDensTCubFilename,  L_STRING, "%s.exxedens",     pSPARC->filename_out);
+        snprintf(pSPARC->ExxEnDensUCubFilename,  L_STRING, "%s.exxedensUp",   pSPARC->filename_out);
+        snprintf(pSPARC->ExxEnDensDCubFilename,  L_STRING, "%s.exxedensDwn",  pSPARC->filename_out);
 
         // check if the name for out file exits
         char temp_outfname[L_STRING];
@@ -1353,16 +1375,40 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->StaticFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->AtomFilename);
             snprintf(pSPARC->AtomFilename,  L_STRING, "%s_%02d", tempchar, i);
-            snprintf(tempchar, L_STRING, "%s", pSPARC->DensFilename);
-            snprintf(pSPARC->DensFilename,  L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->EigenFilename);
             snprintf(pSPARC->EigenFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->MDFilename);
             snprintf(pSPARC->MDFilename,    L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->RelaxFilename);
             snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->DensTCubFilename);
+            snprintf(pSPARC->DensTCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->DensUCubFilename);
+            snprintf(pSPARC->DensUCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->DensDCubFilename);
+            snprintf(pSPARC->DensDCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->OrbitalsFilename);
+            snprintf(pSPARC->OrbitalsFilename, L_STRING, "%s_%02d", tempchar, i);
+            // energy density files 
+            snprintf(tempchar, L_STRING, "%s", pSPARC->KinEnDensTCubFilename);
+            snprintf(pSPARC->KinEnDensTCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->KinEnDensUCubFilename);
+            snprintf(pSPARC->KinEnDensUCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->KinEnDensDCubFilename);
+            snprintf(pSPARC->KinEnDensDCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->XcEnDensCubFilename);
+            snprintf(pSPARC->XcEnDensCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->ExxEnDensTCubFilename);
+            snprintf(pSPARC->ExxEnDensTCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->ExxEnDensUCubFilename);
+            snprintf(pSPARC->ExxEnDensUCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->ExxEnDensDCubFilename);
+            snprintf(pSPARC->ExxEnDensDCubFilename, L_STRING, "%s_%02d", tempchar, i);
         }
     }
+    // Not only rank 0 printing orbitals
+    MPI_Bcast(pSPARC->OrbitalsFilename, L_STRING, MPI_CHAR, 0, MPI_COMM_WORLD);
+
     // Initialize MD/relax variables
     pSPARC->RelaxCount = 0; // initialize current relaxation step
     pSPARC->StressCount = 0; // initialize current stress relaxation step (used in full relaxation)
@@ -2330,6 +2376,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             pSPARC->SQ_gauss_mem = 0;       // Ensure the high memory option is only valid for Gauss Qaudrature
         }
     }
+
+    if (pSPARC->PrintPsiFlag[0] == 1 && pSPARC->PrintPsiFlag[1] < 0) {
+        pSPARC->PrintPsiFlag[1] = 0; pSPARC->PrintPsiFlag[2] = pSPARC->Nspin-1;     // spin start/end index
+        pSPARC->PrintPsiFlag[3] = 0; pSPARC->PrintPsiFlag[4] = pSPARC->Nkpts-1;     // k-point start/end index
+        pSPARC->PrintPsiFlag[5] = 0; pSPARC->PrintPsiFlag[6] = pSPARC->Nstates-1;   // band start/end index
+    }
 }
 
 
@@ -3067,7 +3119,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Aug 13, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Aug 15, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3338,6 +3390,12 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         if(pSPARC->Printrestart == 1)
             fprintf(output_fp,"PRINT_RESTART_FQ: %d\n",pSPARC->Printrestart_fq);
     }
+    if (pSPARC->PrintPsiFlag[0] == 1) {
+        fprintf(output_fp,"PRINT_ORBITAL: %d %d %d %d %d %d %d\n",
+            pSPARC->PrintPsiFlag[0],pSPARC->PrintPsiFlag[1],pSPARC->PrintPsiFlag[2],pSPARC->PrintPsiFlag[3],
+            pSPARC->PrintPsiFlag[4],pSPARC->PrintPsiFlag[5],pSPARC->PrintPsiFlag[6]);
+    }
+    fprintf(output_fp,"PRINT_ENERGY_DENSITY: %d\n",pSPARC->PrintEnergyDensFlag);
 
     if (pSPARC->RelaxFlag == 1) {
         fprintf(output_fp,"TOL_RELAX: %.2E\n",pSPARC->TOL_RELAX);
@@ -3543,7 +3601,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, 
+                                         MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3577,7 +3635,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           3, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
-                          1, /* int */ 
+                          1, 7, 1, /* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -3694,6 +3752,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.npNdx_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npNdy_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npNdz_SQ, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PrintPsiFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PrintEnergyDensFlag, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);

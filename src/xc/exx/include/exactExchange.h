@@ -164,9 +164,4 @@ void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, double *sendbuff, double *re
 void solve_allpair_poissons_equation_apply2Xi(
     SPARC_OBJ *pSPARC, int ncol, double *psi, double *psi_storage, double *occ, double *Xi, int shift, int Ns_occ);
 
-/**
- * @brief   Compute exact exchange energy density
- */
-void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho);
-
 #endif // EXACTEXCHANGEPOTENTIAL_H 
