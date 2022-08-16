@@ -53,7 +53,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     // find exchange-correlation component of pressure
     t1 = MPI_Wtime();
     Calculate_XC_pressure(pSPARC);
-    if ((pSPARC->mGGAflag == 1) && (pSPARC->countSCF > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
+    if ((pSPARC->mGGAflag == 1) && (pSPARC->countPotentialCalculate > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
         if (pSPARC->isGammaPoint) {
             Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mgga.c
         }

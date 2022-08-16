@@ -777,7 +777,7 @@ typedef struct _SPARC_OBJ{
     double vdWDFenergy;
     double *vdWDFpotential;
 
-    int countSCF; // for helping output variables in 1st step, to be deleted in the future
+    int countPotentialCalculate; // for helping output variables in 1st step, to be deleted in the future
     
     /* metaGGA functionals (SCAN) */
     int mGGAflag;
