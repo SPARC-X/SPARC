@@ -102,7 +102,7 @@ $ cd tests/Example_tests/
 The input file is available inside the folder. Run a DC silicon system by
 
 ```shell
-$ mpirun -np 24 ../../../lib/sparc -name Si8_kpt
+$ mpirun -np 24 ../../lib/sparc -name Si8_kpt
 ```
 
 The result is printed to output file "Si8_kpt.out", located in the same directory as the input files. If the file "Si8_kpt.out" is already present, the result will be printed to "Si8_kpt.out\_1" instead. The max number of ".out" files allowed with the same name is 100. Once this number is reached, the result will instead overwrite the "Si8_kpt.out" file. One can compare the result with the reference out file named "Si8_kpt.refout".
