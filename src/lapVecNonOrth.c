@@ -373,6 +373,7 @@ void Lap_plus_diag_vec_mult_nonorth(
     periods[1] = 1 - pSPARC->BCy;
     periods[2] = 1 - pSPARC->BCz;
     
+    int order = pSPARC->order;
     int FDn = pSPARC->order / 2;
     
     // The user has to make sure DMnd = DMnx * DMny * DMnz
@@ -491,7 +492,7 @@ void Lap_plus_diag_vec_mult_nonorth(
     int pshiftz_ex = pshifty_ex * DMny_ex;
     
     double *x_ex = (double *)calloc(ncol * DMnd_ex, sizeof(double));
-    
+    assert(x_ex != NULL);
     // copy x into extended x_ex
     count = 0;
     for (n = 0; n < ncol; n++) {
@@ -527,10 +528,8 @@ void Lap_plus_diag_vec_mult_nonorth(
     Dx1 = NULL; Dx2 = NULL;
     if(pSPARC->cell_typ == 11){
         Dx1 = (double *) malloc(ncol * DMnd_xex * sizeof(double) ); // df/dy
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
+
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
                 Calc_DX(x+n*DMnd, Dx1+n*DMnd_xex, FDn, pshifty, pshifty, DMnx_ex, pshiftz, DMnxexny, 
@@ -545,10 +544,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 12){
         Dx1 = (double *) malloc(ncol * DMnd_xex * sizeof(double) ); // df/dz
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -564,10 +560,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 13){
         Dx1 = (double *) malloc(ncol * DMnd_yex * sizeof(double) ); // df/dz
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -583,10 +576,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 14){
         Dx1 = (double *) malloc(ncol * DMnd_xex * sizeof(double) ); // 2*T_12*df/dy + 2*T_13*df/dz
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -602,10 +592,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 15){
         Dx1 = (double *) malloc(ncol * DMnd_zex * sizeof(double) ); // 2*T_13*dV/dx + 2*T_23*dV/dy
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -621,10 +608,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 16){
         Dx1 = (double *) malloc(ncol * DMnd_yex * sizeof(double) ); // 2*T_12*dV/dx + 2*T_23*dV/dz
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -640,16 +624,8 @@ void Lap_plus_diag_vec_mult_nonorth(
         }
     } else if(pSPARC->cell_typ == 17){
         Dx1 = (double *) malloc(ncol * DMnd_xex * sizeof(double) ); // 2*T_12*df/dy + 2*T_13*df/dz
-        if(Dx1 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
-        
         Dx2 = (double *) malloc(ncol * DMnd_yex * sizeof(double) ); // df/dz
-        if(Dx2 == NULL){
-            printf("\nMemory allocation failed in Laplacian vector multiplication!\n");
-            exit(EXIT_FAILURE);
-        }
+        assert(Dx1 != NULL && Dx2 != NULL);
         
         if(overlap_flag){
             for (n = 0; n < ncol; n++) {
@@ -736,559 +712,374 @@ void Lap_plus_diag_vec_mult_nonorth(
     st = MPI_Wtime();
     #endif
 
+    // positions of sub-blocks when overlap_flag is on
+    const int x_Y_spos[6] = {0,	0,	0,	0,	0,	DMnx_in};
+    const int x_Y_epos[6] = {DMnx,	DMnx,	DMnx,	DMnx,	FDn,	DMnx};
+    const int y_Y_spos[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+    const int y_Y_epos[6] = {DMny,	DMny,	FDn,	DMny,	DMny_in,	DMny_in};
+    const int z_Y_spos[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+    const int z_Y_epos[6] = {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+    const int x_x_ex_spos_lap[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+    const int y_x_ex_spos_lap[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+    const int z_x_ex_spos_lap[6] = {FDn,	DMnz,	order,	order,	order,	order};
+
     if(pSPARC->cell_typ == 11){
         // calculate Lx
         if (overlap_flag) {
-            //  df/dy 
-            // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
-                        0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_y, 0.0);
-            }
-            
-            // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0);
-            }
-            
-            // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_y, 0.0);
+            // df/dy
+            const int x_Dx1_spos[6] = {0,	0,	0,	0,	0,	DMnx_out};
+            const int x_Dx1_epos[6] = {DMnx_ex,	DMnx_ex,	DMnx_ex,	DMnx_ex,	FDn,	DMnx_ex};
+            const int y_Dx1_spos[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int y_Dx1_epos[6] = {DMny,	DMny,	FDn,	DMny,	DMny_in,	DMny_in};
+            const int z_Dx1_spos[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos[6] = {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+            const int x_x_ex_spos[6] = {0,	0,	0,	0,	0,	DMnx_out};
+            const int y_x_ex_spos[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_x_ex_spos[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                        x_Dx1_spos[blk], x_Dx1_epos[blk], y_Dx1_spos[blk], y_Dx1_epos[blk], z_Dx1_spos[blk], z_Dx1_epos[blk],
+                        x_x_ex_spos[blk], y_x_ex_spos[blk], z_x_ex_spos[blk],
+                        pSPARC->D1_stencil_coeffs_y, 0.0);
+                }
             }
 
-            // Laplacian 
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, FDn, 0, 0, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, FDn, 0, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            // Laplacian
+            const int x_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	FDn,	    FDn,	DMnx};
+            const int y_Dx1_spos_lap[6] = {0,	0,	    0,	    DMny_in,	FDn,	FDn};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,FDn,    FDn,	    FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, FDn, 0, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, FDn, DMny_in, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, FDn, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0);
+                            0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                                  0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
-        free(Dx1); Dx1 = NULL;   
+
+        free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 12){
         // calculate Lx
         if (overlap_flag) {
-            //  df/dz 
-            // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex,DMnxexny,
-                        0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
+            //  df/dz
+            const int x_Dx1_spos[6] = {0,	0,	0,	0,	0,	DMnx_out};
+            const int x_Dx1_epos[6] = {DMnx_ex,	DMnx_ex,	DMnx_ex,	DMnx_ex,	FDn,	DMnx_ex};
+            const int y_Dx1_spos[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int y_Dx1_epos[6] = {DMny,	DMny,	FDn,	DMny,	DMny_in,	DMny_in};
+            const int z_Dx1_spos[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos[6] = {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+            const int x_x_ex_spos[6] = {0,	0,	0,	0,	0,	DMnx_out};
+            const int y_x_ex_spos[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_x_ex_spos[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                        x_Dx1_spos[blk], x_Dx1_epos[blk], y_Dx1_spos[blk], y_Dx1_epos[blk], z_Dx1_spos[blk], z_Dx1_epos[blk],
+                        x_x_ex_spos[blk], y_x_ex_spos[blk], z_x_ex_spos[blk],
+                        pSPARC->D1_stencil_coeffs_z, 0.0);
+                }
             }
 
-            // Laplacian 
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, FDn, 0, 0, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, FDn, 0, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            // Laplacian
+            const int x_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	FDn,	    FDn,	DMnx};
+            const int y_Dx1_spos_lap[6] = {0,	0,	    0,	    DMny_in,	FDn,	FDn};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,FDn,    FDn,	    FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, FDn, 0, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, FDn, DMny_in, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, FDn, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                        0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
+                            0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                                  0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
-        free(Dx1); Dx1 = NULL;   
+
+        free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 13){
         // calculate Lx
         if (overlap_flag) {
-            //  df/dz
-            // (0:DMnx, 0:DMny_ex, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, DMny_ex, 0, FDn, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, DMny_ex, DMnz_in, DMnz, FDn, 0, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // (0:DMnx, [0:FDn,DMny_out:DMny_ex], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, FDn, FDn, DMnz_in, FDn, 0, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, DMny_out, DMny_ex, FDn, DMnz_in, FDn, DMny_out, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // ([0:FDn,DMnx_in:DMnx], FDn:DMny_out, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, FDn, FDn, DMny_out, FDn, DMnz_in, FDn, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        DMnx_in, DMnx, FDn, DMny_out, FDn, DMnz_in, DMnx, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
+            // df/dz
+            const int x_Dx1_spos[6] =  {0,	0,	0,	0,	0,	DMnx_in};
+            const int x_Dx1_epos[6] =  {DMnx,	DMnx,	DMnx,	DMnx,	FDn,	DMnx};
+            const int y_Dx1_spos[6] =  {0,	0,	0,	DMny_out,	FDn,	FDn};
+            const int y_Dx1_epos[6] =  {DMny_ex,	DMny_ex,	FDn,	DMny_ex,	DMny_out,	DMny_out};
+            const int z_Dx1_spos[6] =  {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos[6] =  {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+            const int x_x_ex_spos[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+            const int y_x_ex_spos[6] = {0,	0,	0,	DMny_out,	FDn,	FDn};
+            const int z_x_ex_spos[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                        x_Dx1_spos[blk], x_Dx1_epos[blk], y_Dx1_spos[blk], y_Dx1_epos[blk], z_Dx1_spos[blk], z_Dx1_epos[blk],
+                        x_x_ex_spos[blk], y_x_ex_spos[blk], z_x_ex_spos[blk],
+                        pSPARC->D1_stencil_coeffs_z, 0.0);
+                }
             }
 
-            // Laplacian 
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, 0, FDn, 0, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, 0, FDn, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            // Laplacian
+            const int x_Dx1_spos_lap[6] = {0,	0,	0,	0,	0,	DMnx_in};
+            const int y_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, 0, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, 0, DMny, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, 0, pSPARC->order, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx_in, pSPARC->order, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
+
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 14){
         if (overlap_flag) {
             // 2*T_12*df/dy + 2*T_13*df/dz
-            
-            // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            }                              
-            
-            // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            }    
-            
-            // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            } 
+            const int x_Dx1_spos_dydz[6] =  {0,	0,	0,	0,	0,	DMnx_out};
+            const int x_Dx1_epos_dydz[6] =  {DMnx_ex,	DMnx_ex,	DMnx_ex,	DMnx_ex,	FDn,	DMnx_ex};
+            const int y_Dx1_spos_dydz[6] =  {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int y_Dx1_epos_dydz[6] =  {DMny,	DMny,	FDn,	DMny,	DMny_in,	DMny_in};
+            const int z_Dx1_spos_dydz[6] =  {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos_dydz[6] =  {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+            const int x_x_ex_spos_dydz[6] = {0,	0,	0,	0,	0,	DMnx_out};
+            const int y_x_ex_spos_dydz[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_x_ex_spos_dydz[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                        x_Dx1_spos_dydz[blk], x_Dx1_epos_dydz[blk], y_Dx1_spos_dydz[blk], y_Dx1_epos_dydz[blk], z_Dx1_spos_dydz[blk], z_Dx1_epos_dydz[blk],
+                        x_x_ex_spos_dydz[blk], y_x_ex_spos_dydz[blk], z_x_ex_spos_dydz[blk],
+                        pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz
+                    );
+                }
+            }
 
             // Laplacian
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, FDn, 0, 0, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, FDn, 0, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            const int x_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+            const int y_Dx1_spos_lap[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, FDn, 0, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, FDn, DMny_in, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, FDn, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
                              0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 15){
         if (overlap_flag) {
             // 2*T_13*dV/dx + 2*T_23*dV/dy
-            
-            // (0:DMnx, 0:DMny, [0:FDn,DMnz_out:DMnz_ex])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             0, DMnx, 0, DMny, 0, FDn, FDn, FDn, 0, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             0, DMnx, 0, DMny, DMnz_out, DMnz_ex, FDn, FDn, DMnz_out, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-            }                              
-            
-            // (0:DMnx, [0:FDn,DMny_in:DMny], FDn:DMnz_out)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             0, DMnx, 0, FDn, FDn, DMnz_out, FDn, FDn, FDn, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             0, DMnx, DMny_in, DMny, FDn, DMnz_out, FDn, DMny, FDn, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-            }    
-            
-            // ([0:FDn,DMnx_in:DMnx], FDn:DMny_in, FDn:DMnz_out)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             0, FDn, FDn, DMny_in, FDn, DMnz_out, FDn, pSPARC->order, FDn, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
-                             DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_out, DMnx, pSPARC->order, FDn, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-            } 
+            const int x_Dx1_spos_dxdy[6] =  {0,	0,	0,	0,	0,	DMnx_in};
+            const int x_Dx1_epos_dxdy[6] =  {DMnx,	DMnx,	DMnx,	DMnx,	FDn,	DMnx};
+            const int y_Dx1_spos_dxdy[6] =  {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int y_Dx1_epos_dxdy[6] =  {DMny,	DMny,	FDn,	DMny,	DMny_in,	DMny_in};
+            const int z_Dx1_spos_dxdy[6] =  {0,	DMnz_out,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos_dxdy[6] =  {FDn,	DMnz_ex,	DMnz_out,	DMnz_out,	DMnz_out,	DMnz_out};
+            const int x_x_ex_spos_dxdy[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+            const int y_x_ex_spos_dxdy[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_x_ex_spos_dxdy[6] = {0,	DMnz_out,	FDn,	FDn,	FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
+                        x_Dx1_spos_dxdy[blk], x_Dx1_epos_dxdy[blk], y_Dx1_spos_dxdy[blk], y_Dx1_epos_dxdy[blk], z_Dx1_spos_dxdy[blk], z_Dx1_epos_dxdy[blk],
+                        x_x_ex_spos_dxdy[blk], y_x_ex_spos_dxdy[blk], z_x_ex_spos_dxdy[blk],
+                        pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy
+                    );
+                }
+            }
 
             // Laplacian
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, 0, 0, FDn, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, 0, 0, DMnz,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            const int x_Dx1_spos_lap[6] = {0,	0,	0,	0,	0,	DMnx_in};
+            const int y_Dx1_spos_lap[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int z_Dx1_spos_lap[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, 0, 0, pSPARC->order, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, 0, DMny_in, pSPARC->order,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, 0, FDn, pSPARC->order, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx_in, FDn, pSPARC->order,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, 1, pshifty_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxny,
                              0, DMnx, 0, DMny, 0, DMnz_ex, FDn, FDn, 0, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, 0, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, 0, FDn, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 16){
         if (overlap_flag) {
             // 2*T_12*dV/dx + 2*T_23*dV/dz
-            
-            //(0:DMnx, 0:DMny_ex, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             0, DMnx, 0, DMny_ex, 0, FDn, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             0, DMnx, 0, DMny_ex, DMnz_in, DMnz, FDn, 0, DMnz, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-            }                              
-            
-            // (0:DMnx, [0:FDn,DMny_out:DMny_ex], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             0, DMnx, 0, FDn, FDn, DMnz_in, FDn, 0, pSPARC->order, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             0, DMnx, DMny_out, DMny_ex, FDn, DMnz_in, FDn, DMny_out, pSPARC->order, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-            }    
-            
-            // ([0:FDn,DMnx_in:DMnx], FDn:DMny_out, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             0, FDn, FDn, DMny_out, FDn, DMnz_in, FDn, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                             DMnx_in, DMnx, FDn, DMny_out, FDn, DMnz_in, DMnx, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
+            const int x_Dx1_spos_dxdz[6] =  {0,	0,	0,	0,	0,	DMnx_in};
+            const int x_Dx1_epos_dxdz[6] =  {DMnx,	 DMnx,	 DMnx,	 DMnx,	 FDn,	 DMnx};
+            const int y_Dx1_spos_dxdz[6] =  {0,	0,	0,	 DMny_out,	 FDn,	 FDn};
+            const int y_Dx1_epos_dxdz[6] =  {DMny_ex,	 DMny_ex,	 FDn,	 DMny_ex,	 DMny_out,	 DMny_out};
+            const int z_Dx1_spos_dxdz[6] =  {0,	 DMnz_in,	 FDn,	 FDn,	 FDn,	 FDn};
+            const int z_Dx1_epos_dxdz[6] =  {FDn,	 DMnz,	 DMnz_in,	 DMnz_in,	 DMnz_in,	 DMnz_in};
+            const int x_x_ex_spos_dxdz[6] = {FDn,	 FDn,	 FDn,	 FDn,	 FDn,	 DMnx};
+            const int y_x_ex_spos_dxdz[6] = {0,	0,	0,	 DMny_out,	 FDn,	 FDn};
+            const int z_x_ex_spos_dxdz[6] = {FDn,	 DMnz,	 order,	 order,	 order,	 order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                        x_Dx1_spos_dxdz[blk], x_Dx1_epos_dxdz[blk], y_Dx1_spos_dxdz[blk], y_Dx1_epos_dxdz[blk], z_Dx1_spos_dxdz[blk], z_Dx1_epos_dxdz[blk],
+                        x_x_ex_spos_dxdz[blk], y_x_ex_spos_dxdz[blk], z_x_ex_spos_dxdz[blk],
+                        pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz
+                    );
+                }
             }
 
             // Laplacian
-            //first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, 0, FDn, 0, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, 0, FDn, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, 0, FDn, FDn, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, 0, DMny, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, 0, pSPARC->order, FDn, 
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx_in, pSPARC->order, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            const int x_Dx1_spos_lap[6] = {0,	0,	0,	0,	0,	DMnx_in};
+            const int y_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
+                        x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                        x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk], x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                        Lap_wt, w2_diag, _b, _v, y+n*DMnd
+                    );
+                }
             }
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, 1, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
                              0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
             }
-            
+
             for (n = 0; n < ncol; n++) {
                 stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 17){
         if (overlap_flag) {
             // 2*T_12*df/dy + 2*T_13*df/dz
-            // (0:DMnx_ex, 0:DMny, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, DMny, 0, FDn, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, DMny, DMnz_in, DMnz, 0, FDn, DMnz, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            }                              
-            
-            // (0:DMnx_ex, [0:FDn,DMny_in:DMny], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, FDn, FDn, DMnz_in, 0, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, DMny_in, DMny, FDn, DMnz_in, 0, DMny, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            }    
-            
-            // ([0:FDn,DMnx_out:DMnx_ex], FDn:DMny_in, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, FDn, FDn, DMny_in, FDn, DMnz_in, 0, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-                Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             DMnx_out, DMnx_ex, FDn, DMny_in, FDn, DMnz_in, DMnx_out, pSPARC->order, pSPARC->order, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-            } 
+            const int x_Dx1_spos_dydz[6] =  {0,	0,	0,	0,	0,	DMnx_out};
+            const int x_Dx1_epos_dydz[6] =  {DMnx_ex,	 DMnx_ex,	 DMnx_ex,	 DMnx_ex,	 FDn,	 DMnx_ex};
+            const int y_Dx1_spos_dydz[6] =  {0,	0,	0,	 DMny_in,	 FDn,	 FDn};
+            const int y_Dx1_epos_dydz[6] =  {DMny,	 DMny,	 FDn,	 DMny,	 DMny_in,	 DMny_in};
+            const int z_Dx1_spos_dydz[6] =  {0,	 DMnz_in,	 FDn,	 FDn,	 FDn,	 FDn};
+            const int z_Dx1_epos_dydz[6] =  {FDn,	 DMnz,	 DMnz_in,	 DMnz_in,	 DMnz_in,	 DMnz_in};
+            const int x_x_ex_spos_dydz[6] = {0,	0,	0,	0,	0,	 DMnx_out};
+            const int y_x_ex_spos_dydz[6] = {FDn,	 FDn,	 FDn,	 DMny,	 order,	 order};
+            const int z_x_ex_spos_dydz[6] = {FDn,	 DMnz,	 order,	 order,	 order,	 order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
+                        x_Dx1_spos_dydz[blk], x_Dx1_epos_dydz[blk], y_Dx1_spos_dydz[blk], y_Dx1_epos_dydz[blk], z_Dx1_spos_dydz[blk], z_Dx1_epos_dydz[blk],
+                        x_x_ex_spos_dydz[blk], y_x_ex_spos_dydz[blk], z_x_ex_spos_dydz[blk],
+                        pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz
+                    );
+                }
+            }
 
             //  df/dz
-            // (0:DMnx, 0:DMny_ex, [0:FDn,DMnz_in:DMnz])
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, DMny_ex, 0, FDn, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, DMny_ex, DMnz_in, DMnz, FDn, 0, DMnz, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // (0:DMnx, [0:FDn,DMny_out:DMny_ex], FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, FDn, FDn, DMnz_in, FDn, 0, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, DMny_out, DMny_ex, FDn, DMnz_in, FDn, DMny_out, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-            }
-            
-            // ([0:FDn,DMnx_in:DMnx], FDn:DMny_out, FDn:DMnz_in)
-            for (n = 0; n < ncol; n++) {
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, FDn, FDn, DMny_out, FDn, DMnz_in, FDn, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
-                
-                Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        DMnx_in, DMnx, FDn, DMny_out, FDn, DMnz_in, DMnx, FDn, pSPARC->order, pSPARC->D1_stencil_coeffs_z, 0.0);
+            const int x_Dx1_spos[6] =  {0,	0,	0,	0,	0,	DMnx_in};
+            const int x_Dx1_epos[6] =  {DMnx,	DMnx,	DMnx,	DMnx,	FDn,	DMnx};
+            const int y_Dx1_spos[6] =  {0,	0,	0,	DMny_out,	FDn,	FDn};
+            const int y_Dx1_epos[6] =  {DMny_ex,	DMny_ex,	FDn,	DMny_ex,	DMny_out,	DMny_out};
+            const int z_Dx1_spos[6] =  {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int z_Dx1_epos[6] =  {FDn,	DMnz,	DMnz_in,	DMnz_in,	DMnz_in,	DMnz_in};
+            const int x_x_ex_spos[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+            const int y_x_ex_spos[6] = {0,	0,	0,	DMny_out,	FDn,	FDn};
+            const int z_x_ex_spos[6] = {FDn,	DMnz,	order,	order,	order,	order};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                    Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                        x_Dx1_spos[blk], x_Dx1_epos[blk], y_Dx1_spos[blk], y_Dx1_epos[blk], z_Dx1_spos[blk], z_Dx1_epos[blk],
+                        x_x_ex_spos[blk], y_x_ex_spos[blk], z_x_ex_spos[blk],
+                        pSPARC->D1_stencil_coeffs_z, 0.0);
+                }
             }
 
             // Laplacian
-            // first calculate Lx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-            for (n = 0; n < ncol; n++) {
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, DMnx, 0, DMny, DMnz_in, DMnz, FDn, FDn, DMnz, FDn, 0, DMnz_in, 0, FDn, DMnz_in,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+            const int x_Dx1_spos_lap[6] = {FDn,	FDn,	FDn,	FDn,	FDn,	DMnx};
+            const int y_Dx1_spos_lap[6] = {0,	0,	0,	DMny_in,	FDn,	FDn};
+            const int z_Dx1_spos_lap[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            const int x_Dx2_spos_lap[6] = {0,	0,	0,	0,	0,	DMnx_in};
+            const int y_Dx2_spos_lap[6] = {FDn,	FDn,	FDn,	DMny,	order,	order};
+            const int z_Dx2_spos_lap[6] = {0,	DMnz_in,	FDn,	FDn,	FDn,	FDn};
+            for (int blk = 0; blk < 6; blk++) {
+                for (n = 0; n < ncol; n++) {
+                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn,
+                    1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
+                    x_Y_spos[blk], x_Y_epos[blk], y_Y_spos[blk], y_Y_epos[blk], z_Y_spos[blk], z_Y_epos[blk],
+                    x_x_ex_spos_lap[blk], y_x_ex_spos_lap[blk], z_x_ex_spos_lap[blk],
+                    x_Dx1_spos_lap[blk], y_Dx1_spos_lap[blk], z_Dx1_spos_lap[blk],
+                    x_Dx2_spos_lap[blk], y_Dx2_spos_lap[blk], z_Dx2_spos_lap[blk],
+                    Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                }
             }
-            
-            // then calculate Lx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, DMnx, 0, FDn, FDn, DMnz_in, FDn, FDn, pSPARC->order, FDn, 0, FDn, 0, FDn, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, DMnx, DMny_in, DMny, FDn, DMnz_in, FDn, DMny, pSPARC->order, FDn, DMny_in, FDn, 0, DMny, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }
-            
-            // finally calculate Lx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-            for (n = 0; n < ncol; n++) {
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, FDn, FDn, DMny_in, FDn, DMnz_in, FDn, pSPARC->order, pSPARC->order, FDn, FDn, FDn, 0, pSPARC->order, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-                
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx, pSPARC->order, pSPARC->order, DMnx, FDn, FDn, DMnx_in, pSPARC->order, FDn,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);
-            }           
         } else {
             for (n = 0; n < ncol; n++) {
                 Calc_DX1_DX2(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, pshifty_ex, pshiftz_ex, pshifty_ex, DMnx_ex, pshiftz_ex, DMnxexny,
-                             0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
+                                 0, DMnx_ex, 0, DMny, 0, DMnz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
+
                 Calc_DX(x_ex+n*DMnd_ex, Dx2+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
-                        0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
+                            0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
             }
-            
+
             for (n = 0; n < ncol; n++) {
-                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx, pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                              0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0,
-                              Lap_wt, w2_diag, _b, _v, y+n*DMnd);  
+                stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx,
+                                  pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
+                                  0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
             }
         }
         free(Dx1); Dx1 = NULL;
@@ -1306,7 +1097,6 @@ void Lap_plus_diag_vec_mult_nonorth(
     EVA_buff_rhs_add(ncol, 0);
     #endif
 }
-
 
 
 /*
