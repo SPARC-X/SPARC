@@ -150,7 +150,7 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
             pSPARC->vdWDFthetaFTs[q1] = (double _Complex*)malloc(sizeof(double _Complex)*DMnd); 
             // likewise, thetaFTs[q1][i] is the theta function of q1th model energy ratio on ith grid point. Im m, it is thetasFFT(q1, i)
         }
-        pSPARC->countSCF = 0; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
+        pSPARC->countPotentialCalculate = 0; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
 
         // compose the index of these reciprocal lattice vectors and make a permutation.
         pSPARC->timeReciLattice = (int**)malloc(sizeof(int*)*3); // reciprocal lattice grid point i = timeReciLattice[0][i]*pSPARC->reciLattice0(0 1 2)+timeReciLattice[1][i]*pSPARC->reciLattice1(3 4 5)+timeReciLattice[2][i]*pSPARC->reciLattice2(6 7 8)

@@ -65,7 +65,7 @@ void Calculate_Vxc_vdWExchangeLinearCorre(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, 
     }
     int DMnd, i;
     DMnd = pSPARC->Nd_d;
-    // if (pSPARC->countSCF == 3) { // jsut for debugging. should be commented after that
+    // if (pSPARC->countPotentialCalculate == 3) { // jsut for debugging. should be commented after that
     //     char folderRoute[L_STRING];
     //     find_folder_route(pSPARC, folderRoute);
     //     // char *kernelFileRoute = "kernel_d2.txt"; // name of the file of the output kernels and 2nd derivative of kernels

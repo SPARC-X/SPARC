@@ -145,10 +145,10 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
     for (j = 0; j < size_k; j++) {
         mGGAterm[j] = Dvxc3Dx_x_kpt[j] + Dvxc3Dx_y_kpt[j] + Dvxc3Dx_z_kpt[j];
     }
-    // if ((pSPARC->countSCF == 5) && (kpt == 1) && (comm == pSPARC->dmcomm)) {
+    // if ((pSPARC->countPotentialCalculate == 5) && (kpt == 1) && (comm == pSPARC->dmcomm)) {
     //     FILE *compute_mGGA_term_hamil_kpt = fopen("X_mGGA_term_hamil_kpt.txt","w");
     //     fprintf(compute_mGGA_term_hamil_kpt, "SCF %d, ncol %d, colLength %d, spin %d, kpt %d\n", 
-    //     pSPARC->countSCF, ncol, colLength, spin, kpt);
+    //     pSPARC->countPotentialCalculate, ncol, colLength, spin, kpt);
     //     int index;
     //     fprintf(compute_mGGA_term_hamil_kpt, "SCF 5, vxcMGGA3_dm is listed below\n");
     //     for (index = 0; index < colLength; index++) {

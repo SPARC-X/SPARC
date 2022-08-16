@@ -99,10 +99,6 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
 	    memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspin * pSPARC->MixingHistory);
 	    memset(pSPARC->mixing_hist_Fk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspin * pSPARC->MixingHistory);
     }
-
-    if ((pSPARC->mGGAflag == 1) || (pSPARC->vdWDFFlag != 0)) { // initialize the SCF time counter for vdWDF and SCAN
-        pSPARC->countSCF = 0;
-    }
     
     Calculate_EGS_elecDensEnergy(pSPARC);
 

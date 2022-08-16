@@ -70,18 +70,18 @@ void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC) {
 void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (pSPARC->countSCF != 0) {
+    if (pSPARC->countPotentialCalculate != 0) {
         compute_Kinetic_Density_Tau_Transfer_phi(pSPARC);
     }
     Calculate_Vxc_MGGA(pSPARC, rho);
     // printf("rank %d, Nspin %d, spincomm_index %d, reached the beginning of transfer_Vxc\n", rank, pSPARC->Nspin, pSPARC->spincomm_index);
-    if (pSPARC->countSCF != 0) { // not the first SCF step
+    if (pSPARC->countPotentialCalculate != 0) { // not the first SCF step
         Transfer_vxcMGGA3_phi_psi(pSPARC, pSPARC->vxcMGGA3, pSPARC->vxcMGGA3_loc_dmcomm); // only transfer the potential they are going to use
         // if (!(pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo)) { // the conditional judge whether this computation is necessary to do that. 
         // This function is moved to file eigenSolver.c and eigenSolverKpt.c
     }
     // printf("rank %d reached the end of transfer_Vxc\n", rank);
-    pSPARC->countSCF++;
+    pSPARC->countPotentialCalculate++;
 }
 
 /**
@@ -93,7 +93,7 @@ void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
         return; 
     }
-    if (pSPARC->countSCF == 0) {
+    if (pSPARC->countPotentialCalculate == 0) {
         // Initialize constants    
         XCCST_OBJ xc_cst;
         xc_constants_init(&xc_cst, pSPARC);
@@ -282,7 +282,7 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
  * @brief   the function to compute the exchange-correlation energy of metaGGA functional
  */
 void Calculate_Exc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
-    if (pSPARC->countSCF == 1) {
+    if (pSPARC->countPotentialCalculate == 1) {
         if (pSPARC->Nspin == 1) {
             Calculate_Exc_GGA_PBE(pSPARC, rho);
             return;

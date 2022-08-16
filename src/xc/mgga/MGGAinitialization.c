@@ -40,5 +40,5 @@ void initialize_MGGA(SPARC_OBJ *pSPARC) {
     // If the processor in dmcomm contains both spin up and dn, potential up and dn need to be transferred separately. Reference: electronicGroundState.c, 574
     assert(pSPARC->vxcMGGA3_loc_kptcomm != NULL);
 
-    pSPARC->countSCF = 0;
+    pSPARC->countPotentialCalculate = 0;
 }

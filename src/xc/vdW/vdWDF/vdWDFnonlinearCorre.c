@@ -165,7 +165,7 @@ void get_q0_Grid(SPARC_OBJ *pSPARC, double *rho)
         dq0dgradrho[igrid] = saturate[1] * rho[igrid] * kfResult * DFSDS(s) * DSDGRADRHO(rho[igrid], kfResult);
     }
     // // verify the correctness of result
-    // if ((pSPARC->countSCF == 0) && (rank == size - 1)) {
+    // if ((pSPARC->countPotentialCalculate == 0) && (rank == size - 1)) {
     //     printf("rank %d, (%d, %d, %d)-(%d, %d, %d), q0[0] %.6e, q0[DMnd - 1] %.6e\n",
     //      rank, pSPARC->DMVertices[0], pSPARC->DMVertices[2], pSPARC->DMVertices[4], pSPARC->DMVertices[1], pSPARC->DMVertices[3], pSPARC->DMVertices[5],
     //      q0[0], q0[DMnd - 1]);
@@ -341,7 +341,7 @@ void spline_interpolation(SPARC_OBJ *pSPARC)
     }
     // verify the correctness of result
     // #ifdef DEBUG
-    //     if ((pSPARC->countSCF == 3) && (rank == size - 1)) {
+    //     if ((pSPARC->countPotentialCalculate == 3) && (rank == size - 1)) {
     //         printf("vdWDF: rank %d, (%d, %d, %d)-(%d, %d, %d), in 3rd SCF ps[5][DMnd - 1] %.6e, dpdq0s[5][DMnd - 1] %.6e\n",
     //          rank, pSPARC->DMVertices[0], pSPARC->DMVertices[2], pSPARC->DMVertices[4], pSPARC->DMVertices[1], pSPARC->DMVertices[3], pSPARC->DMVertices[5],
     //          ps[5][DMnd - 1], dpdq0s[5][DMnd - 1]);
@@ -424,7 +424,7 @@ void compute_Gvectors(SPARC_OBJ *pSPARC)
 
     // // For debugging
     // #ifdef DEBUG
-    // if ((pSPARC->countSCF == 3) && (rank == size - 1)) { // only output result in 1st step
+    // if ((pSPARC->countPotentialCalculate == 3) && (rank == size - 1)) { // only output result in 1st step
     //     printf("vdWDF: rank %d, 2nd reci point (%d %d %d) %12.6e %12.6e %12.6e\n", rank, pSPARC->timeReciLattice[0][1], pSPARC->timeReciLattice[1][1], pSPARC->timeReciLattice[2][1],
     //         reciLatticeGrid[0][1], reciLatticeGrid[1][1], reciLatticeGrid[2][1]);
     // }
@@ -744,7 +744,7 @@ void theta_generate_FT(SPARC_OBJ *pSPARC, double *rho)
             thetaFTs[q1][rigrid] = thetaFTreal[rigrid] + thetaFTimag[rigrid] * I;
             thetaFTs[q1][rigrid] /= nnr;
         }
-        // if ((pSPARC->countSCF == 3) && (q1 == 5) && (rank == size - 1)) { // only output result in 3rd SCF
+        // if ((pSPARC->countPotentialCalculate == 3) && (q1 == 5) && (rank == size - 1)) { // only output result in 3rd SCF
         // 	int localIndex1D = domain_index1D(1, 1, 1, DMnx, DMny, DMnz);
         //     printf("rank %d, in 3rd SCF thetaFTs[5][(1, 1, 1)]=globalthetaFTs[5][(%d, %d, %d)] = %.5e + i%.5e\n", rank,
         //     	pSPARC->DMVertices[0] + 1, pSPARC->DMVertices[2] + 1, pSPARC->DMVertices[4] + 1,
@@ -849,7 +849,7 @@ void vdWDF_energy(SPARC_OBJ *pSPARC)
             }
         }
     }
-    // if ((pSPARC->countSCF == 3) && (rank == size - 1)) { // only output result in 3rd step, for debugging
+    // if ((pSPARC->countPotentialCalculate == 3) && (rank == size - 1)) { // only output result in 3rd step, for debugging
     // 	int localIndex1D = domain_index1D(1, 1, 1, DMnx, DMny, DMnz);
     //     printf("rank %d, in 3rd SCF uFTs[5][(1, 1, 1)]=globaluFTs[5][(%d, %d, %d)] = %.5e + i%.5e\n", rank,
     //     	pSPARC->DMVertices[0] + 1, pSPARC->DMVertices[2] + 1, pSPARC->DMVertices[4] + 1,
@@ -869,7 +869,7 @@ void vdWDF_energy(SPARC_OBJ *pSPARC)
 #ifdef DEBUG
     if (rank == size - 1)
     {
-        printf("vdWDF: at %d SCF vdWDF energy is %.5e\n", pSPARC->countSCF, pSPARC->vdWDFenergy);
+        printf("vdWDF: at %d countPotentialCalculate vdWDF energy is %.5e\n", pSPARC->countPotentialCalculate, pSPARC->vdWDFenergy);
     }
 #endif
 }
@@ -1049,7 +1049,7 @@ void u_generate_iFT(SPARC_OBJ *pSPARC)
             pSPARC->zAxisVertices, gatheredu,
             pSPARC->DMVertices, u[q1],
             pSPARC->zAxisComm, zAxisDims, pSPARC->dmcomm_phi, phiDims, MPI_COMM_WORLD);
-        // if ((pSPARC->countSCF == 0) && (q1 == 5) && (rank == size - 1)) { // only output result in 1st step
+        // if ((pSPARC->countPotentialCalculate == 0) && (q1 == 5) && (rank == size - 1)) { // only output result in 1st step
         //     int localIndex1D = domain_index1D(1, 1, 1, DMnx, DMny, DMnz);
         //     fprintf(pSPARC->vdWDFOutput, "rank %d, at 1st SCF u[5][(1, 1, 1)]=globalu[5][(%d, %d, %d)] = %.5e\n", rank,
         //         pSPARC->DMVertices[0] + 1, pSPARC->DMVertices[2] + 1, pSPARC->DMVertices[4] + 1,
@@ -1250,7 +1250,7 @@ void Calculate_nonLinearCorr_E_V_vdWDF(SPARC_OBJ *pSPARC, double *rho)
     u_generate_iFT(pSPARC);
     vdWDF_potential(pSPARC);
 
-    pSPARC->countSCF++; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
+    pSPARC->countPotentialCalculate++; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
 }
 
 // The main function in the file, spin-polarized case
@@ -1270,7 +1270,7 @@ void Calculate_nonLinearCorr_E_V_SvdWDF(SPARC_OBJ *pSPARC, double *rho)
     u_generate_iFT(pSPARC); // functions above should be similar to spin-unpolarized case
 
     spin_vdWDF_potential(pSPARC);
-    pSPARC->countSCF++; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
+    pSPARC->countPotentialCalculate++; // count the time of SCF. To output variables in 1st step. To be deleted in the future.
 }
 
 void Add_Exc_vdWDF(SPARC_OBJ *pSPARC)
