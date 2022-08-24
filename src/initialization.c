@@ -302,9 +302,10 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
 
     // initialize DFT-D3
     if (pSPARC->d3Flag == 1) {
-        if ((strcmpi(pSPARC->XC, "GGA_PBE") != 0) && (strcmpi(pSPARC->XC, "GGA_PBEsol") != 0) && (strcmpi(pSPARC->XC, "GGA_RPBE") != 0)) {
-            if (rank == 0) printf("WARNING: Cannot find D3 coefficients for this functional. DFT-D3 correction calculation canceled!\n");
-            pSPARC->d3Flag = 0;
+        if ((strcmpi(pSPARC->XC, "GGA_PBE") != 0) && (strcmpi(pSPARC->XC, "GGA_PBEsol") != 0) && (strcmpi(pSPARC->XC, "GGA_RPBE") != 0) && (strcmpi(pSPARC->XC, "PBE0") != 0) && (strcmpi(pSPARC->XC, "HSE") != 0)) {
+            if (rank == 0) 
+                printf(RED "ERROR: Cannot find D3 coefficients for this functional. DFT-D3 correction calculation canceled!\n" RESET);
+            exit(EXIT_FAILURE);
         }
         else {
             set_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
@@ -3119,7 +3120,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Aug 16, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Aug 24, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

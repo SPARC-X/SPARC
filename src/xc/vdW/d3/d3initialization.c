@@ -106,6 +106,12 @@ void set_D3_coefficients(SPARC_OBJ *pSPARC) {
     else pSPARC->BCtype[2] = 0; // D boundary
     pSPARC->periodicBCFlag = pSPARC->BCtype[0] + pSPARC->BCtype[1] + pSPARC->BCtype[2]; // !=0: PBC
 
+    if (pSPARC->d3Rthr < pSPARC->d3Cn_thr) {
+        if (rank == 0)
+            printf(RED "ERROR: D3_RTHR should not be smaller than D3_CN_THR. Please reset these two radius!\n" RESET);
+        exit(EXIT_FAILURE); 
+    }
+
     // coefficients of zero-damping and PBE functional setfuncpar.f
     if (strcmpi(pSPARC->XC, "GGA_PBE") == 0) {
         pSPARC->d3Rs6 = 1.217; // formula 4
@@ -116,10 +122,18 @@ void set_D3_coefficients(SPARC_OBJ *pSPARC) {
     } else if (strcmpi(pSPARC->XC, "GGA_RPBE") == 0) {
         pSPARC->d3Rs6 = 0.872; // formula 4
         pSPARC->d3S18 = 0.514;
+    } else if (strcmpi(pSPARC->XC, "PBE0") == 0) { // TO BE ADDED
+        pSPARC->d3Rs6 = 1.287; // formula 4
+        pSPARC->d3S18 = 0.928;
+    } else if (strcmpi(pSPARC->XC, "HSE") == 0) { // TO BE ADDED
+        pSPARC->d3Rs6 = 1.129; // formula 4
+        pSPARC->d3S18 = 0.109;
+        if (rank == 0)
+            printf("WARNING: the DFT-D3 parameters for HSE only fit HSE06. Please make sure HSE06 is the applied xc.\n");
     } else {
-        if (rank == 0) printf("WARNING: Cannot find D3 coefficients for this functional. Default value is rs6 = 1.217 and s18 = 0.722.\n");
-        pSPARC->d3Rs6 = 1.217;
-        pSPARC->d3S18 = 0.722;
+        if (rank == 0) 
+            printf(RED "ERROR: Cannot find D3 coefficients for this functional. DFT-D3 correction calculation canceled!\n" RESET);
+        exit(EXIT_FAILURE);
     }
 
     pSPARC->c6ab = copyC6();
