@@ -662,6 +662,8 @@ Square of cut-off radius for calculating DFT-D3 correction between two atoms
 
 \begin{block}{Remark}
 Only applicable when DFT-D3 correction \hyperlink{D3_FLAG}{\texttt{D3\_FLAG}} is used.
+
+D3\_RTHR should be larger or equal to cutoff radius of CN coefficient, \hyperlink{D3_CN_THR}{\texttt{D3\_CN\_THR}}.
 \end{block}
 
 \end{frame}
@@ -697,6 +699,8 @@ Square of cut-off radius for calculating CN value of every atom and DFT-D3 corre
 
 \begin{block}{Remark}
 Only applicable when DFT-D3 correction \hyperlink{D3_FLAG}{\texttt{D3\_FLAG}} is used.
+
+D3\_CN\_THR should be smaller or equal to cutoff radius of DFT-D3 correction cutoff radius, \hyperlink{D3_RTHR}{\texttt{D3\_RTHR}}.
 \end{block}
 
 \end{frame}
