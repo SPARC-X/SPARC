@@ -1757,9 +1757,9 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
     	fprintf(output_md,":Desc_KEN: Ionic kinetic energy. Unit=Ha/atom \n");
 		fprintf(output_md,":Desc_KENIG: Kinetic energy: 3/2 N k T of ideal gas at temperature T = TIO. Unit=Ha/atom \n"
 						  "     where N = number of particles, k = Boltzmann constant\n");
-    	fprintf(output_md,":Desc_FEN: Free energy. FEN = UEN - TSEN. Unit=Ha/atom \n");
+    	fprintf(output_md,":Desc_FEN: Free energy F = U - TS. FEN = UEN + TSEN. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_UEN: Internal energy. Unit=Ha/atom \n");
-    	fprintf(output_md,":Desc_TSEN: Electronic entropic energy. Unit=Ha/atom \n");
+    	fprintf(output_md,":Desc_TSEN: Electronic entropic contribution -TS to free energy F = U - TS. Unit=Ha/atom \n");
     	if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
     		fprintf(output_md,":Desc_TENX: Total energy of extended system. Unit=Ha/atom \n");
     	}
