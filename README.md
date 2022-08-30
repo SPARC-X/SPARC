@@ -172,7 +172,8 @@ If you publish work using/regarding SPARC, please cite some of the following art
 
 ### (6) Acknowledgement:
   
-* **U.S. Department of Energy, Office of Science: DE-SC0019410** 
+* **U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0019410**
+* **U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): Advanced Simulation and Computing (ASC) Program**
 
   * Preliminary developments
     * U.S. National Science Foundation: 1553212, 1663244, and 1333500
