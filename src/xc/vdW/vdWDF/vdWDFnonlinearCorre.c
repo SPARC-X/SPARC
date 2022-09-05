@@ -5,17 +5,24 @@
  * @authors Boqin Zhang <bzhang376@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  * Reference:
- * Dion, Max, Henrik Rydberg, Elsebeth Schröder, David C. Langreth, and Bengt I. Lundqvist.
- * "Van der Waals density functional for general geometries."
+ * Dion, Max, Henrik Rydberg, Elsebeth Schröder, David C. Langreth, and Bengt I. Lundqvist. 
+ * "Van der Waals density functional for general geometries." 
  * Physical review letters 92, no. 24 (2004): 246401.
- * Román-Pérez, Guillermo, and José M. Soler.
- * "Efficient implementation of a van der Waals density functional: application to double-wall carbon nanotubes."
+ * Román-Pérez, Guillermo, and José M. Soler. 
+ * "Efficient implementation of a van der Waals density functional: application to double-wall carbon nanotubes." 
  * Physical review letters 103, no. 9 (2009): 096102.
- * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth.
+ * Lee, Kyuho, Éamonn D. Murray, Lingzhu Kong, Bengt I. Lundqvist, and David C. Langreth. 
  * "Higher-accuracy van der Waals density functional." Physical Review B 82, no. 8 (2010): 081101.
- * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard.
- * "Spin signature of nonlocal correlation binding in metal-organic frameworks."
+ * Thonhauser, T., S. Zuluaga, C. A. Arter, K. Berland, E. Schröder, and P. Hyldgaard. 
+ * "Spin signature of nonlocal correlation binding in metal-organic frameworks." 
  * Physical review letters 115, no. 13 (2015): 136402.
+ * vdW-DF feature developed in Quantum Espresso:
+ * Thonhauser, Timo, Valentino R. Cooper, Shen Li, Aaron Puzder, Per Hyldgaard, and David C. Langreth. 
+ * "Van der Waals density functional: Self-consistent potential and the nature of the van der Waals bond." 
+ * Physical Review B 76, no. 12 (2007): 125112.
+ * Sabatini, Riccardo, Emine Küçükbenli, Brian Kolb, Timo Thonhauser, and Stefano De Gironcoli. 
+ * "Structural evolution of amino acid crystals under stress from a non-empirical density functional." 
+ * Journal of Physics: Condensed Matter 24, no. 42 (2012): 424209.
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
