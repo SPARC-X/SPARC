@@ -102,16 +102,6 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     
     Calculate_EGS_elecDensEnergy(pSPARC);
 
-    // DFT-D3 correction
-    if (pSPARC->d3Flag == 1) {
-        t1 = MPI_Wtime();
-        d3_energy_gradient(pSPARC);
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-            if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
-        #endif
-    }
-
     // write energies into output file   
     if (!rank && pSPARC->Verbosity) {
         output_fp = fopen(pSPARC->OutFilename,"a");
@@ -153,7 +143,6 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
     // calculate forces
     Calculate_EGS_Forces(pSPARC);
-    if (pSPARC->d3Flag == 1) add_d3_forces(pSPARC);
     t2 = MPI_Wtime();
     
     // write forces into .static file if required
@@ -446,6 +435,16 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
 
     // solve KS-DFT equations using Chebyshev filtered subspace iteration
     scf(pSPARC);
+
+    // DFT-D3 correction: it does not depend on SCF
+    if (pSPARC->d3Flag == 1) {
+        t1 = MPI_Wtime();
+        d3_energy_gradient(pSPARC);
+        t2 = MPI_Wtime();
+        #ifdef DEBUG
+            if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
+        #endif
+    }
 }
 
 

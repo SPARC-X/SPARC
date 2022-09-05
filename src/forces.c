@@ -94,6 +94,9 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
         free(forces_xc);
     }  
 
+    if (pSPARC->d3Flag == 1) 
+        add_d3_forces(pSPARC);
+
     // make the sum of the forces zero
     Symmetrize_forces(pSPARC);
 
