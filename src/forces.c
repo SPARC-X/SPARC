@@ -33,6 +33,7 @@
 #include "electrostatics.h"
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
+#include "d3forceStress.h"
 
 #define TEMP_TOL 1e-12
 
