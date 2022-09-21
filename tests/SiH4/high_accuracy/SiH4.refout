@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 16:28:36 2022                  *
+*                   Start time: Tue Sep 20 18:28:22 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -17,7 +17,7 @@ BC: D D D
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
-EXCHANGE_CORRELATION: LDA_PW
+EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 9
 CHEB_DEGREE: 43
 CHEFSI_BOUND_FLAG: 0
@@ -48,6 +48,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 1
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: SiH4/temp_run/SiH4
 ***************************************************************************
                                 Cell                                       
@@ -77,12 +78,12 @@ Total number of atom types         :  2
 Total number of atoms              :  5
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  psps_tests/Si_LDA.psp8
+Pseudopotential                    :  ../psps_SPMS/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  6.73 6.73 6.73 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  H 1
-Pseudopotential                    :  psps_tests/H_LDA.psp8
-Pseudocharge radii of atom type 2  :  6.73 6.73 6.73 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/01_H_1_1.0_1.0_pbe_v1.0.psp8
+Pseudocharge radii of atom type 2  :  3.65 3.65 3.65 (x, y, z dir)
 Number of atoms of type 2          :  4
 Estimated total memory usage       :  2.74 GB
 Estimated memory per processor     :  29.27 MB
@@ -90,49 +91,50 @@ Estimated memory per processor     :  29.27 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.2924296124E+00        3.353E-01        5.753
-2            -1.3118045960E+00        2.462E-01        3.149
-3            -1.2715598971E+00        5.581E-02        2.997
-4            -1.2616436525E+00        3.075E-02        3.070
-5            -1.2553176695E+00        1.374E-02        2.954
-6            -1.2512125513E+00        9.916E-03        3.089
-7            -1.2497820653E+00        3.922E-03        2.835
-8            -1.2488877515E+00        2.454E-03        2.869
-9            -1.2480151277E+00        1.347E-03        2.844
-10           -1.2478415703E+00        5.857E-04        2.715
-11           -1.2478719352E+00        3.687E-04        2.723
-12           -1.2479661285E+00        3.421E-04        2.244
-13           -1.2479229712E+00        2.169E-04        2.396
-14           -1.2478326461E+00        6.857E-05        2.309
-15           -1.2478237674E+00        5.082E-05        2.252
-16           -1.2478359164E+00        4.225E-05        2.228
-17           -1.2478249291E+00        2.132E-05        2.212
-18           -1.2478270604E+00        1.074E-05        1.955
-19           -1.2478284291E+00        7.709E-06        1.781
-20           -1.2478285249E+00        6.187E-06        1.905
-21           -1.2478282464E+00        3.309E-06        1.811
-22           -1.2478288155E+00        2.639E-06        1.799
-23           -1.2478283609E+00        1.684E-06        1.626
-24           -1.2478282220E+00        1.343E-06        1.715
-25           -1.2478282192E+00        9.142E-07        0.846
-Total number of SCF: 25    
+1            -1.2990952670E+00        3.067E-01        6.090
+2            -1.3373488066E+00        2.263E-01        3.271
+3            -1.3215208098E+00        5.442E-02        3.081
+4            -1.3160214171E+00        2.560E-02        3.185
+5            -1.3130810663E+00        8.865E-03        3.063
+6            -1.3114739520E+00        6.215E-03        3.130
+7            -1.3106321883E+00        2.177E-03        2.922
+8            -1.3103510883E+00        1.555E-03        3.078
+9            -1.3099075360E+00        6.813E-04        2.929
+10           -1.3097741420E+00        4.669E-04        2.883
+11           -1.3097654547E+00        2.474E-04        2.907
+12           -1.3097961876E+00        1.469E-04        2.839
+13           -1.3097911660E+00        9.021E-05        2.539
+14           -1.3097921748E+00        6.606E-05        2.720
+15           -1.3097923837E+00        3.514E-05        2.403
+16           -1.3097847393E+00        2.276E-05        2.375
+17           -1.3097891235E+00        1.324E-05        2.142
+18           -1.3097876721E+00        1.093E-05        2.300
+19           -1.3097872066E+00        6.689E-06        2.163
+20           -1.3097858361E+00        3.295E-06        2.033
+21           -1.3097858738E+00        2.615E-06        2.044
+22           -1.3097866356E+00        2.503E-06        1.852
+23           -1.3097865665E+00        1.637E-06        1.840
+24           -1.3097864538E+00        1.069E-06        1.966
+25           -1.3097867980E+00        1.130E-06        1.786
+26           -1.3097865996E+00        7.055E-07        0.860
+Total number of SCF: 26    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.2478278499E+00 (Ha/atom)
-Total free energy                  : -6.2391392496E+00 (Ha)
-Band structure energy              : -2.8708823720E+00 (Ha)
-Exchange correlation energy        : -2.4734787395E+00 (Ha)
-Self and correction energy         : -1.9372289893E+01 (Ha)
-Entropy*kb*T                       : -1.3999063290E-11 (Ha)
-Fermi level                        : -2.7925269192E-01 (Ha)
-RMS force                          :  3.6626303965E-04 (Ha/Bohr)
-Maximum force                      :  4.5786225838E-04 (Ha/Bohr)
-Time for force calculation         :  0.044 (sec)
+Free energy per atom               : -1.3097863551E+00 (Ha/atom)
+Total free energy                  : -6.5489317754E+00 (Ha)
+Band structure energy              : -2.8635658793E+00 (Ha)
+Exchange correlation energy        : -2.8923819824E+00 (Ha)
+Self and correction energy         : -1.2984855790E+01 (Ha)
+-Entropy*kb*T                      : -5.6491264834E-11 (Ha)
+Fermi level                        : -2.8019299938E-01 (Ha)
+RMS force                          :  9.1504154404E-05 (Ha/Bohr)
+Maximum force                      :  1.1440356506E-04 (Ha/Bohr)
+Time for force calculation         :  0.056 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  65.575 sec
+Total walltime                     :  71.425 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -140,7 +142,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

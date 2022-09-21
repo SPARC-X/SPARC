@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 12:43:17 2022                  *
+*                   Start time: Tue Sep 20 16:13:33 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,7 +19,7 @@ KPOINT_SHIFT: 0 0 0
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
-EXCHANGE_CORRELATION: LDA_PZ
+EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 29
 CHEB_DEGREE: 17
 CHEFSI_BOUND_FLAG: 0
@@ -50,6 +50,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: BaTiO3_quick/temp_run/BaTiO3_quick
 ***************************************************************************
                                 Cell                                       
@@ -79,15 +80,15 @@ Total number of atom types         :  3
 Total number of atoms              :  5
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  Ba 10
-Pseudopotential                    :  psps_tests/Ba_LDA1.psp8
-Pseudocharge radii of atom type 1  :  6.61 6.61 6.61 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  6.10 6.10 6.10 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Ti 12
-Pseudopotential                    :  psps_tests/Ti_LDA1.psp8
+Pseudopotential                    :  ../psps_SPMS/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  6.10 6.10 6.10 (x, y, z dir)
 Number of atoms of type 2          :  1
 Atom type 3  (valence electrons)   :  O 6
-Pseudopotential                    :  psps_tests/O_LDA1.psp8
+Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 3  :  6.61 6.61 6.61 (x, y, z dir)
 Number of atoms of type 3          :  3
 Estimated total memory usage       :  5.20 MB
@@ -96,37 +97,37 @@ Estimated memory per processor     :  110.96 kB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.6725078309E+01        1.982E-01        0.050
-2            -2.6463048208E+01        6.061E-02        0.014
-3            -2.6404223610E+01        4.171E-02        0.014
-4            -2.6407520064E+01        3.983E-02        0.014
-5            -2.6377536873E+01        1.483E-02        0.013
-6            -2.6380821229E+01        3.625E-03        0.013
-7            -2.6376354941E+01        3.044E-03        0.010
-8            -2.6377095492E+01        1.215E-03        0.014
-9            -2.6377056415E+01        6.454E-04        0.013
-10           -2.6377069987E+01        7.759E-05        0.010
-11           -2.6377049037E+01        5.080E-05        0.013
-12           -2.6377061775E+01        1.108E-05        0.013
-13           -2.6377065413E+01        4.843E-06        0.004
+1            -2.7621968964E+01        1.885E-01        0.048
+2            -2.7438348659E+01        6.303E-02        0.014
+3            -2.7401192133E+01        4.565E-02        0.014
+4            -2.7406197600E+01        4.104E-02        0.014
+5            -2.7385436103E+01        1.421E-02        0.014
+6            -2.7387246595E+01        2.614E-03        0.014
+7            -2.7384932051E+01        2.672E-03        0.011
+8            -2.7384702156E+01        8.239E-04        0.006
+9            -2.7384632796E+01        7.191E-04        0.014
+10           -2.7384569759E+01        7.190E-05        0.013
+11           -2.7384549630E+01        3.670E-05        0.014
+12           -2.7384555634E+01        1.331E-05        0.015
+13           -2.7384556539E+01        5.322E-06        0.008
 Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.6377066641E+01 (Ha/atom)
-Total free energy                  : -1.3188533321E+02 (Ha)
-Band structure energy              : -1.1200044128E+01 (Ha)
-Exchange correlation energy        : -2.1485252520E+01 (Ha)
-Self and correction energy         : -2.0340676450E+02 (Ha)
-Entropy*kb*T                       : -1.1232749201E-08 (Ha)
-Fermi level                        :  2.8846437029E-01 (Ha)
-RMS force                          :  4.7571706570E-01 (Ha/Bohr)
-Maximum force                      :  8.5966386334E-01 (Ha/Bohr)
-Time for force calculation         :  0.005 (sec)
+Free energy per atom               : -2.7384558960E+01 (Ha/atom)
+Total free energy                  : -1.3692279480E+02 (Ha)
+Band structure energy              : -1.0613732585E+01 (Ha)
+Exchange correlation energy        : -2.8295339866E+01 (Ha)
+Self and correction energy         : -1.8449032610E+02 (Ha)
+-Entropy*kb*T                      : -6.9014290707E-08 (Ha)
+Fermi level                        :  3.1446644423E-01 (Ha)
+RMS force                          :  2.6722064020E-01 (Ha/Bohr)
+Maximum force                      :  4.7973605151E-01 (Ha/Bohr)
+Time for force calculation         :  0.018 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  0.271 sec
+Total walltime                     :  0.282 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -134,7 +135,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

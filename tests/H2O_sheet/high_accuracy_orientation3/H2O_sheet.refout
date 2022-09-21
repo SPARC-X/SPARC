@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 16:16:15 2022                  *
+*                   Start time: Tue Sep 20 18:11:17 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -46,6 +46,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: H2O_sheet/temp_run3/H2O_sheet
 ***************************************************************************
                                 Cell                                       
@@ -77,11 +78,11 @@ Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  H 1
-Pseudopotential                    :  psps_tests/H_GGA1.psp8
-Pseudocharge radii of atom type 1  :  6.30 6.27 6.27 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/01_H_1_1.0_1.0_pbe_v1.0.psp8
+Pseudocharge radii of atom type 1  :  3.50 3.48 3.48 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  O 6
-Pseudopotential                    :  psps_tests/O_GGA1.psp8
+Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  6.40 6.37 6.37 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  489.86 MB
@@ -90,42 +91,42 @@ Estimated memory per processor     :  5.10 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.6220285041E+00        5.254E-01        1.101
-2            -5.6829831755E+00        1.539E-01        0.715
-3            -5.6878003118E+00        9.555E-02        0.676
-4            -5.6882849533E+00        4.300E-02        0.644
-5            -5.6883393189E+00        3.524E-02        0.809
-6            -5.6884004539E+00        6.116E-03        0.637
-7            -5.6884076676E+00        4.460E-03        0.482
-8            -5.6884089059E+00        1.960E-03        0.421
-9            -5.6884089898E+00        1.006E-03        0.385
-10           -5.6884090188E+00        1.197E-04        0.383
-11           -5.6884090201E+00        8.782E-05        0.248
-12           -5.6884090194E+00        1.230E-05        0.265
-13           -5.6884090385E+00        8.817E-06        0.223
-14           -5.6884090355E+00        2.599E-06        0.204
-15           -5.6884090192E+00        1.442E-06        0.190
-16           -5.6884090198E+00        7.732E-07        0.142
+1            -5.8260224306E+00        4.555E-01        1.484
+2            -5.8709212190E+00        1.297E-01        0.924
+3            -5.8739399583E+00        9.989E-02        0.806
+4            -5.8741843188E+00        5.704E-02        0.746
+5            -5.8742320147E+00        4.039E-02        0.779
+6            -5.8742709040E+00        1.194E-02        0.698
+7            -5.8742741368E+00        6.669E-03        0.563
+8            -5.8742763968E+00        3.021E-03        0.602
+9            -5.8742765118E+00        1.277E-03        0.520
+10           -5.8742765429E+00        1.477E-04        0.503
+11           -5.8742765461E+00        8.800E-05        0.348
+12           -5.8742765461E+00        2.942E-05        0.304
+13           -5.8742765426E+00        1.081E-05        0.272
+14           -5.8742765388E+00        3.757E-06        0.286
+15           -5.8742765446E+00        2.062E-06        0.236
+16           -5.8742765469E+00        8.632E-07        0.259
 Total number of SCF: 16    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -5.6884090198E+00 (Ha/atom)
-Total free energy                  : -1.7065227059E+01 (Ha)
-Band structure energy              : -4.0610700686E+00 (Ha)
-Exchange correlation energy        : -4.2743875180E+00 (Ha)
-Self and correction energy         : -3.6112714742E+01 (Ha)
-Entropy*kb*T                       : -1.5283164958E-07 (Ha)
-Fermi level                        : -1.8908701467E-01 (Ha)
-RMS force                          :  2.1433540369E-02 (Ha/Bohr)
-Maximum force                      :  2.6655786307E-02 (Ha/Bohr)
-Time for force calculation         :  0.018 (sec)
-Maximum stress                     :  6.1372296523E-03 (a.u.)
-Time for stress calculation        :  0.053 (sec)
+Free energy per atom               : -5.8742765469E+00 (Ha/atom)
+Total free energy                  : -1.7622829641E+01 (Ha)
+Band structure energy              : -4.0593472253E+00 (Ha)
+Exchange correlation energy        : -4.9328628180E+00 (Ha)
+Self and correction energy         : -2.6913674992E+01 (Ha)
+-Entropy*kb*T                      : -1.6931449769E-07 (Ha)
+Fermi level                        : -1.8885464999E-01 (Ha)
+RMS force                          :  2.4094971867E-02 (Ha/Bohr)
+Maximum force                      :  2.9038102298E-02 (Ha/Bohr)
+Time for force calculation         :  0.036 (sec)
+Maximum stress                     :  5.9206505512E-03 (a.u.)
+Time for stress calculation        :  0.059 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  8.546 sec
+Total walltime                     :  10.361 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -133,7 +134,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

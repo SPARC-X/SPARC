@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 12:43:31 2022                  *
+*                   Start time: Tue Sep 20 16:21:52 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,9 +11,9 @@ LATVEC:
 1 0 0 
 -0.50003399 0.866005779 0 
 0 0 1 
-FD_GRID: 50 50 94
+FD_GRID: 40 40 76
 FD_ORDER: 12
-BC: P P D
+BC: P P P
 KPOINT_GRID: 1 1 1
 KPOINT_SHIFT: 0 0 0
 SPIN_TYP: 0
@@ -21,24 +21,24 @@ ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.003674926479
 EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 67
-CHEB_DEGREE: 33
+CHEB_DEGREE: 28
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 0
 CALC_PRES: 0
-MAXIT_SCF: 70
+MAXIT_SCF: 50
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
-TOL_SCF: 5.00E-06
+TOL_SCF: 1.00E-05
 POISSON_SOLVER: AAR
-TOL_POISSON: 5.00E-08
+TOL_POISSON: 1.00E-07
 TOL_LANCZOS: 1.00E-02
-TOL_PSEUDOCHARGE: 5.00E-08
+TOL_PSEUDOCHARGE: 1.00E-07
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-TOL_PRECOND: 5.82E-05
+TOL_PRECOND: 9.03E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
-MIXING_PARAMETER: 0.1
+MIXING_PARAMETER: 0.4
 MIXING_HISTORY: 7
 PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
@@ -50,6 +50,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 D3_FLAG: 1
 D3_RTHR: 9000
 D3_CN_THR: 1600
@@ -75,78 +76,61 @@ EIG_SERIAL_MAXNS: 10000
                              Initialization                                
 ***************************************************************************
 Number of processors               :  48
-Mesh spacing in x-direction        :  0.241358 (Bohr)
-Mesh spacing in y-direction        :  0.241341 (Bohr)
-Mesh spacing in z direction        :  0.241242 (Bohr)
+Mesh spacing in x-direction        :  0.301697 (Bohr)
+Mesh spacing in y-direction        :  0.301677 (Bohr)
+Mesh spacing in z direction        :  0.298378 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  MoS2_surface_d3/temp_run/MoS2_surface_d3.out
 Total number of atom types         :  2
 Total number of atoms              :  12
 Total number of electrons          :  104
 Atom type 1  (valence electrons)   :  Mo 14
-Pseudopotential                    :  psps_tests/Mo.psp8
-Pseudocharge radii of atom type 1  :  7.72 7.72 7.72 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/42_Mo_14_2.0_2.6_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  7.84 7.84 7.76 (x, y, z dir)
 Number of atoms of type 1          :  4
 Atom type 2  (valence electrons)   :  S 6
-Pseudopotential                    :  psps_tests/S.psp8
-Pseudocharge radii of atom type 2  :  7.72 7.72 7.72 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/16_S_6_1.8_1.9_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 2  :  7.84 7.84 7.76 (x, y, z dir)
 Number of atoms of type 2          :  8
-Estimated total memory usage       :  779.15 MB
-Estimated memory per processor     :  16.23 MB
+Estimated total memory usage       :  398.93 MB
+Estimated memory per processor     :  8.31 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.9665698042E+01        5.675E-02        2.801
-2            -2.9684650954E+01        5.086E-02        0.868
-3            -2.9692501909E+01        3.753E-02        0.845
-4            -2.9703057568E+01        1.885E-02        0.854
-5            -2.9700701786E+01        1.138E-02        0.859
-6            -2.9694908230E+01        6.122E-03        0.802
-7            -2.9695309345E+01        3.896E-03        0.814
-8            -2.9693742348E+01        2.514E-03        0.806
-9            -2.9693988938E+01        1.123E-03        0.736
-10           -2.9693728166E+01        7.463E-04        0.772
-11           -2.9693556474E+01        3.997E-04        0.781
-12           -2.9693430330E+01        2.620E-04        0.763
-13           -2.9693321349E+01        2.149E-04        0.740
-14           -2.9693248770E+01        1.633E-04        0.751
-15           -2.9693210897E+01        1.475E-04        0.764
-16           -2.9693112056E+01        1.035E-04        0.711
-17           -2.9693104642E+01        9.618E-05        0.760
-18           -2.9693072128E+01        7.075E-05        0.764
-19           -2.9693048631E+01        6.246E-05        0.763
-20           -2.9693012821E+01        5.115E-05        0.743
-21           -2.9693005570E+01        4.747E-05        0.769
-22           -2.9692976218E+01        3.507E-05        0.704
-23           -2.9692981429E+01        2.686E-05        0.750
-24           -2.9692980415E+01        2.288E-05        0.767
-25           -2.9692976643E+01        1.804E-05        0.745
-26           -2.9692975814E+01        1.498E-05        0.745
-27           -2.9692970180E+01        1.202E-05        0.718
-28           -2.9692971710E+01        1.225E-05        0.755
-29           -2.9692967027E+01        7.908E-06        0.725
-30           -2.9692964411E+01        6.738E-06        0.723
-31           -2.9692964085E+01        4.982E-06        0.593
-Total number of SCF: 31    
+1            -3.0639040011E+01        1.164E-01        1.184
+2            -3.0708350191E+01        3.628E-02        0.346
+3            -3.0723212715E+01        2.214E-02        0.351
+4            -3.0719634276E+01        1.203E-02        0.342
+5            -3.0722277910E+01        4.474E-03        0.335
+6            -3.0724641964E+01        2.478E-03        0.341
+7            -3.0722274792E+01        1.240E-03        0.331
+8            -3.0722735840E+01        3.650E-04        0.331
+9            -3.0722691240E+01        1.850E-04        0.326
+10           -3.0722595067E+01        8.621E-05        0.324
+11           -3.0722592809E+01        4.145E-05        0.339
+12           -3.0722564046E+01        1.853E-05        0.316
+13           -3.0722559770E+01        1.123E-05        0.311
+14           -3.0722557198E+01        7.120E-06        0.266
+Total number of SCF: 14    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.9698848717E+01 (Ha/atom)
-Total free energy                  : -3.5638618460E+02 (Ha)
-Band structure energy              : -8.2779435954E+01 (Ha)
-Exchange correlation energy        : -4.9456175148E+01 (Ha)
-Self and correction energy         : -8.4782631421E+02 (Ha)
-Entropy*kb*T                       : -2.0987505936E-07 (Ha)
-Fermi level                        : -1.3801726508E-01 (Ha)
-DFT-D3 correction                  : -7.0611867877E-02 (Ha)
-RMS force                          :  7.9684400990E-03 (Ha/Bohr)
-Maximum force                      :  1.1955706064E-02 (Ha/Bohr)
-Time for force calculation         :  0.035 (sec)
+Free energy per atom               : -3.0728521394E+01 (Ha/atom)
+Total free energy                  : -3.6874225673E+02 (Ha)
+Band structure energy              : -5.7960503126E+01 (Ha)
+Exchange correlation energy        : -6.5932402755E+01 (Ha)
+Self and correction energy         : -7.0492213376E+02 (Ha)
+-Entropy*kb*T                      : -4.4369432381E-09 (Ha)
+Fermi level                        :  5.3827580431E-02 (Ha)
+DFT-D3 correction                  : -7.1600982950E-02 (Ha)
+RMS force                          :  4.5508823622E-03 (Ha/Bohr)
+Maximum force                      :  6.8272244809E-03 (Ha/Bohr)
+Time for force calculation         :  0.042 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  26.737 sec
+Total walltime                     :  6.196 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -154,7 +138,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

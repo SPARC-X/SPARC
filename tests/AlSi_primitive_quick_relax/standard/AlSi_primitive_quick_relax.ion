@@ -1,0 +1,29 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE:   <atom type name> 
+# PSEUDO_POT:  <path/to/pseudopotential/>
+# N_TYPE_ATOM: <num of atoms of this type>
+# ATOMIC_MASS: <mass of atom of this type> #(optional, for MD only)
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX: #(optional)
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+# this is a comment
+
+ATOM_TYPE: Al                              # atom type 
+N_TYPE_ATOM: 1                              # number of atoms of this type
+PSEUDO_POT: ../../../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8     # pseudopotential
+COORD_FRAC:                                      # coordinates follows
+    0.00 0.00 0.00
+
+ATOM_TYPE: Si                               # atom type 
+N_TYPE_ATOM: 1                              # number of atoms of this type
+PSEUDO_POT: ../../../psps/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8     # pseudopotential
+COORD_FRAC:                                      # coordinates follows
+    0.52 0.53 0.52
+
+

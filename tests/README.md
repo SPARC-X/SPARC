@@ -3,8 +3,8 @@
 ### (1) Brief:
 The test suite consists of a number of systems that are chosen to check different functionalities/features of SPARC. Each test system has its own directory inside of which the input files and the reference output files are stored. For each test system, two sets of reference output files are stored in folders named 'Standard' and 'High_accuracy' respectively: 
 
- * Standard case with an accuracy of around 1.0E-03 Ha/atom in energy. 
- * High accuracy case with an accuracy of around 1.0E-05 Ha/atom in energy.
+ * Standard case with an accuracy of around 1.0E-03 Ha/atom or better in energy. 
+ * High accuracy case with an accuracy of around 1.0E-04 Ha/atom or better in energy.
 
 The accuracy is with respect to well established plane wave codes ABINIT/Quantum Espresso.  A python script named `SPARC_testing_script.py` is provided which can launch the test systems and compare the results against the stored reference output files.
 
@@ -55,7 +55,7 @@ The systems in the testing suites are classified with a set of tags which descri
  * Methods: `SQ`,`SQ3`.
  * Smearing: `smear_fd`,`smear_gauss`.
  * Bandgap: `bandgap`.
- * Others: `nlcc`,`memcheck`.
+ * Others: `nlcc`,`memcheck`,`fast`.
 
 In addtion to the tags listed above, there are some tags which can be used to run every test with extra features. These tags are described below:
 

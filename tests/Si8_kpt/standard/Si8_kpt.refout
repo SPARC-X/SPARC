@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 12:40:10 2022                  *
+*                   Start time: Tue Sep 20 16:10:36 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -19,7 +19,7 @@ KPOINT_SHIFT: 0.5 0.5 0.5
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
-EXCHANGE_CORRELATION: LDA_PW
+EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 9
 CHEB_DEGREE: 40
 CHEFSI_BOUND_FLAG: 0
@@ -46,6 +46,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: Si8_kpt/temp_run/Si8_kpt
 ***************************************************************************
                                 Cell                                       
@@ -75,7 +76,7 @@ Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  psps_tests/Si_LDA.psp8
+Pseudopotential                    :  ../psps_SPMS/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  7.70 7.70 7.70 (x, y, z dir)
 Number of atoms of type 1          :  2
 Estimated total memory usage       :  163.74 MB
@@ -84,37 +85,38 @@ Estimated memory per processor     :  3.41 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.9594869726E+00        2.911E-02        1.182
-2            -3.9625109742E+00        1.684E-02        0.297
-3            -3.9630760222E+00        1.425E-03        0.296
-4            -3.9630865375E+00        7.471E-04        0.292
-5            -3.9630877016E+00        1.976E-04        0.292
-6            -3.9630877892E+00        9.535E-05        0.286
-7            -3.9630877611E+00        9.698E-06        0.286
-8            -3.9630878041E+00        4.545E-06        0.282
-9            -3.9630877652E+00        1.155E-06        0.279
-10           -3.9630878065E+00        1.444E-07        0.274
-Total number of SCF: 10    
+1            -4.2110460784E+00        3.110E-02        0.858
+2            -4.2138723263E+00        1.880E-02        0.206
+3            -4.2143112850E+00        4.430E-03        0.203
+4            -4.2143240042E+00        2.539E-03        0.198
+5            -4.2143256765E+00        5.868E-04        0.198
+6            -4.2143259076E+00        1.123E-04        0.195
+7            -4.2143259032E+00        7.208E-05        0.195
+8            -4.2143259142E+00        1.013E-05        0.191
+9            -4.2143259205E+00        3.898E-06        0.188
+10           -4.2143259178E+00        1.292E-06        0.185
+11           -4.2143259104E+00        3.117E-07        0.182
+Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.9630878065E+00 (Ha/atom)
-Total free energy                  : -7.9261756130E+00 (Ha)
-Band structure energy              :  1.8188925472E-01 (Ha)
-Exchange correlation energy        : -2.3890983227E+00 (Ha)
-Self and correction energy         : -2.5549036524E+01 (Ha)
-Entropy*kb*T                       : -3.2694756021E-09 (Ha)
-Fermi level                        :  2.5110931262E-01 (Ha)
-RMS force                          :  2.1058922193E-02 (Ha/Bohr)
-Maximum force                      :  2.1058922193E-02 (Ha/Bohr)
-Time for force calculation         :  0.012 (sec)
-Pressure                           : -1.6162585063E+00 (GPa)
-Maximum stress                     :  5.2468249011E+00 (GPa)
-Time for stress calculation        :  0.045 (sec)
+Free energy per atom               : -4.2143259104E+00 (Ha/atom)
+Total free energy                  : -8.4286518209E+00 (Ha)
+Band structure energy              : -2.1804358186E-01 (Ha)
+Exchange correlation energy        : -3.0621851454E+00 (Ha)
+Self and correction energy         : -1.4376990265E+01 (Ha)
+-Entropy*kb*T                      : -2.5620690532E-09 (Ha)
+Fermi level                        :  2.0158955025E-01 (Ha)
+RMS force                          :  2.2350778179E-02 (Ha/Bohr)
+Maximum force                      :  2.2350778179E-02 (Ha/Bohr)
+Time for force calculation         :  0.030 (sec)
+Pressure                           :  1.5034680134E+00 (GPa)
+Maximum stress                     :  5.0819241454E+00 (GPa)
+Time for stress calculation        :  0.060 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  3.954 sec
+Total walltime                     :  3.025 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -122,7 +124,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

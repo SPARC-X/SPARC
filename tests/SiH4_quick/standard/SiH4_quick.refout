@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 12:43:20 2022                  *
+*                   Start time: Tue Sep 20 16:13:36 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -17,7 +17,7 @@ BC: D D D
 SPIN_TYP: 0
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
-EXCHANGE_CORRELATION: LDA_PW
+EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 10
 CHEB_DEGREE: 17
 CHEFSI_BOUND_FLAG: 0
@@ -48,6 +48,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: SiH4_quick/temp_run/SiH4_quick
 ***************************************************************************
                                 Cell                                       
@@ -76,11 +77,11 @@ Total number of atom types         :  2
 Total number of atoms              :  5
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  psps_tests/Si_LDA.psp8
-Pseudocharge radii of atom type 1  :  6.50 6.50 6.50 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  4.50 4.50 4.50 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  H 1
-Pseudopotential                    :  psps_tests/H_LDA.psp8
+Pseudopotential                    :  ../psps_SPMS/01_H_1_1.0_1.0_pbe_v1.0.psp8
 Pseudocharge radii of atom type 2  :  4.00 4.00 4.00 (x, y, z dir)
 Number of atoms of type 2          :  4
 Estimated total memory usage       :  13.21 MB
@@ -89,37 +90,37 @@ Estimated memory per processor     :  281.92 kB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.3269453091E+00        3.360E-01        0.061
-2            -1.3077749250E+00        2.389E-01        0.030
-3            -1.2583383048E+00        3.304E-02        0.020
-4            -1.2560711115E+00        1.991E-02        0.018
-5            -1.2504120898E+00        8.872E-03        0.017
-6            -1.2476962566E+00        3.624E-03        0.016
-7            -1.2480615324E+00        1.874E-03        0.016
-8            -1.2479171845E+00        3.830E-04        0.016
-9            -1.2479427840E+00        2.364E-04        0.015
-10           -1.2480160658E+00        1.085E-04        0.017
-11           -1.2479965479E+00        3.661E-05        0.015
-12           -1.2479936992E+00        2.782E-05        0.015
-13           -1.2479919684E+00        5.212E-06        0.009
+1            -1.3421381043E+00        3.112E-01        0.060
+2            -1.3363192995E+00        2.197E-01        0.019
+3            -1.3150586104E+00        3.067E-02        0.017
+4            -1.3136773876E+00        1.637E-02        0.015
+5            -1.3116289877E+00        5.819E-03        0.017
+6            -1.3103529124E+00        2.402E-03        0.016
+7            -1.3104171458E+00        1.189E-03        0.016
+8            -1.3103517539E+00        2.731E-04        0.016
+9            -1.3103546107E+00        2.135E-04        0.016
+10           -1.3103952520E+00        9.479E-05        0.015
+11           -1.3103818141E+00        2.070E-05        0.015
+12           -1.3103850689E+00        1.331E-05        0.015
+13           -1.3103817941E+00        3.624E-06        0.009
 Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.2479912016E+00 (Ha/atom)
-Total free energy                  : -6.2399560079E+00 (Ha)
-Band structure energy              : -2.8545982919E+00 (Ha)
-Exchange correlation energy        : -2.4796280562E+00 (Ha)
-Self and correction energy         : -1.9078388129E+01 (Ha)
-Entropy*kb*T                       : -5.7618538062E-07 (Ha)
-Fermi level                        : -1.5601993378E-02 (Ha)
-RMS force                          :  6.8391263246E-03 (Ha/Bohr)
-Maximum force                      :  8.5489330635E-03 (Ha/Bohr)
-Time for force calculation         :  0.002 (sec)
+Free energy per atom               : -1.3103813556E+00 (Ha/atom)
+Total free energy                  : -6.5519067779E+00 (Ha)
+Band structure energy              : -2.8488448032E+00 (Ha)
+Exchange correlation energy        : -2.8990418219E+00 (Ha)
+Self and correction energy         : -1.2809760104E+01 (Ha)
+-Entropy*kb*T                      : -3.8093739410E-07 (Ha)
+Fermi level                        : -2.8675318379E-01 (Ha)
+RMS force                          :  5.9513631066E-03 (Ha/Bohr)
+Maximum force                      :  7.4392015105E-03 (Ha/Bohr)
+Time for force calculation         :  0.004 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  0.336 sec
+Total walltime                     :  0.316 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -127,7 +128,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 16:48:17 2022                  *
+*                   Start time: Tue Sep 20 18:46:26 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0 0 
 0 1 0 
 0 0 1 
-FD_GRID: 95 95 95
+FD_GRID: 38 38 38
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 1 1 1
@@ -21,20 +21,20 @@ ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
 EXCHANGE_CORRELATION: vdWDF1
 NSTATES: 29
-CHEB_DEGREE: 54
+CHEB_DEGREE: 35
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 3
 MAXIT_POISSON: 3000
-TOL_SCF: 1.00E-06
+TOL_SCF: 1.00E-05
 POISSON_SOLVER: AAR
-TOL_POISSON: 1.00E-08
+TOL_POISSON: 1.00E-07
 TOL_LANCZOS: 1.00E-02
-TOL_PSEUDOCHARGE: 1.00E-08
+TOL_PSEUDOCHARGE: 1.00E-07
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-TOL_PRECOND: 6.45E-06
+TOL_PRECOND: 4.03E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -49,6 +49,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 VDWDF_GEN_KERNEL: 1
 OUTPUT_FILE: BaTiO3_vdWDF1/temp_run/BaTiO3_vdWDF1
 ***************************************************************************
@@ -72,70 +73,65 @@ EIG_SERIAL_MAXNS: 10000
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
-Mesh spacing                       :  0.0803158 (Bohr)
+Mesh spacing                       :  0.200789 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  BaTiO3_vdWDF1/temp_run/BaTiO3_vdWDF1.out
 Total number of atom types         :  3
 Total number of atoms              :  5
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  Ba 10
-Pseudopotential                    :  psps_tests/Ba_GGA.psp8
-Pseudocharge radii of atom type 1  :  6.34 6.34 6.34 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  6.63 6.63 6.63 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Ti 12
-Pseudopotential                    :  psps_tests/Ti_GGA.psp8
-Pseudocharge radii of atom type 2  :  6.34 6.34 6.34 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 2  :  6.63 6.63 6.63 (x, y, z dir)
 Number of atoms of type 2          :  1
 Atom type 3  (valence electrons)   :  O 6
-Pseudopotential                    :  psps_tests/O_GGA1.psp8
-Pseudocharge radii of atom type 3  :  6.34 6.34 6.34 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 3  :  6.83 6.83 6.83 (x, y, z dir)
 Number of atoms of type 3          :  3
-Estimated total memory usage       :  1.29 GB
-Estimated memory per processor     :  13.76 MB
+Estimated total memory usage       :  84.57 MB
+Estimated memory per processor     :  902.03 kB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.6407942439E+01        1.445E-01        3.696
-2            -2.6449125120E+01        8.212E-02        1.561
-3            -2.6395179225E+01        5.559E-02        1.624
-4            -2.6419843737E+01        4.101E-02        1.548
-5            -2.6392760794E+01        2.295E-02        1.627
-6            -2.6380623909E+01        1.051E-02        1.563
-7            -2.6376700909E+01        4.172E-03        1.535
-8            -2.6377521957E+01        2.049E-03        1.299
-9            -2.6376795320E+01        1.053E-03        1.276
-10           -2.6377569400E+01        7.347E-04        1.309
-11           -2.6376849590E+01        2.015E-04        1.280
-12           -2.6377014353E+01        6.420E-05        1.316
-13           -2.6377018132E+01        2.879E-05        1.247
-14           -2.6377044549E+01        2.223E-05        1.249
-15           -2.6377029582E+01        7.890E-06        1.240
-16           -2.6377036200E+01        6.111E-06        1.220
-17           -2.6377031536E+01        1.862E-06        1.219
-18           -2.6377030265E+01        6.358E-07        0.595
-Total number of SCF: 18    
+1            -2.7636809846E+01        1.649E-01        0.267
+2            -2.7482022366E+01        5.887E-02        0.135
+3            -2.7441884667E+01        4.301E-02        0.144
+4            -2.7458461459E+01        3.778E-02        0.111
+5            -2.7430610979E+01        9.619E-03        0.134
+6            -2.7432397977E+01        5.615E-03        0.104
+7            -2.7429295841E+01        2.743E-03        0.103
+8            -2.7429371567E+01        4.844E-04        0.104
+9            -2.7429041527E+01        2.698E-04        0.106
+10           -2.7429149407E+01        2.680E-04        0.123
+11           -2.7429134357E+01        3.493E-05        0.122
+12           -2.7429115838E+01        1.254E-05        0.103
+13           -2.7429120091E+01        3.937E-06        0.028
+Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.6377030044E+01 (Ha/atom)
-Total free energy                  : -1.3188515022E+02 (Ha)
-Band structure energy              : -1.0759824285E+01 (Ha)
-Exchange correlation energy        : -2.2443862334E+01 (Ha)
-Self and correction energy         : -2.0764072710E+02 (Ha)
-Entropy*kb*T                       : -1.4568334214E-10 (Ha)
-Fermi level                        :  3.0493714541E-01 (Ha)
-vdWDF energy                       :  2.4543679838E-01 (Ha)
-RMS force                          :  1.1278856444E-01 (Ha/Bohr)
-Maximum force                      :  2.4894841447E-01 (Ha/Bohr)
-Time for force calculation         :  0.080 (sec)
-Pressure                           :  4.4923999046E+01 (GPa)
-Maximum stress                     :  5.3028810636E+01 (GPa)
-Time for stress calculation        :  0.140 (sec)
+Free energy per atom               : -2.7429122541E+01 (Ha/atom)
+Total free energy                  : -1.3714561271E+02 (Ha)
+Band structure energy              : -1.0853081395E+01 (Ha)
+Exchange correlation energy        : -2.8786796510E+01 (Ha)
+Self and correction energy         : -1.8459012092E+02 (Ha)
+-Entropy*kb*T                      : -2.3833163344E-10 (Ha)
+Fermi level                        :  2.4576471575E-01 (Ha)
+vdWDF energy                       :  3.0376204050E-01 (Ha)
+RMS force                          :  1.1324059413E-01 (Ha/Bohr)
+Maximum force                      :  2.4988117695E-01 (Ha/Bohr)
+Time for force calculation         :  0.056 (sec)
+Pressure                           :  4.5437159874E+01 (GPa)
+Maximum stress                     :  5.3609882301E+01 (GPa)
+Time for stress calculation        :  0.044 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  72.369 sec
+Total walltime                     :  45.942 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -143,7 +139,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            
