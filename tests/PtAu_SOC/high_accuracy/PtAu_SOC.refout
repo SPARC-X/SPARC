@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 16:59:44 2022                  *
+*                   Start time: Tue Sep 20 19:03:41 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 -0.707106781186547 -0.707106781186547 -0 
 0 0.707106781186547 -0.707106781186547 
 0.409181822389871 -0.409181822389871 -0.815561446153144 
-FD_GRID: 27 27 47
+FD_GRID: 54 54 94
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 2 2 1
@@ -21,7 +21,7 @@ ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.003674926479
 EXCHANGE_CORRELATION: GGA_PBE
 NSTATES: 52
-CHEB_DEGREE: 39
+CHEB_DEGREE: 53
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 250
@@ -34,7 +34,7 @@ TOL_LANCZOS: 1.00E-02
 TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-TOL_PRECOND: 4.03E-05
+TOL_PRECOND: 1.01E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -49,6 +49,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: PtAu_SOC/temp_run/PtAu_SOC
 ***************************************************************************
                                 Cell                                       
@@ -71,61 +72,62 @@ EIG_SERIAL_MAXNS: 10000
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
-Mesh spacing in x-direction        :  0.200798 (Bohr)
-Mesh spacing in y-direction        :  0.200798 (Bohr)
-Mesh spacing in z direction        :  0.200714 (Bohr)
+Mesh spacing in x-direction        :  0.100399 (Bohr)
+Mesh spacing in y-direction        :  0.100399 (Bohr)
+Mesh spacing in z direction        :  0.100357 (Bohr)
 Number of symmetry adapted k-points:  2
 Output printed to                  :  PtAu_SOC/temp_run/PtAu_SOC.out
 Total number of atom types         :  2
 Total number of atoms              :  2
 Total number of electrons          :  37
 Atom type 1  (valence electrons)   :  Au 19
-Pseudopotential                    :  psps_tests/Au_fr.psp8
-Pseudocharge radii of atom type 1  :  6.63 6.63 6.62 (x, y, z dir)
+Pseudopotential                    :  PtAu_SOC/Au_fr.psp8
+Pseudocharge radii of atom type 1  :  6.43 6.43 6.42 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Pt 18
-Pseudopotential                    :  psps_tests/Pt_fr.psp8
-Pseudocharge radii of atom type 2  :  6.83 6.83 6.82 (x, y, z dir)
+Pseudopotential                    :  PtAu_SOC/Pt_fr.psp8
+Pseudocharge radii of atom type 2  :  6.43 6.43 6.42 (x, y, z dir)
 Number of atoms of type 2          :  1
-Estimated total memory usage       :  667.11 MB
-Estimated memory per processor     :  6.95 MB
+Estimated total memory usage       :  5.21 GB
+Estimated memory per processor     :  55.59 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.2643157024E+02        9.713E-02        4.134
-2            -1.2663333662E+02        4.676E-02        1.041
-3            -1.2682879877E+02        1.162E-02        1.038
-4            -1.2683179980E+02        6.232E-03        1.064
-5            -1.2682817639E+02        1.099E-03        1.043
-6            -1.2682855194E+02        3.260E-04        1.072
-7            -1.2682942284E+02        1.291E-04        1.039
-8            -1.2682910859E+02        4.947E-05        1.088
-9            -1.2682922834E+02        2.332E-05        1.056
-10           -1.2682919264E+02        5.375E-06        1.068
-11           -1.2682920363E+02        3.420E-06        1.029
-12           -1.2682919694E+02        5.963E-07        0.994
-Total number of SCF: 12    
+1            -1.2626646652E+02        9.914E-02        33.442
+2            -1.2662637883E+02        4.703E-02        8.569
+3            -1.2681395687E+02        1.361E-02        8.527
+4            -1.2683461474E+02        7.728E-03        8.468
+5            -1.2682862260E+02        1.474E-03        8.487
+6            -1.2682856649E+02        5.347E-04        8.497
+7            -1.2682891632E+02        2.489E-04        8.474
+8            -1.2682914999E+02        1.044E-04        8.482
+9            -1.2682920899E+02        3.474E-05        8.458
+10           -1.2682918600E+02        2.102E-05        8.410
+11           -1.2682920689E+02        4.446E-06        8.414
+12           -1.2682920529E+02        1.773E-06        8.416
+13           -1.2682920649E+02        6.115E-07        8.209
+Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.2682919750E+02 (Ha/atom)
-Total free energy                  : -2.5365839500E+02 (Ha)
-Band structure energy              : -2.2547463041E+01 (Ha)
-Exchange correlation energy        : -2.4344668363E+01 (Ha)
-Self and correction energy         : -3.6613624093E+02 (Ha)
-Entropy*kb*T                       : -2.9236403173E-10 (Ha)
-Fermi level                        :  5.3408045425E-01 (Ha)
-RMS force                          :  4.5671185856E-01 (Ha/Bohr)
-Maximum force                      :  4.5671185856E-01 (Ha/Bohr)
-Time for force calculation         :  0.024 (sec)
-Pressure                           :  8.3438208075E+01 (GPa)
-Maximum stress                     :  1.7609160732E+02 (GPa)
-Time for stress calculation        :  0.064 (sec)
+Free energy per atom               : -1.2682920655E+02 (Ha/atom)
+Total free energy                  : -2.5365841309E+02 (Ha)
+Band structure energy              : -2.2547423947E+01 (Ha)
+Exchange correlation energy        : -2.4344632912E+01 (Ha)
+Self and correction energy         : -3.6613589962E+02 (Ha)
+-Entropy*kb*T                      : -2.1206950442E-10 (Ha)
+Fermi level                        :  5.5208873012E-01 (Ha)
+RMS force                          :  4.5675033428E-01 (Ha/Bohr)
+Maximum force                      :  4.5675033428E-01 (Ha/Bohr)
+Time for force calculation         :  0.151 (sec)
+Pressure                           :  8.3383016136E+01 (GPa)
+Maximum stress                     :  1.7602702655E+02 (GPa)
+Time for stress calculation        :  0.311 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  15.944 sec
+Total walltime                     :  136.030 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -133,7 +135,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

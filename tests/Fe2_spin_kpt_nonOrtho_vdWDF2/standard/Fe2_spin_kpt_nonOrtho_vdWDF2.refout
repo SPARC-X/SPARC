@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Aug 06, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sun Aug  7 21:56:18 2022                  *
+*                   Start time: Tue Sep 20 16:21:42 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0.1 0 
 0.1 1 0 
 0 0 1 
-FD_GRID: 29 29 28
+FD_GRID: 14 14 14
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 3 3 3
@@ -21,7 +21,7 @@ ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
 EXCHANGE_CORRELATION: vdWDF2
 NSTATES: 24
-CHEB_DEGREE: 51
+CHEB_DEGREE: 35
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
@@ -35,7 +35,7 @@ TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: potential
 MIXING_PRECOND: kerker
 MIXING_PRECOND_MAG: none
-TOL_PRECOND: 9.88E-06
+TOL_PRECOND: 4.14E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -51,8 +51,9 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 VDWDF_GEN_KERNEL: 1
-OUTPUT_FILE: Fe2_spin_kpt_nonOrtho_vdWDF2
+OUTPUT_FILE: Fe2_spin_kpt_nonOrtho_vdWDF2/temp_run/Fe2_spin_kpt_nonOrtho_vdWDF2
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -68,62 +69,67 @@ NP_SPIN_PARAL: 2
 NP_KPOINT_PARAL: 2
 NP_BAND_PARAL: 12
 NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 4 4 3
+NP_DOMAIN_PHI_PARAL: 2 2 2
 EIG_SERIAL_MAXNS: 10000
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  48
-Mesh spacing in x-direction        :  0.0984213 (Bohr)
-Mesh spacing in y-direction        :  0.0984213 (Bohr)
-Mesh spacing in z direction        :  0.10143 (Bohr)
+Mesh spacing in x-direction        :  0.203873 (Bohr)
+Mesh spacing in y-direction        :  0.203873 (Bohr)
+Mesh spacing in z direction        :  0.202861 (Bohr)
 Number of symmetry adapted k-points:  14
-Output printed to                  :  Fe2_spin_kpt_nonOrtho_vdWDF2.out
+Output printed to                  :  Fe2_spin_kpt_nonOrtho_vdWDF2/temp_run/Fe2_spin_kpt_nonOrtho_vdWDF2.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
-Pseudopotential                    :  Fe_LDA.psp8
-Pseudocharge radii of atom type 1  :  6.50 6.50 6.49 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/26_Fe_16_2.0_2.5_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  6.93 6.93 6.90 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  1.42 GB
-Estimated memory per processor     :  30.38 MB
+Estimated total memory usage       :  169.91 MB
+Estimated memory per processor     :  3.54 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1397219498E+02         3.4223E-01        4.997E-01        18.953
-2            -1.1398800787E+02         8.4943E-04        3.076E-01        4.736
-3            -1.1399703888E+02        -9.6995E-03        4.270E-02        4.757
-4            -1.1399710244E+02         8.3833E-04        2.249E-02        4.770
-5            -1.1399711276E+02         1.3190E-05        1.144E-02        4.733
-6            -1.1399711722E+02         5.4841E-05        1.327E-03        4.737
-7            -1.1399711731E+02        -2.6492E-05        2.821E-04        4.738
-8            -1.1399711731E+02         1.2698E-05        1.392E-04        4.743
-9            -1.1399711731E+02        -3.4652E-07        1.574E-05        4.707
-10           -1.1399711731E+02         3.5287E-07        2.391E-06        4.729
-Total number of SCF: 10    
+1            -1.1336387922E+02         4.4445E-01        2.074E-01        1.956
+2            -1.1336869550E+02         1.4806E-01        1.297E-01        0.474
+3            -1.1337119795E+02        -2.0612E-02        2.924E-02        0.475
+4            -1.1337128266E+02         5.1283E-02        1.207E-02        0.473
+5            -1.1337129817E+02         1.0527E-01        5.274E-03        0.474
+6            -1.1337130120E+02         1.0474E-01        1.150E-03        0.487
+7            -1.1337130263E+02         1.1120E-01        9.100E-04        0.503
+8            -1.1337130525E+02         1.2475E-01        7.725E-04        0.473
+9            -1.1337130722E+02         1.4028E-01        3.300E-04        0.471
+10           -1.1337130722E+02         1.3889E-01        1.496E-04        0.472
+11           -1.1337130725E+02         1.4062E-01        8.118E-05        0.487
+12           -1.1337130722E+02         1.3862E-01        1.456E-04        0.471
+13           -1.1337130726E+02         1.4020E-01        1.602E-05        0.470
+14           -1.1337130726E+02         1.3997E-01        1.245E-05        0.472
+15           -1.1337130726E+02         1.4009E-01        2.220E-06        0.468
+Total number of SCF: 15    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.1399711731E+02 (Ha/atom)
-Total free energy                  : -2.2799423462E+02 (Ha)
-Band structure energy              :  4.7578955751E+00 (Ha)
-Exchange correlation energy        : -3.1596724069E+01 (Ha)
-Self and correction energy         : -2.4173788357E+02 (Ha)
-Entropy*kb*T                       : -6.8429901955E-06 (Ha)
-Fermi level                        :  1.8871851378E+00 (Ha)
-vdWDF energy                       :  7.2814072271E-02 (Ha)
-RMS force                          :  4.8769587050E-01 (Ha/Bohr)
-Maximum force                      :  4.8769587050E-01 (Ha/Bohr)
-Time for force calculation         :  0.143 (sec)
-Pressure                           :  2.4374086882E+04 (GPa)
-Maximum stress                     :  2.5270608952E+04 (GPa)
-Time for stress calculation        :  0.395 (sec)
+Free energy per atom               : -1.1337130726E+02 (Ha/atom)
+Total free energy                  : -2.2674261451E+02 (Ha)
+Band structure energy              : -5.5118956729E-01 (Ha)
+Exchange correlation energy        : -3.7839008152E+01 (Ha)
+Self and correction energy         : -2.3056985265E+02 (Ha)
+-Entropy*kb*T                      : -1.2578539584E-04 (Ha)
+Fermi level                        :  1.8100126344E+00 (Ha)
+vdWDF energy                       :  9.1543206467E-02 (Ha)
+RMS force                          :  4.1688611305E-01 (Ha/Bohr)
+Maximum force                      :  4.1688611305E-01 (Ha/Bohr)
+Time for force calculation         :  0.130 (sec)
+Pressure                           :  2.1738251518E+04 (GPa)
+Maximum stress                     :  2.2623694802E+04 (GPa)
+Time for stress calculation        :  0.242 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  106.767 sec
+Total walltime                     :  53.052 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -131,7 +137,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

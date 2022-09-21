@@ -1,0 +1,3809 @@
+
+Creating SPARC_INPUT_MPI datatype took 0.072 ms
+Initializing ...
+Checking input arguments parsed by command line.
+
+Checking inputs parsed by commandline took 0.020 ms
+
+Set default values took 0.000 ms
+Reading input file AlSi_primitive_quick_relax.inpt
+
+Reading input file took 1.235 ms
+Reading ion file AlSi_primitive_quick_relax.ion
+Number of atom types : 2.
+Total number of atoms: 2.
+[32m
+Time for finding element is 0.007 ms
+[32mElement type for atom_type Al is Al
+[0m[32mDefault atomic mass for Al is 26.981538
+[0m[32m
+Time for finding element is 0.000 ms
+[32mElement type for atom_type Si is Si
+[0m[32mDefault atomic mass for Si is 28.085000
+[0mpseudo_dir # 1 = ../../../psps_SPMS/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
+pseudo_dir # 2 = ../../../psps_SPMS/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
+
+Reading ion file took 1.106 ms
+Reading pseudopotential (PSP) file.
+Reading pseudopotential: ../../../psps_SPMS/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
+Input element type: Al
+pspcod = 8, pspxc = 11
+
+fchrg = 5.00000000 > 0.0 (icmod != 0)
+This pseudopotential contains non-linear core correction. 
+
+fchrg = 5.000000, READING MODEL CORE CHARGE!
+
+Reading pseudopotential: ../../../psps_SPMS/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
+Input element type: Si
+pspcod = 8, pspxc = 11
+
+fchrg = 4.00000000 > 0.0 (icmod != 0)
+This pseudopotential contains non-linear core correction. 
+
+fchrg = 4.000000, READING MODEL CORE CHARGE!
+
+
+Reading pseudopotential file took 7.124 ms
+
+Freeing SPARC_INPUT_MPI datatype took 0.007 ms
+Broadcasting Atom info. using MPI_Pack & MPI_Unpack in SPARC took 0.109 ms
+
+Checking existence of (0) out file(s) took 0.021 ms
+
+
+CELL_TYP: 17
+
+
+Range:
+    4.926480	    4.926480	    4.926480
+
+COORD AFTER MAPPING:
+    0.000000	    0.000000	    0.000000	
+    2.561770	    2.611034	    2.561770	
+
+Max eigenvalue of -0.5*Lap is 406.6909982552030, time taken: 0.008 ms
+h_eff = 0.16, npl = 40
+[34m[k1_red,k2_red,k3_red] =   0.2500   0.2500   0.2500
+[0m[34m[k1_red,k2_red,k3_red] =   0.2500   0.2500  -0.2500
+[0m[34m[k1_red,k2_red,k3_red] =   0.2500  -0.2500   0.2500
+[0m[34m[k1_red,k2_red,k3_red] =   0.2500  -0.2500  -0.2500
+[0m[34m[k1_red,k2_red,k3_red] =  -0.2500   0.2500   0.2500
+[0m[34m[k1_red,k2_red,k3_red] =  -0.2500   0.2500  -0.2500
+[0m[34m[k1_red,k2_red,k3_red] =  -0.2500  -0.2500   0.2500
+[0m[34m[k1_red,k2_red,k3_red] =  -0.2500  -0.2500  -0.2500
+[0mAfter symmetry reduction, Nkpts_sym = 4
+k1[ 0]:   0.2500, k2[ 0]:   0.2500, k3[ 0]:   0.2500, kptwt[ 0]: 2.000 
+k1[ 1]:   0.2500, k2[ 1]:   0.2500, k3[ 1]:  -0.2500, kptwt[ 1]: 2.000 
+k1[ 2]:   0.2500, k2[ 2]:  -0.2500, k3[ 2]:   0.2500, kptwt[ 2]: 2.000 
+k1[ 3]:   0.2500, k2[ 3]:  -0.2500, k3[ 3]:  -0.2500, kptwt[ 3]: 2.000 
+
+rank = 0, Copying data from SPARC_Input into SPARC & set up subcomm took 0.352 ms
+Set up communicators.
+
+--set up spincomm took 0.215 ms
+
+--set up kptcomm took 0.597 ms
+
+ kpt_topo #0, kptcomm topology dims = {2, 3, 4}, nodes/proc = {12.50,8.33,6.25}
+
+--set up bandcomm took 0.081 ms
+rank = 0, dmcomm dims = {1, 1, 3}
+gridsizes = [25, 25, 25], Nstates = 8, dmcomm dims = [1, 1, 3]
+
+--set up dmcomm took 0.032 ms
+
+--set up blacscomm took 0.053 ms
+rank = 0, size_blacscomm = 8, ScaLAPACK topology Dims = (8, 1)
+nproc = 96, size_blacscomm = 8 = dims[0] * dims[1] = (8, 1)
+rank =  0, my blacs rank = 0, BLCYC size (5625, 1), actual size (5625, 1)
+rank = 0, mb = nb = 8, mbQ = nbQ = 64
+rank = 0, nr_Hp = 8, nc_Hp = 8
+========================================================================
+Poisson domain decomposition:np total = 96, {Nx, Ny, Nz} = {25, 25, 25}
+nproc used = 64 = {4, 4, 4}, nodes/proc = {6.25, 6.25, 6.25}
+
+
+--set up dmcomm_phi took 0.135 ms
+======Set_D2D_Target: find receivers in each process (c_ndgrid) in send_comm took 0.012 ms
+======Set_D2D_Target: Gather and Scatter receivers in send_comm took 22.163 ms
+======Set_D2D_Target: find receivers in each process (c_ndgrid) in send_comm took 0.001 ms
+======Set_D2D_Target: Gather and Scatter receivers in send_comm took 0.027 ms
+
+-----------------------------------------------
+Parallelization summary
+Total number of processors: 96
+-----------------------------------------------
+== Psi domain ==
+Total number of processors used for Psi domain: 96
+npspin  : 1
+# of spin per spincomm           : 1
+npkpt   : 4
+# of k-points per kptcomm        : 1
+npband  : 8
+# of bands per bandcomm          : 1
+npdomain: 3
+Embeded Cartesian topology dims: (1,1,3)
+# of FD-grid points per processor: 5625 = (25,25,9)
+-----------------------------------------------
+== Phi domain ==
+Total number of processors used for Phi domain: 64
+Embeded Cartesian topology dims: (4,4,4)
+# of FD-grid points per processor: 343 = (7,7,7)
+-----------------------------------------------
+
+Calculate_SplineDerivRadFun took 0.219 ms
+Rbmax_x = 7.470592, Rbmax_y = 7.470592, Rbmax_z = 7.470592
+rlen_ex = 403971, nxp = 44, nyp = 44, nzp = 50
+time spent on qsort: 4.463 ms.
+time spent on vectorized spline interp: 4.890 ms.
+Z = 3,rb_x = 4.710151,rb_y = 4.710151,rb_z = 4.710151,error = 1.312E-04,Bint = -2.9998687756366
+Z = 3,rb_x = 6.090372,rb_y = 6.090372,rb_z = 6.090372,error = 7.153E-05,Bint = -3.0000715344817
+Z = 3,rb_x = 6.780482,rb_y = 6.780482,rb_z = 6.780482,error = 8.201E-06,Bint = -3.0000082013042
+Z = 3,rb_x = 7.125537,rb_y = 7.125537,rb_z = 7.125537,error = 2.495E-06,Bint = -3.0000024953463
+Z = 3,rb_x = 7.298064,rb_y = 7.298064,rb_z = 7.298064,error = 2.418E-07,Bint = -3.0000002417709
+
+error = 2.42e-07 > TOL_PSEUDOCHARGE = 1.00e-08
+
+WARNING: upperbond for pseudocharge radius (Rbmax_?) is not big enough! Rbmax_x = 7.5, Rbmax_y = 7.5, Rbmax_z = 7.5
+
+dx = 0.197059, dy = 0.197059, dz = 0.197059, Ncube_x = 38, Ncube_y = 38, Ncube_z = 38
+ityp = 0, converged in 5 iters, err_cur = 2.42E-07, TOL = 1.00E-08, rb = {7.470592, 7.470592, 7.470592}, after proj to grid rb = {7.488250, 7.488250, 7.488250}
+time for finding rb using bisection: 16.676 ms.
+time spent on vectorized spline interp: 2.980 ms.
+Z = 4,rb_x = 4.690591,rb_y = 4.690591,rb_z = 4.690591,error = 1.442E-05,Bint = -4.0000144185908
+Z = 4,rb_x = 6.080592,rb_y = 6.080592,rb_z = 6.080592,error = 8.971E-06,Bint = -4.0000089706475
+Z = 4,rb_x = 6.775592,rb_y = 6.775592,rb_z = 6.775592,error = 7.506E-06,Bint = -4.0000075056187
+Z = 4,rb_x = 7.123092,rb_y = 7.123092,rb_z = 7.123092,error = 4.186E-06,Bint = -4.0000041855903
+Z = 4,rb_x = 7.296842,rb_y = 7.296842,rb_z = 7.296842,error = 4.965E-07,Bint = -4.0000004965102
+
+error = 4.97e-07 > TOL_PSEUDOCHARGE = 1.00e-08
+
+WARNING: upperbond for pseudocharge radius (Rbmax_?) is not big enough! Rbmax_x = 7.5, Rbmax_y = 7.5, Rbmax_z = 7.5
+
+dx = 0.197059, dy = 0.197059, dz = 0.197059, Ncube_x = 38, Ncube_y = 38, Ncube_z = 38
+ityp = 1, converged in 5 iters, err_cur = 4.97E-07, TOL = 1.00E-08, rb = {7.470592, 7.470592, 7.470592}, after proj to grid rb = {7.488250, 7.488250, 7.488250}
+time for finding rb using bisection: 14.626 ms.
+
+Calculating rb for all atom types took 43.654 ms
+----------------------
+Estimated memory usage
+Total: 49.11 MB
+orbitals             : 45.78 MB
+global sized vectors : 3.34 MB
+----------------------------------------------
+Estimated memory usage per processor: 523.89 kB
+[32mStarting L-BFGS for structural relaxation
+[0mStart ground-state calculation.
+
+Computing nearest neighbor distance (6.315 Bohr) takes 0.000 ms
+Calculating electron density ... 
+Finding atoms that influence the local process domain ... 
+
+Finding influencing atoms took 0.012 ms
+Calculating pseudocharge density ... 
+the global sum of int_b = -6.9999996781118, sum_int_rho = 6.8708572728189
+PosCharge = 6.999999678112, NegCharge = -6.870857272819, scal_fac = 1.018795675731
+After scaling, int_rho = 6.9999996781118, PosCharge + NegCharge - NetCharge = 0.000e+00
+--Calculate Vref took 0.814 ms
+--Calculate rho_guess took 5.862 ms
+
+ integral of b = -6.9999996781118,
+ int{b} + Nelectron + NetCharge = 3.219e-07,
+ Esc = -10.3152544255426,
+ MPI_Reduce took 0.056 ms
+
+Calculating b & b_ref took 16.224 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 1.210 ms
+[0m
+Finding nonlocal influencing atoms in psi-domain took 1.318 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.110 ms
+[0m
+Calculating nonlocal projectors in psi-domain took 0.680 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 0.194 ms
+[0m
+Finding nonlocal influencing atoms in kptcomm_topo took 0.195 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.010 ms
+[0m
+Calculating nonlocal projectors in kptcomm_topo took 0.055 ms
+Initializing Kohn-Sham orbitals ... 
+Finished setting random orbitals. Time taken: 0.129 ms
+Initializing electron density ... 
+Start SCF calculation ... 
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = 0.000e+00, checking this took 0.042 ms
+2-norm of RHS = 191.3143237770759, which took 0.074 ms
+
+iter_count = 180, r_2norm = 4.931e-07, tol*||rhs|| = 1.913e-06
+
+Anderson update took 15.835 ms, out of which F'*F took 4.143 ms; b-Ax took 23.070 ms, out of which Lap took 23.024 ms
+Solving Poisson took 68.289 ms
+Start calculating Vxc (GGA_PBE) ...
+rank = 0, XC calculation took 0.414 ms
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.039 ms
+---Transfer Veff_loc: D2D took 0.091 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.309 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.170 ms
+rank = 0, Veff calculation and Bcast (non-blocking) took 0.666 ms
+-------------
+SCF iter 1  
+-------------
+
+Time for setting up initial guess for Lanczos: 0.021 ms
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.000 ms
+======D2D: initiated sending and receiving took 0.025 ms
+
+Start Lanczos algorithm ...
+Wait for veff to be bcasted took 0.000 ms
+rank =  0, One H*x took 0.525 ms
+    Lanczos iter 36, eigmin  = -0.059822610, eigmax = 409.465288320, err_eigmin = 1.409e-03, err_eigmax = 9.701e-03
+rank =   0, Lanczos took 30.817 ms, eigmin = -0.059822609823, eigmax = 413.559941203174
+
+ Chebfilt 1, in Chebyshev filtering, lambda_cutoff = 206.700059, lowerbound = -0.159823, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 46.475 ms
+rank =  0, Distribute orbital to block cyclic format took 1.297 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.313 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.008 ms
+rank =  0, Distribute data + matrix mult took 1.626 ms
+rank =  0, finding HY took 1.165 ms
+rank =  0, distributing HY into block cyclic form took 0.268 ms
+rank =  0, finding Y'*HY took 0.093 ms
+Total time for projection: 3.166 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.424 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.219 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.654 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.132 ms
+rank =  0, Distributing orbital back into band + domain format took 0.250 ms
+Total time for subspace rotation: 0.388 ms
+rank = 0, Efermi =   4.721410208624 calculate fermi energy took 5.738 ms
+
+ Chebfilt 2, in Chebyshev filtering, lambda_cutoff = 6.777152, lowerbound = -0.159823, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 55.279 ms
+rank =  0, Distribute orbital to block cyclic format took 0.882 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.109 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 1.002 ms
+rank =  0, finding HY took 1.081 ms
+rank =  0, distributing HY into block cyclic form took 0.284 ms
+rank =  0, finding Y'*HY took 0.119 ms
+Total time for projection: 2.498 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.065 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.182 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.257 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.227 ms
+Total time for subspace rotation: 0.254 ms
+rank = 0, Efermi =   0.925288372354 calculate fermi energy took 15.669 ms
+
+ Chebfilt 3, in Chebyshev filtering, lambda_cutoff = 1.635336, lowerbound = -0.159823, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 42.598 ms
+rank =  0, Distribute orbital to block cyclic format took 1.326 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.107 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.023 ms
+rank =  0, Distribute data + matrix mult took 1.461 ms
+rank =  0, finding HY took 1.102 ms
+rank =  0, distributing HY into block cyclic form took 0.234 ms
+rank =  0, finding Y'*HY took 0.087 ms
+Total time for projection: 2.896 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.181 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.253 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.234 ms
+Total time for subspace rotation: 0.261 ms
+rank = 0, Efermi =   0.627537208127 calculate fermi energy took 0.052 ms
+
+ Chebfilt 4, in Chebyshev filtering, lambda_cutoff = 1.223762, lowerbound = -0.159823, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 42.492 ms
+rank =  0, Distribute orbital to block cyclic format took 1.328 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.116 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.008 ms
+rank =  0, Distribute data + matrix mult took 1.457 ms
+rank =  0, finding HY took 1.112 ms
+rank =  0, distributing HY into block cyclic form took 0.209 ms
+rank =  0, finding Y'*HY took 0.103 ms
+Total time for projection: 2.894 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.059 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.177 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.246 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.228 ms
+Total time for subspace rotation: 0.253 ms
+rank = 0, Efermi =   0.618923292677 calculate fermi energy took 0.113 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.258 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.168 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 253.830 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.073 ms
+rank = 0, D2D took 0.077 ms
+rank = 0, Transfering density took 0.078 ms
+Etot    =    -5.771790048572
+Eband   =     2.387084825370
+E1      =     1.974850809344
+E2      =     0.052345227971
+E3      =    -3.593746846183
+Exc     =    -3.359872867192
+Esc     =   -10.315254425543
+Entropy =    -0.000000008764
+dE = 2.886e+00, dEband = 1.194e+00
+rank = 0, Calculating/Estimating energy took 0.777 ms, Etot = -5.771790049, dEtot = 2.886e+00, dEband = 1.194e+00
+Start applying Kerker preconditioner ...
+2-norm of RHS = 9.3093927276210, which took 0.023 ms
+
+iter_count = 78, r_2norm = 1.997e-04, tol*||rhs|| = 3.615e-04
+
+Anderson update took 1.434 ms, out of which F'*F took 1.298 ms; b-Ax took 13.141 ms, out of which Lap took 13.122 ms
+rank = 0, Mixing (+ precond) took 16.205 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -3.691e-15, checking this took 0.018 ms
+2-norm of RHS = 193.8286148027649, which took 0.039 ms
+
+iter_count = 126, r_2norm = 1.802e-06, tol*||rhs|| = 1.938e-06
+
+Anderson update took 2.089 ms, out of which F'*F took 2.019 ms; b-Ax took 13.088 ms, out of which Lap took 13.058 ms
+Solving Poisson took 16.570 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.065 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.072 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.079 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.223 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.223 ms
+
+This SCF took 298.159 ms, scf error = 1.272e-01
+-------------
+SCF iter 2  
+-------------
+
+ Chebfilt 5, in Chebyshev filtering, lambda_cutoff = 1.181892, lowerbound = -0.066719, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.047 ms
+rank =  0, Distribute orbital to block cyclic format took 1.087 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.119 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.034 ms
+rank =  0, Distribute data + matrix mult took 1.246 ms
+rank =  0, finding HY took 1.058 ms
+rank =  0, distributing HY into block cyclic form took 0.260 ms
+rank =  0, finding Y'*HY took 0.109 ms
+Total time for projection: 2.688 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.069 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.142 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.136 ms
+Total time for subspace rotation: 0.164 ms
+rank = 0, Efermi =   0.619379145460 calculate fermi energy took 1.423 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.254 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.071 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 48.826 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.068 ms
+rank = 0, D2D took 0.072 ms
+rank = 0, Transfering density took 0.072 ms
+Etot    =    -5.773437647635
+Eband   =     2.391837796652
+E1      =     1.987384205451
+E2      =     0.072635674757
+E3      =    -3.596971429534
+Exc     =    -3.361740970207
+Esc     =   -10.315254425543
+Entropy =    -0.000000008765
+dE = 8.238e-04, dEband = 2.376e-03
+rank = 0, Calculating/Estimating energy took 0.682 ms, Etot = -5.773437648, dEtot = 8.238e-04, dEband = 2.376e-03
+Start applying Kerker preconditioner ...
+2-norm of RHS = 1.0219861270131, which took 0.013 ms
+
+iter_count = 84, r_2norm = 3.518e-05, tol*||rhs|| = 3.969e-05
+
+Anderson update took 1.054 ms, out of which F'*F took 1.251 ms; b-Ax took 7.812 ms, out of which Lap took 7.790 ms
+rank = 0, Mixing (+ precond) took 9.522 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -2.461e-15, checking this took 0.007 ms
+2-norm of RHS = 200.8457858383686, which took 0.006 ms
+
+iter_count = 132, r_2norm = 1.863e-06, tol*||rhs|| = 2.008e-06
+
+Anderson update took 1.316 ms, out of which F'*F took 1.927 ms; b-Ax took 12.184 ms, out of which Lap took 12.152 ms
+Solving Poisson took 14.079 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.066 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.051 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.085 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.209 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.209 ms
+
+This SCF took 73.768 ms, scf error = 9.276e-02
+-------------
+SCF iter 3  
+-------------
+
+ Chebfilt 6, in Chebyshev filtering, lambda_cutoff = 1.178092, lowerbound = -0.066004, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.211 ms
+rank =  0, Distribute orbital to block cyclic format took 1.297 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.154 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.018 ms
+rank =  0, Distribute data + matrix mult took 1.475 ms
+rank =  0, finding HY took 1.142 ms
+rank =  0, distributing HY into block cyclic form took 0.177 ms
+rank =  0, finding Y'*HY took 0.129 ms
+Total time for projection: 2.933 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.064 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.136 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.157 ms
+Total time for subspace rotation: 0.183 ms
+rank = 0, Efermi =   0.620952207799 calculate fermi energy took 0.052 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.183 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.051 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.784 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.078 ms
+rank = 0, D2D took 0.082 ms
+rank = 0, Transfering density took 0.083 ms
+Etot    =    -5.773659504216
+Eband   =     2.406924763348
+E1      =     2.021613012013
+E2      =     0.135276925521
+E3      =    -3.612502513609
+Exc     =    -3.364168433357
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 1.109e-04, dEband = 7.543e-03
+rank = 0, Calculating/Estimating energy took 0.703 ms, Etot = -5.773659504, dEtot = 1.109e-04, dEband = 7.543e-03
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.5193591038038, which took 0.011 ms
+
+iter_count = 84, r_2norm = 1.321e-05, tol*||rhs|| = 2.017e-05
+
+Anderson update took 0.962 ms, out of which F'*F took 1.251 ms; b-Ax took 7.758 ms, out of which Lap took 7.736 ms
+rank = 0, Mixing (+ precond) took 9.472 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.0688601344167, which took 0.007 ms
+
+iter_count = 102, r_2norm = 1.943e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 1.117 ms, out of which F'*F took 1.470 ms; b-Ax took 9.268 ms, out of which Lap took 9.243 ms
+Solving Poisson took 11.014 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.000 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.075 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.054 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.078 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.214 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.214 ms
+
+This SCF took 68.692 ms, scf error = 7.577e-03
+-------------
+SCF iter 4  
+-------------
+
+ Chebfilt 7, in Chebyshev filtering, lambda_cutoff = 1.177712, lowerbound = -0.063760, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.571 ms
+rank =  0, Distribute orbital to block cyclic format took 0.463 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.124 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.024 ms
+rank =  0, Distribute data + matrix mult took 0.617 ms
+rank =  0, finding HY took 1.087 ms
+rank =  0, distributing HY into block cyclic form took 0.265 ms
+rank =  0, finding Y'*HY took 0.089 ms
+Total time for projection: 2.070 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.064 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.072 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.145 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.182 ms
+Total time for subspace rotation: 0.209 ms
+rank = 0, Efermi =   0.620970599971 calculate fermi energy took 0.076 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.201 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.054 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.363 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.073 ms
+rank = 0, D2D took 0.077 ms
+rank = 0, Transfering density took 0.077 ms
+Etot    =    -5.773756006420
+Eband   =     2.407262888296
+E1      =     2.023183692767
+E2      =     0.137760371489
+E3      =    -3.613025347868
+Exc     =    -3.364213129553
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 4.825e-05, dEband = 1.691e-04
+rank = 0, Calculating/Estimating energy took 1.069 ms, Etot = -5.773756006, dEtot = 4.825e-05, dEband = 1.691e-04
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0943327925887, which took 0.007 ms
+
+iter_count = 84, r_2norm = 2.444e-06, tol*||rhs|| = 3.663e-06
+
+Anderson update took 0.890 ms, out of which F'*F took 1.203 ms; b-Ax took 7.696 ms, out of which Lap took 7.679 ms
+rank = 0, Mixing (+ precond) took 9.315 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -2.461e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1484144981314, which took 0.006 ms
+
+iter_count = 108, r_2norm = 1.194e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 1.123 ms, out of which F'*F took 1.566 ms; b-Ax took 9.703 ms, out of which Lap took 9.680 ms
+Solving Poisson took 11.257 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.002 ms
+======D2D: initiated sending and receiving took 0.022 ms
+---Transfer Veff_loc: D2D took 0.087 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.048 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.093 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.234 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.234 ms
+
+This SCF took 68.700 ms, scf error = 4.190e-03
+-------------
+SCF iter 5  
+-------------
+
+ Chebfilt 8, in Chebyshev filtering, lambda_cutoff = 1.177680, lowerbound = -0.063690, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.269 ms
+rank =  0, Distribute orbital to block cyclic format took 0.924 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.130 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.042 ms
+rank =  0, Distribute data + matrix mult took 1.101 ms
+rank =  0, finding HY took 1.101 ms
+rank =  0, distributing HY into block cyclic form took 0.203 ms
+rank =  0, finding Y'*HY took 0.106 ms
+Total time for projection: 2.524 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.077 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.147 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.033 ms
+rank =  0, Distributing orbital back into band + domain format took 0.157 ms
+Total time for subspace rotation: 0.194 ms
+rank = 0, Efermi =   0.620949962488 calculate fermi energy took 0.056 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.088 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.091 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.003 ms
+rank = 0, Calculating density took 46.404 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.079 ms
+rank = 0, D2D took 0.082 ms
+rank = 0, Transfering density took 0.083 ms
+Etot    =    -5.773932578011
+Eband   =     2.407241863225
+E1      =     2.024182279280
+E2      =     0.139005439853
+E3      =    -3.613130874300
+Exc     =    -3.364227720654
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 8.829e-05, dEband = 1.051e-05
+rank = 0, Calculating/Estimating energy took 0.777 ms, Etot = -5.773932578, dEtot = 8.829e-05, dEband = 1.051e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0362358738548, which took 0.013 ms
+
+iter_count = 78, r_2norm = 1.362e-06, tol*||rhs|| = 1.407e-06
+
+Anderson update took 0.939 ms, out of which F'*F took 1.172 ms; b-Ax took 7.413 ms, out of which Lap took 7.396 ms
+rank = 0, Mixing (+ precond) took 9.121 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -2.461e-15, checking this took 0.008 ms
+2-norm of RHS = 201.1259470633134, which took 0.007 ms
+
+iter_count = 96, r_2norm = 8.497e-07, tol*||rhs|| = 2.011e-06
+
+Anderson update took 1.016 ms, out of which F'*F took 1.393 ms; b-Ax took 8.950 ms, out of which Lap took 8.927 ms
+Solving Poisson took 10.612 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.023 ms
+---Transfer Veff_loc: D2D took 0.073 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.051 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.081 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.210 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.210 ms
+
+This SCF took 67.680 ms, scf error = 7.361e-04
+-------------
+SCF iter 6  
+-------------
+
+ Chebfilt 9, in Chebyshev filtering, lambda_cutoff = 1.177681, lowerbound = -0.063669, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.779 ms
+rank =  0, Distribute orbital to block cyclic format took 0.234 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.115 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.047 ms
+rank =  0, Distribute data + matrix mult took 0.402 ms
+rank =  0, finding HY took 1.106 ms
+rank =  0, distributing HY into block cyclic form took 0.213 ms
+rank =  0, finding Y'*HY took 0.117 ms
+Total time for projection: 1.851 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.072 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.144 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.172 ms
+Total time for subspace rotation: 0.198 ms
+rank = 0, Efermi =   0.620946646238 calculate fermi energy took 0.410 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.233 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.142 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.794 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.072 ms
+rank = 0, D2D took 0.076 ms
+rank = 0, Transfering density took 0.077 ms
+Etot    =    -5.773953568652
+Eband   =     2.407190660046
+E1      =     2.024111818413
+E2      =     0.138861516285
+E3      =    -3.613080470458
+Exc     =    -3.364220566976
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 1.050e-05, dEband = 2.560e-05
+rank = 0, Calculating/Estimating energy took 0.664 ms, Etot = -5.773953569, dEtot = 1.050e-05, dEband = 2.560e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0039396575484, which took 0.008 ms
+
+iter_count = 90, r_2norm = 1.062e-07, tol*||rhs|| = 1.530e-07
+
+Anderson update took 1.058 ms, out of which F'*F took 1.310 ms; b-Ax took 8.319 ms, out of which Lap took 8.299 ms
+rank = 0, Mixing (+ precond) took 10.044 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -2.461e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1326907486219, which took 0.006 ms
+
+iter_count = 84, r_2norm = 1.569e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.777 ms, out of which F'*F took 1.211 ms; b-Ax took 7.575 ms, out of which Lap took 7.555 ms
+Solving Poisson took 8.908 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.000 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.021 ms
+---Transfer Veff_loc: D2D took 0.087 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.054 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.090 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.237 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.237 ms
+
+This SCF took 67.086 ms, scf error = 1.900e-04
+-------------
+SCF iter 7  
+-------------
+
+ Chebfilt 10, in Chebyshev filtering, lambda_cutoff = 1.177672, lowerbound = -0.063676, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.749 ms
+rank =  0, Distribute orbital to block cyclic format took 0.286 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.136 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.005 ms
+rank =  0, Distribute data + matrix mult took 0.432 ms
+rank =  0, finding HY took 1.102 ms
+rank =  0, distributing HY into block cyclic form took 0.206 ms
+rank =  0, finding Y'*HY took 0.105 ms
+Total time for projection: 1.857 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.060 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.062 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.132 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.179 ms
+Total time for subspace rotation: 0.206 ms
+rank = 0, Efermi =   0.620949856201 calculate fermi energy took 0.052 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.094 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.090 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.217 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.077 ms
+rank = 0, D2D took 0.081 ms
+rank = 0, Transfering density took 0.082 ms
+Etot    =    -5.773945377381
+Eband   =     2.407213231363
+E1      =     2.024127775701
+E2      =     0.138919167297
+E3      =    -3.613107159748
+Exc     =    -3.364219942588
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 4.096e-06, dEband = 1.129e-05
+rank = 0, Calculating/Estimating energy took 0.710 ms, Etot = -5.773945377, dEtot = 4.096e-06, dEband = 1.129e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0004252479976, which took 0.011 ms
+
+iter_count = 84, r_2norm = 1.571e-08, tol*||rhs|| = 1.651e-08
+
+Anderson update took 0.897 ms, out of which F'*F took 1.214 ms; b-Ax took 7.947 ms, out of which Lap took 7.928 ms
+rank = 0, Mixing (+ precond) took 9.665 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -3.691e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1325082344676, which took 0.006 ms
+
+iter_count = 66, r_2norm = 9.899e-07, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.744 ms, out of which F'*F took 1.319 ms; b-Ax took 6.452 ms, out of which Lap took 6.437 ms
+Solving Poisson took 7.670 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.022 ms
+---Transfer Veff_loc: D2D took 0.078 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.047 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.091 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.221 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.221 ms
+
+This SCF took 64.945 ms, scf error = 1.727e-05
+-------------
+SCF iter 8  
+-------------
+
+ Chebfilt 11, in Chebyshev filtering, lambda_cutoff = 1.177671, lowerbound = -0.063674, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.859 ms
+rank =  0, Distribute orbital to block cyclic format took 0.186 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.125 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.022 ms
+rank =  0, Distribute data + matrix mult took 0.340 ms
+rank =  0, finding HY took 1.081 ms
+rank =  0, distributing HY into block cyclic form took 0.221 ms
+rank =  0, finding Y'*HY took 0.098 ms
+Total time for projection: 1.752 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.074 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.088 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.171 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.153 ms
+Total time for subspace rotation: 0.179 ms
+rank = 0, Efermi =   0.620949637525 calculate fermi energy took 0.051 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.089 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.121 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.003 ms
+rank = 0, Calculating density took 46.259 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.078 ms
+rank = 0, D2D took 0.082 ms
+rank = 0, Transfering density took 0.083 ms
+Etot    =    -5.773945173449
+Eband   =     2.407212150854
+E1      =     2.024125134972
+E2      =     0.138915154810
+E3      =    -3.613107139327
+Exc     =    -3.364220009484
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 1.020e-07, dEband = 5.403e-07
+rank = 0, Calculating/Estimating energy took 0.698 ms, Etot = -5.773945173, dEtot = 1.020e-07, dEband = 5.403e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0001109482827, which took 0.010 ms
+
+iter_count = 84, r_2norm = 2.703e-09, tol*||rhs|| = 4.308e-09
+
+Anderson update took 0.829 ms, out of which F'*F took 1.217 ms; b-Ax took 7.800 ms, out of which Lap took 7.781 ms
+rank = 0, Mixing (+ precond) took 9.349 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -1.230e-15, checking this took 0.008 ms
+2-norm of RHS = 201.1324879947314, which took 0.006 ms
+
+iter_count = 42, r_2norm = 1.817e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.462 ms, out of which F'*F took 0.671 ms; b-Ax took 3.837 ms, out of which Lap took 3.828 ms
+Solving Poisson took 4.529 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.071 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.048 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.086 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.211 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.211 ms
+
+This SCF took 61.529 ms, scf error = 2.124e-06
+-------------
+SCF iter 9  
+-------------
+
+ Chebfilt 12, in Chebyshev filtering, lambda_cutoff = 1.177671, lowerbound = -0.063674, upperbound = 413.559941
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.802 ms
+rank =  0, Distribute orbital to block cyclic format took 0.364 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.126 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.016 ms
+rank =  0, Distribute data + matrix mult took 0.512 ms
+rank =  0, finding HY took 1.099 ms
+rank =  0, distributing HY into block cyclic form took 0.181 ms
+rank =  0, finding Y'*HY took 0.093 ms
+Total time for projection: 1.897 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.070 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.143 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.167 ms
+Total time for subspace rotation: 0.193 ms
+rank = 0, Efermi =   0.620949618135 calculate fermi energy took 0.053 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.090 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.120 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.336 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.080 ms
+rank = 0, D2D took 0.083 ms
+rank = 0, Transfering density took 0.084 ms
+Etot    =    -5.773945231180
+Eband   =     2.407212012426
+E1      =     2.024125154494
+E2      =     0.138914950630
+E3      =    -3.613107011432
+Exc     =    -3.364220024594
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 2.887e-08, dEband = 6.921e-08
+rank = 0, Calculating/Estimating energy took 0.797 ms, Etot = -5.773945231, dEtot = 2.887e-08, dEband = 6.921e-08
+
+This SCF took 47.407 ms, scf error = 8.101e-07
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999967811184, int_rho =   6.99999967811184, int_b + int_rho = -4.921e-15, checking this took 0.017 ms
+2-norm of RHS = 201.1324820168483, which took 0.010 ms
+
+iter_count = 42, r_2norm = 1.557e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.736 ms, out of which F'*F took 0.608 ms; b-Ax took 3.871 ms, out of which Lap took 3.860 ms
+Solving Poisson took 4.971 ms
+Start calculating Vxc (GGA_PBE) ...
+Etot    =    -5.773945154245
+Eband   =     2.407212012426
+E1      =     2.024124902680
+E2      =     0.138914650799
+E3      =    -3.613107057817
+Exc     =    -3.364220042061
+Esc     =   -10.315254425543
+Entropy =    -0.000000008766
+dE = 3.847e-08, dEband = 0.000e+00
+The last 8 occupations of kpoints #1 are (Nelectron = 7):
+lambda[   1] =  -0.06367412311930, occ[   1] =   2.00000000000000
+lambda[   2] =   0.45584334597410, occ[   2] =   2.00000000000000
+lambda[   3] =   0.73277858275376, occ[   3] =   0.00000000000000
+lambda[   4] =   0.73283816488621, occ[   4] =   0.00000000000000
+lambda[   5] =   0.87286170678663, occ[   5] =   0.00000000000000
+lambda[   6] =   0.87291602822068, occ[   6] =   0.00000000000000
+lambda[   7] =   0.97173096752676, occ[   7] =   0.00000000000000
+lambda[   8] =   1.07767048929164, occ[   8] =   0.00000000000000
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 7 (90%) = 0.000000000000000.
+Occupation of state 8 (100%) = 0.000000000000000.
+Start calculating local components of forces ...
+time for sorting and interpolate pseudopotential: 2.131 ms, time for Allreduce/Reduce: 0.011 ms 
+Time for calculating local force components: 11.446 ms
+Start Calculating nonlocal forces
+force_nloc = 
+  0.06666938155889   0.07587618991259   0.06666937704787
+ -0.07737272112283  -0.08704628890873  -0.07737271789273
+force_loc = 
+  0.08039123739121   0.09006331830335   0.08039124115361
+ -0.06854531798581  -0.07757285281530  -0.06854532176013
+Time for calculating nonlocal force components: 0.962 ms
+[32mforces_xc: 
+[0m[32m -0.00421339217770  -0.00327468021404  -0.00421339268112
+[0m[32m  0.00327969098932   0.00259251377430   0.00327969125058
+[0mTime for calculating XC forces components: 37.908 ms
+ Cartesian force = 
+  0.11312358982044   0.08736346731363   0.11312358958262
+ -0.11312358982044  -0.08736346731363  -0.11312358958262
+Start calculating exchange-correlation components of stress ...
+Start calculating NLCC exchange-correlation components of stress ...
+time for sorting and interpolate pseudopotential: 8.920 ms, time for Allreduce/Reduce: 0.010 ms 
+NLCC XC contribution to stress (GPa): 
+ 265.077637343593949 -1.179494700594355 -1.242369350790606 
+ -1.179494700594355 265.026335532071300 -1.179494636057312 
+ -1.242369350790606 -1.179494636057312 265.077637672394189
+
+XC contribution to stress (GPa): 
+ 351.822695777043634 -1.186726738034174 -1.248682853244074 
+ -1.186726738034174 351.771959921528719 -1.186726670469442 
+ -1.248682853244074 -1.186726670469442 351.822696100854500
+Time for calculating exchange-correlation stress components: 40.140 ms
+Start calculating local components of stress ...
+time for sorting and interpolate pseudopotential: 8.925 ms, time for Allreduce/Reduce: 0.016 ms 
+
+Electrostatics contribution to stress (GPa): 
+ 664.778323238943130 2.421416840435441 5.111123871344575 
+ 2.421416840435441 672.939077777411512 2.421735364764112 
+ 5.111123871344575 2.421735364764112 664.778332293490621
+Time for calculating local stress components: 96.642 ms
+Start calculating stress contributions from kinetic and nonlocal psp. 
+
+Non-local contribution to stress (GPa): 
+ -658.229279333705790 26.946391524119850 27.628266770152916 
+ 26.946391524119850 -657.626332983400403 26.946621351995066 
+ 27.628266770152916 26.946621351995066 -658.229283169917267
+
+Kinetic contribution to stress (GPa): 
+ -1012.185090134317761 -26.626469434281663 -26.349212942444950 
+ -26.626469434281663 -1011.744095918387870 -26.626469949051383 
+ -26.349212942444950 -26.626469949051383 -1012.185089350625844
+Time for calculating nonlocal+kinetic stress components: 2.082 ms
+
+Electronic contribution to stress (GPa): 
+ -653.813350452036616 1.554612192239453 5.141494845808469 
+ 1.554612192239453 -644.659391202847928 1.555160097238353 
+ 5.141494845808469 1.555160097238353 -653.813344126197990
+:RelaxStep: 2
+Start ground-state calculation.
+
+Computing nearest neighbor distance (6.308 Bohr) takes 0.000 ms
+Calculating electron density ... 
+Finding atoms that influence the local process domain ... 
+
+Finding influencing atoms took 0.008 ms
+Calculating pseudocharge density ... 
+the global sum of int_b = -7.0000003074245, sum_int_rho = 6.8709036521204
+PosCharge = 7.000000307424, NegCharge = -6.870903652120, scal_fac = 1.018788890347
+After scaling, int_rho = 7.0000003074245, PosCharge + NegCharge - NetCharge = 8.882e-16
+--Calculate Vref took 0.804 ms
+--Calculate rho_guess took 5.865 ms
+
+ integral of b = -7.0000003074245,
+ int{b} + Nelectron + NetCharge = -3.074e-07,
+ Esc = -10.3152550091347,
+ MPI_Reduce took 0.027 ms
+
+Calculating b & b_ref took 16.073 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 1.149 ms
+[0m
+Finding nonlocal influencing atoms in psi-domain took 1.151 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.110 ms
+[0m
+Calculating nonlocal projectors in psi-domain took 0.641 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 0.188 ms
+[0m
+Finding nonlocal influencing atoms in kptcomm_topo took 0.189 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.010 ms
+[0m
+Calculating nonlocal projectors in kptcomm_topo took 0.059 ms
+Initializing Kohn-Sham orbitals ... 
+Initializing electron density ... 
+Start SCF calculation ... 
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742447, int_b + int_rho = 0.000e+00, checking this took 0.012 ms
+2-norm of RHS = 201.1404854316706, which took 0.007 ms
+
+iter_count = 114, r_2norm = 1.465e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 1.215 ms, out of which F'*F took 1.712 ms; b-Ax took 11.594 ms, out of which Lap took 11.565 ms
+Solving Poisson took 13.817 ms
+Start calculating Vxc (GGA_PBE) ...
+rank = 0, XC calculation took 0.199 ms
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.062 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.092 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.081 ms
+rank = 0, Veff calculation and Bcast (non-blocking) took 0.242 ms
+-------------
+SCF iter 1  
+-------------
+
+Time for setting up initial guess for Lanczos: 0.021 ms
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.041 ms
+
+Start Lanczos algorithm ...
+Wait for veff to be bcasted took 0.000 ms
+rank =  0, One H*x took 0.697 ms
+    Lanczos iter 36, eigmin  = -0.056833882, eigmax = 409.464860952, err_eigmin = 1.393e-03, err_eigmax = 9.732e-03
+rank =   0, Lanczos took 13.195 ms, eigmin = -0.056833882446, eigmax = 413.559509561181
+
+ Chebfilt 1, in Chebyshev filtering, lambda_cutoff = 1.177670, lowerbound = -0.156834, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 45.018 ms
+rank =  0, Distribute orbital to block cyclic format took 0.212 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.129 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.014 ms
+rank =  0, Distribute data + matrix mult took 0.360 ms
+rank =  0, finding HY took 1.083 ms
+rank =  0, distributing HY into block cyclic form took 0.239 ms
+rank =  0, finding Y'*HY took 0.118 ms
+Total time for projection: 1.813 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.069 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.141 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.156 ms
+Total time for subspace rotation: 0.182 ms
+rank = 0, Efermi =   0.677720056936 calculate fermi energy took 0.055 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.199 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.102 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 60.767 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.775182375123
+Eband   =     2.407060007978
+E1      =     2.023224518821
+E2      =     0.139154496735
+E3      =    -3.613088064929
+Exc     =    -3.364145452595
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 6.186e-04, dEband = 7.600e-05
+rank = 0, Calculating/Estimating energy took 0.121 ms, Etot = -5.775182375, dEtot = 6.186e-04, dEband = 7.600e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0965624029945, which took 0.021 ms
+
+iter_count = 78, r_2norm = 2.410e-06, tol*||rhs|| = 3.750e-06
+
+Anderson update took 1.076 ms, out of which F'*F took 1.145 ms; b-Ax took 7.626 ms, out of which Lap took 7.607 ms
+rank = 0, Mixing (+ precond) took 12.999 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742446, int_b + int_rho = -2.461e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1410243441797, which took 0.010 ms
+
+iter_count = 90, r_2norm = 7.111e-07, tol*||rhs|| = 2.011e-06
+
+Anderson update took 1.119 ms, out of which F'*F took 1.310 ms; b-Ax took 8.180 ms, out of which Lap took 8.158 ms
+Solving Poisson took 9.768 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.022 ms
+---Transfer Veff_loc: D2D took 0.084 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.045 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.760 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.913 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.913 ms
+
+This SCF took 84.986 ms, scf error = 1.267e-03
+-------------
+SCF iter 2  
+-------------
+
+ Chebfilt 2, in Chebyshev filtering, lambda_cutoff = 1.177718, lowerbound = -0.063708, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.473 ms
+rank =  0, Distribute orbital to block cyclic format took 0.179 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.134 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.324 ms
+rank =  0, finding HY took 1.073 ms
+rank =  0, distributing HY into block cyclic form took 0.210 ms
+rank =  0, finding Y'*HY took 0.107 ms
+Total time for projection: 1.728 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.089 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.063 ms
+==generalized eigenproblem: bcast eigvals took 0.006 ms
+Total time for solving generalized eigenvalue problem: 0.162 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.166 ms
+Total time for subspace rotation: 0.194 ms
+rank = 0, Efermi =   0.677718331617 calculate fermi energy took 2.598 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.087 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.106 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 48.383 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.775194247782
+Eband   =     2.407044418254
+E1      =     2.023257709930
+E2      =     0.139170175097
+E3      =    -3.613076758706
+Exc     =    -3.364147942055
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 5.936e-06, dEband = 7.795e-06
+rank = 0, Calculating/Estimating energy took 0.077 ms, Etot = -5.775194248, dEtot = 5.936e-06, dEband = 7.795e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0203544351019, which took 0.013 ms
+
+iter_count = 78, r_2norm = 6.832e-07, tol*||rhs|| = 7.904e-07
+
+Anderson update took 0.930 ms, out of which F'*F took 1.191 ms; b-Ax took 8.237 ms, out of which Lap took 8.217 ms
+rank = 0, Mixing (+ precond) took 9.866 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742447, int_b + int_rho = -1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1422821466801, which took 0.011 ms
+
+iter_count = 90, r_2norm = 1.575e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.758 ms, out of which F'*F took 1.296 ms; b-Ax took 8.213 ms, out of which Lap took 8.191 ms
+Solving Poisson took 9.362 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.023 ms
+---Transfer Veff_loc: D2D took 0.094 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.046 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.741 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.908 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.908 ms
+
+This SCF took 69.126 ms, scf error = 8.739e-04
+-------------
+SCF iter 3  
+-------------
+
+ Chebfilt 3, in Chebyshev filtering, lambda_cutoff = 1.177721, lowerbound = -0.063708, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.775 ms
+rank =  0, Distribute orbital to block cyclic format took 0.280 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.118 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.040 ms
+rank =  0, Distribute data + matrix mult took 0.444 ms
+rank =  0, finding HY took 1.101 ms
+rank =  0, distributing HY into block cyclic form took 0.215 ms
+rank =  0, finding Y'*HY took 0.108 ms
+Total time for projection: 1.881 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.068 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.139 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.160 ms
+Total time for subspace rotation: 0.185 ms
+rank = 0, Efermi =   0.677715282375 calculate fermi energy took 0.062 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.103 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.085 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.266 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.056 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.775217251201
+Eband   =     2.407013709449
+E1      =     2.023323635182
+E2      =     0.139202482599
+E3      =    -3.613055334968
+Exc     =    -3.364152430681
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 1.150e-05, dEband = 1.535e-05
+rank = 0, Calculating/Estimating energy took 0.084 ms, Etot = -5.775217251, dEtot = 1.150e-05, dEband = 1.535e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0070098277318, which took 0.012 ms
+
+iter_count = 78, r_2norm = 1.744e-07, tol*||rhs|| = 2.722e-07
+
+Anderson update took 0.855 ms, out of which F'*F took 1.170 ms; b-Ax took 7.185 ms, out of which Lap took 7.163 ms
+rank = 0, Mixing (+ precond) took 8.918 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742446, int_b + int_rho = -2.461e-15, checking this took 0.118 ms
+2-norm of RHS = 201.1421599296285, which took 0.023 ms
+
+iter_count = 66, r_2norm = 1.614e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.667 ms, out of which F'*F took 0.975 ms; b-Ax took 6.646 ms, out of which Lap took 6.630 ms
+Solving Poisson took 7.845 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.098 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.041 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.433 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.579 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.579 ms
+
+This SCF took 64.292 ms, scf error = 1.110e-04
+-------------
+SCF iter 4  
+-------------
+
+ Chebfilt 4, in Chebyshev filtering, lambda_cutoff = 1.177729, lowerbound = -0.063709, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.534 ms
+rank =  0, Distribute orbital to block cyclic format took 1.127 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.139 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.024 ms
+rank =  0, Distribute data + matrix mult took 1.296 ms
+rank =  0, finding HY took 1.083 ms
+rank =  0, distributing HY into block cyclic form took 0.231 ms
+rank =  0, finding Y'*HY took 0.106 ms
+Total time for projection: 2.729 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.062 ms
+==generalized eigenproblem: bcast eigvals took 0.045 ms
+Total time for solving generalized eigenvalue problem: 0.173 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.153 ms
+Total time for subspace rotation: 0.178 ms
+rank = 0, Efermi =   0.677715839324 calculate fermi energy took 0.053 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.102 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.099 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.907 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.056 ms
+rank = 0, D2D took 0.060 ms
+rank = 0, Transfering density took 0.061 ms
+Etot    =    -5.775215343923
+Eband   =     2.407015912044
+E1      =     2.023317159420
+E2      =     0.139198530113
+E3      =    -3.613057173756
+Exc     =    -3.364152041511
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 9.536e-07, dEband = 1.101e-06
+rank = 0, Calculating/Estimating energy took 0.073 ms, Etot = -5.775215344, dEtot = 9.536e-07, dEband = 1.101e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0004290266783, which took 0.012 ms
+
+iter_count = 90, r_2norm = 9.978e-09, tol*||rhs|| = 1.666e-08
+
+Anderson update took 0.877 ms, out of which F'*F took 1.379 ms; b-Ax took 9.633 ms, out of which Lap took 9.611 ms
+rank = 0, Mixing (+ precond) took 11.341 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742446, int_b + int_rho = -2.461e-15, checking this took 0.008 ms
+2-norm of RHS = 201.1421150022578, which took 0.014 ms
+
+iter_count = 66, r_2norm = 1.214e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.700 ms, out of which F'*F took 0.973 ms; b-Ax took 6.058 ms, out of which Lap took 6.041 ms
+Solving Poisson took 7.124 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.021 ms
+---Transfer Veff_loc: D2D took 0.082 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.043 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.675 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.805 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.805 ms
+
+This SCF took 66.759 ms, scf error = 5.093e-05
+-------------
+SCF iter 5  
+-------------
+
+ Chebfilt 5, in Chebyshev filtering, lambda_cutoff = 1.177729, lowerbound = -0.063709, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.727 ms
+rank =  0, Distribute orbital to block cyclic format took 0.349 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.133 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.021 ms
+rank =  0, Distribute data + matrix mult took 0.508 ms
+rank =  0, finding HY took 1.091 ms
+rank =  0, distributing HY into block cyclic form took 0.241 ms
+rank =  0, finding Y'*HY took 0.096 ms
+Total time for projection: 1.949 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.061 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.066 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.136 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.163 ms
+Total time for subspace rotation: 0.190 ms
+rank = 0, Efermi =   0.677716151256 calculate fermi energy took 0.054 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.132 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.067 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.289 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.052 ms
+rank = 0, D2D took 0.057 ms
+rank = 0, Transfering density took 0.058 ms
+Etot    =    -5.775214667867
+Eband   =     2.407016589546
+E1      =     2.023314479172
+E2      =     0.139196699406
+E3      =    -3.613057886373
+Exc     =    -3.364151906032
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 3.380e-07, dEband = 3.388e-07
+rank = 0, Calculating/Estimating energy took 0.098 ms, Etot = -5.775214668, dEtot = 3.380e-07, dEband = 3.388e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0002079803416, which took 0.012 ms
+
+iter_count = 78, r_2norm = 6.655e-09, tol*||rhs|| = 8.076e-09
+
+Anderson update took 0.929 ms, out of which F'*F took 1.155 ms; b-Ax took 7.414 ms, out of which Lap took 7.395 ms
+rank = 0, Mixing (+ precond) took 9.012 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742447, int_b + int_rho = -1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.1421223429291, which took 0.006 ms
+
+iter_count = 48, r_2norm = 1.360e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.484 ms, out of which F'*F took 0.707 ms; b-Ax took 4.482 ms, out of which Lap took 4.470 ms
+Solving Poisson took 5.208 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.089 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.046 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.676 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.816 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.816 ms
+
+This SCF took 61.939 ms, scf error = 3.608e-06
+-------------
+SCF iter 6  
+-------------
+
+ Chebfilt 6, in Chebyshev filtering, lambda_cutoff = 1.177728, lowerbound = -0.063709, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.474 ms
+rank =  0, Distribute orbital to block cyclic format took 0.191 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.141 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.211 ms
+rank =  0, Distribute data + matrix mult took 0.548 ms
+rank =  0, finding HY took 1.076 ms
+rank =  0, distributing HY into block cyclic form took 0.219 ms
+rank =  0, finding Y'*HY took 0.183 ms
+Total time for projection: 2.037 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.067 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.138 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.154 ms
+Total time for subspace rotation: 0.180 ms
+rank = 0, Efermi =   0.677716166609 calculate fermi energy took 0.064 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.097 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.089 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.116 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.054 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.775214590865
+Eband   =     2.407016694400
+E1      =     2.023314317318
+E2      =     0.139196678298
+E3      =    -3.613057989159
+Exc     =    -3.364151895924
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 3.850e-08, dEband = 5.243e-08
+rank = 0, Calculating/Estimating energy took 0.094 ms, Etot = -5.775214591, dEtot = 3.850e-08, dEband = 5.243e-08
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0000151998105, which took 0.009 ms
+
+iter_count = 84, r_2norm = 4.012e-10, tol*||rhs|| = 5.902e-10
+
+Anderson update took 0.840 ms, out of which F'*F took 1.232 ms; b-Ax took 7.794 ms, out of which Lap took 7.774 ms
+rank = 0, Mixing (+ precond) took 9.348 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742446, int_b + int_rho = -2.461e-15, checking this took 0.009 ms
+2-norm of RHS = 201.1421281029464, which took 0.011 ms
+
+iter_count = 36, r_2norm = 1.673e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.376 ms, out of which F'*F took 0.528 ms; b-Ax took 3.282 ms, out of which Lap took 3.273 ms
+Solving Poisson took 3.924 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.021 ms
+---Transfer Veff_loc: D2D took 0.104 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.044 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.457 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.611 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.611 ms
+
+This SCF took 61.565 ms, scf error = 1.392e-06
+-------------
+SCF iter 7  
+-------------
+
+ Chebfilt 7, in Chebyshev filtering, lambda_cutoff = 1.177728, lowerbound = -0.063709, upperbound = 413.559510
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.939 ms
+rank =  0, Distribute orbital to block cyclic format took 0.194 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.129 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.005 ms
+rank =  0, Distribute data + matrix mult took 0.334 ms
+rank =  0, finding HY took 1.074 ms
+rank =  0, distributing HY into block cyclic form took 0.243 ms
+rank =  0, finding Y'*HY took 0.105 ms
+Total time for projection: 1.770 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.072 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.068 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.148 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.141 ms
+Total time for subspace rotation: 0.168 ms
+rank = 0, Efermi =   0.677716158782 calculate fermi energy took 0.051 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.099 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.096 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.309 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.054 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.775214634046
+Eband   =     2.407016646355
+E1      =     2.023314458061
+E2      =     0.139196776670
+E3      =    -3.613057960338
+Exc     =    -3.364151904611
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 2.159e-08, dEband = 2.402e-08
+rank = 0, Calculating/Estimating energy took 0.103 ms, Etot = -5.775214634, dEtot = 2.159e-08, dEband = 2.402e-08
+
+This SCF took 46.685 ms, scf error = 1.098e-07
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -7.00000030742447, int_rho =   7.00000030742447, int_b + int_rho = 2.461e-15, checking this took 0.011 ms
+2-norm of RHS = 201.1421295389717, which took 0.007 ms
+
+iter_count = 24, r_2norm = 1.201e-06, tol*||rhs|| = 2.011e-06
+
+Anderson update took 0.342 ms, out of which F'*F took 0.355 ms; b-Ax took 2.270 ms, out of which Lap took 2.264 ms
+Solving Poisson took 2.838 ms
+Start calculating Vxc (GGA_PBE) ...
+Etot    =    -5.775214632048
+Eband   =     2.407016646355
+E1      =     2.023314467958
+E2      =     0.139196788299
+E3      =    -3.613057964413
+Exc     =    -3.364151904954
+Esc     =   -10.315255009135
+Entropy =    -0.000000008386
+dE = 9.992e-10, dEband = 0.000e+00
+The last 8 occupations of kpoints #1 are (Nelectron = 7):
+lambda[   1] =  -0.06370923057582, occ[   1] =   2.00000000000000
+lambda[   2] =   0.45579087227840, occ[   2] =   2.00000000000000
+lambda[   3] =   0.73288289534522, occ[   3] =   0.00000000000000
+lambda[   4] =   0.73293947183056, occ[   4] =   0.00000000000000
+lambda[   5] =   0.87286398611969, occ[   5] =   0.00000000000000
+lambda[   6] =   0.87291558425044, occ[   6] =   0.00000000000000
+lambda[   7] =   0.97154833232683, occ[   7] =   0.00000000000000
+lambda[   8] =   1.07772773036041, occ[   8] =   0.00000000000000
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 7 (90%) = 0.000000000000000.
+Occupation of state 8 (100%) = 0.000000000000000.
+Start calculating local components of forces ...
+time for sorting and interpolate pseudopotential: 2.103 ms, time for Allreduce/Reduce: 0.010 ms 
+Time for calculating local force components: 11.626 ms
+Start Calculating nonlocal forces
+force_nloc = 
+  0.06512099825921   0.07406434787504   0.06512099834627
+ -0.07559330520654  -0.08499419738289  -0.07559330550973
+force_loc = 
+  0.07850528674555   0.08787195722553   0.07850528667380
+ -0.06691777405211  -0.07565393302336  -0.06691777375923
+Time for calculating nonlocal force components: 0.839 ms
+[32mforces_xc: 
+[0m[32m -0.00411298088672  -0.00320108758394  -0.00411298087508
+[0m[32m  0.00320223778008   0.00253441767715   0.00320223775568
+[0mTime for calculating XC forces components: 37.527 ms
+ Cartesian force = 
+  0.11039321160172   0.08541109707397   0.11039321160160
+ -0.11039321160172  -0.08541109707397  -0.11039321160160
+Start calculating exchange-correlation components of stress ...
+Start calculating NLCC exchange-correlation components of stress ...
+time for sorting and interpolate pseudopotential: 8.915 ms, time for Allreduce/Reduce: 0.009 ms 
+NLCC XC contribution to stress (GPa): 
+ 265.062003231497897 -1.168163395411809 -1.227738424458180 
+ -1.168163395411809 265.013342693144239 -1.168163394086259 
+ -1.227738424458180 -1.168163394086259 265.062003228607182
+
+XC contribution to stress (GPa): 
+ 351.813417962289861 -1.175576246205796 -1.234282399756228 
+ -1.175576246205796 351.765295156379011 -1.175576244890156 
+ -1.234282399756228 -1.175576244890156 351.813417959437515
+Time for calculating exchange-correlation stress components: 39.718 ms
+Start calculating local components of stress ...
+time for sorting and interpolate pseudopotential: 8.936 ms, time for Allreduce/Reduce: 0.009 ms 
+
+Electrostatics contribution to stress (GPa): 
+ 665.063606992233986 1.946921648183515 4.492840109838855 
+ 1.946921648183515 672.797636163881180 1.947041282826164 
+ 4.492840109838855 1.947041282826164 665.063606897607769
+Time for calculating local stress components: 95.070 ms
+Start calculating stress contributions from kinetic and nonlocal psp. 
+
+Non-local contribution to stress (GPa): 
+ -657.999070884398066 26.812046871207606 27.458422100436252 
+ 26.812046871207606 -657.426440931617208 26.812238314845757 
+ 27.458422100436252 26.812238314845757 -657.999070849024292
+
+Kinetic contribution to stress (GPa): 
+ -1012.118808191694256 -26.649191725995816 -26.386051377476125 
+ -26.649191725995816 -1011.700779928170732 -26.649191733934600 
+ -26.386051377476125 -26.649191733934600 -1012.118808190222921
+Time for calculating nonlocal+kinetic stress components: 1.500 ms
+
+Electronic contribution to stress (GPa): 
+ -653.240854121568532 0.934200547189510 4.330928433042756 
+ 0.934200547189510 -644.564289539527749 0.934511618847167 
+ 4.330928433042756 0.934511618847167 -653.240854182201815
+Time taken by RelaxStep 2: 0.684 s.
+:RelaxStep: 3
+Start ground-state calculation.
+
+Computing nearest neighbor distance (6.164 Bohr) takes 0.000 ms
+Calculating electron density ... 
+Finding atoms that influence the local process domain ... 
+
+Finding influencing atoms took 0.007 ms
+Calculating pseudocharge density ... 
+the global sum of int_b = -6.9999997113811, sum_int_rho = 6.8710483446179
+PosCharge = 6.999999711381, NegCharge = -6.871048344618, scal_fac = 1.018767349653
+After scaling, int_rho = 6.9999997113811, PosCharge + NegCharge - NetCharge = 0.000e+00
+--Calculate Vref took 0.809 ms
+--Calculate rho_guess took 5.657 ms
+
+ integral of b = -6.9999997113811,
+ int{b} + Nelectron + NetCharge = 2.886e-07,
+ Esc = -10.3152877393427,
+ MPI_Reduce took 0.027 ms
+
+Calculating b & b_ref took 25.249 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 1.143 ms
+[0m
+Finding nonlocal influencing atoms in psi-domain took 1.156 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.112 ms
+[0m
+Calculating nonlocal projectors in psi-domain took 0.648 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 0.188 ms
+[0m
+Finding nonlocal influencing atoms in kptcomm_topo took 0.190 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.011 ms
+[0m
+Calculating nonlocal projectors in kptcomm_topo took 0.064 ms
+Initializing Kohn-Sham orbitals ... 
+Initializing electron density ... 
+Start SCF calculation ... 
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = -2.461e-15, checking this took 0.020 ms
+2-norm of RHS = 201.2758093880162, which took 0.007 ms
+
+iter_count = 138, r_2norm = 1.674e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 1.612 ms, out of which F'*F took 2.019 ms; b-Ax took 13.022 ms, out of which Lap took 12.986 ms
+Solving Poisson took 15.262 ms
+Start calculating Vxc (GGA_PBE) ...
+rank = 0, XC calculation took 0.188 ms
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.018 ms
+---Transfer Veff_loc: D2D took 0.069 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.049 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.101 ms
+rank = 0, Veff calculation and Bcast (non-blocking) took 0.226 ms
+-------------
+SCF iter 1  
+-------------
+
+Time for setting up initial guess for Lanczos: 0.021 ms
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.022 ms
+
+Start Lanczos algorithm ...
+Wait for veff to be bcasted took 0.000 ms
+rank =  0, One H*x took 0.388 ms
+    Lanczos iter 36, eigmin  = -0.057317612, eigmax = 409.464441665, err_eigmin = 1.395e-03, err_eigmax = 9.766e-03
+rank =   0, Lanczos took 11.863 ms, eigmin = -0.057317612043, eigmax = 413.559086082139
+
+ Chebfilt 1, in Chebyshev filtering, lambda_cutoff = 1.177728, lowerbound = -0.157318, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.358 ms
+rank =  0, Distribute orbital to block cyclic format took 0.819 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.130 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.961 ms
+rank =  0, finding HY took 1.131 ms
+rank =  0, distributing HY into block cyclic form took 0.185 ms
+rank =  0, finding Y'*HY took 0.118 ms
+Total time for projection: 2.408 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.061 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.067 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.135 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.155 ms
+Total time for subspace rotation: 0.181 ms
+rank = 0, Efermi =   0.621456217262 calculate fermi energy took 0.056 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.271 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.695 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 59.044 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.052 ms
+rank = 0, D2D took 0.056 ms
+rank = 0, Transfering density took 0.057 ms
+Etot    =    -5.794071544118
+Eband   =     2.404432291098
+E1      =     2.010385287467
+E2      =     0.143534315495
+E3      =    -3.612800149950
+Exc     =    -3.362867209905
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 9.428e-03, dEband = 1.292e-03
+rank = 0, Calculating/Estimating energy took 0.690 ms, Etot = -5.794071544, dEtot = 9.428e-03, dEband = 1.292e-03
+Start applying Kerker preconditioner ...
+2-norm of RHS = 1.9909955725737, which took 0.011 ms
+
+iter_count = 78, r_2norm = 5.067e-05, tol*||rhs|| = 7.731e-05
+
+Anderson update took 0.817 ms, out of which F'*F took 1.121 ms; b-Ax took 10.598 ms, out of which Lap took 10.581 ms
+rank = 0, Mixing (+ precond) took 11.983 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 0.000e+00, checking this took 0.008 ms
+2-norm of RHS = 201.2767266896595, which took 0.006 ms
+
+iter_count = 102, r_2norm = 1.583e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.973 ms, out of which F'*F took 1.498 ms; b-Ax took 9.366 ms, out of which Lap took 9.341 ms
+Solving Poisson took 10.809 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.068 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.055 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.086 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.214 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.214 ms
+
+This SCF took 83.185 ms, scf error = 2.645e-02
+-------------
+SCF iter 2  
+-------------
+
+ Chebfilt 2, in Chebyshev filtering, lambda_cutoff = 1.179139, lowerbound = -0.064238, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.548 ms
+rank =  0, Distribute orbital to block cyclic format took 0.490 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.135 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.025 ms
+rank =  0, Distribute data + matrix mult took 0.656 ms
+rank =  0, finding HY took 1.088 ms
+rank =  0, distributing HY into block cyclic form took 0.202 ms
+rank =  0, finding Y'*HY took 0.116 ms
+Total time for projection: 2.074 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.067 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.138 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.163 ms
+Total time for subspace rotation: 0.188 ms
+rank = 0, Efermi =   0.621416964050 calculate fermi energy took 1.196 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.089 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.766 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 48.056 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.794269590529
+Eband   =     2.404247692446
+E1      =     2.010664877132
+E2      =     0.143474105415
+E3      =    -3.612562985892
+Exc     =    -3.362983293352
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 9.902e-05, dEband = 9.230e-05
+rank = 0, Calculating/Estimating energy took 0.258 ms, Etot = -5.794269591, dEtot = 9.902e-05, dEband = 9.230e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.4232041696782, which took 0.010 ms
+
+iter_count = 78, r_2norm = 1.401e-05, tol*||rhs|| = 1.643e-05
+
+Anderson update took 0.747 ms, out of which F'*F took 1.136 ms; b-Ax took 7.108 ms, out of which Lap took 7.092 ms
+rank = 0, Mixing (+ precond) took 8.829 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 0.000e+00, checking this took 0.007 ms
+2-norm of RHS = 201.2926637049700, which took 0.006 ms
+
+iter_count = 114, r_2norm = 9.751e-07, tol*||rhs|| = 2.013e-06
+
+Anderson update took 1.168 ms, out of which F'*F took 1.654 ms; b-Ax took 10.645 ms, out of which Lap took 10.619 ms
+Solving Poisson took 12.538 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.021 ms
+---Transfer Veff_loc: D2D took 0.072 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.053 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.083 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.213 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.213 ms
+
+This SCF took 70.199 ms, scf error = 1.815e-02
+-------------
+SCF iter 3  
+-------------
+
+ Chebfilt 3, in Chebyshev filtering, lambda_cutoff = 1.178701, lowerbound = -0.064245, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.500 ms
+rank =  0, Distribute orbital to block cyclic format took 0.720 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.144 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.875 ms
+rank =  0, finding HY took 1.122 ms
+rank =  0, distributing HY into block cyclic form took 0.217 ms
+rank =  0, finding Y'*HY took 0.092 ms
+Total time for projection: 2.317 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.064 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.072 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.144 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.167 ms
+Total time for subspace rotation: 0.191 ms
+rank = 0, Efermi =   0.621339722711 calculate fermi energy took 0.259 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.095 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.787 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.353 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.053 ms
+rank = 0, D2D took 0.057 ms
+rank = 0, Transfering density took 0.058 ms
+Etot    =    -5.794581096181
+Eband   =     2.403926335383
+E1      =     2.011204015095
+E2      =     0.143582561433
+E3      =    -3.612269752811
+Exc     =    -3.363110890804
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 1.558e-04, dEband = 1.607e-04
+rank = 0, Calculating/Estimating energy took 0.074 ms, Etot = -5.794581096, dEtot = 1.558e-04, dEband = 1.607e-04
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.1444909582856, which took 0.010 ms
+
+iter_count = 78, r_2norm = 3.496e-06, tol*||rhs|| = 5.611e-06
+
+Anderson update took 0.820 ms, out of which F'*F took 1.150 ms; b-Ax took 7.866 ms, out of which Lap took 7.847 ms
+rank = 0, Mixing (+ precond) took 9.352 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 0.000e+00, checking this took 0.007 ms
+2-norm of RHS = 201.2922804499769, which took 0.006 ms
+
+iter_count = 96, r_2norm = 1.042e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.877 ms, out of which F'*F took 1.423 ms; b-Ax took 8.819 ms, out of which Lap took 8.798 ms
+Solving Poisson took 10.124 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.023 ms
+---Transfer Veff_loc: D2D took 0.077 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.051 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.107 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.241 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.241 ms
+
+This SCF took 67.604 ms, scf error = 2.317e-03
+-------------
+SCF iter 4  
+-------------
+
+ Chebfilt 4, in Chebyshev filtering, lambda_cutoff = 1.178669, lowerbound = -0.064257, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.407 ms
+rank =  0, Distribute orbital to block cyclic format took 1.033 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.116 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.039 ms
+rank =  0, Distribute data + matrix mult took 1.194 ms
+rank =  0, finding HY took 1.112 ms
+rank =  0, distributing HY into block cyclic form took 0.190 ms
+rank =  0, finding Y'*HY took 0.086 ms
+Total time for projection: 2.604 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.065 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.063 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.136 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.160 ms
+Total time for subspace rotation: 0.185 ms
+rank = 0, Efermi =   0.621345737318 calculate fermi energy took 0.053 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.093 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.794 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.331 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.056 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.794561442165
+Eband   =     2.403949821723
+E1      =     2.011127584665
+E2      =     0.143534550897
+E3      =    -3.612291588545
+Exc     =    -3.363108138968
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 9.827e-06, dEband = 1.174e-05
+rank = 0, Calculating/Estimating energy took 0.071 ms, Etot = -5.794561442, dEtot = 9.827e-06, dEband = 1.174e-05
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0087096361938, which took 0.012 ms
+
+iter_count = 84, r_2norm = 3.252e-07, tol*||rhs|| = 3.382e-07
+
+Anderson update took 0.915 ms, out of which F'*F took 1.288 ms; b-Ax took 7.737 ms, out of which Lap took 7.717 ms
+rank = 0, Mixing (+ precond) took 9.400 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.2928189511504, which took 0.006 ms
+
+iter_count = 96, r_2norm = 8.071e-07, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.939 ms, out of which F'*F took 1.392 ms; b-Ax took 8.721 ms, out of which Lap took 8.701 ms
+Solving Poisson took 10.129 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.021 ms
+---Transfer Veff_loc: D2D took 0.076 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.050 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.084 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.216 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.216 ms
+
+This SCF took 67.590 ms, scf error = 1.050e-03
+-------------
+SCF iter 5  
+-------------
+
+ Chebfilt 5, in Chebyshev filtering, lambda_cutoff = 1.178641, lowerbound = -0.064257, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.473 ms
+rank =  0, Distribute orbital to block cyclic format took 1.220 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.133 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 1.364 ms
+rank =  0, finding HY took 1.075 ms
+rank =  0, distributing HY into block cyclic form took 0.268 ms
+rank =  0, finding Y'*HY took 0.090 ms
+Total time for projection: 2.810 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.083 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.154 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.153 ms
+Total time for subspace rotation: 0.180 ms
+rank = 0, Efermi =   0.621347827810 calculate fermi energy took 0.053 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.079 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.757 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.561 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.053 ms
+rank = 0, D2D took 0.057 ms
+rank = 0, Transfering density took 0.058 ms
+Etot    =    -5.794553181194
+Eband   =     2.403958490260
+E1      =     2.011088355679
+E2      =     0.143509053519
+E3      =    -3.612303971050
+Exc     =    -3.363107197431
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 4.130e-06, dEband = 4.334e-06
+rank = 0, Calculating/Estimating energy took 0.070 ms, Etot = -5.794553181, dEtot = 4.130e-06, dEband = 4.334e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0042361681320, which took 0.013 ms
+
+iter_count = 78, r_2norm = 1.230e-07, tol*||rhs|| = 1.645e-07
+
+Anderson update took 0.774 ms, out of which F'*F took 1.198 ms; b-Ax took 7.303 ms, out of which Lap took 7.284 ms
+rank = 0, Mixing (+ precond) took 8.816 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 0.000e+00, checking this took 0.007 ms
+2-norm of RHS = 201.2927924872096, which took 0.006 ms
+
+iter_count = 72, r_2norm = 1.532e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.683 ms, out of which F'*F took 1.074 ms; b-Ax took 6.995 ms, out of which Lap took 6.979 ms
+Solving Poisson took 8.197 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.084 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.046 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.097 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.232 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.232 ms
+
+This SCF took 65.348 ms, scf error = 7.363e-05
+-------------
+SCF iter 6  
+-------------
+
+ Chebfilt 6, in Chebyshev filtering, lambda_cutoff = 1.178635, lowerbound = -0.064256, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.517 ms
+rank =  0, Distribute orbital to block cyclic format took 0.430 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.134 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.029 ms
+rank =  0, Distribute data + matrix mult took 0.599 ms
+rank =  0, finding HY took 1.118 ms
+rank =  0, distributing HY into block cyclic form took 0.199 ms
+rank =  0, finding Y'*HY took 0.093 ms
+Total time for projection: 2.021 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.064 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.058 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.130 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.154 ms
+Total time for subspace rotation: 0.178 ms
+rank = 0, Efermi =   0.621348086410 calculate fermi energy took 1.162 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.073 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.669 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.805 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.053 ms
+rank = 0, D2D took 0.057 ms
+rank = 0, Transfering density took 0.057 ms
+Etot    =    -5.794552319004
+Eband   =     2.403959457288
+E1      =     2.011085698624
+E2      =     0.143507556271
+E3      =    -3.612304955611
+Exc     =    -3.363107127024
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 4.311e-07, dEband = 4.835e-07
+rank = 0, Calculating/Estimating energy took 0.071 ms, Etot = -5.794552319, dEtot = 4.311e-07, dEband = 4.835e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0003312724708, which took 0.009 ms
+
+iter_count = 84, r_2norm = 6.148e-09, tol*||rhs|| = 1.286e-08
+
+Anderson update took 0.901 ms, out of which F'*F took 1.249 ms; b-Ax took 7.960 ms, out of which Lap took 7.942 ms
+rank = 0, Mixing (+ precond) took 9.531 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = -1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.2928312828870, which took 0.006 ms
+
+iter_count = 60, r_2norm = 1.372e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.605 ms, out of which F'*F took 0.926 ms; b-Ax took 5.480 ms, out of which Lap took 5.467 ms
+Solving Poisson took 6.375 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.082 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.045 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.099 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.232 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.232 ms
+
+This SCF took 64.462 ms, scf error = 2.849e-05
+-------------
+SCF iter 7  
+-------------
+
+ Chebfilt 7, in Chebyshev filtering, lambda_cutoff = 1.178633, lowerbound = -0.064256, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.546 ms
+rank =  0, Distribute orbital to block cyclic format took 0.726 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.122 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.045 ms
+rank =  0, Distribute data + matrix mult took 0.898 ms
+rank =  0, finding HY took 1.114 ms
+rank =  0, distributing HY into block cyclic form took 0.186 ms
+rank =  0, finding Y'*HY took 0.144 ms
+Total time for projection: 2.354 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.065 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.067 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.140 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.167 ms
+Total time for subspace rotation: 0.191 ms
+rank = 0, Efermi =   0.621347964063 calculate fermi energy took 0.062 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.090 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.660 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.095 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.054 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.794552660234
+Eband   =     2.403958991963
+E1      =     2.011086731297
+E2      =     0.143508129124
+E3      =    -3.612304713303
+Exc     =    -3.363107220439
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 1.706e-07, dEband = 2.327e-07
+rank = 0, Calculating/Estimating energy took 0.101 ms, Etot = -5.794552660, dEtot = 1.706e-07, dEband = 2.327e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0000341869097, which took 0.080 ms
+
+iter_count = 84, r_2norm = 1.023e-09, tol*||rhs|| = 1.328e-09
+
+Anderson update took 0.912 ms, out of which F'*F took 1.193 ms; b-Ax took 7.736 ms, out of which Lap took 7.719 ms
+rank = 0, Mixing (+ precond) took 9.469 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = 0.000e+00, checking this took 0.011 ms
+2-norm of RHS = 201.2928339204235, which took 0.005 ms
+
+iter_count = 48, r_2norm = 1.445e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.474 ms, out of which F'*F took 0.794 ms; b-Ax took 4.461 ms, out of which Lap took 4.448 ms
+Solving Poisson took 5.168 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.018 ms
+---Transfer Veff_loc: D2D took 0.072 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.049 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.083 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.209 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.209 ms
+
+This SCF took 62.513 ms, scf error = 2.418e-06
+-------------
+SCF iter 8  
+-------------
+
+ Chebfilt 8, in Chebyshev filtering, lambda_cutoff = 1.178633, lowerbound = -0.064256, upperbound = 413.559086
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.745 ms
+rank =  0, Distribute orbital to block cyclic format took 0.412 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.128 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.019 ms
+rank =  0, Distribute data + matrix mult took 0.564 ms
+rank =  0, finding HY took 1.106 ms
+rank =  0, distributing HY into block cyclic form took 0.181 ms
+rank =  0, finding Y'*HY took 0.103 ms
+Total time for projection: 1.966 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.061 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.132 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.160 ms
+Total time for subspace rotation: 0.185 ms
+rank = 0, Efermi =   0.621347968843 calculate fermi energy took 0.114 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.133 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.063 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.393 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.794552635678
+Eband   =     2.403959008450
+E1      =     2.011086688721
+E2      =     0.143508110527
+E3      =    -3.612304747086
+Exc     =    -3.363107222175
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 1.228e-08, dEband = 8.244e-09
+rank = 0, Calculating/Estimating energy took 0.735 ms, Etot = -5.794552636, dEtot = 1.228e-08, dEband = 8.244e-09
+
+This SCF took 47.370 ms, scf error = 5.382e-07
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999971138108, int_rho =   6.99999971138108, int_b + int_rho = -2.461e-15, checking this took 0.011 ms
+2-norm of RHS = 201.2928355553499, which took 0.008 ms
+
+iter_count = 30, r_2norm = 1.779e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.490 ms, out of which F'*F took 0.453 ms; b-Ax took 2.805 ms, out of which Lap took 2.798 ms
+Solving Poisson took 3.537 ms
+Start calculating Vxc (GGA_PBE) ...
+Etot    =    -5.794552623447
+Eband   =     2.403959008450
+E1      =     2.011086735099
+E2      =     0.143508135939
+E3      =    -3.612304736027
+Exc     =    -3.363107219852
+Esc     =   -10.315287739343
+Entropy =    -0.000000007890
+dE = 6.115e-09, dEband = 0.000e+00
+The last 8 occupations of kpoints #1 are (Nelectron = 7):
+lambda[   1] =  -0.06425642727634, occ[   1] =   2.00000000000000
+lambda[   2] =   0.45498389899309, occ[   2] =   2.00000000000000
+lambda[   3] =   0.73447934304290, occ[   3] =   0.00000000000000
+lambda[   4] =   0.73449004812359, occ[   4] =   0.00000000000000
+lambda[   5] =   0.87289726131997, occ[   5] =   0.00000000000000
+lambda[   6] =   0.87290912915496, occ[   6] =   0.00000000000000
+lambda[   7] =   0.96881854802638, occ[   7] =   0.00000000000000
+lambda[   8] =   1.07863303977517, occ[   8] =   0.00000000000000
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 7 (90%) = 0.000000000000000.
+Occupation of state 8 (100%) = 0.000000000000000.
+Start calculating local components of forces ...
+time for sorting and interpolate pseudopotential: 2.111 ms, time for Allreduce/Reduce: 0.011 ms 
+Time for calculating local force components: 11.185 ms
+Start Calculating nonlocal forces
+force_nloc = 
+  0.03181972199109   0.03537115944867   0.03181972257876
+ -0.03704976924251  -0.04080537556453  -0.03704976964327
+force_loc = 
+  0.03818290039094   0.04172355383577   0.03818289996127
+ -0.03241160047869  -0.03567955498316  -0.03241159989484
+Time for calculating nonlocal force components: 0.836 ms
+[32mforces_xc: 
+[0m[32m -0.00196651179539  -0.00160438859457  -0.00196651174122
+[0m[32m  0.00153580925442   0.00126925232498   0.00153580921989
+[0mTime for calculating XC forces components: 37.602 ms
+ Cartesian force = 
+  0.05254744326918   0.04288051027594   0.05254744333128
+ -0.05254744326918  -0.04288051027594  -0.05254744333128
+Start calculating exchange-correlation components of stress ...
+Start calculating NLCC exchange-correlation components of stress ...
+time for sorting and interpolate pseudopotential: 9.053 ms, time for Allreduce/Reduce: 0.014 ms 
+NLCC XC contribution to stress (GPa): 
+ 264.824382062105030 -0.995400473629249 -1.006587782929987 
+ -0.995400473629249 264.814915201745634 -0.995400471594583 
+ -1.006587782929987 -0.995400471594583 264.824382069482795
+
+XC contribution to stress (GPa): 
+ 351.673117705118841 -1.005552943536175 -1.016579621280329 
+ -1.005552943536175 351.663755144438881 -1.005552941528876 
+ -1.016579621280329 -1.005552941528876 351.673117712380531
+Time for calculating exchange-correlation stress components: 39.946 ms
+Start calculating local components of stress ...
+time for sorting and interpolate pseudopotential: 8.931 ms, time for Allreduce/Reduce: 0.010 ms 
+
+Electrostatics contribution to stress (GPa): 
+ 669.691239638834190 -5.375273798352099 -4.911503917969436 
+ -5.375273798352099 671.155847372289145 -5.375848587987273 
+ -4.911503917969436 -5.375848587987273 669.691239865510397
+Time for calculating local stress components: 95.170 ms
+Start calculating stress contributions from kinetic and nonlocal psp. 
+
+Non-local contribution to stress (GPa): 
+ -654.479646906588187 24.763455129161184 24.885959689245439 
+ 24.763455129161184 -654.365808683614659 24.763500398420369 
+ 24.885959689245439 24.763500398420369 -654.479647003046011
+
+Kinetic contribution to stress (GPa): 
+ -1011.116774714989106 -26.992737420420340 -26.942587877416788 
+ -26.992737420420340 -1011.034388633600770 -26.992737417432583 
+ -26.942587877416788 -26.992737417432583 -1011.116774720744502
+Time for calculating nonlocal+kinetic stress components: 1.544 ms
+
+Electronic contribution to stress (GPa): 
+ -644.232064277624318 -8.610109033147431 -7.984711727421113 
+ -8.610109033147431 -642.580594800487461 -8.610638548528362 
+ -7.984711727421113 -8.610638548528362 -644.232064145899585
+Time taken by RelaxStep 3: 0.766 s.
+:RelaxStep: 4
+Start ground-state calculation.
+
+Computing nearest neighbor distance (6.029 Bohr) takes 0.000 ms
+Calculating electron density ... 
+Finding atoms that influence the local process domain ... 
+
+Finding influencing atoms took 0.008 ms
+Calculating pseudocharge density ... 
+the global sum of int_b = -6.9999990646259, sum_int_rho = 6.8710618827152
+PosCharge = 6.999999064626, NegCharge = -6.871061882715, scal_fac = 1.018765248241
+After scaling, int_rho = 6.9999990646259, PosCharge + NegCharge - NetCharge = 0.000e+00
+--Calculate Vref took 0.847 ms
+--Calculate rho_guess took 5.760 ms
+
+ integral of b = -6.9999990646259,
+ int{b} + Nelectron + NetCharge = 9.354e-07,
+ Esc = -10.3152939445635,
+ MPI_Reduce took 0.764 ms
+
+Calculating b & b_ref took 16.713 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 1.149 ms
+[0m
+Finding nonlocal influencing atoms in psi-domain took 1.151 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.110 ms
+[0m
+Calculating nonlocal projectors in psi-domain took 0.655 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 0.194 ms
+[0m
+Finding nonlocal influencing atoms in kptcomm_topo took 0.196 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.011 ms
+[0m
+Calculating nonlocal projectors in kptcomm_topo took 0.069 ms
+Initializing Kohn-Sham orbitals ... 
+Initializing electron density ... 
+Using charge extrapolation for density guess
+Start SCF calculation ... 
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 0.000e+00, checking this took 0.010 ms
+2-norm of RHS = 201.2571501624358, which took 0.007 ms
+
+iter_count = 138, r_2norm = 1.240e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 1.659 ms, out of which F'*F took 1.996 ms; b-Ax took 12.676 ms, out of which Lap took 12.641 ms
+Solving Poisson took 14.886 ms
+Start calculating Vxc (GGA_PBE) ...
+rank = 0, XC calculation took 0.175 ms
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.022 ms
+---Transfer Veff_loc: D2D took 0.079 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.050 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.088 ms
+rank = 0, Veff calculation and Bcast (non-blocking) took 0.248 ms
+-------------
+SCF iter 1  
+-------------
+
+Time for setting up initial guess for Lanczos: 0.022 ms
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.024 ms
+
+Start Lanczos algorithm ...
+Wait for veff to be bcasted took 0.000 ms
+rank =  0, One H*x took 0.331 ms
+    Lanczos iter 36, eigmin  = -0.057530913, eigmax = 409.464227520, err_eigmin = 1.389e-03, err_eigmax = 9.789e-03
+rank =   0, Lanczos took 11.750 ms, eigmin = -0.057530913121, eigmax = 413.558869795306
+
+ Chebfilt 1, in Chebyshev filtering, lambda_cutoff = 1.178633, lowerbound = -0.157531, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.614 ms
+rank =  0, Distribute orbital to block cyclic format took 0.828 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.146 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.116 ms
+rank =  0, Distribute data + matrix mult took 1.095 ms
+rank =  0, finding HY took 1.111 ms
+rank =  0, distributing HY into block cyclic form took 0.176 ms
+rank =  0, finding Y'*HY took 0.116 ms
+Total time for projection: 2.511 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.063 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.059 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.130 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.165 ms
+Total time for subspace rotation: 0.190 ms
+rank = 0, Efermi =   0.620250257827 calculate fermi energy took 0.054 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.272 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.134 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 58.717 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.075 ms
+rank = 0, D2D took 0.079 ms
+rank = 0, Transfering density took 0.080 ms
+Etot    =    -5.800082216204
+Eband   =     2.403034375043
+E1      =     2.006603701175
+E2      =     0.143653528079
+E3      =    -3.612036650504
+Exc     =    -3.362809445784
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 2.765e-03, dEband = 4.623e-04
+rank = 0, Calculating/Estimating energy took 0.077 ms, Etot = -5.800082216, dEtot = 2.765e-03, dEband = 4.623e-04
+Start applying Kerker preconditioner ...
+2-norm of RHS = 5.9715857096324, which took 0.012 ms
+
+iter_count = 66, r_2norm = 1.314e-04, tol*||rhs|| = 2.319e-04
+
+Anderson update took 0.870 ms, out of which F'*F took 0.956 ms; b-Ax took 6.104 ms, out of which Lap took 6.089 ms
+rank = 0, Mixing (+ precond) took 7.547 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.2783143361923, which took 0.006 ms
+
+iter_count = 102, r_2norm = 1.020e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.960 ms, out of which F'*F took 1.487 ms; b-Ax took 9.257 ms, out of which Lap took 9.233 ms
+Solving Poisson took 10.616 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.072 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.053 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.082 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.213 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.213 ms
+
+This SCF took 78.290 ms, scf error = 2.193e-03
+-------------
+SCF iter 2  
+-------------
+
+ Chebfilt 2, in Chebyshev filtering, lambda_cutoff = 1.179426, lowerbound = -0.064427, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.320 ms
+rank =  0, Distribute orbital to block cyclic format took 6.399 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.133 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.015 ms
+rank =  0, Distribute data + matrix mult took 6.552 ms
+rank =  0, finding HY took 1.137 ms
+rank =  0, distributing HY into block cyclic form took 0.175 ms
+rank =  0, finding Y'*HY took 0.100 ms
+Total time for projection: 7.977 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.064 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.135 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.171 ms
+Total time for subspace rotation: 0.197 ms
+rank = 0, Efermi =   0.620247008735 calculate fermi energy took 0.137 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.171 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.040 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 52.014 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.052 ms
+rank = 0, D2D took 0.056 ms
+rank = 0, Transfering density took 0.057 ms
+Etot    =    -5.800115815961
+Eband   =     2.403034632994
+E1      =     2.006854410731
+E2      =     0.143951264073
+E3      =    -3.612046151184
+Exc     =    -3.362805777735
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 1.680e-05, dEband = 1.290e-07
+rank = 0, Calculating/Estimating energy took 0.084 ms, Etot = -5.800115816, dEtot = 1.680e-05, dEband = 1.290e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 2.2715763517103, which took 0.011 ms
+
+iter_count = 72, r_2norm = 2.771e-05, tol*||rhs|| = 8.821e-05
+
+Anderson update took 0.787 ms, out of which F'*F took 1.098 ms; b-Ax took 6.679 ms, out of which Lap took 6.662 ms
+rank = 0, Mixing (+ precond) took 8.187 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 1.230e-15, checking this took 0.008 ms
+2-norm of RHS = 201.3106183202859, which took 0.006 ms
+
+iter_count = 102, r_2norm = 1.158e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.952 ms, out of which F'*F took 1.469 ms; b-Ax took 9.323 ms, out of which Lap took 9.301 ms
+Solving Poisson took 10.663 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.074 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.056 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.084 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.219 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.219 ms
+
+This SCF took 72.315 ms, scf error = 1.533e-03
+-------------
+SCF iter 3  
+-------------
+
+ Chebfilt 3, in Chebyshev filtering, lambda_cutoff = 1.179031, lowerbound = -0.064423, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.051 ms
+rank =  0, Distribute orbital to block cyclic format took 0.469 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.122 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.008 ms
+rank =  0, Distribute data + matrix mult took 0.604 ms
+rank =  0, finding HY took 1.107 ms
+rank =  0, distributing HY into block cyclic form took 0.205 ms
+rank =  0, finding Y'*HY took 0.108 ms
+Total time for projection: 2.037 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.070 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.141 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.159 ms
+Total time for subspace rotation: 0.184 ms
+rank = 0, Efermi =   0.620243983302 calculate fermi energy took 1.718 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.074 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.044 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 48.284 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.800153741523
+Eband   =     2.403049872688
+E1      =     2.007237078794
+E2      =     0.144406296047
+E3      =    -3.612061623225
+Exc     =    -3.362802051120
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 1.896e-05, dEband = 7.620e-06
+rank = 0, Calculating/Estimating energy took 0.225 ms, Etot = -5.800153742, dEtot = 1.896e-05, dEband = 7.620e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.1250801518993, which took 0.010 ms
+
+iter_count = 78, r_2norm = 1.882e-06, tol*||rhs|| = 4.857e-06
+
+Anderson update took 0.825 ms, out of which F'*F took 1.148 ms; b-Ax took 7.319 ms, out of which Lap took 7.303 ms
+rank = 0, Mixing (+ precond) took 8.780 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 0.000e+00, checking this took 0.007 ms
+2-norm of RHS = 201.3335451365595, which took 0.006 ms
+
+iter_count = 96, r_2norm = 1.531e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 1.073 ms, out of which F'*F took 1.419 ms; b-Ax took 8.747 ms, out of which Lap took 8.726 ms
+Solving Poisson took 10.296 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.018 ms
+---Transfer Veff_loc: D2D took 0.065 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.053 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.074 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.198 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.198 ms
+
+This SCF took 68.915 ms, scf error = 6.217e-04
+-------------
+SCF iter 4  
+-------------
+
+ Chebfilt 4, in Chebyshev filtering, lambda_cutoff = 1.178928, lowerbound = -0.064417, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.148 ms
+rank =  0, Distribute orbital to block cyclic format took 0.505 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.122 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.011 ms
+rank =  0, Distribute data + matrix mult took 0.643 ms
+rank =  0, finding HY took 1.096 ms
+rank =  0, distributing HY into block cyclic form took 0.189 ms
+rank =  0, finding Y'*HY took 0.141 ms
+Total time for projection: 2.081 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.072 ms
+==generalized eigenproblem: bcast eigvals took 0.014 ms
+Total time for solving generalized eigenvalue problem: 0.153 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.023 ms
+rank =  0, Distributing orbital back into band + domain format took 0.178 ms
+Total time for subspace rotation: 0.205 ms
+rank = 0, Efermi =   0.620241978507 calculate fermi energy took 0.051 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.133 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.309 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.114 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.800178748417
+Eband   =     2.403062686854
+E1      =     2.007503315586
+E2      =     0.144726074139
+E3      =    -3.612074853008
+Exc     =    -3.362799560663
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 1.250e-05, dEband = 6.407e-06
+rank = 0, Calculating/Estimating energy took 0.084 ms, Etot = -5.800178748, dEtot = 1.250e-05, dEband = 6.407e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0050495541403, which took 0.016 ms
+
+iter_count = 84, r_2norm = 1.119e-07, tol*||rhs|| = 1.961e-07
+
+Anderson update took 0.781 ms, out of which F'*F took 1.232 ms; b-Ax took 7.673 ms, out of which Lap took 7.653 ms
+rank = 0, Mixing (+ precond) took 9.227 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.3374055231923, which took 0.006 ms
+
+iter_count = 78, r_2norm = 1.183e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.670 ms, out of which F'*F took 1.123 ms; b-Ax took 7.090 ms, out of which Lap took 7.075 ms
+Solving Poisson took 8.201 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.020 ms
+---Transfer Veff_loc: D2D took 0.081 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.053 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.083 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.222 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.222 ms
+
+This SCF took 65.934 ms, scf error = 8.727e-05
+-------------
+SCF iter 5  
+-------------
+
+ Chebfilt 5, in Chebyshev filtering, lambda_cutoff = 1.178898, lowerbound = -0.064413, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.925 ms
+rank =  0, Distribute orbital to block cyclic format took 0.767 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.132 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.013 ms
+rank =  0, Distribute data + matrix mult took 0.917 ms
+rank =  0, finding HY took 1.122 ms
+rank =  0, distributing HY into block cyclic form took 0.188 ms
+rank =  0, finding Y'*HY took 0.098 ms
+Total time for projection: 2.338 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.071 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.071 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.150 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.175 ms
+Total time for subspace rotation: 0.202 ms
+rank = 0, Efermi =   0.620242078150 calculate fermi energy took 0.056 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.089 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.112 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.908 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.800181161856
+Eband   =     2.403067584481
+E1      =     2.007536505866
+E2      =     0.144772901493
+E3      =    -3.612080741852
+Exc     =    -3.362799123500
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 1.207e-06, dEband = 2.449e-06
+rank = 0, Calculating/Estimating energy took 0.098 ms, Etot = -5.800181162, dEtot = 1.207e-06, dEband = 2.449e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0205368185919, which took 0.009 ms
+
+iter_count = 66, r_2norm = 7.542e-07, tol*||rhs|| = 7.975e-07
+
+Anderson update took 0.646 ms, out of which F'*F took 0.946 ms; b-Ax took 6.197 ms, out of which Lap took 6.176 ms
+rank = 0, Mixing (+ precond) took 7.446 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 2.461e-15, checking this took 0.008 ms
+2-norm of RHS = 201.3374246759097, which took 0.006 ms
+
+iter_count = 60, r_2norm = 1.345e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.551 ms, out of which F'*F took 0.863 ms; b-Ax took 5.482 ms, out of which Lap took 5.468 ms
+Solving Poisson took 6.341 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.069 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.050 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.075 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.200 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.200 ms
+
+This SCF took 62.106 ms, scf error = 1.807e-05
+-------------
+SCF iter 6  
+-------------
+
+ Chebfilt 6, in Chebyshev filtering, lambda_cutoff = 1.178892, lowerbound = -0.064412, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.967 ms
+rank =  0, Distribute orbital to block cyclic format took 0.682 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.123 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.817 ms
+rank =  0, finding HY took 1.120 ms
+rank =  0, distributing HY into block cyclic form took 0.404 ms
+rank =  0, finding Y'*HY took 0.107 ms
+Total time for projection: 2.460 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.074 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.145 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.024 ms
+rank =  0, Distributing orbital back into band + domain format took 0.159 ms
+Total time for subspace rotation: 0.186 ms
+rank = 0, Efermi =   0.620242067795 calculate fermi energy took 0.077 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.084 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.063 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 47.015 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.063 ms
+rank = 0, D2D took 0.067 ms
+rank = 0, Transfering density took 0.068 ms
+Etot    =    -5.800181237395
+Eband   =     2.403067519750
+E1      =     2.007537086758
+E2      =     0.144773404899
+E3      =    -3.612080654142
+Exc     =    -3.362799124084
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 3.777e-08, dEband = 3.237e-08
+rank = 0, Calculating/Estimating energy took 0.073 ms, Etot = -5.800181237, dEtot = 3.777e-08, dEband = 3.237e-08
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0011859970481, which took 0.012 ms
+
+iter_count = 78, r_2norm = 1.864e-08, tol*||rhs|| = 4.606e-08
+
+Anderson update took 0.739 ms, out of which F'*F took 1.130 ms; b-Ax took 7.155 ms, out of which Lap took 7.137 ms
+rank = 0, Mixing (+ precond) took 8.559 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 0.000e+00, checking this took 0.007 ms
+2-norm of RHS = 201.3377068565501, which took 0.007 ms
+
+iter_count = 60, r_2norm = 1.495e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.610 ms, out of which F'*F took 0.865 ms; b-Ax took 5.523 ms, out of which Lap took 5.508 ms
+Solving Poisson took 6.418 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.000 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.062 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.057 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.074 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.199 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.199 ms
+
+This SCF took 63.413 ms, scf error = 9.468e-06
+-------------
+SCF iter 7  
+-------------
+
+ Chebfilt 7, in Chebyshev filtering, lambda_cutoff = 1.178890, lowerbound = -0.064412, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.144 ms
+rank =  0, Distribute orbital to block cyclic format took 0.566 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.131 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.709 ms
+rank =  0, finding HY took 1.122 ms
+rank =  0, distributing HY into block cyclic form took 0.161 ms
+rank =  0, finding Y'*HY took 0.055 ms
+Total time for projection: 2.059 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.060 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.062 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.131 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.113 ms
+Total time for subspace rotation: 0.138 ms
+rank = 0, Efermi =   0.620242116203 calculate fermi energy took 0.060 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.108 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.073 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.749 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.055 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.800181320784
+Eband   =     2.403068054455
+E1      =     2.007538845961
+E2      =     0.144776500182
+E3      =    -3.612081332521
+Exc     =    -3.362799084477
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 4.169e-08, dEband = 2.674e-07
+rank = 0, Calculating/Estimating energy took 0.089 ms, Etot = -5.800181321, dEtot = 4.169e-08, dEband = 2.674e-07
+
+This SCF took 47.120 ms, scf error = 5.311e-07
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999906462592, int_rho =   6.99999906462592, int_b + int_rho = 0.000e+00, checking this took 0.011 ms
+2-norm of RHS = 201.3377113573107, which took 0.007 ms
+
+iter_count = 36, r_2norm = 1.512e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.402 ms, out of which F'*F took 0.528 ms; b-Ax took 3.344 ms, out of which Lap took 3.335 ms
+Solving Poisson took 4.093 ms
+Start calculating Vxc (GGA_PBE) ...
+Etot    =    -5.800181348258
+Eband   =     2.403068054455
+E1      =     2.007538801671
+E2      =     0.144776529177
+E3      =    -3.612081379290
+Exc     =    -3.362799085435
+Esc     =   -10.315293944563
+Entropy =    -0.000000024499
+dE = 1.374e-08, dEband = 0.000e+00
+The last 8 occupations of kpoints #1 are (Nelectron = 7):
+lambda[   1] =  -0.06441176428368, occ[   1] =   2.00000000000000
+lambda[   2] =   0.45475084258464, occ[   2] =   2.00000000000000
+lambda[   3] =   0.73495174664598, occ[   3] =   0.00000000000000
+lambda[   4] =   0.73495200406131, occ[   4] =   0.00000000000000
+lambda[   5] =   0.87290964086186, occ[   5] =   0.00000000000000
+lambda[   6] =   0.87290989391378, occ[   6] =   0.00000000000000
+lambda[   7] =   0.96802332762223, occ[   7] =   0.00000000000000
+lambda[   8] =   1.07888991835535, occ[   8] =   0.00000000000000
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 7 (90%) = 0.000000000000000.
+Occupation of state 8 (100%) = 0.000000000000000.
+Start calculating local components of forces ...
+time for sorting and interpolate pseudopotential: 2.114 ms, time for Allreduce/Reduce: 0.010 ms 
+Time for calculating local force components: 11.178 ms
+Start Calculating nonlocal forces
+force_nloc = 
+ -0.00106387201672  -0.00158617335528  -0.00106387199818
+  0.00125633056354   0.00181092147685   0.00125633062408
+force_loc = 
+ -0.00131064603588  -0.00182891869448  -0.00131064602829
+  0.00110107143715   0.00157648242082   0.00110107133379
+Time for calculating nonlocal force components: 0.859 ms
+[32mforces_xc: 
+[0m[32m  0.00008713111390   0.00003345969465   0.00008713111859
+[0m[32m -0.00006803366212  -0.00002841297390  -0.00006803365788
+[0mTime for calculating XC forces components: 38.002 ms
+ Cartesian force = 
+ -0.00232746309433  -0.00090999089235  -0.00232746314286
+  0.00232746309433   0.00090999089235   0.00232746314286
+Start calculating exchange-correlation components of stress ...
+Start calculating NLCC exchange-correlation components of stress ...
+time for sorting and interpolate pseudopotential: 8.919 ms, time for Allreduce/Reduce: 0.010 ms 
+NLCC XC contribution to stress (GPa): 
+ 264.755490109974005 -0.943401255110567 -0.943444063856746 
+ -0.943401255110567 264.755468947072416 -0.943401256106199 
+ -0.943444063856746 -0.943401256106199 264.755490106174250
+
+XC contribution to stress (GPa): 
+ 351.632526319639510 -0.954378545739220 -0.954419532874142 
+ -0.954378545739220 351.632506390772903 -0.954378546754514 
+ -0.954419532874142 -0.954378546754514 351.632526315889720
+Time for calculating exchange-correlation stress components: 39.771 ms
+Start calculating local components of stress ...
+time for sorting and interpolate pseudopotential: 8.940 ms, time for Allreduce/Reduce: 0.010 ms 
+
+Electrostatics contribution to stress (GPa): 
+ 670.907399541692143 -7.556499344869615 -7.548897528447068 
+ -7.556499344869615 670.916435472194962 -7.556710368601729 
+ -7.548897528447068 -7.556710368601729 670.907399432877014
+Time for calculating local stress components: 95.274 ms
+Start calculating stress contributions from kinetic and nonlocal psp. 
+
+Non-local contribution to stress (GPa): 
+ -653.453598720042919 24.149218863253438 24.149933106720020 
+ 24.149218863253438 -653.453330023069498 24.149030093958711 
+ 24.149933106720020 24.149030093958711 -653.453598652106734
+
+Kinetic contribution to stress (GPa): 
+ -1010.828429251233388 -27.094388267032866 -27.094921414271866 
+ -27.094388267032866 -1010.828854654889710 -27.094388247237156 
+ -27.094921414271866 -27.094388247237156 -1010.828429255407173
+Time for calculating nonlocal+kinetic stress components: 1.464 ms
+
+Electronic contribution to stress (GPa): 
+ -641.742102109944540 -11.456047294388263 -11.448305368873058 
+ -11.456047294388263 -641.733242814991286 -11.456447068634688 
+ -11.448305368873058 -11.456447068634688 -641.742102158747230
+Time taken by RelaxStep 4: 0.686 s.
+:RelaxStep: 5
+Start ground-state calculation.
+
+Computing nearest neighbor distance (6.034 Bohr) takes 0.000 ms
+Calculating electron density ... 
+Finding atoms that influence the local process domain ... 
+
+Finding influencing atoms took 0.008 ms
+Calculating pseudocharge density ... 
+the global sum of int_b = -6.9999990573378, sum_int_rho = 6.8710590132154
+PosCharge = 6.999999057338, NegCharge = -6.871059013215, scal_fac = 1.018765672639
+After scaling, int_rho = 6.9999990573378, PosCharge + NegCharge - NetCharge = -8.882e-16
+--Calculate Vref took 0.796 ms
+--Calculate rho_guess took 5.703 ms
+
+ integral of b = -6.9999990573378,
+ int{b} + Nelectron + NetCharge = 9.427e-07,
+ Esc = -10.3152939388051,
+ MPI_Reduce took 0.026 ms
+
+Calculating b & b_ref took 15.816 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 1.145 ms
+[0m
+Finding nonlocal influencing atoms in psi-domain took 1.147 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.107 ms
+[0m
+Calculating nonlocal projectors in psi-domain took 0.656 ms
+Finding atoms that has nonlocal influence on the local process domain ... 
+[32mrank = 0, time for nonlocal influencing atoms: 0.188 ms
+[0m
+Finding nonlocal influencing atoms in kptcomm_topo took 0.189 ms
+Calculate nonlocal projectors ... 
+[34mrank = 0, Time for spherical harmonics: 0.011 ms
+[0m
+Calculating nonlocal projectors in kptcomm_topo took 0.066 ms
+Initializing Kohn-Sham orbitals ... 
+Initializing electron density ... 
+Using charge extrapolation for density guess
+Start SCF calculation ... 
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 1.230e-15, checking this took 0.010 ms
+2-norm of RHS = 201.3566671646214, which took 0.007 ms
+
+iter_count = 108, r_2norm = 1.159e-06, tol*||rhs|| = 2.014e-06
+
+Anderson update took 1.176 ms, out of which F'*F took 1.573 ms; b-Ax took 9.958 ms, out of which Lap took 9.930 ms
+Solving Poisson took 11.679 ms
+Start calculating Vxc (GGA_PBE) ...
+rank = 0, XC calculation took 0.188 ms
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.022 ms
+---Transfer Veff_loc: D2D took 0.075 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.049 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.087 ms
+rank = 0, Veff calculation and Bcast (non-blocking) took 0.218 ms
+-------------
+SCF iter 1  
+-------------
+
+Time for setting up initial guess for Lanczos: 0.021 ms
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.023 ms
+
+Start Lanczos algorithm ...
+Wait for veff to be bcasted took 0.000 ms
+rank =  0, One H*x took 0.346 ms
+    Lanczos iter 36, eigmin  = -0.057512145, eigmax = 409.464227947, err_eigmin = 1.389e-03, err_eigmax = 9.788e-03
+rank =   0, Lanczos took 11.644 ms, eigmin = -0.057512144972, eigmax = 413.558870226914
+
+ Chebfilt 1, in Chebyshev filtering, lambda_cutoff = 1.178890, lowerbound = -0.157512, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.791 ms
+rank =  0, Distribute orbital to block cyclic format took 0.136 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.102 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.005 ms
+rank =  0, Distribute data + matrix mult took 0.247 ms
+rank =  0, finding HY took 1.104 ms
+rank =  0, distributing HY into block cyclic form took 0.180 ms
+rank =  0, finding Y'*HY took 0.070 ms
+Total time for projection: 1.613 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.062 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.071 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.141 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.106 ms
+Total time for subspace rotation: 0.131 ms
+rank = 0, Efermi =   0.620232739598 calculate fermi energy took 0.054 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.158 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.100 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 58.721 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.064 ms
+rank = 0, D2D took 0.068 ms
+rank = 0, Transfering density took 0.069 ms
+Etot    =    -5.800210200525
+Eband   =     2.403076947959
+E1      =     2.007750058670
+E2      =     0.145039196484
+E3      =    -3.612092778823
+Exc     =    -3.362796826006
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 1.444e-05, dEband = 4.447e-06
+rank = 0, Calculating/Estimating energy took 0.727 ms, Etot = -5.800210201, dEtot = 1.444e-05, dEband = 4.447e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 1.5357274422218, which took 0.011 ms
+
+iter_count = 60, r_2norm = 5.128e-05, tol*||rhs|| = 5.964e-05
+
+Anderson update took 0.722 ms, out of which F'*F took 0.872 ms; b-Ax took 5.586 ms, out of which Lap took 5.572 ms
+rank = 0, Mixing (+ precond) took 6.846 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 0.000e+00, checking this took 0.008 ms
+2-norm of RHS = 201.3517094241692, which took 0.006 ms
+
+iter_count = 78, r_2norm = 1.795e-06, tol*||rhs|| = 2.014e-06
+
+Anderson update took 0.750 ms, out of which F'*F took 1.151 ms; b-Ax took 7.195 ms, out of which Lap took 7.178 ms
+Solving Poisson took 8.365 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.018 ms
+---Transfer Veff_loc: D2D took 0.061 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.048 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.079 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.193 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.193 ms
+
+This SCF took 75.299 ms, scf error = 5.141e-04
+-------------
+SCF iter 2  
+-------------
+
+ Chebfilt 2, in Chebyshev filtering, lambda_cutoff = 1.178885, lowerbound = -0.064409, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.947 ms
+rank =  0, Distribute orbital to block cyclic format took 0.152 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.090 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.014 ms
+rank =  0, Distribute data + matrix mult took 0.262 ms
+rank =  0, finding HY took 1.064 ms
+rank =  0, distributing HY into block cyclic form took 0.227 ms
+rank =  0, finding Y'*HY took 0.074 ms
+Total time for projection: 1.641 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.065 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.070 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.143 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.022 ms
+rank =  0, Distributing orbital back into band + domain format took 0.113 ms
+Total time for subspace rotation: 0.138 ms
+rank = 0, Efermi =   0.620233209916 calculate fermi energy took 1.706 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.116 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.056 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 48.806 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.056 ms
+rank = 0, D2D took 0.059 ms
+rank = 0, Transfering density took 0.060 ms
+Etot    =    -5.800204817268
+Eband   =     2.403074466876
+E1      =     2.007691383096
+E2      =     0.144969648356
+E3      =    -3.612090212139
+Exc     =    -3.362797267535
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 2.692e-06, dEband = 1.241e-06
+rank = 0, Calculating/Estimating energy took 0.071 ms, Etot = -5.800204817, dEtot = 2.692e-06, dEband = 1.241e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0100784988801, which took 0.015 ms
+
+iter_count = 84, r_2norm = 3.061e-07, tol*||rhs|| = 3.914e-07
+
+Anderson update took 0.956 ms, out of which F'*F took 1.315 ms; b-Ax took 7.774 ms, out of which Lap took 7.755 ms
+rank = 0, Mixing (+ precond) took 9.410 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 3.691e-15, checking this took 0.007 ms
+2-norm of RHS = 201.3394434693176, which took 0.006 ms
+
+iter_count = 90, r_2norm = 1.569e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.891 ms, out of which F'*F took 1.314 ms; b-Ax took 8.102 ms, out of which Lap took 8.082 ms
+Solving Poisson took 9.405 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.056 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.046 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.085 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.194 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.194 ms
+
+This SCF took 68.377 ms, scf error = 3.647e-04
+-------------
+SCF iter 3  
+-------------
+
+ Chebfilt 3, in Chebyshev filtering, lambda_cutoff = 1.178886, lowerbound = -0.064410, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.898 ms
+rank =  0, Distribute orbital to block cyclic format took 0.796 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.116 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.006 ms
+rank =  0, Distribute data + matrix mult took 0.923 ms
+rank =  0, finding HY took 1.122 ms
+rank =  0, distributing HY into block cyclic form took 0.141 ms
+rank =  0, finding Y'*HY took 0.063 ms
+Total time for projection: 2.262 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.065 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.065 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.138 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.113 ms
+Total time for subspace rotation: 0.138 ms
+rank = 0, Efermi =   0.620234302125 calculate fermi energy took 0.052 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.084 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.046 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.679 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.057 ms
+rank = 0, D2D took 0.061 ms
+rank = 0, Transfering density took 0.062 ms
+Etot    =    -5.800191580874
+Eband   =     2.403068111151
+E1      =     2.007547883522
+E2      =     0.144798585113
+E3      =    -3.612083440663
+Exc     =    -3.362798467610
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 6.618e-06, dEband = 3.178e-06
+rank = 0, Calculating/Estimating energy took 0.767 ms, Etot = -5.800191581, dEtot = 6.618e-06, dEband = 3.178e-06
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0274004310029, which took 0.012 ms
+
+iter_count = 66, r_2norm = 9.636e-07, tol*||rhs|| = 1.064e-06
+
+Anderson update took 0.626 ms, out of which F'*F took 0.984 ms; b-Ax took 6.154 ms, out of which Lap took 6.137 ms
+rank = 0, Mixing (+ precond) took 7.415 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733776, int_b + int_rho = -1.230e-15, checking this took 0.008 ms
+2-norm of RHS = 201.3387602002101, which took 0.006 ms
+
+iter_count = 66, r_2norm = 8.189e-07, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.618 ms, out of which F'*F took 0.983 ms; b-Ax took 6.072 ms, out of which Lap took 6.057 ms
+Solving Poisson took 7.074 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.061 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.053 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.079 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.198 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.198 ms
+
+This SCF took 62.614 ms, scf error = 2.987e-05
+-------------
+SCF iter 4  
+-------------
+
+ Chebfilt 4, in Chebyshev filtering, lambda_cutoff = 1.178890, lowerbound = -0.064412, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.892 ms
+rank =  0, Distribute orbital to block cyclic format took 0.765 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.091 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.023 ms
+rank =  0, Distribute data + matrix mult took 0.885 ms
+rank =  0, finding HY took 1.108 ms
+rank =  0, distributing HY into block cyclic form took 0.141 ms
+rank =  0, finding Y'*HY took 0.059 ms
+Total time for projection: 2.206 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.061 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.072 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.141 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.108 ms
+Total time for subspace rotation: 0.133 ms
+rank = 0, Efermi =   0.620234315560 calculate fermi energy took 0.051 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.109 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.042 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.633 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.054 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.800191050894
+Eband   =     2.403067452336
+E1      =     2.007541161354
+E2      =     0.144789811862
+E3      =    -3.612082658045
+Exc     =    -3.362798547280
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 2.650e-07, dEband = 3.294e-07
+rank = 0, Calculating/Estimating energy took 0.762 ms, Etot = -5.800191051, dEtot = 2.650e-07, dEband = 3.294e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0092085454934, which took 0.012 ms
+
+iter_count = 66, r_2norm = 3.210e-07, tol*||rhs|| = 3.576e-07
+
+Anderson update took 0.659 ms, out of which F'*F took 0.979 ms; b-Ax took 6.700 ms, out of which Lap took 6.685 ms
+rank = 0, Mixing (+ precond) took 8.123 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 1.230e-15, checking this took 0.008 ms
+2-norm of RHS = 201.3379278991367, which took 0.011 ms
+
+iter_count = 60, r_2norm = 1.785e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.579 ms, out of which F'*F took 0.907 ms; b-Ax took 5.469 ms, out of which Lap took 5.453 ms
+Solving Poisson took 6.415 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.002 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.062 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.055 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.078 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.201 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.201 ms
+
+This SCF took 62.606 ms, scf error = 1.881e-05
+-------------
+SCF iter 5  
+-------------
+
+ Chebfilt 5, in Chebyshev filtering, lambda_cutoff = 1.178890, lowerbound = -0.064412, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 44.032 ms
+rank =  0, Distribute orbital to block cyclic format took 0.569 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.087 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.013 ms
+rank =  0, Distribute data + matrix mult took 0.676 ms
+rank =  0, finding HY took 1.103 ms
+rank =  0, distributing HY into block cyclic form took 0.204 ms
+rank =  0, finding Y'*HY took 0.064 ms
+Total time for projection: 2.059 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.075 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.067 ms
+==generalized eigenproblem: bcast eigvals took 0.005 ms
+Total time for solving generalized eigenvalue problem: 0.151 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.111 ms
+Total time for subspace rotation: 0.136 ms
+rank = 0, Efermi =   0.620234294226 calculate fermi energy took 0.051 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.008 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.098 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.044 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.627 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.054 ms
+rank = 0, D2D took 0.058 ms
+rank = 0, Transfering density took 0.059 ms
+Etot    =    -5.800190548456
+Eband   =     2.403066404902
+E1      =     2.007533971432
+E2      =     0.144779713224
+E3      =    -3.612081379229
+Exc     =    -3.362798627308
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 2.512e-07, dEband = 5.237e-07
+rank = 0, Calculating/Estimating energy took 0.753 ms, Etot = -5.800190548, dEtot = 2.512e-07, dEband = 5.237e-07
+Start applying Kerker preconditioner ...
+2-norm of RHS = 0.0001987664566, which took 0.014 ms
+
+iter_count = 84, r_2norm = 3.920e-09, tol*||rhs|| = 7.719e-09
+
+Anderson update took 0.721 ms, out of which F'*F took 1.209 ms; b-Ax took 7.746 ms, out of which Lap took 7.718 ms
+rank = 0, Mixing (+ precond) took 9.217 ms
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 1.230e-15, checking this took 0.007 ms
+2-norm of RHS = 201.3378136512146, which took 0.006 ms
+
+iter_count = 54, r_2norm = 1.338e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.429 ms, out of which F'*F took 0.792 ms; b-Ax took 4.909 ms, out of which Lap took 4.896 ms
+Solving Poisson took 5.688 ms
+Start calculating Vxc (GGA_PBE) ...
+Transmitting Veff_loc from phi-domain to psi-domain (LOCAL) ...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.001 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.002 ms
+======D2D: initiated sending and receiving took 0.019 ms
+---Transfer Veff_loc: D2D took 0.057 ms
+---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took 0.000 ms
+---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took 0.056 ms
+---Transfer Veff_loc: mpi_bcast (count = 5625) to all bandcomms took 0.079 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.197 ms
+rank = 0, Transfering Veff from phi-domain to psi-domain took 0.197 ms
+
+This SCF took 62.978 ms, scf error = 2.771e-06
+-------------
+SCF iter 6  
+-------------
+
+ Chebfilt 6, in Chebyshev filtering, lambda_cutoff = 1.178891, lowerbound = -0.064412, upperbound = 413.558870
+
+Start Chebyshev filtering ... 
+Total time for Chebyshev filtering (1 columns, degree = 40): 43.967 ms
+rank =  0, Distribute orbital to block cyclic format took 0.591 ms
+rank = 0, STARTING PZGEMM ...
+rank =  0, Psi'*Psi in block cyclic format in each blacscomm took 0.095 ms
+rank =  0, Allreduce to sum Psi'*Psi over dmcomm took 0.019 ms
+rank =  0, Distribute data + matrix mult took 0.711 ms
+rank =  0, finding HY took 1.130 ms
+rank =  0, distributing HY into block cyclic form took 0.136 ms
+rank =  0, finding Y'*HY took 0.089 ms
+Total time for projection: 2.077 ms
+Start solving generalized eigenvalue problem ...
+==generalized eigenproblem: info = 0, solving generalized eigenproblem using LAPACKE_zhegvd: 0.061 ms
+==generalized eigenproblem: distribute subspace eigenvectors into block cyclic format: 0.068 ms
+==generalized eigenproblem: bcast eigvals took 0.004 ms
+Total time for solving generalized eigenvalue problem: 0.137 ms
+rank =  0, subspace rotation using ScaLAPACK took 0.021 ms
+rank =  0, Distributing orbital back into band + domain format took 0.118 ms
+Total time for subspace rotation: 0.143 ms
+rank = 0, Efermi =   0.620234278373 calculate fermi energy took 0.083 ms
+rank = 0, --- Calculate rho: sum over local bands took 0.009 ms
+rank = 0, --- Calculate rho: reduce over all kpoint groups took 0.121 ms
+rank = 0, --- Calculate rho: reduce over all band groups took 0.046 ms
+rank = 0, --- Scale rho: scale by 1/dV took 0.002 ms
+rank = 0, Calculating density took 46.631 ms
+rank = 0, starting to transfer density...
+======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took 0.002 ms
+======D2D: finished initiating send_comm! Start entering receivers comm
+======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took 0.001 ms
+======D2D: initiated sending and receiving took 0.056 ms
+rank = 0, D2D took 0.060 ms
+rank = 0, Transfering density took 0.061 ms
+Etot    =    -5.800190521564
+Eband   =     2.403066198547
+E1      =     2.007533223903
+E2      =     0.144778456864
+E3      =    -3.612081115081
+Exc     =    -3.362798638744
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 1.345e-08, dEband = 1.032e-07
+rank = 0, Calculating/Estimating energy took 0.723 ms, Etot = -5.800190522, dEtot = 1.345e-08, dEband = 1.032e-07
+
+This SCF took 47.608 ms, scf error = 3.591e-07
+Start calculating electrostatic potential ... 
+Start calculating rhs of the poisson problem
+rank = 0, int_b =  -6.99999905733777, int_rho =   6.99999905733777, int_b + int_rho = 2.461e-15, checking this took 0.011 ms
+2-norm of RHS = 201.3378004822113, which took 0.008 ms
+
+iter_count = 30, r_2norm = 1.990e-06, tol*||rhs|| = 2.013e-06
+
+Anderson update took 0.360 ms, out of which F'*F took 0.445 ms; b-Ax took 2.832 ms, out of which Lap took 2.826 ms
+Solving Poisson took 3.483 ms
+Start calculating Vxc (GGA_PBE) ...
+Etot    =    -5.800190488454
+Eband   =     2.403066198547
+E1      =     2.007533150423
+E2      =     0.144778309231
+E3      =    -3.612081075042
+Exc     =    -3.362798639747
+Esc     =   -10.315293938805
+Entropy =    -0.000000024682
+dE = 1.656e-08, dEband = 0.000e+00
+The last 8 occupations of kpoints #1 are (Nelectron = 7):
+lambda[   1] =  -0.06441229182308, occ[   1] =   2.00000000000000
+lambda[   2] =   0.45475036371301, occ[   2] =   2.00000000000000
+lambda[   3] =   0.73495250182901, occ[   3] =   0.00000000000000
+lambda[   4] =   0.73495270255812, occ[   4] =   0.00000000000000
+lambda[   5] =   0.87290961441246, occ[   5] =   0.00000000000000
+lambda[   6] =   0.87290983652033, occ[   6] =   0.00000000000000
+lambda[   7] =   0.96802234808393, occ[   7] =   0.00000000000000
+lambda[   8] =   1.07889052750294, occ[   8] =   0.00000000000000
+
+k = [0.250, 0.250, 0.250]
+Occupation of state 7 (90%) = 0.000000000000000.
+Occupation of state 8 (100%) = 0.000000000000000.
+Start calculating local components of forces ...
+time for sorting and interpolate pseudopotential: 2.123 ms, time for Allreduce/Reduce: 0.016 ms 
+Time for calculating local force components: 11.192 ms
+Start Calculating nonlocal forces
+force_nloc = 
+  0.00008108514264  -0.00008758436555   0.00008108514235
+ -0.00008603860347   0.00009397646437  -0.00008603853986
+force_loc = 
+  0.00007719984345  -0.00009387511242   0.00007719988315
+ -0.00007004862753   0.00008588218893  -0.00007004871892
+Time for calculating nonlocal force components: 0.855 ms
+[32mforces_xc: 
+[0m[32m  0.00000448498125  -0.00001309752608   0.00000448497927
+[0m[32m -0.00000379962110   0.00000933172198  -0.00000379961600
+[0mTime for calculating XC forces components: 37.763 ms
+ Cartesian force = 
+ -0.00012360292547   0.00033882537664  -0.00012360297651
+  0.00012360292547  -0.00033882537664   0.00012360297651
+Start calculating exchange-correlation components of stress ...
+Start calculating NLCC exchange-correlation components of stress ...
+time for sorting and interpolate pseudopotential: 8.914 ms, time for Allreduce/Reduce: 0.009 ms 
+
+ kpt_topo #2, kptcomm topology dims = {2, 3, 4}, nodes/proc = {12.50,8.33,6.25}
+
+ kpt_topo #1, kptcomm topology dims = {2, 3, 4}, nodes/proc = {12.50,8.33,6.25}
+NLCC XC contribution to stress (GPa): 
+ 264.755380415971445 -0.943354292754447 -0.943322384378994 
+ -0.943354292754447 264.755400527386655 -0.943354291648992 
+ -0.943322384378994 -0.943354291648992 264.755380416765263
+
+XC contribution to stress (GPa): 
+ 351.632463986099538 -0.954332087235652 -0.954299514699400 
+ -0.954332087235652 351.632484685772852 -0.954332086124667 
+ -0.954299514699400 -0.954332086124667 351.632463986905577
+Time for calculating exchange-correlation stress components: 39.770 ms
+Start calculating local components of stress ...
+time for sorting and interpolate pseudopotential: 8.919 ms, time for Allreduce/Reduce: 0.013 ms 
+
+Electrostatics contribution to stress (GPa): 
+ 670.911228810960210 -7.558586987790775 -7.553992341771351 
+ -7.558586987790775 670.912376886860670 -7.558806191552024 
+ -7.553992341771351 -7.558806191552024 670.911228806083045
+Time for calculating local stress components: 95.430 ms
+Start calculating stress contributions from kinetic and nonlocal psp. 
+
+
+ kpt_topo #3, kptcomm topology dims = {2, 3, 4}, nodes/proc = {12.50,8.33,6.25}
+Non-local contribution to stress (GPa): 
+ -653.451877044163325 24.148598384774552 24.148545352182033 
+ 24.148598384774552 -653.452104935383886 24.148405567563927 
+ 24.148545352182033 24.148405567563927 -653.451877075636617
+
+Kinetic contribution to stress (GPa): 
+ -1010.827981355740576 -27.094549797149032 -27.095403379579501 
+ -27.094549797149032 -1010.828685140490961 -27.094549826718350 
+ -27.095403379579501 -27.094549826718350 -1010.827981368753399
+Time for calculating nonlocal+kinetic stress components: 1.470 ms
+
+Electronic contribution to stress (GPa): 
+ -641.736165602844267 -11.458870487400910 -11.455149883868216 
+ -11.458870487400910 -641.735928503241439 -11.459282536831115 
+ -11.455149883868216 -11.459282536831115 -641.736165651401507
+Time taken by RelaxStep 5: 0.604 s.
+The program took 3.950 s.

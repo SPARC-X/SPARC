@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 27, 2022)                      *
+*                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Jul 27 16:04:48 2022                  *
+*                   Start time: Tue Sep 20 16:20:02 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 1 0 
 0 1 1 
 1 0 1 
-FD_GRID: 24 24 24
+FD_GRID: 48 48 48
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 1 1 1
@@ -22,8 +22,8 @@ SMEARING: 0.0009999935878
 EXCHANGE_CORRELATION: HSE
 EXX_RANGE_FOCK: 0.106000
 EXX_RANGE_PBE: 0.106000
-NSTATES: 6
-CHEB_DEGREE: 40
+NSTATES: 8
+CHEB_DEGREE: 54
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
@@ -36,7 +36,7 @@ TOL_LANCZOS: 1.00E-02
 TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-TOL_PRECOND: 3.94E-05
+TOL_PRECOND: 9.86E-06
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -51,17 +51,18 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 TOL_FOCK: 2.00E-07
 TOL_SCF_INIT: 1.00E-03
-MAXIT_FOCK: 100
+MAXIT_FOCK: 20
 MINIT_FOCK: 2
 EXX_METHOD: FOURIER_SPACE
 EXX_DIVERGENCE: AUXILIARY
-EXX_MEM: 10
+EXX_MEM: 0
 ACE_FLAG: 1
 EXX_ACE_VALENCE_STATES: 3
 EXX_DOWNSAMPLING: 1 1 1
-OUTPUT_FILE: C_HSE_aux
+OUTPUT_FILE: C_HSE_aux/temp_run/C_HSE_aux
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -83,102 +84,112 @@ EIG_SERIAL_MAXNS: 10000
                              Initialization                                
 ***************************************************************************
 Number of processors               :  48
-Mesh spacing                       :  0.198583 (Bohr)
+Mesh spacing                       :  0.0992917 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  C_HSE_aux.out
+Output printed to                  :  C_HSE_aux/temp_run/C_HSE_aux.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  C 4
-Pseudopotential                    :  ../../psps_tests/C.psp8
-Pseudocharge radii of atom type 1  :  7.55 7.55 7.55 (x, y, z dir)
+Pseudopotential                    :  ../psps_SPMS/06_C_4_1.2_1.2_pbe_n_v1.0.psp8
+Pseudocharge radii of atom type 1  :  6.55 6.55 6.55 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  8.02 MB
-Estimated memory per processor     :  171.00 kB
+Estimated total memory usage       :  239.62 MB
+Estimated memory per processor     :  4.99 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.3340508090E+00        3.458E-01        0.166
-2            -5.3111982068E+00        2.350E-01        0.050
-3            -5.2812953816E+00        1.609E-01        0.050
-4            -5.2363973924E+00        7.384E-02        0.050
-5            -5.2153453660E+00        3.613E-02        0.047
-6            -5.2143942831E+00        2.877E-02        0.048
-7            -5.2128162874E+00        5.880E-03        0.048
-8            -5.2123813732E+00        2.253E-03        0.046
-9            -5.2122487660E+00        8.708E-04        0.026
-Total number of SCF: 9     
+1            -5.6945117594E+00        3.082E-01        0.485
+2            -5.6483536061E+00        2.218E-01        0.215
+3            -5.5448649423E+00        5.333E-02        0.177
+4            -5.5389622556E+00        2.969E-02        0.175
+5            -5.5331779329E+00        1.406E-02        0.173
+6            -5.5323497697E+00        4.757E-03        0.172
+7            -5.5312720908E+00        2.231E-03        0.171
+8            -5.5315235503E+00        3.153E-04        0.087
+Total number of SCF: 8     
 
 No.1 Exx outer loop: 
-1            -5.2296583399E+00        3.987E-03        0.054
-2            -5.2282158643E+00        1.016E-02        0.046
-3            -5.2276474077E+00        1.242E-02        0.049
-4            -5.2289626134E+00        6.881E-03        0.063
-5            -5.2299445023E+00        2.653E-03        0.047
-6            -5.2302588348E+00        1.023E-03        0.046
-7            -5.2304167481E+00        2.902E-04        0.045
-8            -5.2304664698E+00        5.147E-05        0.044
-9            -5.2304738133E+00        3.026E-05        0.044
-10           -5.2304666763E+00        9.458E-06        0.043
-11           -5.2304686199E+00        1.195E-06        0.041
-12           -5.2304685584E+00        6.857E-07        0.026
-Total number of SCF: 12    
-Exx outer loop error: 2.5695070013e-04 
+1            -5.4714927854E+00        2.717E-03        0.192
+2            -5.4675087016E+00        1.857E-02        0.166
+3            -5.4676181008E+00        1.803E-02        0.166
+4            -5.4677177332E+00        1.759E-02        0.172
+5            -5.4670160106E+00        2.020E-02        0.183
+6            -5.4682557091E+00        1.604E-02        0.172
+7            -5.4677401131E+00        1.772E-02        0.181
+8            -5.4688784068E+00        1.349E-02        0.176
+9            -5.4713353903E+00        4.800E-03        0.175
+10           -5.4724076927E+00        8.310E-04        0.168
+11           -5.4725907578E+00        9.553E-05        0.163
+12           -5.4726084890E+00        1.278E-05        0.155
+13           -5.4726124770E+00        1.405E-05        0.156
+14           -5.4726092495E+00        1.373E-06        0.176
+15           -5.4726091104E+00        7.409E-07        0.090
+Total number of SCF: 15    
+Exx outer loop error: 2.8437052431e-04 
 
 No.2 Exx outer loop: 
-1            -5.2304567753E+00        3.114E-04        0.047
-2            -5.2303192235E+00        8.208E-04        0.045
-3            -5.2304317112E+00        3.392E-04        0.045
-4            -5.2304947609E+00        6.151E-05        0.044
-5            -5.2305102350E+00        6.603E-05        0.044
-6            -5.2304955863E+00        3.042E-05        0.049
-7            -5.2305016351E+00        1.016E-05        0.043
-8            -5.2304987221E+00        9.336E-06        0.042
-9            -5.2305008237E+00        1.721E-06        0.043
-10           -5.2305011405E+00        6.520E-07        0.025
-Total number of SCF: 10    
-Exx outer loop error: 1.8261605532e-05 
+1            -5.4726373926E+00        2.227E-04        0.180
+2            -5.4722839178E+00        1.412E-03        0.165
+3            -5.4723718459E+00        1.084E-03        0.170
+4            -5.4723211538E+00        1.293E-03        0.161
+5            -5.4723348810E+00        1.234E-03        0.153
+6            -5.4723379066E+00        1.220E-03        0.153
+7            -5.4723387107E+00        1.216E-03        0.156
+8            -5.4723432545E+00        1.199E-03        0.153
+9            -5.4723507467E+00        1.175E-03        0.167
+10           -5.4726697342E+00        1.051E-04        0.163
+11           -5.4726464259E+00        9.577E-05        0.168
+12           -5.4726802595E+00        4.002E-05        0.161
+13           -5.4726690230E+00        1.013E-05        0.158
+14           -5.4726729464E+00        5.003E-06        0.153
+15           -5.4726724019E+00        1.722E-06        0.150
+16           -5.4726732175E+00        1.045E-06        0.147
+17           -5.4726730316E+00        3.318E-07        0.091
+Total number of SCF: 17    
+Exx outer loop error: 2.1894424951e-05 
 
 No.3 Exx outer loop: 
-1            -5.2304972382E+00        3.133E-05        0.047
-2            -5.2304851681E+00        1.053E-04        0.045
-3            -5.2304961438E+00        5.252E-05        0.044
-4            -5.2304969858E+00        3.370E-05        0.043
-5            -5.2304992704E+00        1.635E-05        0.043
-6            -5.2305021255E+00        5.216E-06        0.044
-7            -5.2305014627E+00        8.358E-07        0.032
-Total number of SCF: 7     
-Exx outer loop error: 1.4720336295e-06 
+1            -5.4726712260E+00        5.662E-05        0.177
+2            -5.4726404955E+00        1.177E-04        0.169
+3            -5.4726911407E+00        6.199E-05        0.160
+4            -5.4726807675E+00        2.517E-05        0.155
+5            -5.4726754464E+00        7.344E-06        0.155
+6            -5.4726722851E+00        4.419E-06        0.146
+7            -5.4726726693E+00        3.356E-06        0.146
+8            -5.4726735483E+00        1.646E-07        0.092
+Total number of SCF: 8     
+Exx outer loop error: 2.0295078051e-06 
 
 No.4 Exx outer loop: 
-1            -5.2305012089E+00        8.997E-06        0.047
-2            -5.2304999343E+00        2.930E-05        0.044
-3            -5.2305021353E+00        9.802E-06        0.043
-4            -5.2305016709E+00        2.328E-06        0.041
-5            -5.2305013917E+00        7.810E-07        0.027
+1            -5.4726732178E+00        1.540E-05        0.174
+2            -5.4726704709E+00        1.260E-05        0.156
+3            -5.4726756965E+00        7.360E-06        0.148
+4            -5.4726739096E+00        1.307E-06        0.146
+5            -5.4726737722E+00        6.741E-07        0.091
 Total number of SCF: 5     
-Exx outer loop error: 1.0252121124e-07 
+Exx outer loop error: 1.9601000945e-07 
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -5.2305015566E+00 (Ha/atom)
-Total free energy                  : -1.0461003113E+01 (Ha)
-Band structure energy              :  1.5625266330E+00 (Ha)
-Exchange correlation energy        : -3.7802764641E+00 (Ha)
-Self and correction energy         : -2.9331273383E+01 (Ha)
-Entropy*kb*T                       : -3.8402072861E-08 (Ha)
-Fermi level                        :  4.9487321075E-01 (Ha)
-RMS force                          :  5.8352875908E-01 (Ha/Bohr)
-Maximum force                      :  5.8352875908E-01 (Ha/Bohr)
-Time for force calculation         :  0.008 (sec)
-Pressure                           :  2.6229539018E+02 (GPa)
-Maximum stress                     :  3.2339381527E+02 (GPa)
-Time for stress calculation        :  0.070 (sec)
+Free energy per atom               : -5.4726735782E+00 (Ha/atom)
+Total free energy                  : -1.0945347156E+01 (Ha)
+Band structure energy              :  1.1269485081E+00 (Ha)
+Exchange correlation energy        : -4.4307147219E+00 (Ha)
+Self and correction energy         : -2.0700050441E+01 (Ha)
+-Entropy*kb*T                      : -3.3141443085E-07 (Ha)
+Fermi level                        :  6.6906648696E-01 (Ha)
+RMS force                          :  5.8548409187E-01 (Ha/Bohr)
+Maximum force                      :  5.8548409187E-01 (Ha/Bohr)
+Time for force calculation         :  0.067 (sec)
+Pressure                           :  2.6808475288E+02 (GPa)
+Maximum stress                     :  3.1989531901E+02 (GPa)
+Time for stress calculation        :  0.162 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  2.268 sec
+Total walltime                     :  9.447 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -186,7 +197,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            
