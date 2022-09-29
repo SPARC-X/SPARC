@@ -2,7 +2,7 @@
 *                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 16:13:26 2022                  *
+*                   Start time: Thu Sep 29 15:34:11 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -78,11 +78,11 @@ Total number of atom types         :  2
 Total number of atoms              :  4
 Total number of electrons          :  60
 Atom type 1  (valence electrons)   :  Ti 12
-Pseudopotential                    :  ../psps_SPMS/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  6.65 6.69 6.79 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  Ni 18
-Pseudopotential                    :  ../psps_SPMS/28_Ni_18_1.7_2.2_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/28_Ni_18_1.7_2.2_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  6.86 6.69 6.79 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  100.09 MB
@@ -91,24 +91,24 @@ Estimated memory per processor     :  2.09 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.0738828062E+02        1.473E-01        0.534
-2            -1.0524878551E+02        5.296E-01        0.146
-3            -1.0742132743E+02        1.304E-01        0.149
-4            -1.0744465702E+02        1.009E-01        0.144
-5            -1.0747322863E+02        5.480E-02        0.140
-6            -1.0748123474E+02        3.533E-02        0.140
-7            -1.0748563102E+02        1.628E-02        0.138
-8            -1.0748205798E+02        3.337E-02        0.140
-9            -1.0748589824E+02        1.480E-02        0.137
-10           -1.0748674357E+02        3.255E-03        0.137
-11           -1.0748673621E+02        3.808E-03        0.139
-12           -1.0748678831E+02        6.694E-04        0.135
-13           -1.0748679008E+02        2.902E-04        0.130
-14           -1.0748679041E+02        7.157E-05        0.128
-15           -1.0748679046E+02        3.157E-05        0.124
-16           -1.0748679048E+02        1.233E-05        0.122
-17           -1.0748679048E+02        2.151E-06        0.120
-18           -1.0748679046E+02        9.642E-07        0.112
+1            -1.0738828062E+02        1.473E-01        0.559
+2            -1.0524878551E+02        5.296E-01        0.164
+3            -1.0742132743E+02        1.304E-01        0.165
+4            -1.0744465702E+02        1.009E-01        0.163
+5            -1.0747322863E+02        5.480E-02        0.162
+6            -1.0748123474E+02        3.533E-02        0.157
+7            -1.0748563102E+02        1.628E-02        0.156
+8            -1.0748205798E+02        3.337E-02        0.158
+9            -1.0748589824E+02        1.480E-02        0.155
+10           -1.0748674357E+02        3.255E-03        0.156
+11           -1.0748673621E+02        3.808E-03        0.149
+12           -1.0748678831E+02        6.694E-04        0.184
+13           -1.0748679008E+02        2.902E-04        0.147
+14           -1.0748679041E+02        7.157E-05        0.141
+15           -1.0748679046E+02        3.157E-05        0.146
+16           -1.0748679048E+02        1.233E-05        0.138
+17           -1.0748679048E+02        2.151E-06        0.136
+18           -1.0748679046E+02        9.642E-07        0.132
 Total number of SCF: 18    
 ====================================================================
                     Energy and force calculation                    
@@ -118,18 +118,18 @@ Total free energy                  : -4.2994716184E+02 (Ha)
 Band structure energy              : -4.5835035901E+01 (Ha)
 Exchange correlation energy        : -5.4723530014E+01 (Ha)
 Self and correction energy         : -5.9044482068E+02 (Ha)
--Entropy*kb*T                      : -9.3923564801E-04 (Ha)
+-Entropy*kb*T                      : -9.3923564811E-04 (Ha)
 Fermi level                        :  3.8662195038E-01 (Ha)
-RMS force                          :  8.0954115118E-02 (Ha/Bohr)
-Maximum force                      :  1.1392331471E-01 (Ha/Bohr)
-Time for force calculation         :  0.030 (sec)
-Pressure                           :  4.8748337524E+00 (GPa)
-Maximum stress                     :  5.0090515769E+01 (GPa)
-Time for stress calculation        :  0.063 (sec)
+RMS force                          :  8.0954115170E-02 (Ha/Bohr)
+Maximum force                      :  1.1392331473E-01 (Ha/Bohr)
+Time for force calculation         :  0.035 (sec)
+Pressure                           :  4.8748337405E+00 (GPa)
+Maximum stress                     :  5.0090515752E+01 (GPa)
+Time for stress calculation        :  0.078 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  3.068 sec
+Total walltime                     :  3.432 sec
 ___________________________________________________________________________
 
 ***************************************************************************

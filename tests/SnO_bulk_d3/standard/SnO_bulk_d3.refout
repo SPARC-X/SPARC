@@ -2,7 +2,7 @@
 *                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 16:24:12 2022                  *
+*                   Start time: Thu Sep 29 15:49:22 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -84,11 +84,11 @@ Total number of atom types         :  2
 Total number of atoms              :  4
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  O 6
-Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  7.01 7.01 6.83 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  Sn 14
-Pseudopotential                    :  ../psps_SPMS/50_Sn_14_2.5_3.0_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/50_Sn_14_2.5_3.0_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  7.01 7.01 6.83 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  199.69 MB
@@ -97,17 +97,17 @@ Estimated memory per processor     :  4.16 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -4.3720710179E+01        1.038E-01        0.320
-2            -4.3590536134E+01        3.583E-02        0.081
-3            -4.3552009683E+01        2.306E-02        0.081
-4            -4.3568612775E+01        6.700E-03        0.079
-5            -4.3554375979E+01        5.384E-03        0.080
-6            -4.3558240839E+01        1.292E-03        0.080
-7            -4.3558489204E+01        2.337E-04        0.079
-8            -4.3558547673E+01        1.667E-04        0.080
-9            -4.3558535036E+01        6.625E-05        0.079
-10           -4.3558458793E+01        2.638E-05        0.078
-11           -4.3558422997E+01        5.613E-06        0.096
+1            -4.3720710179E+01        1.038E-01        0.403
+2            -4.3590536134E+01        3.583E-02        0.095
+3            -4.3552009683E+01        2.306E-02        0.120
+4            -4.3568612775E+01        6.700E-03        0.092
+5            -4.3554375979E+01        5.384E-03        0.092
+6            -4.3558240839E+01        1.292E-03        0.092
+7            -4.3558489204E+01        2.337E-04        0.090
+8            -4.3558547673E+01        1.667E-04        0.092
+9            -4.3558535036E+01        6.625E-05        0.092
+10           -4.3558458793E+01        2.638E-05        0.091
+11           -4.3558422997E+01        5.613E-06        0.087
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
@@ -117,19 +117,19 @@ Total free energy                  : -1.7424999153E+02 (Ha)
 Band structure energy              : -1.3327127101E+01 (Ha)
 Exchange correlation energy        : -4.3992678585E+01 (Ha)
 Self and correction energy         : -2.1343874814E+02 (Ha)
--Entropy*kb*T                      : -7.5639912104E-10 (Ha)
-Fermi level                        :  1.6928255328E-01 (Ha)
+-Entropy*kb*T                      : -7.5639718993E-10 (Ha)
+Fermi level                        :  1.6928255450E-01 (Ha)
 DFT-D3 correction                  : -1.6286771082E-02 (Ha)
-RMS force                          :  5.2563041844E-04 (Ha/Bohr)
-Maximum force                      :  1.0505846156E-03 (Ha/Bohr)
-Time for force calculation         :  0.018 (sec)
-Pressure                           : -8.4498543566E-01 (GPa)
-Maximum stress                     :  1.0167316208E+00 (GPa)
-Time for stress calculation        :  0.031 (sec)
+RMS force                          :  5.2563041970E-04 (Ha/Bohr)
+Maximum force                      :  1.0505846182E-03 (Ha/Bohr)
+Time for force calculation         :  0.020 (sec)
+Pressure                           : -8.4498543551E-01 (GPa)
+Maximum stress                     :  1.0167316207E+00 (GPa)
+Time for stress calculation        :  0.039 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  1.605 sec
+Total walltime                     :  3.208 sec
 ___________________________________________________________________________
 
 ***************************************************************************
