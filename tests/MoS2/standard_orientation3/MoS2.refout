@@ -2,7 +2,7 @@
 *                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 16:12:13 2022                  *
+*                   Start time: Thu Sep 29 15:32:31 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -78,11 +78,11 @@ Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  26
 Atom type 1  (valence electrons)   :  Mo 14
-Pseudopotential                    :  ../psps_SPMS/42_Mo_14_2.0_2.6_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/42_Mo_14_2.0_2.6_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  7.48 7.60 7.73 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  S 6
-Pseudopotential                    :  ../psps_SPMS/16_S_6_1.8_1.9_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/16_S_6_1.8_1.9_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  7.48 7.60 7.73 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  1.28 GB
@@ -91,45 +91,44 @@ Estimated memory per processor     :  27.41 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.0604808410E+01        2.215E-01        4.479
-2            -3.0251748498E+01        8.754E-01        1.386
-3            -3.0662852593E+01        3.067E-01        1.389
-4            -3.0714871941E+01        8.037E-02        1.313
-5            -3.0715573705E+01        6.326E-02        1.274
-6            -3.0717409572E+01        1.642E-02        1.276
-7            -3.0717511293E+01        8.619E-03        1.414
-8            -3.0717553006E+01        3.460E-03        1.259
-9            -3.0717556238E+01        4.743E-04        1.221
-10           -3.0717556168E+01        1.454E-04        1.161
-11           -3.0717556366E+01        2.304E-05        1.200
-12           -3.0717556343E+01        1.841E-05        1.129
-13           -3.0717556212E+01        5.234E-06        1.076
-14           -3.0717556198E+01        7.264E-06        1.083
-15           -3.0717556221E+01        2.270E-06        1.063
-16           -3.0717556269E+01        1.565E-06        1.042
-17           -3.0717556197E+01        1.248E-06        1.026
-18           -3.0717556210E+01        1.003E-06        1.020
-19           -3.0717556206E+01        8.967E-07        1.016
-Total number of SCF: 19    
+1            -3.0604808411E+01        2.215E-01        5.307
+2            -3.0251748497E+01        8.754E-01        1.645
+3            -3.0662852591E+01        3.067E-01        1.618
+4            -3.0714871898E+01        8.037E-02        1.530
+5            -3.0715573686E+01        6.326E-02        1.507
+6            -3.0717409584E+01        1.641E-02        1.514
+7            -3.0717511288E+01        8.620E-03        1.514
+8            -3.0717553006E+01        3.460E-03        1.489
+9            -3.0717556237E+01        4.743E-04        1.478
+10           -3.0717556177E+01        1.456E-04        1.386
+11           -3.0717556366E+01        2.302E-05        1.357
+12           -3.0717556370E+01        1.811E-05        1.327
+13           -3.0717556226E+01        5.655E-06        1.290
+14           -3.0717556200E+01        7.063E-06        1.311
+15           -3.0717556218E+01        2.261E-06        1.263
+16           -3.0717556266E+01        1.457E-06        1.244
+17           -3.0717556193E+01        1.138E-06        1.242
+18           -3.0717556212E+01        9.177E-07        1.218
+Total number of SCF: 18    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.0717556206E+01 (Ha/atom)
-Total free energy                  : -9.2152668617E+01 (Ha)
-Band structure energy              : -2.1019195072E+01 (Ha)
-Exchange correlation energy        : -1.6407923761E+01 (Ha)
+Free energy per atom               : -3.0717556212E+01 (Ha/atom)
+Total free energy                  : -9.2152668636E+01 (Ha)
+Band structure energy              : -2.1019198512E+01 (Ha)
+Exchange correlation energy        : -1.6407923857E+01 (Ha)
 Self and correction energy         : -1.7623020502E+02 (Ha)
--Entropy*kb*T                      : -9.5763446182E-10 (Ha)
-Fermi level                        : -1.8793965598E-01 (Ha)
-RMS force                          :  7.8467796470E-02 (Ha/Bohr)
-Maximum force                      :  1.1614874112E-01 (Ha/Bohr)
-Time for force calculation         :  0.049 (sec)
-Maximum stress                     :  4.6589709396E-03 (a.u.)
-Time for stress calculation        :  0.103 (sec)
+-Entropy*kb*T                      : -9.5737894627E-10 (Ha)
+Fermi level                        : -1.8793949567E-01 (Ha)
+RMS force                          :  7.8467487644E-02 (Ha/Bohr)
+Maximum force                      :  1.1614830630E-01 (Ha/Bohr)
+Time for force calculation         :  0.061 (sec)
+Maximum stress                     :  4.6589513454E-03 (a.u.)
+Time for stress calculation        :  0.134 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  26.536 sec
+Total walltime                     :  29.942 sec
 ___________________________________________________________________________
 
 ***************************************************************************

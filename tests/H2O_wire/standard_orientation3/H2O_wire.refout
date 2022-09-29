@@ -2,7 +2,7 @@
 *                       SPARC (version Sep 06, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 16:09:57 2022                  *
+*                   Start time: Thu Sep 29 15:29:43 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -79,11 +79,11 @@ Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  H 1
-Pseudopotential                    :  ../psps_SPMS/01_H_1_1.0_1.0_pbe_v1.0.psp8
+Pseudopotential                    :  ../psps/01_H_1_1.0_1.0_pbe_v1.0.psp8
 Pseudocharge radii of atom type 1  :  4.00 4.00 4.00 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  O 6
-Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  7.00 7.00 7.00 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  87.69 MB
@@ -92,46 +92,46 @@ Estimated memory per processor     :  1.83 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.9774575891E+00        1.282E-01        0.191
-2            -5.9314569993E+00        7.743E-02        0.093
-3            -5.9007712235E+00        4.698E-02        0.096
-4            -5.8996152914E+00        8.204E-03        0.090
-5            -5.8964355307E+00        5.477E-03        0.096
-6            -5.8953172638E+00        1.815E-03        0.086
-7            -5.8950492870E+00        1.128E-03        0.088
-8            -5.8951895448E+00        6.149E-04        0.091
-9            -5.8949806330E+00        2.347E-04        0.087
-10           -5.8949825865E+00        1.806E-04        0.086
-11           -5.8950069816E+00        7.711E-05        0.074
-12           -5.8949716519E+00        4.549E-05        0.074
-13           -5.8949800057E+00        3.061E-05        0.073
-14           -5.8950040893E+00        1.101E-05        0.072
-15           -5.8950132703E+00        1.004E-05        0.073
-16           -5.8950132103E+00        4.326E-06        0.072
-17           -5.8950123740E+00        2.317E-06        0.068
-18           -5.8950133876E+00        2.069E-06        0.071
-19           -5.8950131436E+00        1.043E-06        0.060
-20           -5.8950129674E+00        6.892E-07        0.026
+1            -5.9774575891E+00        1.282E-01        0.224
+2            -5.9314569993E+00        7.743E-02        0.113
+3            -5.9007712235E+00        4.698E-02        0.115
+4            -5.8996152914E+00        8.204E-03        0.109
+5            -5.8964355307E+00        5.477E-03        0.149
+6            -5.8953172638E+00        1.815E-03        0.106
+7            -5.8950492870E+00        1.128E-03        0.107
+8            -5.8951895448E+00        6.149E-04        0.110
+9            -5.8949806330E+00        2.347E-04        0.102
+10           -5.8949825865E+00        1.806E-04        0.105
+11           -5.8950069816E+00        7.711E-05        0.090
+12           -5.8949716519E+00        4.549E-05        0.090
+13           -5.8949800057E+00        3.061E-05        0.089
+14           -5.8950040893E+00        1.101E-05        0.088
+15           -5.8950132703E+00        1.004E-05        0.112
+16           -5.8950132103E+00        4.326E-06        0.087
+17           -5.8950123740E+00        2.317E-06        0.083
+18           -5.8950133876E+00        2.069E-06        0.083
+19           -5.8950131436E+00        1.043E-06        0.082
+20           -5.8950129674E+00        6.892E-07        0.024
 Total number of SCF: 20    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
 Free energy per atom               : -5.8950125874E+00 (Ha/atom)
 Total free energy                  : -1.7685037762E+01 (Ha)
-Band structure energy              : -4.2455020665E+00 (Ha)
+Band structure energy              : -4.2455020664E+00 (Ha)
 Exchange correlation energy        : -4.8893207840E+00 (Ha)
 Self and correction energy         : -2.6913568059E+01 (Ha)
--Entropy*kb*T                      : -3.7200907017E-09 (Ha)
-Fermi level                        : -1.5314127366E-01 (Ha)
-RMS force                          :  1.9648990923E-02 (Ha/Bohr)
-Maximum force                      :  2.3570237873E-02 (Ha/Bohr)
-Time for force calculation         :  0.011 (sec)
+-Entropy*kb*T                      : -3.7200913121E-09 (Ha)
+Fermi level                        : -1.5314127302E-01 (Ha)
+RMS force                          :  1.9648990922E-02 (Ha/Bohr)
+Maximum force                      :  2.3570237872E-02 (Ha/Bohr)
+Time for force calculation         :  0.010 (sec)
 Maximum stress                     :  2.0064557319E-02 (a.u.)
-Time for stress calculation        :  0.014 (sec)
+Time for stress calculation        :  0.020 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  1.850 sec
+Total walltime                     :  2.303 sec
 ___________________________________________________________________________
 
 ***************************************************************************

@@ -15,9 +15,9 @@ import math
 nprocs_tests = 24  # In default tests are run with 24 processors per node
 nnodes_tests = 2  # In default tests are run with 1 node
 npbs = 1  # By default (number of PBS files the tests are distributed to)
-launch_cluster_extension = ".pbs"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
-command_launch_extension = "qsub"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
-MPI_command = "mpirun -np 48"  # MPI command to run the executable on the given cluster
+launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
+command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
+MPI_command = "srun"  # MPI command to run the executable on the given cluster
 
 
 
@@ -268,6 +268,23 @@ SYSTEMS["systemname"].append('TiO2_orthogonal_quick_md')
 SYSTEMS["Tags"].append(['bulk', 'gga','orth','md_nve','gamma','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
+################################################################################################################
+SYSTEMS["systemname"].append('BaTiO3_scan')
+SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Si4_kpt_scan')
+SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Fe2_spin_scan_gamma')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'nonorth', 'gamma','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Fe2_spin_scan_kpt')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 
 # < Uncomment 3 lines below and fill in the details for the new systems>
 # SYSTEMS["systemname"].append('??type the system name??')
@@ -367,7 +384,7 @@ def findsystems(tags_systems):
 
 def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isorient, isserial):
 	#""" Launches the systems with memcheck, specified number of processors and with valgrid """
-	with open("samplepbs",'r') as f_samplePBS:
+	with open("samplescript_cluster",'r') as f_samplePBS:
 		samplePBS_content_orj = [ line.strip() for line in f_samplePBS]
 
 	for lines in samplePBS_content_orj:
@@ -384,7 +401,7 @@ def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isori
 
 	jobID=[]
 	for i in range(len(systems)):
-		if  [i] == True:
+		if  memcheck[i] == True:
 			os.chdir(systems[i])
 			f_inplace = open("inplace_reduce.supp","w")
 			f_inplace.write(inplace_file_content)
@@ -2903,7 +2920,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 20 September 2022)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 29 September 2022)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
