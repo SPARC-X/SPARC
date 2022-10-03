@@ -372,18 +372,6 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         free(f_mag);
     }
 
-    if (pSPARC->MixingVariable == 0 && pSPARC->MixingPrecond != 0) { // density mixing
-	    // due to inaccurate kerker solver, the density might have
-	    // slightly inaccuate integral
-        double int_rho = 0.0;
-        VectorSum(x_kp1, N, &int_rho, pSPARC->dmcomm_phi);
-        int_rho *= pSPARC->dV;
-        double scal_fac = -pSPARC->NegCharge / int_rho;
-        for (int i = 0; i < N; i++) {
-            x_kp1[i] *= scal_fac;
-        }
-    }
-
     // for density mixing, need to check if rho < 0
     if (pSPARC->MixingVariable == 0) {
         int neg_flag = 0;
@@ -405,37 +393,15 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         if (neg_flag > 0) {
             if (rank == 0) printf("WARNING: The density after mixing has negative components!\n");
         }
-        
-        // consider doing this every time, not just when density is negative
-        if (neg_flag > 0) {
-            double int_rho = 0.0;
-            for (i = 0; i < pSPARC->Nd_d; i++) {
-                int_rho += pSPARC->electronDens[i];
-            }
-            int_rho *= pSPARC->dV;
 
-            // use MPI_Reduce/MPI_Allreduce to find the global sum (based on the local sums)
-            t1 = MPI_Wtime();
-            MPI_Allreduce(MPI_IN_PLACE, &int_rho, 1, MPI_DOUBLE,
-                          MPI_SUM, pSPARC->dmcomm_phi);
-            t2 = MPI_Wtime();
-
-#ifdef DEBUG    
-            if (rank == 0) printf("time taken by All reduce for int_rho(%.15f) in mixing: %.3f ms\n",int_rho, (t2-t1)*1e3);  
-#endif
-
-            /*  Scale electron density so that PosCharge + NegCharge = NetCharge  */
-            double scal_fac = -pSPARC->NegCharge / int_rho;
-            
-            int len;
-            if (pSPARC->spin_typ != 0) { // for spin polarized
-                len = 3 * pSPARC->Nd_d;
-            } else {
-                len = pSPARC->Nd_d;      // for spin unpolarized
-            }
-            for (i = 0; i < len; i++) {
-                pSPARC->electronDens[i] *= scal_fac;
-            }    
+        // scale electron density so that PosCharge + NegCharge = NetCharge 
+        double int_rho = 0.0;
+        VectorSum(x_kp1, N, &int_rho, pSPARC->dmcomm_phi);
+        int_rho *= pSPARC->dV;
+        double scal_fac = -pSPARC->NegCharge / int_rho;
+        int len = pSPARC->spin_typ ? 3 * pSPARC->Nd_d : pSPARC->Nd_d;
+        for (int i = 0; i < len; i++) {
+            pSPARC->electronDens[i] *= scal_fac;
         }
     }
     
