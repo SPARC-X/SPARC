@@ -438,10 +438,12 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
 
     // DFT-D3 correction: it does not depend on SCF
     if (pSPARC->d3Flag == 1) {
-        t1 = MPI_Wtime();
-        d3_energy_gradient(pSPARC);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+            t1 = MPI_Wtime();
+        #endif
+        d3_energy_gradient(pSPARC);
+        #ifdef DEBUG
+            t2 = MPI_Wtime();
             if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
         #endif
     }
