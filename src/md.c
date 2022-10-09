@@ -142,7 +142,6 @@ void main_MD(SPARC_OBJ *pSPARC) {
 		else{
 			if (!rank){
 				printf("\nCannot recognize MDMeth = \"%s\"\n",pSPARC->MDMeth);
-                printf("MDMeth (MD Method) must be one of the following:\n\tNVT_NH\t NVE\n");
             }
             exit(EXIT_FAILURE);
         }

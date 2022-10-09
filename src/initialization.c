@@ -1254,6 +1254,16 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->hyb_range_pbe = -1;
     }
 
+    // check MDMeth availability
+    if ((strcmpi(pSPARC->MDMeth,"NVT_NH") && strcmpi(pSPARC->MDMeth,"NVE")
+        && strcmpi(pSPARC->MDMeth,"NVK_G") && strcmpi(pSPARC->MDMeth,"NPT_NH") && strcmpi(pSPARC->MDMeth,"NPT_NP")) != 0) {
+            if (!rank){
+				printf("\nCannot recognize MDMeth = \"%s\"\n",pSPARC->MDMeth);
+                printf("MDMeth (MD Method) must be one of the following:\n\tNVT_NH\t NVE\t NVK_G\t NPT_NH\t NPT_NP\n");
+            }
+            exit(EXIT_FAILURE);
+    }
+
     /* process the data read from input files */
     Ntypes = pSPARC->Ntypes;
 
@@ -3120,7 +3130,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 03, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Oct 09, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3486,7 +3496,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     } else {
         fprintf(output_fp,"Mesh spacing in x-direction        :  %.6g (Bohr)\n",pSPARC->delta_x);
         fprintf(output_fp,"Mesh spacing in y-direction        :  %.6g (Bohr)\n",pSPARC->delta_y);
-        fprintf(output_fp,"Mesh spacing in z direction        :  %.6g (Bohr)\n",pSPARC->delta_z);
+        fprintf(output_fp,"Mesh spacing in z-direction        :  %.6g (Bohr)\n",pSPARC->delta_z);
     }
 
     if (pSPARC->BC==2 || pSPARC->BC==3 || pSPARC->BC==4) {
