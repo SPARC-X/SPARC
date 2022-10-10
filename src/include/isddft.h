@@ -482,7 +482,9 @@ typedef struct _SPARC_OBJ{
                         // for Nstates greater than this value, ScaLAPACK will be used instead, unless 
                         // useLAPACK is turned off.
     int eig_paral_blksz; // block size for distributing the subspace eigenproblem
-    
+    double eig_paral_orfac; // specifies which eigenvectors should be reorthogonalized when the "expert" parallel
+                            // eigensolver p?syevx or p?sygvx is used.
+
     /* tool variable*/
     MPI_Request req_veff_loc;     // when transmitting Veff_loc, we use nonblocking collectives, 
                                   // this is for checking if transmition is completed later
@@ -1126,6 +1128,10 @@ typedef struct _SPARC_INPUT_OBJ{
     /* Cell relaxation */
     double max_dilatation;
     double TOL_RELAX_CELL;
+
+    /* eigensolver */
+    double eig_paral_orfac; // specifies which eigenvectors should be reorthogonalized when the "expert" parallel
+                            // eigensolver p?syevx or p?sygvx is used.
 
     /* Method options */
     char MDMeth[32];

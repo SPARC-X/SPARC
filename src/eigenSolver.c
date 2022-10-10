@@ -46,6 +46,8 @@
 #include "isddft.h"
 #include "parallelization.h"
 
+#define TEMP_TOL 1e-12
+
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -1440,7 +1442,11 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
 
             int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, *iwork, liwork, *ifail, 
                 *icluster, info, N, M, NZ;
-            double *work, *gap, vl = 0.0, vu = 0.0, abstol, orfac = 0.001; 
+            double *work, *gap, vl = 0.0, vu = 0.0, abstol = 0.0, orfac; 
+            orfac = pSPARC->eig_paral_orfac;
+            #ifdef DEBUG
+            if(!rank) printf("rank = %d, orfac = %.3e\n", rank, orfac);
+            #endif
             
             int NNP, NN, NP0, MQ0, NB;
             N = pSPARC->Nstates;

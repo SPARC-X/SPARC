@@ -6,11 +6,13 @@
 
 --------------
 Oct 09, 2022
-Name: Boqin Zhang
-Changes: (initialization.c)
+Name: Boqin Zhang, Qimen Xu
+Changes: (initialization.c, eigenSolver.c, eigenSolverKpt.c, readfiles.c, isddft.h)
 1. Fix a bug in counting d3 computation time in debug mode
 2. Check the availability of MD method in initialization.c
 3. Add the missed "-" in "z-direction"
+4. Add `eig_paral_orfac` option to control the reorthogonalization of parallel eigensolvers p?syevx and p?sygvx. The default is 0.0.
+5. Modify default `EIG_SERIAL_MAXNS` value to 1500.
 
 
 --------------
