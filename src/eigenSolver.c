@@ -46,6 +46,8 @@
 #include "isddft.h"
 #include "parallelization.h"
 
+#define TEMP_TOL 1e-12
+
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -1440,7 +1442,11 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
 
             int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, *iwork, liwork, *ifail, 
                 *icluster, info, N, M, NZ;
-            double *work, *gap, vl = 0.0, vu = 0.0, abstol, orfac = 0.001; 
+            double *work, *gap, vl = 0.0, vu = 0.0, abstol = 0.0, orfac; 
+            orfac = pSPARC->eig_paral_orfac;
+            #ifdef DEBUG
+            if(!rank) printf("rank = %d, orfac = %.3e\n", rank, orfac);
+            #endif
             
             int NNP, NN, NP0, MQ0, NB;
             N = pSPARC->Nstates;
@@ -1486,7 +1492,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
              * processes do not. i.e., where the data are concentrated.
              */
             //lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
-            lwork += max(N*N, min(10*lwork,2000000));
+            if (fabs(orfac) > TEMP_TOL) lwork += max(N*N, min(10*lwork,2000000));
             work = realloc(work, lwork * sizeof(double));
             
             liwork = iwork[0];
@@ -1494,7 +1500,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
             liwork = max(liwork, 6 * NNP);
             
             //liwork += min(20*liwork, 200000); // TODO: for safety, to be optimized
-            liwork += max(N*N, min(20*liwork, 200000));
+            //liwork += max(N*N, min(20*liwork, 200000));
             iwork = realloc(iwork, liwork * sizeof(int));
 
             /** ScaLAPACK might fail when the the matrix is distributed only on 

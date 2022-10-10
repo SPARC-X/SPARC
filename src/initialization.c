@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 164
+#define N_MEMBR 165
 
 
 
@@ -425,10 +425,11 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->npNdx_phi = 0;      // number of processes for calculating phi in paral. over domain in x-dir
     pSPARC_Input->npNdy_phi = 0;      // number of processes for calculating phi in paral. over domain in y-dir
     pSPARC_Input->npNdz_phi = 0;      // number of processes for calculating phi in paral. over domain in z-dir
-    pSPARC_Input->eig_serial_maxns = 10000;// maximum Nstates for solving the subspace eigenproblem in serial by default,
+    pSPARC_Input->eig_serial_maxns = 1500; // maximum Nstates for solving the subspace eigenproblem in serial by default,
                                       // for Nstates greater than this value, a parallel methods will be used instead, unless 
                                       // ScaLAPACK is not compiled or useLAPACK is turned off.
     pSPARC_Input->eig_paral_blksz = 128; // block size for distributing the subspace eigenproblem
+    pSPARC_Input->eig_paral_orfac = 0.0; // no reorthogonalization when using p?syevx or p?sygvx
 
     /* default spin_typ */
     pSPARC_Input->spin_typ = 0;       // Default is spin unpolarized calculation
@@ -1171,6 +1172,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->FIRE_maxmov = pSPARC_Input->FIRE_maxmov;
     pSPARC->max_dilatation = pSPARC_Input->max_dilatation;
     pSPARC->TOL_RELAX_CELL = pSPARC_Input->TOL_RELAX_CELL;
+    pSPARC->eig_paral_orfac = pSPARC_Input->eig_paral_orfac;
     pSPARC->d3Rthr = pSPARC_Input->d3Rthr;
     pSPARC->d3Cn_thr = pSPARC_Input->d3Cn_thr;
     pSPARC->TOL_FOCK = pSPARC_Input->TOL_FOCK;
@@ -3483,6 +3485,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"EIG_SERIAL_MAXNS: %d\n",pSPARC->eig_serial_maxns);
         if (pSPARC->useLAPACK == 0) {
             fprintf(output_fp,"EIG_PARAL_BLKSZ: %d\n",pSPARC->eig_paral_blksz);
+            fprintf(output_fp,"EIG_PARAL_ORFAC: %.1e\n",pSPARC->eig_paral_orfac);
         }
     }
     fprintf(output_fp,"***************************************************************************\n");
@@ -3625,6 +3628,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
+                                         MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -3656,9 +3660,10 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, 1, L_QMASS, 1, 1,
+                          1, 1, 1, L_QMASS, 1,
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, 1, 1, /* double */
+                          1, 1, 1, 1, 1,
+                          1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -3811,6 +3816,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.FIRE_maxmov, addr + i++);
     MPI_Get_address(&sparc_input_tmp.max_dilatation, addr + i++);
     MPI_Get_address(&sparc_input_tmp.TOL_RELAX_CELL, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.eig_paral_orfac, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Rthr, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Cn_thr, addr + i++);
     MPI_Get_address(&sparc_input_tmp.NPT_NHqmass, addr + i++);
