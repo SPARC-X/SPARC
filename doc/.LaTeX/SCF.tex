@@ -1180,7 +1180,7 @@ Integer
 \end{block}
 
 \begin{block}{Default}
-0
+20
 \end{block}
 
 \column{0.4\linewidth}
@@ -1189,16 +1189,12 @@ No unit
 \end{block}
 
 \begin{block}{Example}
-\texttt{EXX\_MEM}: 1
+\texttt{EXX\_MEM}: 0
 \end{block}
 \end{columns}
 
 \begin{block}{Description}
-Number of Poisson's equations to be solved in each process at a time when creating exact exchange operator or ACE operator. It could be any non negative integer. 
-\end{block}
-
-\begin{block}{Remark}
-If set to 0, user could get fastest speed but with highest memory requirement. If set to positive integer, user could run large systems with relatively small memory but slower speed. 
+Number of Poisson's equations to be solved in each process at a time when creating exact exchange operator or ACE operator. Typically, when \texttt{EXX\_MEM} is larger than 20, the speed of code is barely affected. When it is 0, all Poisson's equations are solved together and it hits the fastest speed but largest memory requirement. 
 \end{block}
 
 \end{frame}

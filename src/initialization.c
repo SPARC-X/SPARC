@@ -618,7 +618,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->MINIT_FOCK = 2;             // default minimum number of iterations for Hartree-Fock outer loop
     pSPARC_Input->EXXMeth_Flag = 0;           // default method to solve Poisson's equation of Exact Exchange in Fourier space
     pSPARC_Input->ACEFlag = 1;                // default setting for not using ACE operator
-    pSPARC_Input->EXXMem_batch = 0;           // default setting for using high memory option
+    pSPARC_Input->EXXMem_batch = 20;           // default setting for using high memory option
     pSPARC_Input->EXXACEVal_state = 3;        // default setting for using high memory option
     pSPARC_Input->EXXDownsampling[0] = 1;     // default setting for downsampling, using full k-points
     pSPARC_Input->EXXDownsampling[1] = 1;     // default setting for downsampling, using full k-points
@@ -2491,7 +2491,7 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
         if (pSPARC->EXXMem_batch == 0) {
             memory_exx += (double) Nd * Ns * Ns * pSPARC->Nkpts_hf * Nkpts_sym * (2*type_size + 2*sizeof(int));
         } else {
-            memory_exx += (double) pSPARC->EXXMem_batch * (2*type_size + 2*sizeof(int));
+            memory_exx += (double) Nd * pSPARC->EXXMem_batch * (2*type_size + 2*sizeof(int));
         }
         memory_usage += memory_exx;
     }
@@ -3132,7 +3132,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 09, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Oct 12, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
