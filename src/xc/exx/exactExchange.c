@@ -60,7 +60,7 @@
  */
 void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     int i, rank, DMnd, blacs_size, kpt_size, spn_i;
-    double t1, t2;
+    double t1, t2, ACE_time;
     FILE *output_fp;
 
     DMnd = pSPARC->Nd_d_dmcomm;
@@ -191,6 +191,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
             }
             t2 = MPI_Wtime();
             pSPARC->ACEtime += (t2 - t1);
+            ACE_time = (t2 - t1);
             #ifdef DEBUG
             if(!rank) printf("\nCreating ACE operator took %.3f ms!\n", (t2 - t1)*1e3);
             #endif  
@@ -253,7 +254,10 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
         if(!rank) {
             // write to .out file
             output_fp = fopen(pSPARC->OutFilename,"a");
-            fprintf(output_fp,"\nNo.%d Exx outer loop: \n", count_xx + 1);
+            if (pSPARC->ACEFlag == 0)
+                fprintf(output_fp,"\nNo.%d Exx outer loop. \n", count_xx + 1);
+            else 
+                fprintf(output_fp,"\nNo.%d Exx outer loop. ACE timing: %.3f (sec)\n", count_xx + 1, ACE_time);
             fclose(output_fp);
         }
 
