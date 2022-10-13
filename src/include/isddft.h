@@ -484,6 +484,8 @@ typedef struct _SPARC_OBJ{
     int eig_paral_blksz; // block size for distributing the subspace eigenproblem
     double eig_paral_orfac; // specifies which eigenvectors should be reorthogonalized when the "expert" parallel
                             // eigensolver p?syevx or p?sygvx is used.
+    int eig_paral_maxnp;           // max number of processes for eigenvalue solver
+    int eig_paral_subdims[2];      // dimensions of subgrid of eigensolver    
 
     /* tool variable*/
     MPI_Request req_veff_loc;     // when transmitting Veff_loc, we use nonblocking collectives, 
@@ -1132,6 +1134,7 @@ typedef struct _SPARC_INPUT_OBJ{
     /* eigensolver */
     double eig_paral_orfac; // specifies which eigenvectors should be reorthogonalized when the "expert" parallel
                             // eigensolver p?syevx or p?sygvx is used.
+    int eig_paral_maxnp;           // max number of processes for eigenvalue solver
 
     /* Method options */
     char MDMeth[32];

@@ -45,6 +45,7 @@
 #include "occupation.h"
 #include "isddft.h"
 #include "parallelization.h"
+#include "linearAlgebra.h"
 
 #define TEMP_TOL 1e-12
 
@@ -1218,10 +1219,8 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
         if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
         #endif   
         // perform matrix multiplication using ScaLAPACK routines
-        pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
-                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
-                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
-                &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+        pdsyrk_("U", "T", &pSPARC->Nstates, &Nd_blacscomm, &alpha, pSPARC->Yorb_BLCYC, &ONE, &ONE,
+            pSPARC->desc_orb_BLCYC, &beta, Mp, &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
     } else {
         #ifdef DEBUG    
         if (!rank && spn_i == 0) printf("rank = %d, STARTING DGEMM ...\n",rank);
@@ -1437,105 +1436,43 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
             }
             #endif
         } else {
-            int nprow, npcol, myrow, mycol;
-            Cblacs_gridinfo(pSPARC->ictxt_blacs_topo, &nprow, &npcol, &myrow, &mycol);
+            int ZERO = 0, ONE = 1, il = 1, iu = 1, *ifail, info, N, M, NZ;
+            double vl = 0.0, vu = 0.0, abstol, orfac;
 
-            int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, *iwork, liwork, *ifail, 
-                *icluster, info, N, M, NZ;
-            double *work, *gap, vl = 0.0, vu = 0.0, abstol = 0.0, orfac; 
+            ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
+            N = pSPARC->Nstates;
             orfac = pSPARC->eig_paral_orfac;
             #ifdef DEBUG
             if(!rank) printf("rank = %d, orfac = %.3e\n", rank, orfac);
             #endif
-            
-            int NNP, NN, NP0, MQ0, NB;
-            N = pSPARC->Nstates;
-
             // this setting yields the most orthogonal eigenvectors
-            abstol = pdlamch_(&pSPARC->ictxt_blacs_topo, "U");
-            
-            //** first do a workspace query **//
-            lwork = liwork = -1;
-            work  = (double *)malloc(100 * sizeof(double));
-            gap   = (double *)malloc(nprow * npcol * sizeof(double));
-            iwork = (int *)malloc(100 * sizeof(int));
-            ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
-            icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));
+            // abstol = pdlamch_(&pSPARC->ictxt_blacs_topo, "U");
+            abstol = -1.0;
 
             t1 = MPI_Wtime();
-            pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
-                    pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
-                    pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
-                    &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, 
-                    pSPARC->Q, &ONE, &ONE, pSPARC->desc_Q_BLCYC, 
-                    work, &lwork, iwork, &liwork, ifail, icluster, gap, &info);
-            t2 = MPI_Wtime();
-            #ifdef DEBUG
-            if(!rank && spn_i == 0) printf("rank = %d, work(1) = %f, iwork(1) = %d, time for "
-                            "workspace query: %.3f ms\n", 
-                            rank, work[0], iwork[0], (t2 - t1)*1e3);
-            #endif
-            //** calculate eigenvalues and eigenvectors **//
-            // Warning: pdsygvx requires the block sizes in both row and col 
-            //          dimension to be the same!
-            lwork = (int) fabs(work[0]);
-            NB = pSPARC->desc_Hp_BLCYC[4]; // distribution block size
-            NN = max(max(N, NB),2);
-            NP0 = numroc_( &NN, &NB, &ZERO, &ZERO, &nprow );
-            MQ0 = numroc_( &NN, &NB, &ZERO, &ZERO, &npcol );
-            lwork = max(lwork, 5 * N + max(5 * NN, NP0 * MQ0 + 2 * NB * NB) 
-                        + ((N - 1) / (nprow * npcol) + 1) * NN);
-            // TODO: increase lwork 
-            /**
-             * The ScaLAPACK routine for estimating memory might not work well for 
-             * the case where only few processes contain the whole matrix and most 
-             * processes do not. i.e., where the data are concentrated.
-             */
-            //lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
-            lwork += max(N*N, min(10*lwork,2000000));
-            work = realloc(work, lwork * sizeof(double));
-            
-            liwork = iwork[0];
-            NNP = max(max(N,4), nprow * npcol+1);
-            liwork = max(liwork, 6 * NNP);
-            
-            //liwork += min(20*liwork, 200000); // TODO: for safety, to be optimized
-            liwork += max(N*N, min(20*liwork, 200000));
-            iwork = realloc(iwork, liwork * sizeof(int));
-
-            /** ScaLAPACK might fail when the the matrix is distributed only on 
-             *  few processes and most process contains empty local matrices. 
-             *  consider using a subgroup of the processors to solve the 
-             *  eigenvalue problem and then re-distribute.
-             */
-            
-            t1 = MPI_Wtime();
-            // vl, vu, il and iu are not referenced for RANGE = "A"
-            pdsygvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
+            pdsygvx_subcomm_ (
+                    &ONE, "V", "A", "U", &N, pSPARC->Hp, &ONE, &ONE, 
                     pSPARC->desc_Hp_BLCYC, pSPARC->Mp, &ONE, &ONE, 
                     pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
                     &M, &NZ, pSPARC->lambda + spn_i*N, &orfac, pSPARC->Q, 
-                    &ONE, &ONE, pSPARC->desc_Q_BLCYC, work, &lwork, 
-                    iwork, &liwork, ifail, icluster, gap, &info);
+                    &ONE, &ONE, pSPARC->desc_Q_BLCYC, ifail, &info,
+                    pSPARC->blacscomm, pSPARC->eig_paral_subdims, pSPARC->eig_paral_blksz);
+                
+            t2 = MPI_Wtime();
 
             if (info != 0 && !rank) {
                 printf("\nError in solving generalized eigenproblem! info = %d\n", info);
             }
-            
+
             t2 = MPI_Wtime();
             #ifdef DEBUG
             if(!rank && spn_i == 0) {
-                printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized "
-                    "eigenproblem in %d x %d process grid: %.3f ms\n", 
-                        rank, info, ifail[0], nprow, npcol, (t2 - t1)*1e3);
+                printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized eigenproblem: %.3f ms\n", 
+                        rank, info, ifail[0], (t2 - t1)*1e3);
                 printf("rank = %d, after calling pdsygvx, Nstates = %d\n", rank, N);
             }
             #endif
-            free(work);
-            free(gap);
-            free(iwork);
             free(ifail);
-            free(icluster);
         }
     } // SPARCX_ACCEL_NOTE END
 

@@ -4,6 +4,13 @@
 -changes
 
 
+--------------
+Oct 13, 2022
+Name: Qimen Xu
+Changes: (linearAlgebra.c, eigenSolver.c, eigenSolverKpt.c, readfiles.c, initialization.c, makefile)
+1. Add sub-communicator eigensolvers, add input argument `EIG_PARAL_MAXNP`.
+2. Use `pdsyr2k` instead of `pdgemm` for the mass matrix calculation in the projection step.
+
 
 --------------
 Oct 12, 2022

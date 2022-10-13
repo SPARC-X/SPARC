@@ -168,6 +168,12 @@ double Ecut2h(double Ecut, int FDn);
  * @brief   Computing nearest neighbohr distance
  */
 double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN);
+
+/**
+ * @brief   Simple linear model for selecting maximum number of 
+ *          processors for eigenvalue solver. 
+ */
+int parallel_eigensolver_max_processor(int N, char RorC, char SorG);
 #endif // INITIALIZATION_H 
 
 

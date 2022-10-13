@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 165
+#define N_MEMBR 166
 
 
 
@@ -261,6 +261,28 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         if (pSPARC->isGammaPoint) init_DP_CheFSI(pSPARC);
         else init_DP_CheFSI_kpt(pSPARC);
         #endif
+
+        // calculate maximum number of processors for eigenvalue solver
+        if (pSPARC->useLAPACK == 0) {
+            if (pSPARC->eig_paral_maxnp < 0) {
+                char RorC, SorG;
+                RorC = (pSPARC->isGammaPoint) ? 'R' : 'C';
+                SorG = 'G'; // standard or generalized eigenproblem
+                pSPARC->eig_paral_maxnp = parallel_eigensolver_max_processor(pSPARC->Nstates, RorC, SorG);
+            }
+                
+            int gridsizes[2] = {pSPARC->Nstates,pSPARC->Nstates}, ierr = 1, size_blacscomm = 0;
+            if (pSPARC->blacscomm != MPI_COMM_NULL)
+                MPI_Comm_size(pSPARC->blacscomm, &size_blacscomm);
+            SPARC_Dims_create(min(size_blacscomm,pSPARC->eig_paral_maxnp), 2, gridsizes, 1, pSPARC->eig_paral_subdims, &ierr);
+            if (ierr) pSPARC->eig_paral_subdims[0] = pSPARC->eig_paral_subdims[1] = 1;
+
+        #ifdef DEBUG
+            if (rank == 0) printf("\nMaximun number of processors for eigenvalue solver is %d\n", pSPARC->eig_paral_maxnp);
+            if (rank == 0) printf("The dimension of subgrid for eigen sovler is (%d x %d).\n", 
+                                    pSPARC->eig_paral_subdims[0], pSPARC->eig_paral_subdims[1]);
+        #endif
+        }
     }
     
     // estimate memory usage here
@@ -430,6 +452,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                                       // ScaLAPACK is not compiled or useLAPACK is turned off.
     pSPARC_Input->eig_paral_blksz = 128; // block size for distributing the subspace eigenproblem
     pSPARC_Input->eig_paral_orfac = 0.0; // no reorthogonalization when using p?syevx or p?sygvx
+    pSPARC_Input->eig_paral_maxnp = -1;  // using default value from linear fitting model
 
     /* default spin_typ */
     pSPARC_Input->spin_typ = 0;       // Default is spin unpolarized calculation
@@ -1173,6 +1196,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->max_dilatation = pSPARC_Input->max_dilatation;
     pSPARC->TOL_RELAX_CELL = pSPARC_Input->TOL_RELAX_CELL;
     pSPARC->eig_paral_orfac = pSPARC_Input->eig_paral_orfac;
+    pSPARC->eig_paral_maxnp = pSPARC_Input->eig_paral_maxnp;
     pSPARC->d3Rthr = pSPARC_Input->d3Rthr;
     pSPARC->d3Cn_thr = pSPARC_Input->d3Cn_thr;
     pSPARC->TOL_FOCK = pSPARC_Input->TOL_FOCK;
@@ -3132,7 +3156,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 12, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Oct 13, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3486,6 +3510,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         if (pSPARC->useLAPACK == 0) {
             fprintf(output_fp,"EIG_PARAL_BLKSZ: %d\n",pSPARC->eig_paral_blksz);
             fprintf(output_fp,"EIG_PARAL_ORFAC: %.1e\n",pSPARC->eig_paral_orfac);
+            fprintf(output_fp,"EIG_PARAL_MAXNP: %d\n",pSPARC->eig_paral_maxnp);
         }
     }
     fprintf(output_fp,"***************************************************************************\n");
@@ -3615,7 +3640,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3650,7 +3675,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           3, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
-                          1, 7, 1, /* int */ 
+                          1, 7, 1, 1, /* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -3770,6 +3795,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.npNdz_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PrintPsiFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PrintEnergyDensFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.eig_paral_maxnp, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
@@ -3894,3 +3920,22 @@ double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN) {
 #endif
     return nn;
 }
+
+
+/**
+ * @brief   Simple linear model for selecting maximum number of 
+ *          processors for eigenvalue solver. 
+ */
+int parallel_eigensolver_max_processor(int N, char RorC, char SorG)
+{
+    if (SorG == 'S') {
+        return (int)(0.026918*N+1);
+    } else if (SorG == 'G') {
+        if (RorC == 'R')
+            return (int) (0.036215*N+1);
+        else if (RorC == 'C')
+            return (int) (0.038695*N+1);
+    } 
+    return -1;
+}
+

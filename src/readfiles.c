@@ -123,6 +123,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"EIG_PARAL_ORFAC:") == 0) {
             fscanf(input_fp,"%lf", &pSPARC_Input->eig_paral_orfac);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EIG_PARAL_MAXNP:") == 0) {
+            fscanf(input_fp,"%d", &pSPARC_Input->eig_paral_maxnp);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"CELL:") == 0) {
             Flag_cell = 1;
             fscanf(input_fp,"%lf", &pSPARC_Input->range_x);

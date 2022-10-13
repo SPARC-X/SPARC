@@ -18,5 +18,7 @@ extern void   Cblacs_gridinfo( int context, int*  np_row, int* np_col, int*  my_
 extern void   Cblacs_gridexit( int context);
 extern void   Cblacs_exit( int error_code);
 extern void   Cblacs_gridmap (int *ConTxt, int *usermap, int ldup, int nprow0, int npcol0);
+extern int    Csys2blacs_handle(MPI_Comm comm);
+extern void   Cfree_blacs_system_handle(int handle);
 
 #endif //BLACS_H

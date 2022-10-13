@@ -47,6 +47,7 @@
 #include "occupation.h"
 #include "isddft.h"
 #include "parallelization.h"
+#include "linearAlgebra.h"
 
 #define TEMP_TOL 1e-12
 
@@ -1186,93 +1187,26 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         }
         #endif
     } else {
-        int nprow, npcol, myrow, mycol;
-        Cblacs_gridinfo(pSPARC->ictxt_blacs_topo, &nprow, &npcol, &myrow, &mycol);
-
-        int ZERO = 0, ONE = 1, il = 1, iu = 1, lwork, lrwork, *iwork, liwork, *ifail, 
-            *icluster, info, N, M, NZ;
+        int ZERO = 0, ONE = 1, il = 1, iu = 1, *ifail, info, N, M, NZ;
         double complex *work;
-        double *rwork, *gap, vl = 0.0, vu = 0.0, abstol, orfac;
+        double vl = 0.0, vu = 0.0, abstol, orfac;
+        
+        ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
+        N = pSPARC->Nstates;
         orfac = pSPARC->eig_paral_orfac;
         #ifdef DEBUG
         if(!rank) printf("rank = %d, orfac = %.3e\n", rank, orfac);
-        #endif  
-        
-        N = pSPARC->Nstates;
-
+        #endif 
         // this setting yields the most orthogonal eigenvectors
         abstol = pdlamch_(&pSPARC->ictxt_blacs_topo, "U");
 
-        //** first do a workspace query **//
-        lwork = lrwork = liwork = -1;
-        work  = (double complex *)malloc(100 * sizeof(double complex));
-        rwork  = (double *)malloc(100 * sizeof(double));
-        gap   = (double *)malloc(nprow * npcol * sizeof(double));
-        iwork = (int *)malloc(100 * sizeof(int));
-        ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
-        icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));
-
-        t1 = MPI_Wtime();
-        pzhegvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp_kpt, &ONE, &ONE, 
-                 pSPARC->desc_Hp_BLCYC, pSPARC->Mp_kpt, &ONE, &ONE, 
-                 pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
-                 &M, &NZ, pSPARC->lambda + kpt*N + spn_i*pSPARC->Nkpts_kptcomm*N, &orfac, 
-                 pSPARC->Q_kpt, &ONE, &ONE, pSPARC->desc_Q_BLCYC, 
-                 work, &lwork, rwork, &lrwork, iwork, &liwork, ifail, icluster, gap, &info);
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
-        if(!rank && spn_i == 0 && kpt == 0) printf("rank = %d, work(1) = %f%+fi, rwork(1) = %f, iwork(1) = %d, time for "
-                         "workspace query: %.3f ms\n", 
-                         rank, creal(work[0]),cimag(work[0]), rwork[0], iwork[0], (t2 - t1)*1e3);
-        #endif
-        //** calculate eigenvalues and eigenvectors **//
-        // Warning: pdsygvx requires the block sizes in both row and col 
-        //          dimension to be the same!
-        lwork = (int) cabs(work[0]);
-        int NB = pSPARC->desc_Hp_BLCYC[4]; // distribution block size
-        int NN = max(max(N, NB),2);
-        int NP0 = numroc_( &NN, &NB, &ZERO, &ZERO, &nprow );
-        int MQ0 = numroc_( &NN, &NB, &ZERO, &ZERO, &npcol );
-        lwork = max(lwork, N + (NP0 + MQ0 + NB) * NB);
-        // TODO: increase lwork 
-        /**
-         * The ScaLAPACK routine for estimating memory might not work well for 
-         * the case where only few processes contain the whole matrix and most 
-         * processes do not. i.e., where the data are concentrated.
-         */
-        //lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
-        lwork += max(N*N, min(10*lwork,2000000));
-	    work = realloc(work, lwork * sizeof(double complex));
-        
-        
-        lrwork = (int) fabs(rwork[0]);
-        lrwork = max(lrwork, 4 * N + max(5 * NN, NP0 * MQ0) 
-                    + ((N - 1) / (nprow * npcol) + 1) * NN);
-        lrwork += max(N*N, min(10*lrwork,2000000));                  
-        rwork = realloc(rwork, lrwork * sizeof(double));
-        
-        liwork = iwork[0];
-        int NNP = max(max(N,4), nprow * npcol+1);
-        liwork = max(liwork, 6 * NNP);
-
-        //liwork += min(20*liwork, 200000); // TODO: for safety, to be optimized
-        liwork += max(N*N, min(20*liwork, 200000));
-	    iwork = realloc(iwork, liwork * sizeof(int));
-
-        /** ScaLAPACK might fail when the the matrix is distributed only on 
-         *  few processes and most process contains empty local matrices. 
-         *  consider using a subgroup of the processors to solve the 
-         *  eigenvalue problem and then re-distribute.
-         */
-        
-        t1 = MPI_Wtime();
-        // vl, vu, il and iu are not referenced for RANGE = "A"
-        pzhegvx_(&ONE, "V", "A", "U", &N, pSPARC->Hp_kpt, &ONE, &ONE, 
-                 pSPARC->desc_Hp_BLCYC, pSPARC->Mp_kpt, &ONE, &ONE, 
-                 pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, 
-                 &M, &NZ, pSPARC->lambda + kpt*N + spn_i*pSPARC->Nkpts_kptcomm*N, &orfac, 
-                 pSPARC->Q_kpt, &ONE, &ONE, pSPARC->desc_Q_BLCYC, 
-                 work, &lwork, rwork, &lrwork, iwork, &liwork, ifail, icluster, gap, &info);
+        pzhegvx_subcomm_ (
+                &ONE, "V", "A", "U", &N, pSPARC->Hp_kpt, &ONE, 
+                &ONE, pSPARC->desc_Hp_BLCYC, pSPARC->Mp_kpt, &ONE, &ONE, 
+                pSPARC->desc_Mp_BLCYC, &vl, &vu, &il, &iu, &abstol, &M, 
+                &NZ, pSPARC->lambda + kpt*N + spn_i*pSPARC->Nkpts_kptcomm*N, &orfac, 
+                pSPARC->Q_kpt, &ONE, &ONE, pSPARC->desc_Q_BLCYC, ifail, &info,
+                pSPARC->blacscomm, pSPARC->eig_paral_subdims, pSPARC->eig_paral_blksz);
 
         if (info != 0 && !rank) {
             printf("\nError in solving generalized eigenproblem! info = %d\n", info);
@@ -1281,20 +1215,13 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         t2 = MPI_Wtime();
         #ifdef DEBUG
         if(!rank && spn_i == 0 && kpt == 0) {
-            printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized "
-                   "eigenproblem in %d x %d process grid: %.3f ms\n", 
-                    rank, info, ifail[0], nprow, npcol, (t2 - t1)*1e3);
+            printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized eigenproblem : %.3f ms\n", 
+                    rank, info, ifail[0], (t2 - t1)*1e3);
             printf("rank = %d, after calling pzhegvx, Nstates = %d\n", rank, N);
         }
         #endif
-        free(work);
-        free(rwork);
-        free(gap);
-        free(iwork);
         free(ifail);
-        free(icluster);
     }
-
 #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
