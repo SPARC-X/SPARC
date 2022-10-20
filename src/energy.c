@@ -83,7 +83,7 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         }
     }
     
-    if (pSPARC->usefock <= 1) {
+    if ((pSPARC->usefock == 0 ) || (pSPARC->usefock%2 == 1)) {
         // calculate total free energy
         Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
         pSPARC->Exc_corr = E3;

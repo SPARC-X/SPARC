@@ -684,6 +684,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"EXX_RANGE_PBE:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->hyb_range_pbe);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_FRAC:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->exx_frac);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MINIT_FOCK:") == 0) {    
             fscanf(input_fp,"%d",&pSPARC_Input->MINIT_FOCK);
             fscanf(input_fp, "%*[^\n]\n");

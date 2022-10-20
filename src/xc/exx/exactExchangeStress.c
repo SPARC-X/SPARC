@@ -137,7 +137,7 @@ void Calculate_exact_exchange_stress_linear(SPARC_OBJ *pSPARC)
     }
 
     for (i = 0; i < 6; i++) 
-        pSPARC->stress_exx[i] *= (-pSPARC->hyb_mixing/pSPARC->dV/pSPARC->Nspin);
+        pSPARC->stress_exx[i] *= (-pSPARC->exx_frac/pSPARC->dV/pSPARC->Nspin);
 
     pSPARC->stress_exx[0] = 2*pSPARC->stress_exx[0] - 2*pSPARC->Eexx + (mflag == 1)*pSPARC->Eexx/2;
     pSPARC->stress_exx[1] = 2*pSPARC->stress_exx[1];
@@ -539,7 +539,7 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC)
     }
 
     for (i = 0; i < 6; i++) 
-        pSPARC->stress_exx[i] *= (-pSPARC->hyb_mixing/pSPARC->dV/pSPARC->Nspin);
+        pSPARC->stress_exx[i] *= (-pSPARC->exx_frac/pSPARC->dV/pSPARC->Nspin);
 
     pSPARC->stress_exx[0] = 2*pSPARC->stress_exx[0] - 2*pSPARC->Eexx + (mflag == 1)*pSPARC->Eexx/2;
     pSPARC->stress_exx[1] = 2*pSPARC->stress_exx[1];

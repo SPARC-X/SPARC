@@ -369,10 +369,10 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, i
 {
     int i, j, k, rank, Ns, num_rhs, *rhs_list_i, *rhs_list_j;
     int size, batch_num_rhs, NL, base, loop;
-    double occ, *rhs, *Vi, hyb_mixing, occ_alpha;
+    double occ, *rhs, *Vi, exx_frac, occ_alpha;
 
     Ns = pSPARC->Nstates;
-    hyb_mixing = pSPARC->hyb_mixing;
+    exx_frac = pSPARC->exx_frac;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(comm, &size);
     /********************************************************************/
@@ -426,7 +426,7 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, i
             i = rhs_list_i[count];
             j = rhs_list_j[count];
             occ = occ_outer[j];
-            occ_alpha = occ * hyb_mixing;
+            occ_alpha = occ * exx_frac;
             for (k = 0; k < DMnd; k++) {
                 Hx[k + i*DMnd] -= occ_alpha * psi_outer[k + j*DMnd] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
             }
@@ -483,9 +483,9 @@ void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC,
     // perform matrix multiplication Xi * (Xi'*X) using ScaLAPACK routines
     if (ncol != 1) {
         cblas_dgemm( CblasColMajor, CblasNoTrans, CblasNoTrans, DMnd, ncol, Ns_occ,
-                    -pSPARC->hyb_mixing, Xi, DMnd, Xi_times_psi, Ns_occ, 1.0, Hx, DMnd);
+                    -pSPARC->exx_frac, Xi, DMnd, Xi_times_psi, Ns_occ, 1.0, Hx, DMnd);
     } else {
-        cblas_dgemv( CblasColMajor, CblasNoTrans, DMnd, Ns_occ, -pSPARC->hyb_mixing, 
+        cblas_dgemv( CblasColMajor, CblasNoTrans, DMnd, Ns_occ, -pSPARC->exx_frac, 
                     Xi, DMnd, Xi_times_psi, 1, 1.0, Hx, 1);
     }
 
@@ -643,7 +643,7 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     }
 
     pSPARC->Eexx /= (pSPARC->Nspin + 0.0);
-    pSPARC->Eexx *= -pSPARC->hyb_mixing;
+    pSPARC->Eexx *= -pSPARC->exx_frac;
 
     t2 = MPI_Wtime();
 #ifdef DEBUG
@@ -1534,8 +1534,14 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
         free(psi_storage2);
     }
 
-    if (nproc_blacscomm > 1)
-        MPI_Allreduce(MPI_IN_PLACE, Xi, DMnd*Ns_occ, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+    // MPI_Allreduce(MPI_IN_PLACE, Xi, DMnd*Ns_occ, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+    // Allreduce is unstable in valgrind test
+    if (nproc_blacscomm > 1) {
+        MPI_Request req;
+        MPI_Status  sta;
+        MPI_Iallreduce(MPI_IN_PLACE, Xi, DMnd*Ns_occ, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm, &req);
+        MPI_Wait(&req, &sta);
+    }
 
     /******************************************************************************/
     int nrows_M = pSPARC->nrows_M[spn_i];

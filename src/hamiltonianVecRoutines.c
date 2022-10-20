@@ -88,7 +88,7 @@ void Hamiltonian_vectors_mult(
     }
 
     // adding Exact Exchange potential  
-    if (pSPARC->usefock > 1){
+    if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0)){
         exact_exchange_potential((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, comm);
     }
 
@@ -177,7 +177,7 @@ void Hamiltonian_vectors_mult_kpt(
         }
 
         // adding Exact Exchange potential  
-        if (pSPARC->usefock > 1){
+        if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0)){
             exact_exchange_potential_kpt((SPARC_OBJ *)pSPARC, x, ncol, DMnd, Hx, spin, kpt, comm);
         }
 
