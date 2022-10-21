@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 166
+#define N_MEMBR 167
 
 
 
@@ -649,6 +649,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->EXXDiv_Flag = -1;           // default setting for singularity in exact exchange, default spherical trucation    
     pSPARC_Input->hyb_range_fock = 0.1587;    // default using VASP's HSE03 value
     pSPARC_Input->hyb_range_pbe = 0.1587;     // default using VASP's HSE03 value
+    pSPARC_Input->exx_frac = -1;              // default exx_frac
 
     /* Default parameter for spin-orbit coupling */
     pSPARC->Nspinor = 1;
@@ -1203,6 +1204,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->TOL_SCF_INIT = pSPARC_Input->TOL_SCF_INIT;
     pSPARC->hyb_range_fock = pSPARC_Input->hyb_range_fock;
     pSPARC->hyb_range_pbe = pSPARC_Input->hyb_range_pbe;
+    pSPARC->exx_frac = pSPARC_Input->exx_frac;
     pSPARC->SQ_rcut = pSPARC_Input->SQ_rcut;
     pSPARC->SQ_fac_g2c = pSPARC_Input->SQ_fac_g2c;
     pSPARC->SQ_tol_occ = pSPARC_Input->SQ_tol_occ;
@@ -1222,7 +1224,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     // check XC compatibility with pseudopotential
     pSPARC->usefock = 0;                    // default: no fock operator 
-    pSPARC->hyb_mixing = 0.0;               // default: no mixing
     int ixc = 0; // input XC
     if (strcmpi(pSPARC->XC, "LDA_PZ") == 0) {
         ixc = 2;
@@ -1237,15 +1238,24 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     } else if (strcmpi(pSPARC->XC, "HF") == 0) {
         ixc = 40;
         pSPARC->usefock = 1;
-        pSPARC->hyb_mixing = 1;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 1;
+        if (fabs(1-pSPARC->exx_frac) > TEMP_TOL) {
+            if (!rank) printf("ERROR: HF functional could be only defined with 1.0 EXX_FRAC.\n");
+        }
     } else if (strcmpi(pSPARC->XC, "PBE0") == 0) {
         ixc = 41;
         pSPARC->usefock = 1;
-        pSPARC->hyb_mixing = 0.25;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
+        if (fabs(0.25-pSPARC->exx_frac) > TEMP_TOL) {
+            if (!rank) printf("Note: You are using PBE0 with %.5g exact exchange.\n", pSPARC->exx_frac);
+        }
     } else if (strcmpi(pSPARC->XC, "HSE") == 0) {
         ixc = 427;
         pSPARC->usefock = 1;
-        pSPARC->hyb_mixing = 0.25;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
+        if (fabs(0.25-pSPARC->exx_frac) > TEMP_TOL) {
+            if (!rank) printf("Note: You are using HSE with %.5g exact exchange.\n", pSPARC->exx_frac);
+        }
     } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
         ixc = -263267;
     } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
@@ -1272,7 +1282,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         // pSPARC->hyb_range_fock = 0.106066017177982;     // ABINIT's value
         // pSPARC->hyb_range_pbe = 0.188988157484231;      // ABINIT's value
         if (!rank) {
-            printf("Careful: You are using HSE with range-separation parameter omega_HF = %.6f and omega_PBE = %.6f\n", pSPARC->hyb_range_fock, pSPARC->hyb_range_pbe);
+            printf("Careful: You are using HSE with range-separation parameter omega_HF = %.6f (1/Bohr) and omega_PBE = %.6f (1/Bohr)\n", pSPARC->hyb_range_fock, pSPARC->hyb_range_pbe);
             printf("If you want to change it, please use EXX_RANGE_FOCK and EXX_RANGE_PBE input options.\n");
         }
     } else {
@@ -3156,7 +3166,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 13, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Oct 20, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3448,6 +3458,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"PRINT_RELAXOUT: %d\n",pSPARC->PrintRelaxout);
     }
     if (pSPARC->usefock == 1){
+        fprintf(output_fp,"EXX_FRAC: %.5g\n",pSPARC->exx_frac);
         fprintf(output_fp,"TOL_FOCK: %.2E\n",pSPARC->TOL_FOCK);
         fprintf(output_fp,"TOL_SCF_INIT: %.2E\n",pSPARC->TOL_SCF_INIT);
         fprintf(output_fp,"MAXIT_FOCK: %d\n",pSPARC->MAXIT_FOCK);
@@ -3653,7 +3664,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                                         MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -3688,7 +3699,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, L_QMASS, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, /* double */
+                          1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -3854,6 +3865,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.TOL_SCF_INIT, addr + i++);
     MPI_Get_address(&sparc_input_tmp.hyb_range_fock, addr + i++);
     MPI_Get_address(&sparc_input_tmp.hyb_range_pbe, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.exx_frac, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_rcut, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_fac_g2c, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_tol_occ, addr + i++);

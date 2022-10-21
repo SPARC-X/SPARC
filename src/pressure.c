@@ -104,7 +104,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
             cell_measure *= pSPARC->range_z;
         		
  		pSPARC->pres = (-2 * (pSPARC->Eband + pSPARC->Escc) + pSPARC->pres_xc + pSPARC->pres_el + pSPARC->pres_nl);
-        if (pSPARC->usefock > 1) pSPARC->pres += pSPARC->pres_exx; 
+        if (pSPARC->usefock > 0) pSPARC->pres += pSPARC->pres_exx; 
  		pSPARC->pres /= (-3 * cell_measure); // measure = volume for 3D, area for 2D, and length for 1D.
  	}
 #ifdef DEBUG    

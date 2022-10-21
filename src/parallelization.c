@@ -1169,7 +1169,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     if (((pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) &&
             pSPARC->spincomm_index >=0 && pSPARC->kptcomm_index >= 0
             && (pSPARC->spin_typ != 0 || !pSPARC->is_phi_eq_kpt_topo || !pSPARC->isGammaPoint))
-            || (pSPARC->usefock != 0) )
+            || (pSPARC->usefock > 0) )
     {
         gridsizes[0] = pSPARC->Nx;
         gridsizes[1] = pSPARC->Ny;

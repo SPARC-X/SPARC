@@ -352,12 +352,12 @@ void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X
     int i, j, k, l, ll, ll_red, rank, Ns, num_rhs;
     int size, batch_num_rhs, NL, base, loop, Nkpts_hf;
     int *rhs_list_i, *rhs_list_j, *rhs_list_l, *kpt_k_list, *kpt_q_list;
-    double occ, hyb_mixing, occ_alpha;
+    double occ, exx_frac, occ_alpha;
     double _Complex *rhs, *Vi;
 
     Ns = pSPARC->Nstates;
     Nkpts_hf = pSPARC->Nkpts_hf;
-    hyb_mixing = pSPARC->hyb_mixing;
+    exx_frac = pSPARC->exx_frac;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(comm, &size);
 
@@ -435,7 +435,7 @@ void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X
             ll = pSPARC->kpthf_ind[l];                  // ll w.r.t. Nkpts_sym, for occ
             ll_red = pSPARC->kpthf_ind_red[l];          // ll_red w.r.t. Nkpts_hf_red, for psi
             occ = occ_outer[j + ll * Ns];
-            occ_alpha = occ * hyb_mixing;
+            occ_alpha = occ * exx_frac;
             if (pSPARC->kpthf_pn[l] == 1) {
                 for (k = 0; k < DMnd; k++) 
                     Hx[k + i*DMnd] -= occ_alpha * pSPARC->kptWts_hf * psi_outer[k + j*DMnd + ll_red*DMndNs] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
@@ -499,7 +499,7 @@ void evaluate_exact_exchange_potential_ACE_kpt(SPARC_OBJ *pSPARC,
                       MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
     }
 
-    alpha = -pSPARC->hyb_mixing;
+    alpha = -pSPARC->exx_frac;
     beta = 1.0;
     // perform matrix multiplication Xi * (Xi'*X) using ScaLAPACK routines
     if (ncol != 1) {
@@ -713,7 +713,7 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
     }
 
     pSPARC->Eexx /= (pSPARC->Nspin + 0.0);
-    pSPARC->Eexx *= -pSPARC->hyb_mixing;
+    pSPARC->Eexx *= -pSPARC->exx_frac;
     
     t2 = MPI_Wtime();
 #ifdef DEBUG

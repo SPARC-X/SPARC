@@ -104,7 +104,7 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0)
         Calculate_Vxc_GGA(pSPARC, rho);
     else if(strcmpi(pSPARC->XC,"HF") == 0) {
-        if (pSPARC->usefock == 1)
+        if (pSPARC->usefock%2 == 1)
             Calculate_Vxc_GGA(pSPARC, rho);
         else {
             for (i = 0; i < pSPARC->Nd_d; i++) {
@@ -520,21 +520,21 @@ void Calculate_Vxc_GGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
         exc = exc * 2.0;
         pSPARC->e_xc[i] = exc * rhotot_inv;
 
-        if (pSPARC->usefock > 1 && strcmpi(pSPARC->XC,"PBE0") == 0) {
-            pSPARC->e_xc[i] *=  (1.0 - pSPARC->hyb_mixing);
-            pSPARC->Dxcdgrho[i] *= (1.0 - pSPARC->hyb_mixing);
-            pSPARC->XCPotential[i] *= (1.0 - pSPARC->hyb_mixing);
+        if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"PBE0") == 0) {
+            pSPARC->e_xc[i] *=  (1.0 - pSPARC->exx_frac);
+            pSPARC->Dxcdgrho[i] *= (1.0 - pSPARC->exx_frac);
+            pSPARC->XCPotential[i] *= (1.0 - pSPARC->exx_frac);
         }
 
-        if (pSPARC->usefock > 1 && strcmpi(pSPARC->XC,"HSE") == 0) {
+        if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"HSE") == 0) {
             double e_xc_sr, Dxcdgrho_sr, XCPotential_sr;
             // Use the same strategy as \rho for \grho here. 
             // Without this threshold, numerical issue will make simulation fail. 
             if (sigma[i] < 1E-14) sigma[i] = 1E-14;
             pbexsr(rho[i], sigma[i], pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
-            pSPARC->e_xc[i] -=  pSPARC->hyb_mixing * e_xc_sr / rho[i];
-            pSPARC->XCPotential[i] -= pSPARC->hyb_mixing * XCPotential_sr;
-            pSPARC->Dxcdgrho[i] -= pSPARC->hyb_mixing * Dxcdgrho_sr;
+            pSPARC->e_xc[i] -=  pSPARC->exx_frac * e_xc_sr / rho[i];
+            pSPARC->XCPotential[i] -= pSPARC->exx_frac * XCPotential_sr;
+            pSPARC->Dxcdgrho[i] -= pSPARC->exx_frac * Dxcdgrho_sr;
         }
         // WARNING: Dxcdgrho = 0.5 * dvxcdgrho1 here in M-SPARC!! But the same in the end. 
 
@@ -795,21 +795,21 @@ void Calculate_Vxc_GSGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
             exc += ex_gga * rho_updn;
 
             // Hybrid functional 
-            if (pSPARC->usefock > 1 && strcmpi(pSPARC->XC,"PBE0") == 0) {
-                exc -= pSPARC->hyb_mixing * ex_gga * rho_updn;
-                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] *= (1.0 - pSPARC->hyb_mixing);
-                pSPARC->XCPotential[spn_i*DMnd + i] *= (1.0 - pSPARC->hyb_mixing);
+            if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"PBE0") == 0) {
+                exc -= pSPARC->exx_frac * ex_gga * rho_updn;
+                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] *= (1.0 - pSPARC->exx_frac);
+                pSPARC->XCPotential[spn_i*DMnd + i] *= (1.0 - pSPARC->exx_frac);
             }
 
-            if (pSPARC->usefock > 1 && strcmpi(pSPARC->XC,"HSE") == 0) {
+            if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"HSE") == 0) {
                 double e_xc_sr, Dxcdgrho_sr, XCPotential_sr;
                 // Use the same strategy as \rho for \grho here. 
                 // Without this threshold, numerical issue will make simulation fail. 
                 if (sigma[DMnd + spn_i*DMnd + i] < 1E-14) sigma[DMnd + spn_i*DMnd + i] = 1E-14;
                 pbexsr(rho[DMnd + spn_i*DMnd + i] * 2.0, sigma[DMnd + spn_i*DMnd + i] * 4.0, pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
-                exc -=  pSPARC->hyb_mixing * e_xc_sr / 2.0;
-                pSPARC->XCPotential[spn_i*DMnd + i] -= pSPARC->hyb_mixing * XCPotential_sr;
-                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] -= pSPARC->hyb_mixing * Dxcdgrho_sr * 2.0;
+                exc -=  pSPARC->exx_frac * e_xc_sr / 2.0;
+                pSPARC->XCPotential[spn_i*DMnd + i] -= pSPARC->exx_frac * XCPotential_sr;
+                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] -= pSPARC->exx_frac * Dxcdgrho_sr * 2.0;
             }
         }
         pSPARC->e_xc[i] = exc * rhotot_inv;

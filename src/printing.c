@@ -218,6 +218,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
 
     int Nk = pSPARC->Nkpts_kptcomm;
     int Ns = pSPARC->Nstates;
+    double occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
     // number of kpoints assigned to each kptcomm
     int    *Nk_i   = (int    *)malloc(pSPARC->npkpt * sizeof(int)); 
     double *kred_i = (double *)malloc(pSPARC->Nkpts_sym * 3 * sizeof(double));
@@ -234,7 +235,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
             printf("\nCannot open file \"%s\"\n",EigenFilename);
             exit(EXIT_FAILURE);
         } 
-        fprintf(output_fp, "Final eigenvalues and occupation numbers\n");
+        fprintf(output_fp, "Final eigenvalues (Ha) and occupation numbers\n");
         fclose(output_fp);   
     }
 
@@ -395,7 +396,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f\n", 
                                 i+1,
                                 eig_all[displs_all[Kcomm_indx] + k*Ns + i],
-                                2.0 * occ_all[displs_all[Kcomm_indx] + k*Ns + i]);
+                                occfac * occ_all[displs_all[Kcomm_indx] + k*Ns + i]);
                         }
                     }
                 }
@@ -417,9 +418,9 @@ void printEigen(SPARC_OBJ *pSPARC) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f    %20.12E %18.12f\n", 
                                 i+1,
                                 eig_all[displs_all[Kcomm_indx] + k*Ns + i],
-                                occ_all[displs_all[Kcomm_indx] + k*Ns + i],
+                                occfac * occ_all[displs_all[Kcomm_indx] + k*Ns + i],
                                 eig_all[displs_all[Kcomm_indx] + (Nk_Kcomm_indx + k)*Ns + i],
-                                occ_all[displs_all[Kcomm_indx] + (Nk_Kcomm_indx + k)*Ns + i]);
+                                occfac * occ_all[displs_all[Kcomm_indx] + (Nk_Kcomm_indx + k)*Ns + i]);
                         }
                     }
                 }

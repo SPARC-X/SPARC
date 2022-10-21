@@ -798,7 +798,7 @@ typedef struct _SPARC_OBJ{
     double TOL_SCF_INIT;            // Exact exchange potential option
     int MAXIT_FOCK;                 // Maximum number of iterations for Hartree-Fock outer loop
     int MINIT_FOCK;                 // Minimum number of iterations for Hartree-Fock outer loop
-    double hyb_mixing;              // hybrid mixing coefficient
+    double exx_frac;                // hybrid mixing coefficient
     double hyb_range_fock;          // hybrid short range for fock operator 
     double hyb_range_pbe;           // hybrid short range for exchange correlation 
     int EXXMeth_Flag;               // Method to solve Poisson's equation, in Real space or Fourier space
@@ -1163,6 +1163,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int EXXDiv_Flag;        // Method for integrable singularity 
     double hyb_range_fock;  // hybrid short range for fock operator 
     double hyb_range_pbe;   // hybrid short range for exchange correlation 
+    double exx_frac;                // hybrid mixing coefficient
 
     /* SQ methods */
     int SQFlag;             // Flag of SQ method

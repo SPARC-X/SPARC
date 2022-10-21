@@ -102,7 +102,7 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
         MPI_Allreduce(MPI_IN_PLACE, &pres_exx, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
     
-    pres_exx *= (-pSPARC->hyb_mixing/pSPARC->dV/pSPARC->Nspin);
+    pres_exx *= (-pSPARC->exx_frac/pSPARC->dV/pSPARC->Nspin);
     
     if (mflag == 1)
         pres_exx += pSPARC->Eexx*3/4;
@@ -346,7 +346,7 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
         MPI_Allreduce(MPI_IN_PLACE, &pres_exx, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
 
-    pres_exx *= (-pSPARC->hyb_mixing/pSPARC->dV/pSPARC->Nspin);
+    pres_exx *= (-pSPARC->exx_frac/pSPARC->dV/pSPARC->Nspin);
 
     if (mflag == 1)
         pres_exx += pSPARC->Eexx*3/4;
