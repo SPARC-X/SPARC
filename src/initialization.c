@@ -355,7 +355,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     // write initialized parameters into output file
     if (rank == 0) {
         write_output_init(pSPARC);
-    }
+    }        
 }
 
 
@@ -2511,24 +2511,9 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     // memory for Exact Exchange part
     double memory_exx = 0.0;
     if (pSPARC->usefock > 0) {
-        if (pSPARC->ACEFlag == 0) {
-            // psi outer
-            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * type_size;
-            // ace operator
-            memory_exx += (double) Nd * Ns * Nkpts_sym * Nspin * (pSPARC->npband + 2) * type_size;
-        } else {
-            // psi outer in dmcomm
-            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * pSPARC->npband * type_size;
-            // psi outer in kptcomm_topo
-            memory_exx += (double) Nd * Ns * pSPARC->Nkpts_hf_red * Nspin * pSPARC->npkpt * type_size;
-        }
-        if (pSPARC->EXXMem_batch == 0) {
-            memory_exx += (double) Nd * Ns * Ns * pSPARC->Nkpts_hf * Nkpts_sym * (2*type_size + 2*sizeof(int));
-        } else {
-            memory_exx += (double) Nd * pSPARC->EXXMem_batch * (2*type_size + 2*sizeof(int));
-        }
+        memory_exx = estimate_memory_exx(pSPARC);
         memory_usage += memory_exx;
-    }
+    }    
 
     #ifdef DEBUG
     if (rank == 0) {
@@ -3166,7 +3151,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 20, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Oct 25, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

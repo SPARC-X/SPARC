@@ -85,4 +85,9 @@ void kshift_phasefactor(SPARC_OBJ *pSPARC);
  */
 void find_local_kpthf(SPARC_OBJ *pSPARC);
 
+/**
+ * @brief   Estimate memory requirement for hybrid calculation
+ */
+double estimate_memory_exx(const SPARC_OBJ *pSPARC);
+
 #endif // EXACTEXCHANGEINITIALIZATION_H 
