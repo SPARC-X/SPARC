@@ -927,3 +927,76 @@ void find_local_kpthf(SPARC_OBJ *pSPARC)
     }
 #endif
 }
+
+
+/**
+ * @brief   Estimate memory requirement for hybrid calculation
+ */
+double estimate_memory_exx(const SPARC_OBJ *pSPARC)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    double memory_exx = 0.0;
+    int Nd = pSPARC->Nd * pSPARC->Nspinor;
+    int Ns = pSPARC->Nstates;
+    int Nspin = pSPARC->Nspin;
+    int Nkpts_sym = pSPARC->Nkpts_sym;
+    int npband = pSPARC->npband;
+    int npkpt = pSPARC->npkpt;
+    int Nkpts_hf_red = pSPARC->Nkpts_hf_red;
+    int Nkpts_hf = pSPARC->Nkpts_hf;
+    int Nband = pSPARC->Nband_bandcomm;
+    int type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
+    int dmcomm_size;
+    MPI_Comm_size(pSPARC->dmcomm, &dmcomm_size);
+
+    if (pSPARC->ACEFlag == 0) {
+        // storage of psi outer
+        int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
+        memory_exx += (double) len_full_tot * type_size * 2; 
+        // memory for constructing Vx
+        if (pSPARC->isGammaPoint == 1) {
+            // int index
+            memory_exx += (double) Ns * Ns * sizeof(int) * 2;
+            // for poissons equations
+            int ncol = (pSPARC->EXXMem_batch == 0) ? (Ns * Ns) : pSPARC->EXXMem_batch;
+            memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
+        } else {
+            // int index
+            memory_exx += (double) Ns * Ns * sizeof(int) * Nkpts_hf * 3;
+            // for poissons equations
+            int ncol = (pSPARC->EXXMem_batch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->EXXMem_batch;
+            memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
+        }
+    } else {
+        int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
+        if (pSPARC->isGammaPoint == 1) {
+            // storage of ACE operator in dmcomm and kptcomm_topo
+            memory_exx += (double) len_full_tot * type_size * (npband + 1) * npkpt;
+            // memory for constructing ACE
+            int reps = (npband == 1) ? 0 : ((npband - 2) / 2 + 1); // ceil((nproc_blacscomm-1)/2)
+            if (reps > 0) memory_exx += (double) Nd * Ns * 2 * type_size;
+            // int index
+            memory_exx += (double) Nband * Ns * 2 * sizeof(int);
+            // for poissons equations
+            int ncol = (pSPARC->EXXMem_batch == 0) ? (Nband * Nband) : pSPARC->EXXMem_batch;
+            memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
+        } else {
+            // storage of ACE operator in dmcomm and kptcomm_topo
+            memory_exx += (double) len_full_tot * type_size * (npband + 1) * npkpt;
+            // memory for constructing ACE
+            int reps_kpt = pSPARC->npkpt - 1;
+            int reps_band = pSPARC->npband - 1;
+            memory_exx += (double) Nd * Ns * Nkpts_hf_red * type_size * (1+(reps_kpt > 0));            
+            if (reps_band > 0) memory_exx += (double) Nd * Ns * 2 * type_size;
+            // int index
+            memory_exx += (double) Ns * Nband * Nkpts_sym * 3 * sizeof(int);
+            // for poissons equations
+            int ncol = (pSPARC->EXXMem_batch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->EXXMem_batch;            
+            memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
+
+        }
+    }
+    return memory_exx;
+}
