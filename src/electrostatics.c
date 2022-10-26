@@ -1729,6 +1729,20 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
     // do allreduce to sum over all phi process
     MPI_Allreduce(MPI_IN_PLACE, Qlm, Q_len, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi); 
 
+    #ifdef DEBUG
+    // Calculate dipole moment based on the Qlm values
+    // dipole moment vector = (\int {x * rho} dV, \int {y * rho} dV, \int {z * rho} dV)
+    // dipole moment value is defined as the length of the dipole moment vector
+    // Note:
+    //   1. Qlm is defined using the spherical harmonics, which contains a factor of sqrt(3/(4*pi))
+    //   2. Qlm is calculated using f = 4*pi*(rho+b), which includes another factor of 4*pi
+    double dipole_moment = sqrt(Qlm[1] * Qlm[1] + Qlm[2] * Qlm[2] + Qlm[3] * Qlm[3]);
+    const double Debye2eBohr = 0.3934303; // 1 Debye = 0.3934303 e*Bohr
+    const double eBohr2Debye = 1.0 / Debye2eBohr;
+    dipole_moment = dipole_moment / (4.0*M_PI*sqrt(3.0/4.0/M_PI)) * eBohr2Debye;
+    if (rank == 0) printf("Dipole moment: %.6f (Debye)\n", dipole_moment);
+    #endif
+
 	/* find "charge correction" (boudary correction) */
     // define the “correction domain” which contributes to the charge correction. i.e. 0 to FDn-1 and
     // nx-FDn nx-1 in each direction.
