@@ -428,27 +428,8 @@ void Lap_plus_diag_vec_mult_orth(
     
     st = MPI_Wtime();
     #endif
-
-    int overlap_flag = 0; 
-    overlap_flag = (int) (nproc > 1 && DMnx > pSPARC->order 
-                          && DMny > pSPARC->order && DMnz > pSPARC->order);
-    
-    // TODO: REMOVE AFTER CHECK
-    //overlap_flag = 0;
                           
     int i, j, k;
-    // while the non-blocking communication is undergoing, compute 
-    // inner part of y which only requires values from local memory
-    if (overlap_flag) {
-        // find Lx(FDn:DMnx_in, FDn:DMny_in, FDn:DMnz_in)
-       for (n = 0; n < ncol; n++) {
-           stencil_3axis_thread_v2(
-               x+n*DMnd, FDn, pshifty[1], pshifty[1], pshiftz[1], pshiftz[1], 
-               FDn, DMnx_in, FDn, DMny_in, FDn, DMnz_in, FDn, FDn, FDn, 
-               Lap_weights, w2_diag, _b, _v, y+n*DMnd
-           );
-       }
-    }
     
     // set up start and end indices for copying edge nodes in x_ex
     int istart_in[6] = {0,       DMnx_out, FDn,     FDn,      FDn,      FDn}; 
@@ -559,60 +540,13 @@ void Lap_plus_diag_vec_mult_orth(
     
     //int ind_ex;
     // calculate Lx
-    if (overlap_flag) {
-        for (n = 0; n < ncol; n++) {
-            // Lx(0:DMnx, 0:DMny, 0:FDn)
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, DMnx, 0, DMny, 0, FDn, FDn, FDn, FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-            // Lx(0:DMnx, 0:DMny, DMnz-FDn:DMnz)
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, DMnx, 0, DMny, DMnz-FDn, DMnz, FDn, FDn, DMnz, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-        }
-        
-        for (n = 0; n < ncol; n++) { 
-            // Lx(0:DMnx, 0:FDn, FDn:DMnz-FDn)
-            stencil_3axis_thread_v2( 
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, DMnx, 0, FDn, FDn, DMnz-FDn, FDn, FDn, FDn+FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-            // Lx(0:DMnx, DMny-FDn:DMny, FDn:DMnz-FDn)
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, DMnx, DMny-FDn, DMny, FDn, DMnz-FDn, FDn, DMny, FDn+FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-        }
-
-        for (n = 0; n < ncol; n++) {
-            // Lx(0:FDn, FDn:DMny-FDn, FDn:DMnz-FDn)
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, FDn, FDn, DMny-FDn, FDn, DMnz-FDn, FDn, FDn+FDn, FDn+FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-            // Lx(DMnx-FDn:DMnx, FDn:DMny-FDn, FDn:DMnz-FDn)
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                DMnx-FDn, DMnx, FDn, DMny-FDn, FDn, DMnz-FDn, DMnx, FDn+FDn, FDn+FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-        }
-    } else {
-        for (n = 0; n < ncol; n++) {
-            stencil_3axis_thread_v2(
-                x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
-                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 
-                Lap_weights, w2_diag, _b, _v, y+n*DMnd
-            );
-        }
-    } 
+    for (n = 0; n < ncol; n++) {
+        stencil_3axis_thread_v2(
+            x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
+            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 
+            Lap_weights, w2_diag, _b, _v, y+n*DMnd
+        );
+    }
 
     free(x_ex);
     free(pshifty);

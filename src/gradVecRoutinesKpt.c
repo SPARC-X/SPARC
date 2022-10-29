@@ -207,16 +207,6 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
                 }
             }
         }
-    }                
-
-    int overlap_flag = (int) (nproc > 1 && DMnx > pSPARC->order 
-                          && DMny > pSPARC->order && DMnz > pSPARC->order);
-
-    if (overlap_flag) {
-        for (n = 0; n < ncol; n++) {
-            Calc_DX_kpt(x+n*DMnd, Dx+n*DMnd, FDn, pshift, DMnx, DMnx, DMnxny, DMnxny,
-                    FDn, DMnx_in, FDn, DMny_in, FDn, DMnz_in, FDn, FDn, FDn, D1_stencil_coeffs_dirs[dir], w1_diag);
-        }    
     }
 
     if (nproc > 1) {
@@ -343,35 +333,9 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     }
 
     // calculate dx
-    if (overlap_flag) {
-        // first calculate dx(0:DMnx, 0:DMny, [0:FDn,DMnz-FDn:DMnz])
-        for (n = 0; n < ncol; n++) {
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, DMnx, 0, DMny, 0, FDn, exDir[0], exDir[1], exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, DMnx, 0, DMny, DMnz_in, DMnz, exDir[0], exDir[1], DMnz_in+exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-        }
-        
-        // then calculate dx(0:DMnx, [0:FDn,DMny-FDn:DMny], FDn:DMnz-FDn)
-        for (n = 0; n < ncol; n++) {
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, DMnx, 0, FDn, FDn, DMnz_in, exDir[0], exDir[1], FDn+exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, DMnx, DMny_in, DMny, FDn, DMnz_in, exDir[0], DMny_in+exDir[1], FDn+exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-        } 
-        
-        // finally calculate dx([0:FDn,DMnx-FDn:DMnx], FDn:DMny-FDn, FDn:DMnz-FDn)
-        for (n = 0; n < ncol; n++) {
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, FDn, FDn, DMny_in, FDn, DMnz_in, exDir[0], FDn+exDir[1], FDn+exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    DMnx_in, DMnx, FDn, DMny_in, FDn, DMnz_in, DMnx_in+exDir[0], FDn+exDir[1], FDn+exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-        }
-    } else {
-        for (n = 0; n < ncol; n++) {
-            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
-                    0, DMnx, 0, DMny, 0, DMnz, exDir[0], exDir[1], exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
-        }
+    for (n = 0; n < ncol; n++) {
+        Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
+                0, DMnx, 0, DMny, 0, DMnz, exDir[0], exDir[1], exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
     }
 
     free(x_ex);
