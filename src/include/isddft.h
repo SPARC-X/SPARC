@@ -441,6 +441,7 @@ typedef struct _SPARC_OBJ{
     double *electronDens_at;      // electron density guess by summing atomic charge densities (LOCAL)
     double *electronDens_core;    // model core electron density for Non-Linear Core Correction (NLCC)
     double *elecstPotential;      // electrostatic potential, "phi" (LOCAL)
+    double *elecstPotential_in;   // electrostatic potential in, "phi_in" (LOCAL)
     double *XCPotential;          // exchange-correlation potential, "Vxc" (LOCAL)
     double *e_xc;                 // exchange-correlation energy per particle (LOCAL)
     double *Dxcdgrho;             // derivative of exchange-correlation enrgy per particle wrt to norm of the gradient

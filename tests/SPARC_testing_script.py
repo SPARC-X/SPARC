@@ -14,7 +14,7 @@ import math
 # Other parameters to run the test (can be changed by the user)
 nprocs_tests = 24  # In default tests are run with 24 processors per node
 nnodes_tests = 2  # In default tests are run with 1 node
-npbs = 1  # By default (number of PBS files the tests are distributed to)
+npbs = 8  # By default (number of PBS files the tests are distributed to)
 launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
 MPI_command = "srun"  # MPI command to run the executable on the given cluster

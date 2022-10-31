@@ -98,6 +98,7 @@ void Free_SQ(SPARC_OBJ *pSPARC) {
             free(pSPARC->Dxcdgrho);
         }    
         free(pSPARC->elecstPotential);
+        free(pSPARC->elecstPotential_in);
         free(pSPARC->Veff_loc_dmcomm_phi);
         free(pSPARC->mixing_hist_xk);
         free(pSPARC->mixing_hist_fk);

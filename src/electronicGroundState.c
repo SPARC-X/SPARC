@@ -611,6 +611,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         else
             Calculate_elecDens(rank, pSPARC, SCFcount, error);
 
+        // save phi_in for force calculation
+        memcpy(pSPARC->elecstPotential_in, pSPARC->elecstPotential, DMnd * sizeof(double));
+
         // Calculate net magnetization for spin polarized calculations
         if (pSPARC->spin_typ != 0)
             Calculate_magnetization(pSPARC);
@@ -859,30 +862,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"Extra time for evaluating QE SCF Error: %.3f (sec)\n", pSPARC->t_qe_extra);
         }
         fclose(output_fp);
-    }
-
-    // Calculate actual energy for density mixing
-    if (pSPARC->MixingVariable == 0) {
-        // store/update input Veff for density mixing
-        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-            for (i = 0; i < NspinDMnd; i++) 
-                pSPARC->Veff_loc_dmcomm_phi_in[i] = pSPARC->Veff_loc_dmcomm_phi[i];
-        }
-        
-        // update potential
-        Calculate_elecstPotential(pSPARC);
-        Calculate_Vxc(pSPARC);
-        Calculate_Veff_loc_dmcomm_phi(pSPARC);
-        
-        // here potential is consistent with density
-        Calculate_Free_Energy(pSPARC, pSPARC->electronDens); 
-        double Escc = Calculate_Escc(
-            pSPARC, NspinDMnd, pSPARC->Veff_loc_dmcomm_phi, 
-            pSPARC->Veff_loc_dmcomm_phi_in, pSPARC->electronDens + sindx_rho,
-            pSPARC->dmcomm_phi
-        );
-        pSPARC->Escc = Escc;
-        pSPARC->Etot = pSPARC->Etot + Escc;
     }
 
     #ifdef USE_EVA_MODULE

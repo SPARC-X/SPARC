@@ -691,9 +691,9 @@ void Calculate_local_forces_linear(SPARC_OBJ *pSPARC)
     DVc_y = (double *)malloc( DMnd * sizeof(double));
     DVc_z = (double *)malloc( DMnd * sizeof(double));
     
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_z, 2, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential_in, Dphi_x, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential_in, Dphi_y, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential_in, Dphi_z, 2, pSPARC->dmcomm_phi);
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_x, 0, pSPARC->dmcomm_phi);
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_y, 1, pSPARC->dmcomm_phi);
     Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_z, 2, pSPARC->dmcomm_phi);

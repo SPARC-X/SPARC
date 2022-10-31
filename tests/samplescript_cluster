@@ -9,7 +9,7 @@
 
 cd $SLURM_SUBMIT_DIR
 
-module load mkl
+#module load mkl
 
 echo $PWD 
 srun ./sparc -name ./Si_cell/temp_run/Si_cell -log_summary > ./Si_cell/temp_run/Si_cell.log

@@ -1049,7 +1049,7 @@ void Calculate_Exc(SPARC_OBJ *pSPARC, double *electronDens)
     sz_rho = pSPARC->Nd_d * (2*pSPARC->Nspin-1);
     rho = (double *)malloc(sz_rho * sizeof(double) );
     for (i = 0; i < sz_rho; i++){
-        rho[i] = pSPARC->electronDens[i];
+        rho[i] = electronDens[i];
         // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
         if (pSPARC->NLCC_flag)
             rho[i] += pSPARC->electronDens_core[i];

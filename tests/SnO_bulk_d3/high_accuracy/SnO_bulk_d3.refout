@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Sep 06, 2022)                      *
+*                       SPARC (version Oct 31, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 19:21:27 2022                  *
+*                   Start time: Mon Oct 31 11:20:25 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -70,25 +70,25 @@ NP_KPOINT_PARAL: 4
 NP_BAND_PARAL: 6
 NP_DOMAIN_PARAL: 1 2 2
 NP_DOMAIN_PHI_PARAL: 4 4 6
-EIG_SERIAL_MAXNS: 10000
+EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
 Mesh spacing in x-direction        :  0.159008 (Bohr)
 Mesh spacing in y-direction        :  0.159008 (Bohr)
-Mesh spacing in z direction        :  0.160954 (Bohr)
+Mesh spacing in z-direction        :  0.160954 (Bohr)
 Number of symmetry adapted k-points:  4
 Output printed to                  :  SnO_bulk_d3/temp_run/SnO_bulk_d3.out
 Total number of atom types         :  2
 Total number of atoms              :  4
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  O 6
-Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  6.52 6.52 6.44 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  Sn 14
-Pseudopotential                    :  ../psps_SPMS/50_Sn_14_2.5_3.0_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/50_Sn_14_2.5_3.0_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  6.52 6.52 6.60 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  1.32 GB
@@ -97,39 +97,39 @@ Estimated memory per processor     :  14.09 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -4.3714123946E+01        1.024E-01        2.318
-2            -4.3592781800E+01        3.667E-02        0.592
-3            -4.3551394478E+01        2.318E-02        0.592
-4            -4.3571507519E+01        8.357E-03        0.601
-5            -4.3558215660E+01        3.430E-03        0.591
-6            -4.3558639720E+01        1.127E-03        1.128
-7            -4.3558388990E+01        3.756E-04        0.595
-8            -4.3558742634E+01        1.924E-04        0.596
-9            -4.3558529897E+01        7.091E-05        0.588
-10           -4.3558576905E+01        2.501E-05        0.644
-11           -4.3558520488E+01        8.181E-06        0.564
+1            -4.3586772537E+01        1.024E-01        2.114
+2            -4.3562436921E+01        3.667E-02        0.519
+3            -4.3558922440E+01        2.318E-02        0.514
+4            -4.3558618926E+01        8.357E-03        0.513
+5            -4.3558508865E+01        3.430E-03        0.515
+6            -4.3558521071E+01        1.127E-03        0.514
+7            -4.3558527366E+01        3.756E-04        0.513
+8            -4.3558528335E+01        1.924E-04        0.510
+9            -4.3558528883E+01        7.091E-05        0.532
+10           -4.3558528910E+01        2.501E-05        0.508
+11           -4.3558528507E+01        8.181E-06        0.510
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -4.3562600693E+01 (Ha/atom)
-Total free energy                  : -1.7425040277E+02 (Ha)
+Free energy per atom               : -4.3562600200E+01 (Ha/atom)
+Total free energy                  : -1.7425040080E+02 (Ha)
 Band structure energy              : -1.3329934628E+01 (Ha)
-Exchange correlation energy        : -4.3990978044E+01 (Ha)
+Exchange correlation energy        : -4.3991023124E+01 (Ha)
 Self and correction energy         : -2.1344737997E+02 (Ha)
--Entropy*kb*T                      : -2.3326105848E-10 (Ha)
-Fermi level                        :  1.6971932917E-01 (Ha)
+-Entropy*kb*T                      : -2.3326332642E-10 (Ha)
+Fermi level                        :  1.6971932470E-01 (Ha)
 DFT-D3 correction                  : -1.6286771082E-02 (Ha)
-RMS force                          :  6.3532708884E-04 (Ha/Bohr)
-Maximum force                      :  1.2695114493E-03 (Ha/Bohr)
-Time for force calculation         :  0.040 (sec)
-Pressure                           : -2.2867296229E-01 (GPa)
-Maximum stress                     :  5.4686748850E-01 (GPa)
-Time for stress calculation        :  0.120 (sec)
+RMS force                          :  6.0278595959E-04 (Ha/Bohr)
+Maximum force                      :  1.2030963613E-03 (Ha/Bohr)
+Time for force calculation         :  0.044 (sec)
+Pressure                           : -2.2327483424E-01 (GPa)
+Maximum stress                     :  5.4324652633E-01 (GPa)
+Time for stress calculation        :  0.068 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  9.428 sec
+Total walltime                     :  7.990 sec
 ___________________________________________________________________________
 
 ***************************************************************************

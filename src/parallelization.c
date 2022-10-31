@@ -1079,7 +1079,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         }
         // allocate memory for electrostatic potential
         pSPARC->elecstPotential = (double *)malloc( DMnd * sizeof(double) );
-        assert(pSPARC->elecstPotential != NULL);
+        pSPARC->elecstPotential_in = (double *)malloc( DMnd * sizeof(double) );
+        assert(pSPARC->elecstPotential != NULL && pSPARC->elecstPotential_in != NULL);
 
         // allocate memory for XC potential
         pSPARC->XCPotential = (double *)malloc( DMnd * pSPARC->Nspin * sizeof(double) );

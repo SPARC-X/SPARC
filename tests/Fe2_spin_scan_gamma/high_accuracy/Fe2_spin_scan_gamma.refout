@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jul 19, 2022)                      *
+*                       SPARC (version Oct 31, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jul 26 16:57:23 2022                  *
+*                   Start time: Mon Oct 31 11:21:57 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -51,6 +51,7 @@ PRINT_FORCES: 1
 PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
 OUTPUT_FILE: Fe2_spin_scan_gamma/temp_run/Fe2_spin_scan_gamma
 ***************************************************************************
                                 Cell                                       
@@ -68,21 +69,21 @@ NP_KPOINT_PARAL: 1
 NP_BAND_PARAL: 24
 NP_DOMAIN_PARAL: 1 2 1
 NP_DOMAIN_PHI_PARAL: 4 6 4
-EIG_SERIAL_MAXNS: 10000
+EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
 Mesh spacing in x-direction        :  0.0594629 (Bohr)
 Mesh spacing in y-direction        :  0.0594629 (Bohr)
-Mesh spacing in z direction        :  0.0604266 (Bohr)
+Mesh spacing in z-direction        :  0.0604266 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  Fe2_spin_scan_gamma/temp_run/Fe2_spin_scan_gamma.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
-Pseudopotential                    :  psps_tests/Fe_LDA.psp8
+Pseudopotential                    :  Fe2_spin_scan_gamma/Fe_LDA.psp8
 Pseudocharge radii of atom type 1  :  6.12 6.12 6.16 (x, y, z dir)
 Number of atoms of type 1          :  2
 Estimated total memory usage       :  280.90 MB
@@ -91,17 +92,17 @@ Estimated memory per processor     :  2.93 MB
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1571094255E+02         6.1117E-06        6.339E-01        2.468
-2            -1.1416193184E+02         5.5879E-06        4.117E-01        1.496
-3            -1.1415223457E+02         3.6819E-06        1.508E-01        0.931
-4            -1.1415446964E+02         8.2473E-07        1.723E-02        0.921
-5            -1.1415784821E+02         3.4905E-07        6.073E-03        0.921
-6            -1.1415799094E+02         1.0585E-07        1.356E-03        0.956
-7            -1.1415805129E+02         3.6450E-08        3.468E-04        0.914
-8            -1.1415805533E+02         1.9504E-08        1.585E-04        0.908
-9            -1.1415805559E+02         5.1974E-09        2.711E-05        0.907
-10           -1.1415805588E+02         2.4102E-09        1.277E-05        0.896
-11           -1.1415805601E+02         6.9833E-10        3.256E-06        0.870
+1            -1.1571094255E+02         6.1117E-06        6.339E-01        2.478
+2            -1.1416193184E+02         5.5879E-06        4.117E-01        0.885
+3            -1.1415223457E+02         3.6819E-06        1.508E-01        0.826
+4            -1.1415446964E+02         8.2473E-07        1.723E-02        0.845
+5            -1.1415784821E+02         3.4905E-07        6.073E-03        0.814
+6            -1.1415799094E+02         1.0585E-07        1.356E-03        0.825
+7            -1.1415805129E+02         3.6450E-08        3.468E-04        0.807
+8            -1.1415805533E+02         1.9504E-08        1.585E-04        0.828
+9            -1.1415805559E+02         5.1974E-09        2.711E-05        0.805
+10           -1.1415805588E+02         2.4102E-09        1.277E-05        0.816
+11           -1.1415805601E+02         6.9832E-10        3.256E-06        0.766
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
@@ -111,18 +112,18 @@ Total free energy                  : -2.2831611202E+02 (Ha)
 Band structure energy              :  2.1147355064E+00 (Ha)
 Exchange correlation energy        : -3.1399221356E+01 (Ha)
 Self and correction energy         : -2.4173788203E+02 (Ha)
-Entropy*kb*T                       : -8.3721007252E-08 (Ha)
+-Entropy*kb*T                      : -8.3721005287E-08 (Ha)
 Fermi level                        :  2.1128913249E+00 (Ha)
-RMS force                          :  9.5962882499E-01 (Ha/Bohr)
-Maximum force                      :  9.5962882499E-01 (Ha/Bohr)
-Time for force calculation         :  0.054 (sec)
+RMS force                          :  9.5963615373E-01 (Ha/Bohr)
+Maximum force                      :  9.5963615373E-01 (Ha/Bohr)
+Time for force calculation         :  0.055 (sec)
 Pressure                           :  2.2094379220E+04 (GPa)
 Maximum stress                     :  2.2380127674E+04 (GPa)
-Time for stress calculation        :  0.180 (sec)
+Time for stress calculation        :  0.220 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  12.873 sec
+Total walltime                     :  11.594 sec
 ___________________________________________________________________________
 
 ***************************************************************************
@@ -130,7 +131,7 @@ ___________________________________________________________________________
 *                       PI: Phanish Suryanarayana                         *
 *               List of contributors: See the documentation               *
 *         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE (DE-SC0019410)                              *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
 *      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            
