@@ -934,9 +934,6 @@ void find_local_kpthf(SPARC_OBJ *pSPARC)
  */
 double estimate_memory_exx(const SPARC_OBJ *pSPARC)
 {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     double memory_exx = 0.0;
     int Nd = pSPARC->Nd * pSPARC->Nspinor;
     int Ns = pSPARC->Nstates;
@@ -948,8 +945,7 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
     int Nkpts_hf = pSPARC->Nkpts_hf;
     int Nband = pSPARC->Nband_bandcomm;
     int type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
-    int dmcomm_size;
-    MPI_Comm_size(pSPARC->dmcomm, &dmcomm_size);
+    int dmcomm_size = pSPARC->npNd;
 
     if (pSPARC->ACEFlag == 0) {
         // storage of psi outer
