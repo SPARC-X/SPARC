@@ -38,9 +38,13 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
 
     int i, Nband, DMnd, Ns, spn_i, Nk, kpt, count;
     int n, nstart, nend, sg, size_s, size_k, spinDMnd;
-    double *X, *Vexx, g_nk, t1, t2;
+    double *X, *Vexx, g_nk;
     double _Complex *X_kpt, *Vexx_kpt;
     MPI_Comm comm;
+
+    #ifdef DEBUG
+    double t1, t2;
+    #endif
 
     DMnd = pSPARC->Nd_d_dmcomm;
     Nband = pSPARC->Nband_bandcomm;
@@ -106,41 +110,47 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
 
     // sum over spin comm group
     if(pSPARC->npspin > 1) {
+    #ifdef DEBUG
         t1 = MPI_Wtime();
+    #endif
         if (pSPARC->spincomm_index == 0)
             MPI_Reduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
         else
             MPI_Reduce(Exxrho, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        
-        t2 = MPI_Wtime();
+
     #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("rank = %d, --- Calculate kinetic energy density: reduce over all spin_comm took %.3f ms\n", rank, (t2-t1)*1e3);
     #endif
     }
 
     // sum over all k-point groups
-    if (pSPARC->npkpt > 1 && pSPARC->spincomm_index == 0) {    
+    if (pSPARC->npkpt > 1 && pSPARC->spincomm_index == 0) {
+    #ifdef DEBUG
         t1 = MPI_Wtime();
+    #endif
         if (pSPARC->kptcomm_index == 0)
             MPI_Reduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
         else
             MPI_Reduce(Exxrho, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
         
-        t2 = MPI_Wtime();
     #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("rank = %d, --- Calculate exact exchange energy density: reduce over all kpoint groups took %.3f ms\n", rank, (t2-t1)*1e3);
     #endif
     }
 
     // sum over all band groups (only in the first k point group)
     if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0) {
+    #ifdef DEBUG
         t1 = MPI_Wtime();
+    #endif
         if (pSPARC->bandcomm_index == 0)
             MPI_Reduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
         else
             MPI_Reduce(Exxrho, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        t2 = MPI_Wtime();
     #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("rank = %d, --- Calculate exact exchange energy density: reduce over all band groups took %.3f ms\n", rank, (t2-t1)*1e3);
     #endif
     }

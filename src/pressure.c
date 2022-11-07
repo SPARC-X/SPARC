@@ -25,8 +25,7 @@
 #include "pressure.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-#include "lapVecOrth.h"
-#include "lapVecNonOrth.h"
+#include "lapVecRoutines.h"
 #include "tools.h" 
 #include "isddft.h"
 #include "initialization.h"
@@ -46,12 +45,16 @@
  * @brief: function to calculate the electronic pressure
  */
 void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
-	int rank;
-    double t1, t2;
+    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    // find exchange-correlation component of pressure
+    	
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
+    
+    // find exchange-correlation component of pressure
     Calculate_XC_pressure(pSPARC);
     if ((pSPARC->mGGAflag == 1) && (pSPARC->countPotentialCalculate > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
         if (pSPARC->isGammaPoint) {
@@ -61,33 +64,38 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
             Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mgga.c
         }
     }
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating exchnage-correlation pressure components: %.3f ms\n", (t2 - t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
     // find local pressure components
-    t1 = MPI_Wtime();
     Calculate_local_pressure(pSPARC);
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating local pressure components: %.3f ms\n", (t2 - t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
     // find nonlocal pressure components
-    t1 = MPI_Wtime();
     Calculate_nonlocal_pressure(pSPARC);
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating nonlocal pressure components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
     
     if (pSPARC->usefock > 0) {
         // find exact exchange pressure components
-        t1 = MPI_Wtime();
-        Calculate_exact_exchange_pressure(pSPARC);
-        t2 = MPI_Wtime();
     #ifdef DEBUG
+        t1 = MPI_Wtime();
+    #endif    
+        Calculate_exact_exchange_pressure(pSPARC);
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank) printf("Time for calculating exact exchange pressure components: %.3f ms\n", (t2 - t1)*1e3);
     #endif
     }    

@@ -48,7 +48,6 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
     int rank, size, i, j, k, ii, jj, kk, a, count;
     int DMnx, DMny, DMnz, FDn, *nloc;
     double ***t0 = NULL, ***DMcol, ***gradx_DM, ***grady_DM, ***gradz_DM, ***psipsi, lambda_min, lambda_max, delta_lmin, delta_lmax;
-    double time1, time2, time_lan;
 
 	MPI_Comm_rank(pSQ->dmcomm_SQ, &rank);
     MPI_Comm_size(pSQ->dmcomm_SQ, &size);
@@ -57,9 +56,10 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
 
 #ifdef DEBUG
     if(!rank) printf("Start computing non-local component of the forces... ");
+    double time1, time2, time_lan;
+    time1 = MPI_Wtime();
 #endif
 
-    time1 = MPI_Wtime();
     DMnx = pSQ->Nx_d_SQ;
     DMny = pSQ->Ny_d_SQ;
     DMnz = pSQ->Nz_d_SQ;
@@ -378,9 +378,9 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
     if (size > 1) {
         MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSQ->dmcomm_SQ);
     }
-    time2 = MPI_Wtime();
 
 #ifdef DEBUG
+    time2 = MPI_Wtime();
     if(!rank) 
         printf("Computing non-local component of the forces takes %.3f ms\n", (time2 - time1)*1e3);
 

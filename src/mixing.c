@@ -178,7 +178,7 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    double t1, t2;
+
     int N, p, m, i, i_hist;
     double omega, beta, omega_mag, beta_mag, *g_k, *f_k, *Pf, *x_k,
            *x_km1, *x_kp1, *f_km1, *R, *F;

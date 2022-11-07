@@ -943,6 +943,7 @@ void Relax_Cell(SPARC_OBJ *pSPARC)
     if (!rank) printf(RED "optCELL = %18.15f %18.15f %18.15f\n" RESET,
                         pSPARC->range_x, pSPARC->range_y, pSPARC->range_z);
 #endif
+    (void) optVol; // suppress unused-variable warning
 }
 
 
@@ -1042,11 +1043,11 @@ double volrelax_constraint(SPARC_OBJ *pSPARC, double vol)
     // broadcast the max_P_stress value
     MPI_Bcast(&max_P_stress, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    // return max pressure stress
-    return max_P_stress;
-
     // free memory
     free(stress_lc);
+
+    // return max pressure stress
+    return max_P_stress;
 }
 
 
@@ -1071,7 +1072,7 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
         double t1, t2;
 #endif
 
-    int p, i;
+    int p;
 
     if (vol <= 0.0) {
         if (rank == 0) {
@@ -1114,7 +1115,7 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
         printf("Volume: %12.6f\n", vol);
         printf("CELL  : %12.6f\t%12.6f\t%12.6f\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
         printf("COORD : \n");
-        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
+        for (int i = 0; i < 3 * pSPARC->n_atom; i++) {
             printf("%12.6f\t",pSPARC->atom_pos[i]);
             if (i%3==2 && i>0) printf("\n");
         }

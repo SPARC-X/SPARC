@@ -1090,16 +1090,20 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         pSPARC->mvAtmConstraint[i] = 1;
     }
     
+#ifdef DEBUG    
     double t1, t2;
+#endif
     // set default atomic masses based on atom types (for MD)
     if (1) { // atomic mass is only needed for MD
         char elemType[8];
         for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+#ifdef DEBUG
             t1 = MPI_Wtime();
+#endif
             // first identify element type
             find_element(elemType, &pSPARC->atomType[L_ATMTYPE*ityp]);
-            t2 = MPI_Wtime();
 #ifdef DEBUG
+            t2 = MPI_Wtime();
             printf(GRN"\nTime for finding element is %.3f ms\n",(t2-t1)*1000);
             printf(GRN"Element type for atom_type %s is %s\n"RESET, &pSPARC->atomType[L_ATMTYPE*ityp], elemType);
 #endif            

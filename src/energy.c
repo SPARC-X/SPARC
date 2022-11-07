@@ -34,10 +34,12 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     double Etot, Eband, Entropy, E1, E2, E3;
-    double dEtot, dEband; // this is for temp use
     
     Etot = Eband = Entropy = E1 = E2 = E3 = 0.0; // initialize energies
-    dEtot = dEband = 0.0;
+
+    #ifdef DEBUG
+    double dEtot = 0.0, dEband = 0.0; // this is for temp use
+    #endif
 
     // exchange-correlation energy
     Calculate_Exc(pSPARC, electronDens);
@@ -49,9 +51,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         Eband = Calculate_Eband(pSPARC);
     }
     
+    pSPARC->Eband = Eband;
+    #ifdef DEBUG
     // find changes in Eband from previous SCF step
     dEband = fabs(Eband - pSPARC->Eband) / pSPARC->n_atom;
-    pSPARC->Eband = Eband;
+    #endif
     
     // calculate entropy
     if (pSPARC->SQFlag == 1) {
@@ -87,11 +91,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         // calculate total free energy
         Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
         pSPARC->Exc_corr = E3;
-        // find change in Etot from previous SCF step
-        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
         pSPARC->Etot = Etot;
         MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     #ifdef DEBUG
+        // find change in Etot from previous SCF step
+        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
         if(!rank) printf("Etot    = %18.12f\nEband   = %18.12f\nE1      = %18.12f\nE2      = %18.12f\n"
                         "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
                         "dE = %.3e, dEband = %.3e\n", 
@@ -103,11 +107,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         // calculate total free energy
         Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy - 2*pSPARC->Eexx;
         pSPARC->Exc_corr = E3;
-        // find change in Etot from previous SCF step
-        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
         pSPARC->Etot = Etot;
         MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     #ifdef DEBUG
+        // find change in Etot from previous SCF step
+        dEtot = fabs(Etot - pSPARC->Etot) / pSPARC->n_atom;
         if(!rank) printf("Etot    = %18.12f\nEband   = %18.12f\nE1      = %18.12f\nE2      = %18.12f\n"
                         "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
                         "Eexx    = %18.12f\n, dE = %.3e, dEband = %.3e\n", 

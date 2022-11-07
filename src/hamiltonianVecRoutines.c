@@ -19,10 +19,7 @@
 
 #include "hamiltonianVecRoutines.h"
 #include "lapVecRoutines.h"
-#include "lapVecOrth.h"
-#include "lapVecOrthKpt.h"
-#include "lapVecNonOrth.h"
-#include "lapVecNonOrthKpt.h"
+#include "lapVecRoutinesKpt.h"
 #include "nlocVecRoutines.h"
 #include "isddft.h"
 #include "exactExchange.h"

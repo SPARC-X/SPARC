@@ -24,8 +24,9 @@
 #include "printing.h"
 #include "tools.h"
 #include "parallelization.h"
-#include "energyDensity.h"
+#include "exchangeCorrelation.h"
 #include "exactExchangeEnergyDensity.h"
+#include "MGGAexchangeCorrelation.h"
 
 
 /**
@@ -727,27 +728,30 @@ void printEnergyDensity(SPARC_OBJ *pSPARC)
 {
     int rank, nproc_dmcomm, rank_dmcomm, nproc_dmcomm_phi, rank_dmcomm_phi;
     int DMnd, Nd;
-    double *KineticRho, *ExxRho, *ExcRho, t1, t2;
+    double *KineticRho, *ExxRho, *ExcRho;
     KineticRho = ExxRho = ExcRho = NULL;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     Nd = pSPARC->Nd;
     DMnd = pSPARC->Nd_d_dmcomm;
 
-    // compute kinetic energy density
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
+    // compute kinetic energy density
     pSPARC->KineticRho = (double *) calloc(pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
     compute_Kinetic_Density_Tau(pSPARC, pSPARC->KineticRho);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
-if (rank == 0) printf("Time for calculating kinetic energy density: %.3f ms\n", (t2-t1)*1e3);
+    t2 = MPI_Wtime();
+    if (rank == 0) printf("Time for calculating kinetic energy density: %.3f ms\n", (t2-t1)*1e3);
 #endif
 
     // compute exchange correlation energy density
     pSPARC->ExcRho = (double *) calloc( pSPARC->Nd_d, sizeof(double));
     Calculate_xc_energy_density(pSPARC, pSPARC->ExcRho);
-    t1 = MPI_Wtime();
 #ifdef DEBUG
+    t1 = MPI_Wtime();
 if (rank == 0) printf("Time for calculating exchange correlation energy density: %.3f ms\n", (t1-t2)*1e3);
 #endif
 
@@ -755,9 +759,9 @@ if (rank == 0) printf("Time for calculating exchange correlation energy density:
         // compute exact exchange energy density 
         pSPARC->ExxRho = (double *) calloc( pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
         computeExactExchangeEnergyDensity(pSPARC, pSPARC->ExxRho);
-        t2 = MPI_Wtime();
 #ifdef DEBUG
-if (rank == 0) printf("Time for calculating exact exchange energy density: %.3f ms\n", (t2-t1)*1e3);
+        t2 = MPI_Wtime();
+        if (rank == 0) printf("Time for calculating exact exchange energy density: %.3f ms\n", (t2-t1)*1e3);
 #endif
     }
 

@@ -22,9 +22,7 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    double str[9];
     double detLattice = 0.0;
-    double invLattice[9];
     int i, j, k, row;
     for(i = 0; i < 3; i++){
         for(j = 0; j < 3; j++){
@@ -34,12 +32,16 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
             }
         }
     }
+
+    #ifdef DEBUG
+    double invLattice[9];
     for(i = 0; i < 3; i++){
         for(j = 0; j < 3; j++){
            invLattice[3*j + i] = (pSPARC->lattice[3 * ((j+1) % 3) + (i+1) % 3] * pSPARC->lattice[3 * ((j+2) % 3) + (i+2) % 3] - pSPARC->lattice[3 * ((j+1) % 3) + (i+2) % 3] * pSPARC->lattice[3 * ((j+2) % 3) + (i+1) % 3])/detLattice;
         }
     }
 
+    double str[9];
     str[0] = -pSPARC->d3Sigma[0]*invLattice[0] - pSPARC->d3Sigma[1]*invLattice[1] - pSPARC->d3Sigma[2]*invLattice[2]; // 6642-6648 in dftd3.f
     str[1] = -pSPARC->d3Sigma[0]*invLattice[3] - pSPARC->d3Sigma[1]*invLattice[4] - pSPARC->d3Sigma[2]*invLattice[5];
     str[2] = -pSPARC->d3Sigma[0]*invLattice[6] - pSPARC->d3Sigma[1]*invLattice[7] - pSPARC->d3Sigma[2]*invLattice[8];
@@ -55,7 +57,6 @@ void d3_grad_cell_stress(SPARC_OBJ *pSPARC) {
     d3CellGrad[3] = str[1]; d3CellGrad[4] = str[4]; d3CellGrad[5] = str[7]; 
     d3CellGrad[6] = str[2]; d3CellGrad[7] = str[5]; d3CellGrad[8] = str[8]; 
 
-    #ifdef DEBUG
     if (rank == 0) {
         printf("the gradient of D3 energy regarding to (lattice vectors * side length) tensor of cell (Ha/Bohr):\n");
         for (row = 0; row < 3; row++) {

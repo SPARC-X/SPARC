@@ -20,7 +20,6 @@
 #include "parallelization.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-#include "lapVecRoutines.h"
 
 /**
  * @brief   compute the metaGGA psi stress term,

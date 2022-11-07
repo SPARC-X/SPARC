@@ -147,7 +147,7 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
     }                             
  
     // while the non-blocking communication is undergoing, compute Dx which only requires values from local memory
-    int pshift = 0, pshift_ex = 0;
+    int pshift_ex = 0;
     double *D1_stencil_coeffs_dim;
     D1_stencil_coeffs_dim = (double *)malloc((FDn + 1) * sizeof(double));
     double *x_ex = (double *)malloc(ncol * DMnd_ex * sizeof(double));
@@ -156,21 +156,21 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
     int p;
     switch (dir) {
         case 0:
-            pshift = 1; pshift_ex = 1;
+            pshift_ex = 1;
             for (p = 1; p <= FDn; p++) {
                 // stencil coeff
                 D1_stencil_coeffs_dim[p] = pSPARC->D1_stencil_coeffs_x[p];
             }
             break;
         case 1:
-            pshift = DMnx; pshift_ex = DMnx_ex; 
+            pshift_ex = DMnx_ex; 
             for (p = 1; p <= FDn; p++) {
                 // stencil coeff
                 D1_stencil_coeffs_dim[p] = pSPARC->D1_stencil_coeffs_y[p];
             }
             break;
         case 2:
-            pshift = DMnxny; pshift_ex = DMnxny_ex;
+            pshift_ex = DMnxny_ex;
             for (p = 1; p <= FDn; p++) {
                 // stencil coeff
                 D1_stencil_coeffs_dim[p] = pSPARC->D1_stencil_coeffs_z[p];

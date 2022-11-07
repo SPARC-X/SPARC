@@ -49,7 +49,9 @@ void automem_pdsyevx_ (
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+#ifdef DEBUG
     double t1, t2;
+#endif
 
 	int ictxt = desca[1], nprow, npcol, myrow, mycol;
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
@@ -63,13 +65,15 @@ void automem_pdsyevx_ (
 	icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));    
 
 	//** first do a workspace query **//
+#ifdef DEBUG    
     t1 = MPI_Wtime();
+#endif
 	pdsyevx_(jobz, range, uplo, n, a, ia, ja, desca, 
 			vl, vu, il, iu, abstol, m, nz, w, 
 			orfac, z, iz, jz, descz, work, &lwork, iwork, 
 			&liwork, ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!grank) printf("rank = %d, work(1) = %f, time for "
                         "workspace query: %.3f ms\n", 
                         grank, work[0], (t2 - t1)*1e3);
@@ -95,13 +99,15 @@ void automem_pdsyevx_ (
 	iwork = realloc(iwork, liwork * sizeof(int));
 
 	// call the routine again to perform the calculation
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsyevx_(jobz, range, uplo, n, a, ia, ja, desca, 
 			vl, vu, il, iu, abstol, m, nz, w, 
 			orfac, z, iz, jz, descz, work, &lwork, iwork, 
 			&liwork, ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) {
     printf("rank = %d, info = %d, time for solving standard "
             "eigenproblem in %d x %d process grid: %.3f ms\n", 
@@ -133,8 +139,9 @@ void automem_pdsyev_ (
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+#ifdef DEBUG
     double t1, t2;
-
+#endif
 	int ictxt = desca[1], nprow, npcol, myrow, mycol;
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
@@ -144,17 +151,19 @@ void automem_pdsyev_ (
 	work  = (double *)malloc(100 * sizeof(double));
 
 	//** first do a workspace query **//
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsyev_(jobz, uplo, n, a, ia, ja, desca, 
 			w, z, iz, jz, descz, work, &lwork, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!grank) printf("rank = %d, work(1) = %f, time for "
                         "workspace query: %.3f ms\n", 
                         grank, work[0], (t2 - t1)*1e3);
 #endif
 
-	int NNP, NN, NP0, MQ0, NB, N = *n;
+	int NN, NP0, MQ0, NB, N = *n;
 	lwork = (int) fabs(work[0]);
 	NB = desca[4]; // distribution block size
 	NN = max(max(N, NB),2);
@@ -179,11 +188,13 @@ void automem_pdsyev_ (
      *  eigenvalue problem and then re-distribute.
      */
 	// call the routine again to perform the calculation
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsyev_(jobz, uplo, n, a, ia, ja, desca, 
 			w, z, iz, jz, descz, work, &lwork, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) {
     printf("rank = %d, info = %d, time for solving standard "
             "eigenproblem in %d x %d process grid: %.3f ms\n", 
@@ -214,7 +225,9 @@ void automem_pdsygvx_ (
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+#ifdef DEBUG
     double t1, t2;
+#endif
 
 	int ictxt = desca[1], nprow, npcol, myrow, mycol;
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
@@ -228,15 +241,17 @@ void automem_pdsygvx_ (
 	icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));    
 
 	//** first do a workspace query **//
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsygvx_(ibtype, jobz, range, uplo, n, a, ia, ja, 
 		 desca, b, ib, jb, descb, vl, 
 		 vu, il, iu, abstol, m, nz, w, 
 		 orfac, z, iz, jz, descz, 
 		 work, &lwork, iwork, &liwork, 
 		 ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!grank) printf("rank = %d, work(1) = %f, time for "
                         "workspace query: %.3f ms\n", 
                         grank, work[0], (t2 - t1)*1e3);
@@ -263,49 +278,19 @@ void automem_pdsygvx_ (
 	liwork = max(liwork, 6 * NNP);
 	// liwork += max(N*N, min(20*liwork, 200000)); // for safety
 	iwork = realloc(iwork, liwork * sizeof(int));
-/*
-int rank; *nz = -1;
-MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-printf("rank = %d, ictxt  = %d\n",rank, ictxt  );
-printf("rank = %d, ibtype = %d\n",rank, *ibtype);
-printf("rank = %d, jobz   = %c\n",rank, *jobz);
-printf("rank = %d, range  = %c\n",rank, *range);
-printf("rank = %d, uplo   = %c\n",rank, *uplo);
-printf("rank = %d, n      = %d\n",rank, *n     );
-printf("rank = %d, ia     = %d\n",rank, *ia);
-printf("rank = %d, ja     = %d\n",rank, *ja);
-printf("rank = %d, desca  = [%d,%d,%d,%d,%d,%d,%d,%d,%d]\n",rank, desca[0],desca[1],desca[2],desca[3],desca[4],desca[5],desca[6],desca[7],desca[8]);
-printf("rank = %d, ib     = %d\n",rank, *ib);
-printf("rank = %d, jb     = %d\n",rank, *jb);
-printf("rank = %d, descb  = [%d,%d,%d,%d,%d,%d,%d,%d,%d]\n",rank, descb[0],descb[1],descb[2],descb[3],descb[4],descb[5],descb[6],descb[7],descb[8]);
-printf("rank = %d, vl     = %f\n",rank, *vl    );
-printf("rank = %d, vu     = %f\n",rank, *vu    );
-printf("rank = %d, il     = %d\n",rank, *il    );
-printf("rank = %d, iu     = %d\n",rank, *iu    );
-printf("rank = %d, abstol = %f\n",rank, *abstol);
-printf("rank = %d, m      = %d\n",rank, *m);
-printf("rank = %d, nz     = %d\n",rank, *nz);
-printf("rank = %d, orfac  = %f\n",rank, *orfac);
-printf("rank = %d, iz     = %d\n",rank, *iz);
-printf("rank = %d, jz     = %d\n",rank, *jz);
-printf("rank = %d, descz  = [%d,%d,%d,%d,%d,%d,%d,%d,%d]\n",rank, descz[0],descz[1],descz[2],descz[3],descz[4],descz[5],descz[6],descz[7],descz[8]);
-double sum_a = 0.0, sum_b = 0.0;
-for (int i = 0; i < *n; i++) {
-    sum_a += a[i];
-    sum_b += b[i];
-}
-printf("rank = %d, sum_a = %f, sum_b = %f\n",rank,sum_a,sum_b);
-*/
+
 	// call the routine again to perform the calculation
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsygvx_(ibtype, jobz, range, uplo, n, a, ia, ja, 
 		 desca, b, ib, jb, descb, vl, 
 		 vu, il, iu, abstol, m, nz, w, 
 		 orfac, z, iz, jz, descz, 
 		 work, &lwork, iwork, &liwork, 
 		 ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) {
     printf("rank = %d, info = %d, time for solving generalized "
             "eigenproblem in %d x %d process grid: %.3f ms\n", 
@@ -339,8 +324,9 @@ void automem_pzhegvx_ (
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+#ifdef DEBUG
     double t1, t2;
-
+#endif
 	int ictxt = desca[1], nprow, npcol, myrow, mycol;
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
@@ -356,15 +342,17 @@ void automem_pzhegvx_ (
 	icluster = (int *)malloc(2 * nprow * npcol * sizeof(int));
 
 	//** first do a workspace query **//
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pzhegvx_(ibtype, jobz, range, uplo, n, a, ia, ja, 
 		 desca, b, ib, jb, descb, vl, 
 		 vu, il, iu, abstol, m, nz, w, 
 		 orfac, z, iz, jz, descz, 
 		 work, &lwork, rwork, &lrwork, iwork, 
 		 &liwork, ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!grank) printf("rank = %d, work(1) = %f+i%f, time for "
                         "workspace query: %.3f ms\n", 
                         grank, creal(work[0]), cimag(work[0]), (t2 - t1)*1e3);
@@ -411,15 +399,17 @@ void automem_pzhegvx_ (
 	 */
 
 	// call the routine again to perform the calculation
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pzhegvx_(ibtype, jobz, range, uplo, n, a, ia, ja, 
 		 desca, b, ib, jb, descb, vl, 
 		 vu, il, iu, abstol, m, nz, w, 
 		 orfac, z, iz, jz, descz, 
 		 work, &lwork, rwork, &lrwork, iwork, 
 		 &liwork, ifail, icluster, gap, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) {
     printf("rank = %d, info = %d, time for solving standard "
             "eigenproblem in %d x %d process grid: %.3f ms\n", 
@@ -452,23 +442,27 @@ void automem_pdsyevd_ (
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
+#ifdef DEBUG
     double t1, t2;
+#endif
 
 	int ictxt = desca[1], nprow, npcol, myrow, mycol;
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
-	int ZERO = 0, lwork, *iwork, liwork, *icluster;
+	int ZERO = 0, lwork, *iwork, liwork;
 	double *work;
 	lwork = liwork = -1;
 	work  = (double *)malloc(100 * sizeof(double));
 	iwork = (int *)malloc(100 * sizeof(int)); 
 
 	//** first do a workspace query **//
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsyevd_(jobz, uplo, n, a, ia, ja, desca, w, z, iz, jz, descz, 
 		work, &lwork, iwork, &liwork, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!grank) printf("rank = %d, work(1) = %f, time for "
                         "workspace query: %.3f ms\n", 
                         grank, work[0], (t2 - t1)*1e3);
@@ -494,11 +488,13 @@ void automem_pdsyevd_ (
 	iwork = realloc(iwork, liwork * sizeof(int));
 
 	// call the routine again to perform the calculation
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 	pdsyevd_(jobz, uplo, n, a, ia, ja, desca, w, z, iz, jz, descz, 
 		work, &lwork, iwork, &liwork, info);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) {
     printf("rank = %d, info = %d, time for solving standard "
             "eigenproblem in %d x %d process grid: %.3f ms\n", 
@@ -551,9 +547,9 @@ void pdsygvx_subcomm_ (
     Cblacs_gridinit(&ictxt_old, "Row", nproc, 1);
 
     if (ictxt >= 0) {
-        int nproc_grid, nprow, npcol, myrow, mycol;
+        int nprow, npcol, myrow, mycol;
         Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-        nproc_grid = nprow * npcol;
+        // nproc_grid = nprow * npcol;
 
         // define new BLCYC distribution of A, B and Z
         int mb, nb, m_loc, n_loc, llda, ZERO = 0, ONE = 1, info2,
@@ -575,37 +571,39 @@ void pdsygvx_subcomm_ (
         double *Z_BLCYC  = (double *)calloc(m_loc*n_loc,sizeof(double));
         assert(A_BLCYC != NULL && B_BLCYC != NULL && Z_BLCYC != NULL);
 
+        #ifdef DEBUGSUBGRID
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         // convert A from original distribution to BLCYC in the new context
         pdgemr2d_(&N, &N, a, ia, ja, desca, A_BLCYC, &ONE, &ONE,
             descA_BLCYC, &ictxt_old);
         // convert B from original distribution to BLCYC in the new context
         pdgemr2d_(&N, &N, b, ib, jb, descb, B_BLCYC, &ONE, &ONE,
             descB_BLCYC, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsygvx_subcomm: A,B -> A_BLCYC,B_BLCYC: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
         // if abstol is not provided in advance, use the most orthogonal setting
         if (*abstol < 0) *abstol = pdlamch_(&ictxt, "U");
 
-        t1 = MPI_Wtime();
         automem_pdsygvx_(ibtype, jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 			 B_BLCYC, &ONE, &ONE, descB_BLCYC, vl, vu, il, iu, abstol, 
 			 m, nz, w, orfac, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, ifail, info);
         
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsygvx_subcomm: AZ=ZD: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         // convert Z_BLCYC to given format
         pdgemr2d_(&N, &N, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, z, iz, jz, descz, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsygvx_subcomm: Z_BLCYC -> Z: %.3f ms\n", (t2-t1)*1e3);
         #endif
 
@@ -668,13 +666,13 @@ void pdsyevx_subcomm_ (
     int ictxt_old = desca[1];
 
     if (ictxt >= 0) {
-        int nproc_grid, nprow, npcol, myrow, mycol;
+        int nprow, npcol, myrow, mycol;
         Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-        nproc_grid = nprow * npcol;
+        // nproc_grid = nprow * npcol;
 
         // define new BLCYC distribution of A, B and Z
         int mb, nb, m_loc, n_loc, llda, ZERO = 0, ONE = 1, info2,
-            descA_BLCYC[9], descB_BLCYC[9], descZ_BLCYC[9];
+            descA_BLCYC[9], descZ_BLCYC[9];
 
         mb = nb = blksz;
         m_loc = numroc_(&N, &mb, &myrow, &ZERO, &nprow);
@@ -689,32 +687,34 @@ void pdsyevx_subcomm_ (
         double *Z_BLCYC  = (double *)calloc(m_loc*n_loc,sizeof(double));
         assert(A_BLCYC != NULL && Z_BLCYC != NULL);
 
+        #ifdef DEBUGSUBGRID
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         // convert A from original distribution to BLCYC in the new context
         pdgemr2d_(&N, &N, a, ia, ja, desca, A_BLCYC, &ONE, &ONE,
             descA_BLCYC, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsyevx_subcomm_: A -> A_BLCYC: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         automem_pdsyevx_ ( 
             jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 	        vl, vu, il, iu, abstol, m, nz, w, orfac, Z_BLCYC, 
             &ONE, &ONE, descZ_BLCYC, ifail, info);
-        
-        t2 = MPI_Wtime();
+
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsyevx_subcomm_: AZ=ZD: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         // convert Z_BLCYC to given format
         pdgemr2d_(&N, &N, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, z, iz, jz, descz, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pdsygvx_subcomm: Z_BLCYC -> Z: %.3f ms\n", (t2-t1)*1e3);
         #endif
 
@@ -775,9 +775,9 @@ void pzhegvx_subcomm_ (
     int ictxt_old = desca[1];
 
     if (ictxt >= 0) {
-        int nproc_grid, nprow, npcol, myrow, mycol;
+        int nprow, npcol, myrow, mycol;
         Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-        nproc_grid = nprow * npcol;
+        // nproc_grid = nprow * npcol;
 
         // define new BLCYC distribution of A, B and Z
         int mb, nb, m_loc, n_loc, llda, ZERO = 0, ONE = 1, info2,
@@ -799,8 +799,10 @@ void pzhegvx_subcomm_ (
         double complex *Z_BLCYC  = (double complex *)calloc(m_loc*n_loc,sizeof(double complex));
         assert(A_BLCYC != NULL && B_BLCYC != NULL && Z_BLCYC != NULL);
 
+        #ifdef DEBUGSUBGRID
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         // convert A from original distribution to BLCYC in the new context
         pzgemr2d_(&N, &N, a, ia, ja, desca, A_BLCYC, &ONE, &ONE,
             descA_BLCYC, &ictxt_old);
@@ -808,26 +810,26 @@ void pzhegvx_subcomm_ (
         // convert B from original distribution to BLCYC in the new context
         pzgemr2d_(&N, &N, b, ib, jb, descb, B_BLCYC, &ONE, &ONE,
             descB_BLCYC, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pzhegvx_subcomm_: A,B -> A_BLCYC,B_BLCYC: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         automem_pzhegvx_(ibtype, jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 			 B_BLCYC, &ONE, &ONE, descB_BLCYC, vl, vu, il, iu, abstol, 
 			 m, nz, w, orfac, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, ifail, info);
         
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pzhegvx_subcomm_: AZ=ZD: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         // convert Z_BLCYC to given format
         pzgemr2d_(&N, &N, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, z, iz, jz, descz, &ictxt_old);
-        t2 = MPI_Wtime();
         #ifdef DEBUGSUBGRID
+        t2 = MPI_Wtime();
         if (!rank) printf("pzhegvx_subcomm_: Z_BLCYC -> Z: %.3f ms\n", (t2-t1)*1e3);
         #endif
 
@@ -967,9 +969,9 @@ void pdgemm_subcomm(
 
     int ictxt_rowcomm = descA[1];
     if (ictxt >= 0) {
-        int nproc_grid, nprow, npcol, myrow, mycol;
+        int nprow, npcol, myrow, mycol;
         Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
-        nproc_grid = nprow * npcol;
+        // nproc_grid = nprow * npcol;
 
         // define new BLCYC distribution of A and B
         int mb, nb, m_loc, n_loc, llda, ZERO = 0, ONE = 1, info,
@@ -1010,24 +1012,28 @@ void pdgemm_subcomm(
         }
 #endif
 
+        #ifdef DEBUG_PDGEMM_SUBCOMM
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         // convert A from original distribution to BLCYC in the new context
         pdgemr2d_(&M_A, &N_A, A, &ONE, &ONE, descA, A_BLCYC, &ONE, &ONE,
             descA_BLCYC, &ictxt_rowcomm);
-        t2 = MPI_Wtime();
         #ifdef DEBUG_PDGEMM_SUBCOMM
+        t2 = MPI_Wtime();
         if (!rank) printf("pdgemm_subcomm: A -> A_BLCYC: %.3f ms\n", (t2-t1)*1e3);
         #endif
 
         // if A = B, then skip the transfer for B
         if (A != B) {
+            #ifdef DEBUG_PDGEMM_SUBCOMM
             t1 = MPI_Wtime();
+            #endif
             // convert B from original distribution to BLCYC in the new context
             pdgemr2d_(&M_B, &N_B, B, &ONE, &ONE, descB, B_BLCYC, &ONE, &ONE,
-                descB_BLCYC, &ictxt_rowcomm);
-            t2 = MPI_Wtime();
+                descB_BLCYC, &ictxt_rowcomm);            
             #ifdef DEBUG_PDGEMM_SUBCOMM
+            t2 = MPI_Wtime();
             if (!rank) printf("pdgemm_subcomm: B -> B_BLCYC: %.3f ms\n", (t2-t1)*1e3);
             #endif
         }
@@ -1047,15 +1053,19 @@ void pdgemm_subcomm(
 
         // if beta != 0.0, we need to copy the values from C to C_BLCYC
         if (fabs(beta) > TEMP_TOL) {
-            t1 = MPI_Wtime();
-            pdgemr2d_(&M, &N, C, &ONE, &ONE, descC, C_BLCYC, &ONE, &ONE, descC_BLCYC, &ictxt_rowcomm);
-            t2 = MPI_Wtime();
             #ifdef DEBUG_PDGEMM_SUBCOMM
+            t1 = MPI_Wtime();
+            #endif
+            pdgemr2d_(&M, &N, C, &ONE, &ONE, descC, C_BLCYC, &ONE, &ONE, descC_BLCYC, &ictxt_rowcomm);
+            #ifdef DEBUG_PDGEMM_SUBCOMM
+            t2 = MPI_Wtime();
             if (!rank) printf("pdgemm_subcomm: C -> C_BLCYC: %.3f ms\n", (t2-t1)*1e3);
             #endif
         }
 
+        #ifdef DEBUG_PDGEMM_SUBCOMM
         t1 = MPI_Wtime();
+        #endif
         // double alpha = 1.0, beta = 0.0;
         // C = A' * B
         if (A == B && strcmpi(transa,"T") == 0 && strcmpi(transb,"N") == 0) { // C = A'*A
@@ -1067,16 +1077,16 @@ void pdgemm_subcomm(
             pdgemm_(transa, transb, &M, &N, &K, &alpha, A_BLCYC, &ONE, &ONE, descA_BLCYC,
                 B_BLCYC, &ONE, &ONE, descB_BLCYC, &beta, C_BLCYC, &ONE, &ONE, descC_BLCYC);
         }
-        t2 = MPI_Wtime();
         #ifdef DEBUG_PDGEMM_SUBCOMM
+        t2 = MPI_Wtime();
         if (!rank) printf("pdgemm_subcomm: C = A' * B: %.3f ms\n", (t2-t1)*1e3);
+        t1 = MPI_Wtime();
         #endif
 
-        t1 = MPI_Wtime();
         // convert C_BLCYC to given format
         pdgemr2d_(&M, &N, C_BLCYC, &ONE, &ONE, descC_BLCYC, C, &ONE, &ONE, descC, &ictxt_rowcomm);
-        t2 = MPI_Wtime();
         #ifdef DEBUG_PDGEMM_SUBCOMM
+        t2 = MPI_Wtime();
         if (!rank) printf("pdgemm_subcomm: C_BLCYC -> C: %.3f ms\n", (t2-t1)*1e3);
         #endif
 

@@ -605,7 +605,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
  */
 void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
     int i, j, k, ii, jj, kk, count, *nloc, rank;
-    double *x_in, *x_out, tcomm1, tcomm2;
+    double *x_in, *x_out;
     MPI_Request request;
     SQ_OBJ *pSQ  = pSPARC->pSQ;
     SQIND *SqInd = pSQ->SqInd;
@@ -619,7 +619,10 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
     x_out = (double*) calloc(SqInd->n_out, sizeof(double));                                // number of elements sent to each neighbor
     assert(x_in != NULL && x_out != NULL);
 
+    #ifdef DEBUG
+    double tcomm1, tcomm2;
     tcomm1 = MPI_Wtime(); 
+    #endif
     // assemble x_out
     count = 0;
     for (k = 0; k < SqInd->send_layers[4] + SqInd->send_layers[5] + 1; k++) {
@@ -687,8 +690,8 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
         end[2] = start[2];
     }
 
-    tcomm2 = MPI_Wtime();
     #ifdef DEBUG
+    tcomm2 = MPI_Wtime();
     if(!rank) printf("Rank %d Transfering Veff into P.R. (Process + Rcut) domain takes %.3f ms\n",rank, (tcomm2-tcomm1)*1e3); 
     #endif  
     free(x_in);
@@ -722,7 +725,6 @@ void create_D2D_sq2phi(SPARC_OBJ *pSPARC) {
  * @brief   Transferring electron density from SQ domain to phi domain using D2D
  */
 void TransferDensity_sq2phi(SPARC_OBJ *pSPARC, double *rho_send, double *rho_recv) {
-    double t1, t2;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     SQ_OBJ *pSQ  = pSPARC->pSQ;
@@ -732,13 +734,16 @@ void TransferDensity_sq2phi(SPARC_OBJ *pSPARC, double *rho_send, double *rho_rec
     rdims[0] = pSPARC->npNdx_phi; rdims[1] = pSPARC->npNdy_phi; rdims[2] = pSPARC->npNdz_phi;
     gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
     
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
 
     D2D(&pSPARC->d2d_s2p_sq, &pSPARC->d2d_s2p_phi, gridsizes, pSQ->DMVertices_SQ, rho_send, 
         pSPARC->DMVertices, rho_recv, pSQ->dmcomm_SQ, sdims, pSPARC->dmcomm_phi, rdims, MPI_COMM_WORLD);
         
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, Transfer density from SQ domain to dmcomm_phi using D2D took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
@@ -747,7 +752,6 @@ void TransferDensity_sq2phi(SPARC_OBJ *pSPARC, double *rho_send, double *rho_rec
  * @brief   Transferring Veff from phi domain to SQ domain using D2D
  */
 void TransferVeff_phi2sq(SPARC_OBJ *pSPARC, double *Veff_send, double *Veff_recv) {
-    double t1, t2;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     SQ_OBJ *pSQ  = pSPARC->pSQ;
@@ -757,13 +761,16 @@ void TransferVeff_phi2sq(SPARC_OBJ *pSPARC, double *Veff_send, double *Veff_recv
     rdims[0] = pSPARC->npNdx_SQ; rdims[1] = pSPARC->npNdy_SQ; rdims[2] = pSPARC->npNdz_SQ;
     gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
     
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
 
     D2D(&pSPARC->d2d_s2p_phi, &pSPARC->d2d_s2p_sq, gridsizes, pSPARC->DMVertices, Veff_send, 
         pSQ->DMVertices_SQ, Veff_recv, pSPARC->dmcomm_phi, sdims, pSQ->dmcomm_SQ, rdims, MPI_COMM_WORLD);
         
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, Transfer Veff from dmcomm_phi to SQ domain using D2D took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }

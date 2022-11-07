@@ -42,7 +42,7 @@
 #include "eigenSolver.h"
 #include "tools.h" 
 #include "linearSolver.h" // Lanczos
-#include "lapVecRoutines.h"
+#include "lapVecRoutinesKpt.h"
 #include "hamiltonianVecRoutines.h"
 #include "occupation.h"
 #include "isddft.h"
@@ -95,19 +95,22 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
     if(pSPARC->elecgs_Count > 0 || pSPARC->usefock > 1) 
         pSPARC->rhoTrigger = 1;
     
+#ifdef DEBUG
     double t1, t2;
+#endif
     x0 = pSPARC->Lanczos_x0_complex;
     
     if(SCFcount == 0){
         pSPARC->npl_max = pSPARC->ChebDegree;
         pSPARC->npl_min = max(pSPARC->ChebDegree / 4, 12);
+#ifdef DEBUG
         t1 = MPI_Wtime();
+#endif
         // set up initial guess for Lanczos
         if (pSPARC->kptcomm_topo != MPI_COMM_NULL)
             SetRandMat_complex(x0, pSPARC->Nd_d_kptcomm*pSPARC->Nspinor, 1, 0.0, 1.0, pSPARC->kptcomm_topo); // TODO: change for FixRandSeed = 1
-                    
+#ifdef DEBUG
         t2 = MPI_Wtime();
-#ifdef DEBUG    
         if (!rank) printf("\nTime for setting up initial guess for Lanczos: %.3f ms\n", (t2-t1)*1e3);
 #endif
         count = 0;
@@ -132,7 +135,9 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
                 CheFSI_kpt(pSPARC, lambda_cutoff, x0, count, kpt, spn_i);
             }
         }
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         
         // ** calculate fermi energy ** //
         //if(pSPARC->kptcomm_index < 0) return;
@@ -192,8 +197,8 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
         //     }
         // }
 
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (!rank) {
             printf("rank = %d, Efermi = %16.12f"
                    " calculate fermi energy took %.3f ms\n", 
@@ -254,26 +259,33 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
             }
 #endif
 
-    double t1, t2, t3, t_temp;
+    #ifdef DEBUG
+    double t1, t2, t3;
+    #endif
+    double t_temp;
     int DMnd, size_k, size_s;
     DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     size_k = DMnd * pSPARC->Nband_bandcomm;
     size_s = size_k * pSPARC->Nkpts_kptcomm;
 
     // ** Chebyshev filtering ** //
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
                    pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
                    pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
                    pSPARC->dmcomm, &t_temp);
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && kpt == 0) 
         printf("Total time for Chebyshev filtering (%d columns, degree = %d): %.3f ms\n", 
                 pSPARC->Nband_bandcomm, pSPARC->ChebDegree, (t2-t1)*1e3);
     #endif
     
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
     DP_Project_Hamiltonian_kpt(
@@ -290,12 +302,13 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
     Project_Hamiltonian_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb_kpt, 
                         pSPARC->Hp_kpt, pSPARC->Mp_kpt, kpt, spn_i, pSPARC->dmcomm);
     #endif
-    t2 = MPI_Wtime();
+    
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && kpt == 0) printf("Total time for projection: %.3f ms\n", (t2-t1)*1e3);
+    t1 = MPI_Wtime();
     #endif
     
-    t1 = MPI_Wtime();
     // ** solve the generalized eigenvalue problem Hp * Q = Mp * Q * Lambda **//
     #ifdef USE_DP_SUBEIG
     DP_Solve_Generalized_EigenProblem_kpt(pSPARC, kpt, spn_i);
@@ -303,23 +316,26 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
     Solve_Generalized_EigenProblem_kpt(pSPARC, kpt, spn_i);
     #endif
     
+    #ifdef DEBUG
     t3 = MPI_Wtime();
+    #endif
+
     // if eigvals are calculated in root process, then bcast the eigvals
     if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
         MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nkpts_kptcomm * pSPARC->Nspin_spincomm, 
                   MPI_DOUBLE, 0, pSPARC->kptcomm); // TODO: bcast in blacscomm if possible
     }
     
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank_spincomm && spn_i == 0 && kpt == 0) { 
         printf("==generalized eigenproblem: bcast eigvals took %.3f ms\n", (t2-t3)*1e3);
         printf("Total time for solving generalized eigenvalue problem: %.3f ms\n", 
                 (t2-t1)*1e3);
     }
+    t1 = MPI_Wtime();
     #endif
     
-    t1 = MPI_Wtime();
     // ** subspace rotation ** //
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation_kpt(pSPARC, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s);
@@ -341,8 +357,9 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int
         pSPARC->Yorb_BLCYC_kpt = NULL;
     }
     #endif
-    t2 = MPI_Wtime();
+    
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && kpt == 0) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
     #endif
 }
@@ -360,7 +377,9 @@ void Chebyshevfilter_constants_kpt(
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
+    #ifdef DEBUG
     double t1, t2;
+    #endif
     double temp;
     int gridsizes[3], sdims[3], rdims[3];
     gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
@@ -376,7 +395,9 @@ void Chebyshevfilter_constants_kpt(
     // ** find smallest and largest eigenvalue of the Hamiltonian ** //
     if (count == 0) 
     {
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         if (pSPARC->chefsibound_flag == 0 || pSPARC->chefsibound_flag == 1) { // 0 - default, 1 - always call Lanczos on H
             // estimate both max and min eigenval of H using Lanczos
             D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, pSPARC->DMVertices_dmcomm, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
@@ -398,8 +419,8 @@ void Chebyshevfilter_constants_kpt(
             *eigmin = -2.0; // TODO: tune this value
         }
 
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0 && kpt == 0) {
             printf("rank = %3d, Lanczos took %.3f ms, eigmin = %.12f, eigmax = %.12f\n", 
                    rank, (t2-t1)*1e3, *eigmin, *eigmax);
@@ -413,7 +434,9 @@ void Chebyshevfilter_constants_kpt(
         
         if (pSPARC->chefsibound_flag == 1 || ((count == pSPARC->rhoTrigger) && (strcmpi(pSPARC->XC, "SCAN") == 0))) { // 1 - always call Lanczos on H; the other condition is for SCAN: 
         //the first SCF is PBE, the second is SCAN, so it is necessary to do Lanczos again in 2nd SCF
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
             // estimate both max eigenval of H using Lanczos
             D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, pSPARC->DMVertices_dmcomm, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, 
                 pSPARC->DMVertices_kptcomm, pSPARC->Veff_loc_kptcomm_topo, pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL,
@@ -431,8 +454,8 @@ void Chebyshevfilter_constants_kpt(
                     &temp, eigmax, x0, 1e10, pSPARC->TOL_LANCZOS, 
                     1000, kpt, spn_i, pSPARC->kptcomm_topo, &pSPARC->req_veff_loc);
             *eigmax *= 1.01; // add 1% buffer
-            t2 = MPI_Wtime();
             #ifdef DEBUG
+            t2 = MPI_Wtime();
             if (rank == 0 && kpt == 0) {
                 printf("rank = %3d, Lanczos took %.3f ms, eigmin = %.12f, eigmax = %.12f\n", 
                    rank, (t2-t1)*1e3, *eigmin, *eigmax);
@@ -990,7 +1013,9 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     MPI_Comm_size(comm, &nproc_dmcomm);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    #ifdef DEBUG
     double t1, t2, t3, t4;
+    #endif
 
     int Nd_blacscomm;
     int sg  = pSPARC->spin_start_indx + spn_i;
@@ -1001,9 +1026,11 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     double complex alpha = 1.0, beta = 0.0;
     /* Calculate Mp = Y' * Y */
     
+    #ifdef DEBUG
     t3 = MPI_Wtime();
 
     t1 = MPI_Wtime();
+    #endif
     if (pSPARC->npband > 1) {
         // distribute orbitals into block cyclic format
         pzgemr2d_(&Nd_blacscomm, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
@@ -1011,13 +1038,14 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     } else {
         pSPARC->Yorb_BLCYC_kpt = Y;
     }
+    #ifdef DEBUG
     t2 = MPI_Wtime();  
-    #ifdef DEBUG  
     if(!rank && spn_i == 0 && kpt == 0) 
         printf("rank = %2d, Distribute orbital to block cyclic format took %.3f ms\n", 
                 rank, (t2 - t1)*1e3);          
-    #endif
     t1 = MPI_Wtime();
+    #endif
+    
     if (pSPARC->npband > 1) {
         #ifdef DEBUG    
         if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, STARTING PZGEMM ...\n",rank);
@@ -1038,21 +1066,24 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
             &beta, Mp, pSPARC->Nstates
         );
     }
-    t2 = MPI_Wtime();
+    
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) 
         printf("rank = %2d, Psi'*Psi in block cyclic format in each blacscomm took %.3f ms\n", 
                 rank, (t2 - t1)*1e3); 
-    #endif
     t1 = MPI_Wtime();
+    #endif
+    
     if (nproc_dmcomm > 1 && !pSPARC->is_domain_uniform) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Mp, pSPARC->nr_Mp_BLCYC*pSPARC->nc_Mp_BLCYC, 
                       MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
+
+    #ifdef DEBUG
     t2 = MPI_Wtime();
     t4 = MPI_Wtime();
-    #ifdef DEBUG
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, Allreduce to sum Psi'*Psi over dmcomm took %.3f ms\n", 
                      rank, (t2 - t1)*1e3); 
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, Distribute data + matrix mult took %.3f ms\n", 
@@ -1062,8 +1093,9 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     /* Calculate Hp = Y' * HY */
     // first find HY
     double complex *HY_BLCYC;
+    #ifdef DEBUG
     t1 = MPI_Wtime();
-    
+    #endif
     // save HY in Xorb
     int DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     int size_k = DMnd * pSPARC->Nband_bandcomm;
@@ -1072,12 +1104,12 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
         pSPARC, DMnd, DMVertices, pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm, pSPARC->Atom_Influence_nloc, 
         pSPARC->nlocProj, pSPARC->Nband_bandcomm, 0.0, Y, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, spn_i, kpt, pSPARC->dmcomm
     );
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, finding HY took %.3f ms\n", rank, (t2 - t1)*1e3);   
+    t1 = MPI_Wtime();
     #endif    
     
-    t1 = MPI_Wtime();
     if (pSPARC->npband > 1) {
         // distribute HY
         HY_BLCYC = (double complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double complex));
@@ -1087,12 +1119,14 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
     } else {
         HY_BLCYC = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
     }
-    t2 = MPI_Wtime();
+    
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, distributing HY into block cyclic form took %.3f ms\n", 
                      rank, (t2 - t1)*1e3);  
-    #endif
     t1 = MPI_Wtime();
+    #endif
+
     if (pSPARC->npband > 1) {
         // perform matrix multiplication Y' * HY using ScaLAPACK routines
         pzgemm_("C", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
@@ -1114,8 +1148,8 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex 
                       MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
 
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, finding Y'*HY took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
     if (pSPARC->npband > 1) {
@@ -1152,34 +1186,42 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
     int nproc_dmcomm;
     MPI_Comm_size(pSPARC->dmcomm, &nproc_dmcomm);
 
+    #ifdef DEBUG
     double t1, t2;
+    #endif
 
     if (pSPARC->useLAPACK == 1) {
         int info = 0;
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
             (pSPARC->is_domain_uniform && !rank_kptcomm)) {
             info = LAPACKE_zhegvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
                           pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
                           pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates);
         }
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank_spincomm && spn_i == 0 && kpt == 0) {
             printf("==generalized eigenproblem: "
                    "info = %d, solving generalized eigenproblem using LAPACKE_zhegvd: %.3f ms\n", 
                    info, (t2 - t1)*1e3);
         }
+        #else
+        (void) info; // suppress -Wunused-but-set-variable warning
         #endif
 
         int ONE = 1;
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         // distribute eigenvectors to block cyclic format
         pzgemr2d_(&pSPARC->Nstates, &pSPARC->Nstates, pSPARC->Hp_kpt, &ONE, &ONE, 
                   pSPARC->desc_Hp_BLCYC, pSPARC->Q_kpt, &ONE, &ONE, 
                   pSPARC->desc_Q_BLCYC, &pSPARC->ictxt_blacs_topo);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank_spincomm && spn_i == 0 && kpt == 0) {
             printf("==generalized eigenproblem: "
                    "distribute subspace eigenvectors into block cyclic format: %.3f ms\n", 
@@ -1187,8 +1229,11 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         }
         #endif
     } else {
-        int ZERO = 0, ONE = 1, il = 1, iu = 1, *ifail, info, N, M, NZ;
-        double complex *work;
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+        #endif
+        int ONE = 1, il = 1, iu = 1, *ifail, info, N, M, NZ;
+        // double complex *work;
         double vl = 0.0, vu = 0.0, abstol, orfac;
         
         ifail = (int *)malloc(pSPARC->Nstates * sizeof(int));
@@ -1212,8 +1257,8 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
             printf("\nError in solving generalized eigenproblem! info = %d\n", info);
         }
         
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank && spn_i == 0 && kpt == 0) {
             printf("rank = %d, info = %d, ifail[0] = %d, time for solving generalized eigenproblem : %.3f ms\n", 
                     rank, info, ifail[0], (t2 - t1)*1e3);
@@ -1254,9 +1299,11 @@ void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double comple
 
     double complex alpha = 1.0, beta = 0.0;
 
+    #ifdef DEBUG
     double t1, t2;
-
     t1 = MPI_Wtime();
+    #endif
+
     if (pSPARC->npband > 1) {
         // perform matrix multiplication Psi * Q using ScaLAPACK routines
         pzgemm_("N", "N", &Nd_blacscomm, &pSPARC->Nstates, &pSPARC->Nstates, &alpha, 
@@ -1270,12 +1317,14 @@ void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double comple
             &beta, PsiQ, Nd_blacscomm
         );
     }
-    t2 = MPI_Wtime();
+
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, subspace rotation using ScaLAPACK took %.3f ms\n", 
                      rank, (t2 - t1)*1e3); 
-    #endif
     t1 = MPI_Wtime();
+    #endif
+    
     if (pSPARC->npband > 1) {
         // distribute rotated orbitals from block cyclic format back into 
         // original format (band + domain)
@@ -1283,8 +1332,9 @@ void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double comple
                   pSPARC->desc_orb_BLCYC, Psi_rot, &ONE, &ONE, 
                   pSPARC->desc_orbitals, &pSPARC->ictxt_blacs);
     }
-    t2 = MPI_Wtime();    
+    
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) 
         printf("rank = %2d, Distributing orbital back into band + domain format took %.3f ms\n", 
                 rank, (t2 - t1)*1e3); 
@@ -1303,7 +1353,9 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
              double *eigmin, double *eigmax, double complex *x0, double TOL_min, double TOL_max, 
              int MAXIT, int kpt, int spn_i, MPI_Comm comm, MPI_Request *req_veff_loc) 
 {
+    #ifdef DEBUG
     double t1, t2;
+    #endif
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1313,7 +1365,9 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
     #endif
 
     if (comm == MPI_COMM_NULL) {
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         // receive computed eigmin and eigmax from root processors in the Cart topology
         double Bbuf[2];
 
@@ -1324,8 +1378,8 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
         
         *eigmin = Bbuf[0]; *eigmax = Bbuf[1];
 
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, inter-communicator Bcast took %.3f ms\n",rank,(t2-t1)*1e3);
         #endif
         return;
@@ -1375,19 +1429,23 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
 
     // calculate V_j = H * V_jm1, TODO: check if Veff_loc is available
     // TODO: remove if not using nonblocking communication
+#ifdef DEBUG    
     t1 = MPI_Wtime();
-    MPI_Wait(req_veff_loc, MPI_STATUS_IGNORE);
-    t2 = MPI_Wtime();
-#ifdef DEBUG
-    if(!rank && spn_i == 0 && kpt == 0) printf("Wait for veff to be bcasted took %.3f ms\n", (t2-t1)*1e3);
 #endif
+    MPI_Wait(req_veff_loc, MPI_STATUS_IGNORE);
+#ifdef DEBUG
+    t2 = MPI_Wtime();
+    if(!rank && spn_i == 0 && kpt == 0) printf("Wait for veff to be bcasted took %.3f ms\n", (t2-t1)*1e3);
     t1 = MPI_Wtime();
+#endif
+
     Hamiltonian_vectors_mult_kpt(
         pSPARC, DMnd, DMVertices, Veff_loc, Atom_Influence_nloc, 
         nlocProj, 1, 0.0, V_jm1, V_j, spn_i, kpt, comm
     );
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, One H*x took %.3f ms\n", rank, (t2-t1)*1e3);   
 #endif
     // find dot product of V_jm1 and V_j, and store the value in a[0]
@@ -1459,7 +1517,9 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
             e[i] = b[i];
         }
         
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         
         if (!LAPACKE_dsterf(j+2, d, e)) {
             *eigmin = d[0];
@@ -1469,7 +1529,9 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
             break;
         }
         
+        #ifdef DEBUG
         t2 = MPI_Wtime();
+        #endif
         
         err_eigmin = fabs(*eigmin - eigmin_pre);
         err_eigmax = fabs(*eigmax - eigmax_pre);
@@ -1487,7 +1549,9 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
 #endif
     
     if (pSPARC->kptcomm_inter != MPI_COMM_NULL) {
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
 
         // broadcast the computed eigmin and eigmax from root to processors not in the Cart topology
         int rank_kptcomm = -1;
@@ -1504,8 +1568,8 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
         }
         //MPI_Bcast(Bbuf, 2, MPI_DOUBLE, 0, pSPARC->kptcomm);
 
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank && spn_i == 0 && kpt == 0) printf("rank = %d, inter-communicator Bcast took %.3f ms\n",rank,(t2-t1)*1e3);
 #endif
     }
@@ -1526,7 +1590,9 @@ void Lanczos_laplacian_kpt(
     const int MAXIT, int kpt, int spn_i, MPI_Comm comm
 ) 
 {
+    #ifdef DEBUG
     double t1, t2;
+    #endif
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1534,7 +1600,9 @@ void Lanczos_laplacian_kpt(
     if (rank == 0 && spn_i == 0 && kpt == 0) printf("\nStart Lanczos algorithm ...\n");
     #endif
     if (comm == MPI_COMM_NULL) {
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         // receive computed eigmin and eigmax from root processors in the Cart topology
         double Bbuf[2];
         // the non-root processes do nothing
@@ -1544,8 +1612,8 @@ void Lanczos_laplacian_kpt(
         
         *eigmin = Bbuf[0]; *eigmax = Bbuf[1];
 
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (!rank && spn_i == 0 && kpt == 0) printf("rank = %d, inter-communicator Bcast took %.3f ms\n",rank,(t2-t1)*1e3);
         #endif
         return;
@@ -1593,10 +1661,12 @@ void Lanczos_laplacian_kpt(
         V_jm1[i] *= vscal;
 
     // calculate V_j = H * V_jm1
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     Lap_vec_mult_kpt(pSPARC, DMnd, DMVertices, 1, 0.0, V_jm1, V_j, kpt, comm);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank && spn_i == 0 && kpt == 0) printf("rank = %2d, One H*x took %.3f ms\n", rank, (t2-t1)*1e3);   
 #endif
     // find dot product of V_jm1 and V_j, and store the value in a[0]
@@ -1664,7 +1734,9 @@ void Lanczos_laplacian_kpt(
             e[i] = b[i];
         }
         
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         
         if (!LAPACKE_dsterf(j+2, d, e)) {
             *eigmin = d[0];
@@ -1674,7 +1746,9 @@ void Lanczos_laplacian_kpt(
             break;
         }
         
+        #ifdef DEBUG
         t2 = MPI_Wtime();
+        #endif
         
         err_eigmin = fabs(*eigmin - eigmin_pre);
         err_eigmax = fabs(*eigmax - eigmax_pre);
@@ -1691,7 +1765,9 @@ void Lanczos_laplacian_kpt(
 #endif
     
     if (pSPARC->kptcomm_inter != MPI_COMM_NULL) {
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
 
         // broadcast the computed eigmin and eigmax from root to processors not in the Cart topology
         int rank_kptcomm = -1;
@@ -1708,8 +1784,8 @@ void Lanczos_laplacian_kpt(
         }
         // MPI_Bcast(Bbuf, 2, MPI_DOUBLE, 0, pSPARC->kptcomm);
 
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank && spn_i == 0 && kpt == 0) printf("rank = %d, inter-communicator Bcast took %.3f ms\n",rank,(t2-t1)*1e3);
 #endif
     }

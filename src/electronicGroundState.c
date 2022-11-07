@@ -253,44 +253,52 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
 
     // print final electron density
     if (pSPARC->PrintElecDensFlag == 1) {
+        #ifdef DEBUG
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         printElecDens(pSPARC);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("Time for printing density: %.3f ms\n", (t2-t1)*1e3);
         #endif
     }
 
     // print final eigenvalues and occupations
     if (pSPARC->PrintEigenFlag == 1) {
+        #ifdef DEBUG
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         printEigen(pSPARC);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("Time for printing eigenvalues: %.3f ms\n", (t2-t1)*1e3);
         #endif
     }
 
     // print final orbitals
     if (pSPARC->PrintPsiFlag[0] == 1) {
+        #ifdef DEBUG
         double t1, t2;
         t1 = MPI_Wtime();
+        #endif
         print_orbitals(pSPARC);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("Time for printing orbitals: %.3f ms\n", (t2-t1)*1e3);
         #endif
     }
 
     // print energy density
     if (pSPARC->PrintEnergyDensFlag == 1) {
-        double t1, t2;
-        t1 = MPI_Wtime();        
-        printEnergyDensity(pSPARC);
-        t2 = MPI_Wtime();
         #ifdef DEBUG
+        double t1, t2;
+        t1 = MPI_Wtime();
+        #endif
+        printEnergyDensity(pSPARC);
+        #ifdef DEBUG
+        t2 = MPI_Wtime();
         if (rank == 0) printf("Time for printing energy density: %.3f ms\n", (t2-t1)*1e3);
         #endif
     }
@@ -501,7 +509,9 @@ void scf(SPARC_OBJ *pSPARC)
         fclose(output_fp);
     }
     
+    #ifdef DEBUG
     double t1, t2;
+    #endif
     
     int DMnd = pSPARC->Nd_d;
     int NspinDMnd = pSPARC->Nspin * DMnd;
@@ -509,7 +519,9 @@ void scf(SPARC_OBJ *pSPARC)
     // solve the poisson equation for electrostatic potential, "phi"
     Calculate_elecstPotential(pSPARC);
 
-    t1 = MPI_Wtime();  
+    #ifdef DEBUG
+    t1 = MPI_Wtime();
+    #endif
     // calculate xc potential (LDA), "Vxc"
     Calculate_Vxc(pSPARC);
 	#ifdef DEBUG
@@ -568,12 +580,20 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     int DMnd = pSPARC->Nd_d;
     int NspinDMnd = pSPARC->Nspin * DMnd;
     int sindx_rho = (pSPARC->Nspin == 2) ? DMnd : 0;
-    int i, k, SCFcount, spn_i;
+    int i, k, SCFcount;
+
+#ifdef DEBUG
+    int spn_i;
     int Nk = pSPARC->Nkpts_kptcomm;
     int Ns = pSPARC->Nstates;
+#endif
 
     double error, dEtot, dEband, veff_mean;
-    double t1, t2, t_scf_s, t_scf_e, t_cum_scf;
+    double t_scf_s, t_scf_e, t_cum_scf;
+
+#ifdef DEBUG
+    double t1, t2;
+#endif
     
     FILE *output_fp;
 
@@ -616,7 +636,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             Calculate_magnetization(pSPARC);
         
         if (pSPARC->MixingVariable == 0) { // density mixing
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
             dEband = pSPARC->Eband;
             dEtot  = pSPARC->Etot;
             // Calculate/estimate system energies
@@ -641,9 +663,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             
             dEband = fabs(dEband - pSPARC->Eband) / pSPARC->n_atom;
             dEtot  = fabs(dEtot  - pSPARC->Etot ) / pSPARC->n_atom;
-            t2 = MPI_Wtime();
-            
+
 		    #ifdef DEBUG
+            t2 = MPI_Wtime();
             if(!rank) 
             printf("rank = %d, Calculating/Estimating energy took %.3f ms, "
                    "Etot = %.9f, dEtot = %.3e, dEband = %.3e\n", 
@@ -653,21 +675,24 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
         // update potential for potential mixing only
         if (pSPARC->MixingVariable == 1) { // potential mixing
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
+
             // solve the poisson equation for electrostatic potential, "phi"
             Calculate_elecstPotential(pSPARC);
-            t2 = MPI_Wtime();
-		    
+
 		    #ifdef DEBUG
+            t2 = MPI_Wtime();
             if(!rank) printf("rank = %d, Solving poisson equation took %.3f ms\n", rank, (t2 - t1) * 1e3);
-		    #endif
+		    t1 = MPI_Wtime();
+            #endif
             
-            t1 = MPI_Wtime();
             // calculate xc potential (LDA, PW92), "Vxc"
             Calculate_Vxc(pSPARC);
-            t2 = MPI_Wtime();
 		    
 		    #ifdef DEBUG
+            t2 = MPI_Wtime();
             if(!rank) printf("rank = %d, Calculating Vxc took %.3f ms\n", rank, (t2 - t1) * 1e3);
 		    #endif            
             
@@ -676,7 +701,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         }
 
         if (pSPARC->MixingVariable == 1) { // potential mixing
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
             dEband = pSPARC->Eband;
             dEtot  = pSPARC->Etot;
 
@@ -711,9 +738,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             
             dEband = fabs(dEband - pSPARC->Eband) / pSPARC->n_atom;
             dEtot  = fabs(dEtot  - pSPARC->Etot ) / pSPARC->n_atom;
-            t2 = MPI_Wtime();
             
 		    #ifdef DEBUG
+            t2 = MPI_Wtime();
             if(!rank) 
             printf("rank = %d, Calculating/Estimating energy took %.3f ms, "
                    "Etot = %.9f, dEtot = %.3e, dEband = %.3e\n", 
@@ -779,11 +806,14 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         }
 
         // Apply mixing and preconditioner, if required
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
+
         Mixing(pSPARC, SCFcount);
-        t2 = MPI_Wtime();
 
         #ifdef DEBUG
+        t2 = MPI_Wtime();
         if(!rank) printf("rank = %d, Mixing (+ precond) took %.3f ms\n", rank, (t2 - t1) * 1e3);
         #endif
 
@@ -804,11 +834,15 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                 TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->pSQ->Veff_loc_SQ);
         } else {
             // transfer Veff_loc from "phi-domain" to "psi-domain"
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
+
             for (i = 0; i < pSPARC->Nspin; i++)
                 Transfer_Veff_loc(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->Veff_loc_dmcomm + i*pSPARC->Nd_d_dmcomm);
-            t2 = MPI_Wtime();
+            
             #ifdef DEBUG
+            t2 = MPI_Wtime();
             if(!rank) 
                 printf("rank = %d, Transfering Veff from phi-domain to psi-domain took %.3f ms\n", 
                     rank, (t2 - t1) * 1e3);
@@ -889,8 +923,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     EVA_buff_finalize();
     #endif
     
-    int spin_maxocc = 0, k_maxocc = 0;
-    double maxocc = -1.0;
 	// check occupation (if Nstates is large enough)
     if (pSPARC->SQFlag == 1) {
         SQ_OBJ *pSQ = pSPARC->pSQ;
@@ -914,9 +946,11 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             }
         }
     } else {
+        #ifdef DEBUG
+        int spin_maxocc = 0, k_maxocc = 0;
+        double maxocc = -1.0;
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++){
             for (k = 0; k < Nk; k++) {
-                
                 int ind = pSPARC->Nstates-1;
                 ind = max(ind,0);
                 double g_ind = pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + ind];
@@ -927,7 +961,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                     k_maxocc = k;
                 }
 
-                #ifdef DEBUG
+                // #ifdef DEBUG
                 if(!rank) {
                     int nocc_print = min(200,pSPARC->Nstates - pSPARC->Nelectron/2 + 10);
                     nocc_print = min(nocc_print, pSPARC->Nstates);
@@ -940,12 +974,10 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                                 (3.0-pSPARC->Nspin)/pSPARC->Nspinor * pSPARC->occ_sorted[spn_i*Ns*Nk + k*Ns + Ns - nocc_print + i]);
                     }
                 }
-                #endif
             }
-        }    
+        }
 
         // print occ(0.9*NSTATES)] and occ(NSTATES) in DEBUG mode (only for the k point that gives max occ)
-        #ifdef DEBUG
         spn_i = spin_maxocc;
         k = k_maxocc;
         if(!rank) {
@@ -1188,7 +1220,9 @@ void Update_mixing_hist_xk(SPARC_OBJ *pSPARC, double veff_mean)
  */
 void Transfer_Veff_loc(SPARC_OBJ *pSPARC, double *Veff_phi_domain, double *Veff_psi_domain) 
 {
+#ifdef DEBUG
     double t1, t2;
+#endif
     
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1202,43 +1236,46 @@ void Transfer_Veff_loc(SPARC_OBJ *pSPARC, double *Veff_phi_domain, double *Veff_
     sdims[0] = pSPARC->npNdx_phi; sdims[1] = pSPARC->npNdy_phi; sdims[2] = pSPARC->npNdz_phi;
     rdims[0] = pSPARC->npNdx; rdims[1] = pSPARC->npNdy; rdims[2] = pSPARC->npNdz;
 
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
     D2D(&pSPARC->d2d_dmcomm_phi, &pSPARC->d2d_dmcomm, gridsizes, pSPARC->DMVertices, Veff_phi_domain, 
         pSPARC->DMVertices_dmcomm, Veff_psi_domain, pSPARC->dmcomm_phi, sdims, 
         (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, 
         rdims, MPI_COMM_WORLD);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("---Transfer Veff_loc: D2D took %.3f ms\n",(t2-t1)*1e3);
-#endif
-    
     t1 = MPI_Wtime();
+#endif
     
     // Broadcast phi from the dmcomm that contain root process to all dmcomms of the first kptcomms in each spincomm
     if (pSPARC->npspin > 1 && pSPARC->spincomm_index >= 0 && pSPARC->kptcomm_index == 0) {
         MPI_Bcast(Veff_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->spin_bridge_comm);
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("---Transfer Veff_loc: bcast btw/ spincomms of 1st kptcomm took %.3f ms\n",(t2-t1)*1e3);
-#endif
-
     t1 = MPI_Wtime();
+#endif
     
     // Broadcast phi from the dmcomm that contain root process to all dmcomms of the first bandcomms in each kptcomm
     if (pSPARC->spincomm_index >= 0 && pSPARC->npkpt > 1 && pSPARC->kptcomm_index >= 0 && pSPARC->bandcomm_index == 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
         MPI_Bcast(Veff_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->kpt_bridge_comm);
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("---Transfer Veff_loc: bcast btw/ kptcomms of 1st bandcomm took %.3f ms\n",(t2-t1)*1e3);
 #endif
 
     MPI_Barrier(pSPARC->blacscomm); // experienced severe slowdown of MPI_Bcast below on Quartz cluster, this Barrier fixed the issue (why?)
+
+#ifdef DEBUG
     t1 = MPI_Wtime();
-    
+#endif
+
     // Bcast phi from first bandcomm to all other bandcomms
     if (pSPARC->npband > 1 && pSPARC->kptcomm_index >= 0 && pSPARC->dmcomm != MPI_COMM_NULL) {
         MPI_Bcast(Veff_psi_domain, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, 0, pSPARC->blacscomm);    
@@ -1246,8 +1283,9 @@ void Transfer_Veff_loc(SPARC_OBJ *pSPARC, double *Veff_phi_domain, double *Veff_
     pSPARC->req_veff_loc = MPI_REQUEST_NULL;
     
     MPI_Barrier(pSPARC->blacscomm); // experienced severe slowdown of MPI_Bcast above on Quartz cluster, this Barrier fixed the issue (why?)
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("---Transfer Veff_loc: mpi_bcast (count = %d) to all bandcomms took %.3f ms\n",pSPARC->Nd_d_dmcomm,(t2-t1)*1e3);
 #endif
     
@@ -1260,8 +1298,9 @@ void Transfer_Veff_loc(SPARC_OBJ *pSPARC, double *Veff_phi_domain, double *Veff_
  */
 void TransferDensity(SPARC_OBJ *pSPARC, double *rho_send, double *rho_recv)
 {
+#ifdef DEBUG
     double t1, t2;
-    
+#endif
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
@@ -1269,15 +1308,14 @@ void TransferDensity(SPARC_OBJ *pSPARC, double *rho_send, double *rho_recv)
     sdims[0] = pSPARC->npNdx; sdims[1] = pSPARC->npNdy; sdims[2] = pSPARC->npNdz;
     rdims[0] = pSPARC->npNdx_phi; rdims[1] = pSPARC->npNdy_phi; rdims[2] = pSPARC->npNdz_phi;
     gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
-    
+#ifdef DEBUG
     t1 = MPI_Wtime();
-
+#endif
     D2D(&pSPARC->d2d_dmcomm, &pSPARC->d2d_dmcomm_phi, gridsizes, pSPARC->DMVertices_dmcomm, rho_send, 
         pSPARC->DMVertices, rho_recv, (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, sdims, 
         pSPARC->dmcomm_phi, rdims, MPI_COMM_WORLD);
-        
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, D2D took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
