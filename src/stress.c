@@ -25,8 +25,7 @@
 #include "stress.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-#include "lapVecOrth.h"
-#include "lapVecNonOrth.h"
+#include "lapVecRoutines.h"
 #include "tools.h" 
 #include "isddft.h"
 #include "initialization.h"
@@ -109,11 +108,15 @@ void Calculate_ionic_stress(SPARC_OBJ *pSPARC){
 
 void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
 	int i, rank;
+#ifdef DEBUG
     double t1, t2;
+#endif
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     // find exchange-correlation components of stress
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
     Calculate_XC_stress(pSPARC);
     if (pSPARC->mGGAflag == 1) {
         if (pSPARC->isGammaPoint) { // metaGGA stress psi term is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_stress
@@ -123,35 +126,39 @@ void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
             Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mgga.c
         }
     }
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating exchange-correlation stress components: %.3f ms\n", (t2 - t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
     // find local stress components
-    t1 = MPI_Wtime();
     Calculate_local_stress(pSPARC);
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating local stress components: %.3f ms\n", (t2 - t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
     // find nonlocal + kinetic stress components
-    t1 = MPI_Wtime();
     Calculate_nonlocal_kinetic_stress(pSPARC);
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating nonlocal+kinetic stress components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
 
     if (pSPARC->usefock > 0) {
         // find exact exchange stress components
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif        
         Calculate_exact_exchange_stress(pSPARC);
+        #ifdef DEBUG
         t2 = MPI_Wtime();
-    #ifdef DEBUG
         if(!rank) printf("Time for calculating exact exchange stress components: %.3f ms\n", (t2 - t1)*1e3);
-    #endif
+        #endif
     }    
 
     // find stress

@@ -1121,9 +1121,10 @@ void Calculate_Exc_LDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
 {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
 
+    #ifdef DEBUG
     double t1, t2, t3;
-
     t1 = MPI_Wtime();
+    #endif
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1165,13 +1166,15 @@ void Calculate_Exc_LDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
     }
     Exc *= pSPARC->dV;
     
-    t2 = MPI_Wtime();    
+    #ifdef DEBUG
+    t2 = MPI_Wtime();
+    #endif
 
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->Exc = Exc;
 
-    t3 = MPI_Wtime();
 #ifdef DEBUG
+    t3 = MPI_Wtime();
     if (!rank) printf("rank = %d, Exc = %18.14f , local calculation time: %.3f ms, Allreduce time: %.3f ms, Total time: %.3f ms\n", rank, Exc,(t2-t1)*1e3, (t3-t2)*1e3, (t3-t1)*1e3);
 #endif
 }
@@ -1750,3 +1753,43 @@ void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_
         *d1rfx = X * (d1rterm1 + d1rterm3 + d1rterm4 + d1rterm5);
     }
 }
+
+
+/**
+ * @brief  Calculate exchange correlation energy density
+ **/
+void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho)
+{
+    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
+
+    double *rho;
+    int sz_rho, i, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    sz_rho = pSPARC->Nd_d;
+    rho = (double *)malloc(sz_rho * sizeof(double) );
+    for (i = 0; i < sz_rho; i++){
+        rho[i] = pSPARC->electronDens[i];
+        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+        if (pSPARC->NLCC_flag)
+            rho[i] += pSPARC->electronDens_core[i];
+        if(rho[i] < pSPARC->xc_rhotol)
+            rho[i] = pSPARC->xc_rhotol;
+    }
+
+    // TODO: Add ExcRho for spin-up and down
+    for (i = 0; i < pSPARC->Nd_d; i++) {
+        ExcRho[i] = pSPARC->e_xc[i] * rho[i];
+    }
+
+    free(rho);
+#ifdef DEBUG
+    double Exc = 0;
+    for (i = 0; i < pSPARC->Nd_d; i++)
+        Exc += ExcRho[i];
+    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+    Exc *= pSPARC->dV;
+    if (!rank) printf("Exchange correlation energy (without hybrid) from Exc energy density: %f\n", Exc);
+#endif
+}
+

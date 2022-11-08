@@ -730,10 +730,10 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         for (i = 0; i < 9; i++)
             pSPARC->desc_orbitals[i] = 0;
     }
+#ifdef DEBUG
     int temp_r, temp_c;
     temp_r = numroc_( &Nd_blacscomm, &mb, &myrow, &ZERO, &nprow);
     temp_c = numroc_( &pSPARC->Nstates, &nb, &mycol, &ZERO, &npcol);
-#ifdef DEBUG
     if (!rank) printf("rank = %2d, my blacs rank = %d, BLCYC size (%d, %d), actual size (%d, %d)\n", rank, pSPARC->bandcomm_index, temp_r, temp_c, Nd_blacscomm, pSPARC->Nband_bandcomm);
 #endif
     // get coord of each process in block cyclic topology context
@@ -1957,8 +1957,9 @@ void Set_D2D_Target(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int
 {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#ifdef DEBUG
     double t3, t4;
-
+#endif
     int rank_recv_comm, nproc_recv_comm, rank_send_comm, nproc_send_comm,
         nproc_union_comm, rank_union_comm, coords_send_comm[3], coords_recv_comm[3],
         send_coord_start[3], send_coord_end[3], nsend[3], *send_coords,
@@ -2015,7 +2016,9 @@ void Set_D2D_Target(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int
 
     // set up send processes
     if (send_comm != MPI_COMM_NULL) {
+#ifdef DEBUG
         t3 = MPI_Wtime();
+#endif
         MPI_Cart_coords(send_comm, rank_send_comm, 3, coords_send_comm);
         nsend_tot = 1;
         // find out in each dimension, how many recv processes the local domain spans over
@@ -2032,11 +2035,11 @@ void Set_D2D_Target(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int
         // find out all the coordinates of the receiver processes in the recv_comm Cart Topology
         c_ndgrid(3, send_coord_start, send_coord_end, send_coords);
 
-        t4 = MPI_Wtime();
 #ifdef DEBUG
+        t4 = MPI_Wtime();
         if (rank == 0) printf("======Set_D2D_Target: find receivers in each process (c_ndgrid) in send_comm took %.3f ms\n", (t4-t3)*1e3);
-#endif
         t3 = MPI_Wtime();
+#endif
 
         // TODO: Gatherv the send_coords in root process in send_comm
         if (rank_send_comm == 0) { // we require both comms overlap at rank 0
@@ -2091,8 +2094,8 @@ void Set_D2D_Target(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int
             MPI_Scatterv(srank_vec_union, scounts_send_comm, displs_send_comm, MPI_INT, d2d_sender->target_ranks, nsend_tot, MPI_INT, 0, send_comm);
         }
 
-        t4 = MPI_Wtime();
 #ifdef DEBUG
+        t4 = MPI_Wtime();
         if (rank == 0) printf("======Set_D2D_Target: Gather and Scatter receivers in send_comm took %.3f ms\n", (t4-t3)*1e3);
 #endif
     }
@@ -2251,13 +2254,17 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2, t3, t4;
+#endif
 
     int ndims, rank_recv_comm, rank_send_comm,
         coords_send_comm[3], coords_recv_comm[3];
     ndims = 3;
 
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 
     int i, j, k, iloc, jloc, kloc, n;
     int nsend_tot, *send_coord_start, *send_coord_end, *send_coords;
@@ -2284,9 +2291,9 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
 
     // set up send processes
     if (send_comm != MPI_COMM_NULL) {
-
+#ifdef DEBUG
         t3 = MPI_Wtime();
-
+#endif
         for (n = 0; n < 3; n++) {
             sDMnxi[n] = sDMVert[2*n+1] - sDMVert[2*n] + 1;
         }
@@ -2306,8 +2313,8 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
         // find out all the coordinates of the receiver processes in the recv_comm Cart Topology
         c_ndgrid(ndims, send_coord_start, send_coord_end, send_coords);
 
-        t4 = MPI_Wtime();
         #ifdef DEBUG
+        t4 = MPI_Wtime();
             if (rank == 0) printf("======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took %.3f ms\n", (t4-t3)*1e3);
         #endif
 
@@ -2354,7 +2361,9 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
 
     // set up receiver processes
     if (recv_comm != MPI_COMM_NULL) {
+#ifdef DEBUG
         t3 = MPI_Wtime();
+#endif
         MPI_Comm_rank(recv_comm, &rank_recv_comm);
         MPI_Cart_coords(recv_comm, rank_recv_comm, ndims, coords_recv_comm);
 
@@ -2378,8 +2387,8 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
         // find out all the coords of the send process in the send_comm topology
         c_ndgrid(ndims, recv_coord_start, recv_coord_end, recv_coords);
 
-    t4 = MPI_Wtime();
 #ifdef DEBUG
+    t4 = MPI_Wtime();
     if (rank == 0) printf("======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took %.3f ms\n", (t4-t3)*1e3);
 #endif
 
@@ -2405,8 +2414,8 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
         }
     }
 
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("======D2D: initiated sending and receiving took %.3f ms\n", (t2-t1)*1e3);
 #endif
 
@@ -2484,13 +2493,17 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2, t3, t4;
+#endif
 
     int ndims, rank_recv_comm, rank_send_comm,
         coords_send_comm[3], coords_recv_comm[3];
     ndims = 3;
 
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
 
     int i, j, k, iloc, jloc, kloc, n;
     int nsend_tot, *send_coord_start, *send_coord_end, *send_coords;
@@ -2517,9 +2530,9 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
 
     // set up send processes
     if (send_comm != MPI_COMM_NULL) {
-
+#ifdef DEBUG
         t3 = MPI_Wtime();
-
+#endif
         for (n = 0; n < 3; n++) {
             sDMnxi[n] = sDMVert[2*n+1] - sDMVert[2*n] + 1;
         }
@@ -2539,8 +2552,8 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
         // find out all the coordinates of the receiver processes in the recv_comm Cart Topology
         c_ndgrid(ndims, send_coord_start, send_coord_end, send_coords);
 
-        t4 = MPI_Wtime();
         #ifdef DEBUG
+        t4 = MPI_Wtime();
             if (rank == 0) printf("======D2D: find receivers' coords in each process (c_ndgrid) in send_comm took %.3f ms\n", (t4-t3)*1e3);
         #endif
 
@@ -2587,7 +2600,9 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
 
     // set up receiver processes
     if (recv_comm != MPI_COMM_NULL) {
+#ifdef DEBUG
         t3 = MPI_Wtime();
+#endif
         MPI_Comm_rank(recv_comm, &rank_recv_comm);
         MPI_Cart_coords(recv_comm, rank_recv_comm, ndims, coords_recv_comm);
 
@@ -2611,8 +2626,8 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
         // find out all the coords of the send process in the send_comm topology
         c_ndgrid(ndims, recv_coord_start, recv_coord_end, recv_coords);
 
-    t4 = MPI_Wtime();
 #ifdef DEBUG
+    t4 = MPI_Wtime();
     if (rank == 0) printf("======D2D: find senders' coords in each process (c_ndgrid) in recv_comm took %.3f ms\n", (t4-t3)*1e3);
 #endif
 
@@ -2638,8 +2653,8 @@ void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVe
         }
     }
 
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("======D2D: initiated sending and receiving took %.3f ms\n", (t2-t1)*1e3);
 #endif
 

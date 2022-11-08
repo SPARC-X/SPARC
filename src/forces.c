@@ -25,8 +25,7 @@
 #include "forces.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-#include "lapVecOrth.h"
-#include "lapVecNonOrth.h"
+#include "lapVecRoutines.h"
 #include "tools.h" 
 #include "isddft.h"
 #include "initialization.h"
@@ -43,24 +42,27 @@
 void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
 {
     int rank, i;
-    double t1, t2;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
+
+#ifdef DEBUG    
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
+
     // find local force components
     Calculate_local_forces(pSPARC);
-    
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating local force components: %.3f ms\n", (t2 - t1)*1e3);
-#endif
     t1 = MPI_Wtime();
+#endif
     
     // find nonlocal force components
     Calculate_nonlocal_forces(pSPARC);
 
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating nonlocal force components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
 
@@ -73,7 +75,9 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
     
     // calculate f_xc for non-linear core correction (NLCC)
     if (pSPARC->NLCC_flag) {
+#ifdef DEBUG
         t1 = MPI_Wtime();
+#endif
         double *forces_xc = (double *)calloc(3*pSPARC->n_atom, sizeof(double));
         void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc);
         Calculate_forces_xc(pSPARC, forces_xc); // note that forces_xc is already in Cartesian basis

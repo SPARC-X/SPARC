@@ -52,8 +52,10 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
         return; 
     }
 
+#ifdef DEBUG
     double t1, t2;
     t1 = MPI_Wtime();
+#endif
 
     int nproc_comm, rank_comm;
     MPI_Comm_size(comm, &nproc_comm);
@@ -402,8 +404,8 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
         free(Atom_Influence_nloc_temp.grid_pos);
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf(GRN"rank = %d, time for nonlocal influencing atoms: %.3f ms\n"RESET, rank, (t2-t1)*1e3);
 #endif
 }

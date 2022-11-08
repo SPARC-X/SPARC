@@ -49,7 +49,10 @@ void AAR(
     int rank, i, iter_count, i_hist;
     double *r, *x_old, *f, *f_old, *X, *F, b_2norm, r_2norm;
 
-    double t1, t2, tt1, tt2, ttot, t_anderson, ttot2, ttot3, ttot4;
+#ifdef DEBUG
+    double t1, t2;
+#endif
+    double tt1, tt2, ttot, t_anderson, ttot2, ttot3, ttot4;
     
     ttot = ttot2 = ttot3 = ttot4 = 0.0;
     
@@ -71,10 +74,12 @@ void AAR(
     for (i = 0; i < N; i++) 
         x_old[i] = x[i];
 
-    t1 = MPI_Wtime();
-    Vector2Norm(b, N, &b_2norm, comm); // b_2norm = ||b||
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    Vector2Norm(b, N, &b_2norm, comm); // b_2norm = ||b||
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("2-norm of RHS = %.13f, which took %.3f ms\n", b_2norm, (t2-t1)*1e3);
 #endif
     // find initial residual vector r = b - Ax, and its 2-norm

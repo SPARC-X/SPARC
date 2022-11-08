@@ -55,7 +55,9 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
     int *nloc, DMnx, DMny, DMnz, DMnxny, DMnd;
     double lambda_min, lambda_max, lambda_min_MIN, lambda_max_MAX, x1, x2;
     double ***t0;
+    #ifdef DEBUG
     double time1, time2;
+    #endif
     SQ_OBJ  *pSQ = pSPARC->pSQ;
 
     nloc = pSQ->nloc;
@@ -82,7 +84,9 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
     // This barrier fixed the severe slowdown of MPI communication on hive
     MPI_Barrier(pSQ->dmcomm_SQ);
     Transfer_Veff_PR(pSPARC, pSQ->Veff_PR, pSQ->SQ_dist_graph_comm);
+    #ifdef DEBUG
     time2 = MPI_Wtime();
+    #endif
 
     t0 = (double ***) calloc(sizeof(double **), 2*nloc[2]+1);
     for (k = 0; k < 2*nloc[2]+1; k++) {        
@@ -117,8 +121,9 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
 
     // This barrier fixed the severe slowdown of MPI communication on hive
     MPI_Barrier(pSQ->dmcomm_SQ);
-    time1 = MPI_Wtime();
+    
     #ifdef DEBUG
+        time1 = MPI_Wtime();
         if(!rank) printf("Rank %d finished Lanczos taking %.3f ms\n",rank, (time1-time2)*1e3); 
     #endif
 
@@ -147,8 +152,8 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
     x2 = (SCFCount > 0) ? pSPARC->Efermi + 2.0 : lambda_max + 1.0;
     pSPARC->Efermi = Calculate_FermiLevel(pSPARC, x1, x2, 1e-12, 100, occ_constraint_SQ_gauss); 
 
-    time2 = MPI_Wtime();
     #ifdef DEBUG
+    time2 = MPI_Wtime();
         if(!rank) printf("Rank %d Wating and finding fermi level takes %.3f ms\n",rank, (time2-time1)*1e3); 
     #endif
 
@@ -166,8 +171,8 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
         rho[i] = 2 * rho_pc / pSPARC->dV;
     }
 
-    time1 = MPI_Wtime();
     #ifdef DEBUG
+    time1 = MPI_Wtime();
         if(!rank) printf("Rank %d, calculating electron density takes %.3f ms\n",rank, (time1-time2)*1e3); 
     #endif
 

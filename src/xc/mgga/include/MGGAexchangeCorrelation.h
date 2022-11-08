@@ -13,6 +13,12 @@
 
 #include "isddft.h"
 
+
+/**
+ * @brief   compute kinetic energy density \tau
+ */
+void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho);
+
 /**
  * @brief   compute the kinetic energy density tau and transfer it to phi domain for computing Vxc of metaGGA
  *          

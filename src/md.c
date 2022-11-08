@@ -1110,10 +1110,10 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
         double t1, t2;
 #endif
 
-    int p, i;
+    int p;
+#ifdef DEBUG
     // scaling factor
     double scal = pSPARC->scale; // the ratio between length
-#ifdef DEBUG
     if(rank == 0){
     	printf("scal: %12.6f\n", scal);
     }
@@ -1131,7 +1131,7 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
         // printf("Volume: %12.6f\n", vol);
         printf("CELL  : %12.6f\t%12.6f\t%12.6f\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
         printf("COORD : \n");
-        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
+        for (int i = 0; i < 3 * pSPARC->n_atom; i++) {
             printf("%12.6f\t",pSPARC->atom_pos[i]);
             if (i%3==2 && i>0) printf("\n");
         }

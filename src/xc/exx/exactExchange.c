@@ -60,7 +60,7 @@
  */
 void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     int i, rank, DMnd, blacs_size, kpt_size, spn_i;
-    double t1, t2, ACE_time;
+    double t1, t2, ACE_time = 0.0;
     FILE *output_fp;
 
     DMnd = pSPARC->Nd_d_dmcomm;
@@ -501,8 +501,12 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, grank, rank, size, spn_i;
     int Ns, ncol, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base;
-    double occ_i, occ_j, *rhs, *Vi, t1, t2, *psi_outer, temp, *occ_outer, *psi;
+    double occ_i, occ_j, *rhs, *Vi, *psi_outer, temp, *occ_outer, *psi;
     MPI_Comm comm;
+
+#ifdef DEBUG
+    double t1, t2;
+#endif
 
     DMnd = pSPARC->Nd_d_dmcomm;
     Ns = pSPARC->Nstates;
@@ -520,7 +524,9 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     if (pSPARC->ACEFlag == 0) {
         dims[0] = pSPARC->npNdx; 
         dims[1] = pSPARC->npNdy; 
@@ -645,8 +651,8 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     pSPARC->Eexx /= (pSPARC->Nspin + 0.0);
     pSPARC->Eexx *= -pSPARC->exx_frac;
 
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) 
     printf("\nEvaluating Exact exchange energy took: %.3f ms\nExact exchange energy %.6f.\n", (t2-t1)*1e3, pSPARC->Eexx);
 #endif  
@@ -1588,6 +1594,8 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double
         printf("==Cholesky Factorization: "
                "info = %d, computing Cholesky Factorization using LAPACKE_dpotrf: %.3f ms\n", 
                info, (t2 - t1)*1e3);
+    #else
+    (void) info; // suppress unused var warning
     #endif
 
     // Xi = WM^(-1)
@@ -1621,7 +1629,12 @@ void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, do
 {
     int i, j, k, rank, dims[3], Nband, DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
-    double occ_i, occ_j, *rhs, *Vi, t1, t2;
+    double occ_i, occ_j, *rhs, *Vi;
+
+#ifdef DEBUG
+    double t1, t2;
+#endif
+
     /******************************************************************************/
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -1646,7 +1659,9 @@ void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, do
     }
     num_rhs = count;
 
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     if (num_rhs > 0) {
         batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
                         num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
@@ -1694,8 +1709,8 @@ void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, do
     free(rhs_list_i);
     free(rhs_list_j);
     
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
 }
@@ -1745,7 +1760,12 @@ void solve_allpair_poissons_equation_apply2Xi(
 
     int i, j, k, nproc_dmcomm, Ns, dims[3], DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
-    double occ_i, occ_j, *rhs, *Vi, t1, t2, *Xi_l, *Xi_r;
+    double occ_i, occ_j, *rhs, *Vi, *Xi_l, *Xi_r;
+
+#ifdef DEBUG
+    double t1, t2;
+#endif
+
     /******************************************************************************/
 
     if (ncol == 0) return;
@@ -1780,7 +1800,9 @@ void solve_allpair_poissons_equation_apply2Xi(
     Xi_l = Xi + pSPARC->band_start_indx * DMnd;
     Xi_r = Xi + band_start_indx_source * DMnd;
 
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     if (num_rhs > 0) {
         batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
                         num_rhs : pSPARC->EXXMem_batch * nproc_dmcomm;
@@ -1830,8 +1852,8 @@ void solve_allpair_poissons_equation_apply2Xi(
     free(rhs_list_i);
     free(rhs_list_j);
     
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
 }

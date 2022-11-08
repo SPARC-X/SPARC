@@ -1,5 +1,5 @@
 /**
- * @file    electronicGroundState.h
+ * @file    exchangeCorrelation.h
  * @brief   This file declares the functions for calculating exchange-correlation components.
  *
  * @authors Qimen Xu <qimenxu@gatech.edu>
@@ -194,6 +194,11 @@ void pbexsr(double rho, double grho, double omega, double *e_xc_sr, double *XCPo
  *          Taken from Quantum Espresson
  */
 void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_wpbe, double *d1rfx, double *d1sfx);
+
+/**
+ * @brief  Calculate exchange correlation energy density
+ **/
+void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho);
 
 #endif // XC_H
 

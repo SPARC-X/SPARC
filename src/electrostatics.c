@@ -8,7 +8,7 @@
  * 
  * @Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,8 +17,6 @@
 #include "tools.h"
 #include "linearSolver.h"
 #include "lapVecRoutines.h"
-#include "lapVecOrth.h"
-#include "lapVecNonOrth.h"
 #include "nlocVecRoutines.h"
 #include "gradVecRoutines.h"
 #include "initialization.h"
@@ -53,10 +51,12 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
     double w2_diag, dx, dy, dz, x, y, z, r;
     double *R, *V_temp, *b, *temp3, Bint, val, rchrg; 
     double rb_cur_x, rb_cur_y, rb_cur_z, rb_prev_x, rb_prev_y, rb_prev_z, error_cur, error_prev;
-    double t2, t3, t31, t4, t5;
     double *Lap_wt, *Lap_stencil;
     double pos_atm_x, pos_atm_y, pos_atm_z, xin;
-    
+#ifdef DEBUG
+    double t2, t3, t31, t4, t5;
+#endif
+
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     dx = pSPARC->delta_x;
@@ -86,7 +86,9 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
     FDn = pSPARC->order / 2;
     w2_diag = pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0];
     
-    t31 = MPI_Wtime(); 
+#ifdef DEBUG
+    t31 = MPI_Wtime();
+#endif
 
     rchrg = 0;
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
@@ -166,15 +168,17 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
     }
 #endif
 
-    t3 = MPI_Wtime();
 #ifdef DEBUG
+    t3 = MPI_Wtime();
     if (rank == 0) printf("time spent on qsort: %.3f ms.\n", (t3-t31)*1000);       
 #endif
     Ncube_x = Ncube_y = Ncube_z = 0;
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         rchrg = pSPARC->psd[ityp].RadialGrid[pSPARC->psd[ityp].size-1];
+        #ifdef DEBUG
         //t1 = MPI_Wtime();
         t2 = MPI_Wtime();
+        #endif
         temp3 = (double *)malloc( rlen_ex * sizeof(double) );
         if (temp3 == NULL) {
             printf("\nMemory allocation failed!\n");
@@ -206,8 +210,8 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
         free(temp3); 
         temp3 = NULL;
 
-        t4 = MPI_Wtime();
 #ifdef DEBUG
+        t4 = MPI_Wtime();
         if (rank == 0)
             printf("time spent on vectorized spline interp: %.3f ms.\n", (t4-t2)*1000);
 #endif
@@ -498,8 +502,8 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
         }
 #endif
 
-        t5 = MPI_Wtime();
 #ifdef DEBUG
+        t5 = MPI_Wtime();
         if (rank == 0) printf("time for finding rb using bisection: %.3f ms.\n", (t5 - t4) * 1000);        
 #endif    
         // deallocate memory
@@ -735,13 +739,15 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
            *VJ, *VJ_ref, Esc, *rho_J; 
     double spin, spin_frac;
     double inv_4PI = 0.25 / M_PI, w2_diag, rchrg;
-    double t1, t2;
     double *Lap_wt, *Lap_stencil;
     double xin;
+#ifdef DEBUG
+    double t1, t2;
     double tt1, tt2, ttot, ttot2;
-    
     ttot = 0;
     ttot2 = 0;
+#endif
+    
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         double vt[2] = {0.0, 0.0};
@@ -869,8 +875,9 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                 }
             }    
             //Calc_dist(pSPARC, nxp, nyp, nzp, x0_i_shift, y0_i_shift, z0_i_shift, R, rchrg, &count_interp);
-                 
+            #ifdef DEBUG
             tt1 = MPI_Wtime();
+            #endif
             VJ_ref = (double *)malloc( nd_ex * sizeof(double) );
             if (VJ_ref == NULL) {
                printf("\nMemory allocation failed!\n");
@@ -878,8 +885,10 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
             }
             // Calculate pseudopotential reference
             Calculate_Pseudopot_Ref(R, nd_ex, pSPARC->REFERENCE_CUTOFF, -pSPARC->Znucl[ityp], VJ_ref);
+            #ifdef DEBUG
             tt2 = MPI_Wtime();
             ttot += (tt2 - tt1);
+            #endif
             
             VJ = (double *)malloc( nd_ex * sizeof(double) );
             if (VJ == NULL) {
@@ -906,8 +915,9 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                     VJ[i] = VJ[i] / R[i];
                 }
             }
-            
-            tt1 = MPI_Wtime();            
+            #ifdef DEBUG
+            tt1 = MPI_Wtime();
+            #endif
             // calculate the sum of atomic charge densities as initial electron density guess, only in the very 
             // first MD/Relaxation step, and only if restart_flag is off
 			rho_J = (double *)malloc( nd_ex * sizeof(double) );
@@ -961,8 +971,10 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 
             free(rho_J); rho_J = NULL;
             free(rho_c_J); rho_c_J = NULL;
+            #ifdef DEBUG
             tt2 = MPI_Wtime();
             ttot2 += (tt2 - tt1);
+            #endif
             
             free(R); R = NULL;
 
@@ -1022,8 +1034,9 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     int_b *= pSPARC->dV;
     int_rho *= pSPARC->dV; 
     Esc *= pSPARC->dV * 0.5; 
-
+    #ifdef DEBUG
     t1 = MPI_Wtime();
+    #endif
     MPI_Reduce(&Esc, &pSPARC->Esc, 1, MPI_DOUBLE,
                MPI_SUM , 0, pSPARC->dmcomm_phi);
     // find integral rho to get negative charge of the system
@@ -1033,9 +1046,9 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                   MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->PosCharge = -vsum[0];
     pSPARC->NegCharge = -vsum[1];
-    t2 = MPI_Wtime();
 
-#ifdef DEBUG    
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("the global sum of int_b = %.13f, sum_int_rho = %.13f\n", -pSPARC->PosCharge, -pSPARC->NegCharge);    
 #endif
 

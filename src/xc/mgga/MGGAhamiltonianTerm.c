@@ -19,7 +19,6 @@
 #include "parallelization.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-#include "lapVecRoutines.h"
 
 /**
  * @brief   the function to compute the mGGA term in Hamiltonian, called by Hamiltonian_vectors_mult
@@ -28,8 +27,10 @@ void compute_mGGA_term_hamil(const SPARC_OBJ *pSPARC, double *x, int ncol, int c
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
     t1 = MPI_Wtime();
+#endif
 
     double *Dx_x = (double *) calloc(colLength, sizeof(double));
     assert(Dx_x != NULL);
@@ -81,8 +82,8 @@ void compute_mGGA_term_hamil(const SPARC_OBJ *pSPARC, double *x, int ncol, int c
         }
     }
 
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
         if (rank == 0) printf("end of Calculating mGGA term in Hamiltonian, took %.3f ms\n", (t2 - t1)*1000);
     #endif
     free(Dx_x); free(Dx_y); free(Dx_z);
@@ -96,8 +97,10 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
     t1 = MPI_Wtime();
+#endif
     
     int size_k = colLength * ncol;
     double _Complex *Dx_x_kpt = (double _Complex *) calloc(size_k, sizeof(double _Complex));
@@ -167,8 +170,8 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
     //     fclose(compute_mGGA_term_hamil_kpt);
     // }
 
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
         if (rank == 0) printf("end of Calculating mGGA term in Hamiltonian, took %.3f ms\n", (t2 - t1)*1000);
     #endif
     

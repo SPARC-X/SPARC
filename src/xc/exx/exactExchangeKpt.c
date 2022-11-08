@@ -43,7 +43,6 @@
 #include "exactExchangeKpt.h"
 #include "tools.h"
 #include "parallelization.h"
-#include "lapVecRoutines.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -521,7 +520,7 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, l, ll, ll_red, m, grank, rank, size, spn_i;
     int Ns, Ns_loc, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base;
-    double occ_i, occ_j, t1, t2, *occ_outer;
+    double occ_i, occ_j, *occ_outer;
     double _Complex *rhs, *Vi, *psi_outer, *psi, *xi;
     MPI_Comm comm;
 
@@ -540,7 +539,10 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
     if (pSPARC->ACEFlag == 0) {
         int size_k = DMnd * Nband;
         int size_k_ = DMnd * Ns;
@@ -714,9 +716,9 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
 
     pSPARC->Eexx /= (pSPARC->Nspin + 0.0);
     pSPARC->Eexx *= -pSPARC->exx_frac;
-    
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
 if(!grank) 
     printf("\nEvaluating Exact exchange energy took: %.3f ms\nExact exchange energy %.6f.\n", (t2-t1)*1e3, pSPARC->Eexx);
 #endif  
@@ -1397,7 +1399,7 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     int i, j, k, kpt_k, Ns, dims[3], DMnd;
     int num_rhs, count, loop, batch_num_rhs, NL, base, Nkpts_kptcomm, Nband, DMndNsocc;
     int *rhs_list_i, *rhs_list_j, *rhs_list_k, *kpt_k_list, *kpt_q_list;
-    double occ_j, t1, t2;
+    double occ_j;
     double _Complex *rhs, *Vi, *Xi_kpt_ki;
     /******************************************************************************/
 
@@ -1456,7 +1458,10 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     kpt_q_list = (int *) calloc (sizeof(int), batch_num_rhs);                                                   // list of q vector 
     assert(rhs != NULL && Vi != NULL && kpt_k_list != NULL && kpt_q_list != NULL);
 
+#ifdef DEBUG
+    double t1, t2;
     t1 = MPI_Wtime();
+#endif
     for (i = 0; i < batch_num_rhs; i ++) kpt_q_list[i] = kpt_q;
     /*************** Solve all Poisson's equation and apply to psi ****************/
     for (loop = 0; loop < NL; loop ++) {
@@ -1505,8 +1510,8 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     free(rhs_list_j);
     free(rhs_list_k);
 
-    t2 = MPI_Wtime();
     #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif
 }

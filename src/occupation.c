@@ -92,7 +92,6 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray)
     int Ns = pSPARC->Nstates;
     int Nk = pSPARC->Nkpts_kptcomm;
     int kpt_start_indx = pSPARC->kpt_start_indx;
-    int spin_start_indx = pSPARC->spin_start_indx;
     int *kptBridgeCounts = (int *)malloc(sizeof(int) * (pSPARC->npkpt));
     int *kptBridgeDispls = (int *)malloc(sizeof(int) * (pSPARC->npkpt));                      // used for collecting all lambdas in this spin communicator through kpt_bridge_comm
     double *theSpinLambdaArray = (double *)malloc(sizeof(double) * (Ns * pSPARC->Nkpts_sym)); // used for saving all lambdas in this spin communicator
@@ -128,6 +127,7 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray)
     }
     // for debugging 
     #ifdef DEBUG
+        int spin_start_indx = pSPARC->spin_start_indx;
         for (int spinIndex = 0; spinIndex < pSPARC->Nspin_spincomm; spinIndex++) {
             int count = 0;
             for (int kptIndex = 0; kptIndex < Nk; kptIndex++) {

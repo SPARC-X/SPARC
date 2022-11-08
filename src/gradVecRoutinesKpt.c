@@ -165,12 +165,6 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     D1_stencil_coeffs_dirs[1] = pSPARC->D1_stencil_coeffs_y;
     D1_stencil_coeffs_dirs[2] = pSPARC->D1_stencil_coeffs_z;
 
-    int pshift_dirs[3];
-    pshift_dirs[0] = 1;
-    pshift_dirs[1] = DMnx;
-    pshift_dirs[2] = DMnxny;
-    int pshift = pshift_dirs[dir];
-
     int pshift_ex_dirs[3];
     pshift_ex_dirs[0] = 1;
     pshift_ex_dirs[1] = DMnx_ex;

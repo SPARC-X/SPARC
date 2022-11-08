@@ -30,7 +30,9 @@
 void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error){
     int i;
     double *rho = (double *) calloc(pSPARC->Nd_d_dmcomm * (2*pSPARC->Nspin-1), sizeof(double));
+#ifdef DEBUG
     double t1 = MPI_Wtime();
+#endif
     
     // Currently only involves Chebyshev filtering eigensolver
     if (pSPARC->isGammaPoint){
@@ -48,19 +50,20 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
             CalculateDensity_psi_kpt_spin(pSPARC, rho);
     }
 
-    double t2 = MPI_Wtime();
 #ifdef DEBUG
+    double t2 = MPI_Wtime();
     if(!rank) printf("rank = %d, Calculating density took %.3f ms\n",rank,(t2-t1)*1e3);       
     if(!rank) printf("rank = %d, starting to transfer density...\n",rank);
 #endif
     
     // transfer density from psi-domain to phi-domain
-    t1 = MPI_Wtime();    
+#ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
     for (i = 0; i < 2*pSPARC->Nspin-1; i++)
         TransferDensity(pSPARC, rho + i*pSPARC->Nd_d_dmcomm, pSPARC->electronDens + i*pSPARC->Nd_d);
-    t2 = MPI_Wtime();
-    
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("rank = %d, Transfering density took %.3f ms\n", rank, (t2 - t1) * 1e3);
 #endif
 
@@ -89,9 +92,11 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
-    
     t1 = MPI_Wtime();
+#endif
+
     // calculate rho based on local bands
     count = 0;
     for (n = nstart; n <= nend; n++) {
@@ -101,13 +106,13 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
             rho[i] += g_nk * pSPARC->Xorb[count] * pSPARC->Xorb[count];
         }
     }
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: sum over local bands took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     // sum over all band groups
     if (pSPARC->npband > 1) {
         if (pSPARC->bandcomm_index == 0)
@@ -116,13 +121,12 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
             MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
     }
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all band groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     double vscal = 1.0 / pSPARC->dV;
     // scale electron density by 1/dV
     // TODO: this can be done in phi-domain over more processes!
@@ -131,8 +135,8 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
         rho[i] *= vscal; 
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
@@ -159,10 +163,11 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
-
     t1 = MPI_Wtime();
-    
+#endif
+
     // calculate rho based on local bands
     count = 0;
     for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
@@ -176,26 +181,26 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
         }
     }
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: sum over local bands took %.3f ms\n", rank, (t2-t1)*1e3);
-#endif
-    // sum over spin comm
     t1 = MPI_Wtime();
+#endif
+
+    // sum over spin comm
     if(pSPARC->npspin > 1) {
         if (pSPARC->spincomm_index == 0)
             MPI_Reduce(MPI_IN_PLACE, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
         else
             MPI_Reduce(rho, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
     }
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all spin_comm took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     // sum over all band groups
     if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0) {
         if (pSPARC->bandcomm_index == 0)
@@ -204,13 +209,12 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
             MPI_Reduce(rho, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
     } // TODO: can be made only 2*Nd
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all band groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     double vscal = 1.0 / pSPARC->dV;
     // scale electron density by 1/dV
     // TODO: this can be done in phi-domain over more processes!
@@ -219,17 +223,18 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
         rho[Nd+i] *= vscal;
     }    
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     for (i = 0; i < Nd; i++) {
         rho[i] = rho[Nd+i] + rho[2*Nd+i]; 
     }
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Calculate rho: forming total rho took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
@@ -250,10 +255,11 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
-    
     t1 = MPI_Wtime();
-    
+#endif
+
     // calculate rho based on local bands
     count = 0;
     
@@ -270,13 +276,11 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
         }
     }
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: sum over local bands took %.3f ms\n", rank, (t2-t1)*1e3);
-#endif
-
     t1 = MPI_Wtime();
+#endif
     
     // sum over all k-point groups
     if (pSPARC->npkpt > 1) {    
@@ -285,14 +289,13 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
         else
             MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
     }
-    
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all kpoint groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
-    t1 = MPI_Wtime();
     // sum over all band groups (only in the first k point group)
     if (pSPARC->npband > 1 && pSPARC->kptcomm_index == 0) {
         if (pSPARC->bandcomm_index == 0)
@@ -301,13 +304,12 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
             MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
     }
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all band groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     double vscal = 1.0 / pSPARC->dV;
     // scale electron density by 1/dV
     // TODO: this can be done in phi-domain over more processes!
@@ -316,8 +318,8 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
         rho[i] *= vscal;
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
@@ -340,9 +342,11 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#ifdef DEBUG
     double t1, t2;
-    
     t1 = MPI_Wtime();
+#endif
+
     // calculate rho based on local bands
     count = 0;
     for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
@@ -356,27 +360,27 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
             }
         }
     }
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: sum over local bands took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
     // sum over spin comm group
-    t1 = MPI_Wtime();
     if(pSPARC->npspin > 1) {
         if (pSPARC->spincomm_index == 0)
             MPI_Reduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
         else
             MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
     }
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all spin_comm took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     // sum over all k-point groups
     if (pSPARC->spincomm_index == 0 &&  pSPARC->npkpt > 1) {    
         if (pSPARC->kptcomm_index == 0)
@@ -384,13 +388,13 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
         else
             MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
     }
-    t2 = MPI_Wtime();
 
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all kpoint groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
     
-    t1 = MPI_Wtime();
     // sum over all band groups (only in the first k point group)
     if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0) {
         if (pSPARC->bandcomm_index == 0)
@@ -399,13 +403,12 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
             MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
     }
 
-    t2 = MPI_Wtime();
-
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (rank == 0) printf("rank = %d, --- Calculate rho: reduce over all band groups took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     double vscal = 1.0 / pSPARC->dV;
     // scale electron density by 1/dV
     // TODO: this can be done in phi-domain over more processes!
@@ -414,17 +417,18 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
         rho[Nd+i] *= vscal; 
     }
     
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+    t1 = MPI_Wtime();
 #endif
 
-    t1 = MPI_Wtime();
     for (i = 0; i < Nd; i++) {
         rho[i] = rho[Nd+i] + rho[2*Nd+i]; 
     }
-    t2 = MPI_Wtime();
+
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if (!rank) printf("rank = %d, --- Calculate rho: forming total rho took %.3f ms\n", rank, (t2-t1)*1e3);
 #endif
 }
