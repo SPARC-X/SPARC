@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Sep 06, 2022)                      *
+*                       SPARC (version Nov 11, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 20 18:39:34 2022                  *
+*                   Start time: Fri Nov 11 00:08:19 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -68,7 +68,7 @@ NP_KPOINT_PARAL: 1
 NP_BAND_PARAL: 6
 NP_DOMAIN_PARAL: 2 2 2
 NP_DOMAIN_PHI_PARAL: 2 2 2
-EIG_SERIAL_MAXNS: 10000
+EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
@@ -80,15 +80,15 @@ Total number of atom types         :  3
 Total number of atoms              :  5
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  Ba 10
-Pseudopotential                    :  ../psps_SPMS/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  6.10 6.10 6.10 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Ti 12
-Pseudopotential                    :  ../psps_SPMS/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 2  :  6.10 6.10 6.10 (x, y, z dir)
 Number of atoms of type 2          :  1
 Atom type 3  (valence electrons)   :  O 6
-Pseudopotential                    :  ../psps_SPMS/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 3  :  6.61 6.61 6.61 (x, y, z dir)
 Number of atoms of type 3          :  3
 Estimated total memory usage       :  5.20 MB
@@ -97,37 +97,37 @@ Estimated memory per processor     :  55.48 kB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.7621968964E+01        1.885E-01        0.050
-2            -2.7438348659E+01        6.303E-02        0.015
-3            -2.7401192133E+01        4.565E-02        0.014
-4            -2.7406197600E+01        4.104E-02        0.014
-5            -2.7385436103E+01        1.421E-02        0.017
-6            -2.7387246595E+01        2.614E-03        0.015
-7            -2.7384932051E+01        2.672E-03        0.014
-8            -2.7384702156E+01        8.239E-04        0.014
-9            -2.7384632796E+01        7.191E-04        0.030
-10           -2.7384569759E+01        7.190E-05        0.010
-11           -2.7384549630E+01        3.670E-05        0.014
-12           -2.7384555634E+01        1.331E-05        0.013
-13           -2.7384556539E+01        5.322E-06        0.009
+1            -2.7452077051E+01        1.885E-01        0.055
+2            -2.7388332174E+01        6.303E-02        0.007
+3            -2.7385089677E+01        4.565E-02        0.007
+4            -2.7386859683E+01        4.104E-02        0.006
+5            -2.7384719210E+01        1.421E-02        0.007
+6            -2.7384556210E+01        2.614E-03        0.006
+7            -2.7384564127E+01        2.672E-03        0.006
+8            -2.7384558915E+01        8.239E-04        0.017
+9            -2.7384559286E+01        7.191E-04        0.006
+10           -2.7384558870E+01        7.190E-05        0.006
+11           -2.7384558871E+01        3.670E-05        0.006
+12           -2.7384558782E+01        1.331E-05        0.007
+13           -2.7384559142E+01        5.322E-06        0.006
 Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.7384558960E+01 (Ha/atom)
-Total free energy                  : -1.3692279480E+02 (Ha)
+Free energy per atom               : -2.7384559142E+01 (Ha/atom)
+Total free energy                  : -1.3692279571E+02 (Ha)
 Band structure energy              : -1.0613732585E+01 (Ha)
-Exchange correlation energy        : -2.8295339866E+01 (Ha)
+Exchange correlation energy        : -2.8295356725E+01 (Ha)
 Self and correction energy         : -1.8449032610E+02 (Ha)
--Entropy*kb*T                      : -6.9014290710E-08 (Ha)
-Fermi level                        :  3.1446644423E-01 (Ha)
-RMS force                          :  2.6722064020E-01 (Ha/Bohr)
-Maximum force                      :  4.7973605151E-01 (Ha/Bohr)
-Time for force calculation         :  0.018 (sec)
+-Entropy*kb*T                      : -6.9014292025E-08 (Ha)
+Fermi level                        :  3.1446644425E-01 (Ha)
+RMS force                          :  2.6722041504E-01 (Ha/Bohr)
+Maximum force                      :  4.7973384231E-01 (Ha/Bohr)
+Time for force calculation         :  0.019 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  0.324 sec
+Total walltime                     :  0.242 sec
 ___________________________________________________________________________
 
 ***************************************************************************

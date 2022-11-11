@@ -2110,12 +2110,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     // default SCF tolerance based on accuracy_level
     // we use a model curve to correlate scf tolerance and energy and force accuracy
-    //     log10(y) = a * log10(x) + b' + c * log10(Nelectron/n_atom)
-    // (1) if y is energy accuracy (Ha/atom), a = 2.02, b' = -0.25440, c = 1.0000
-    // (2) if y is force accuracy  (Ha/Bohr), a = 1.03, b' = -0.33145, c = 1.1761
+    //     log(y) = a * log(x) + b
+    // (1) if y is energy accuracy (Ha/atom), a = 1.4312, b = -1.5225
+    // (2) if y is force accuracy  (Ha/Bohr), a = 0.9090, b = -0.9347
     // if scf tol is not set, we'll use accuracy_level to find scf tol
-    if (pSPARC->TOL_SCF < 0.0) {
-        const double log10_neatom = log10(pSPARC->Nelectron / (double) pSPARC->n_atom);
+    if (pSPARC->TOL_SCF < 0.0) {        
         double target_force_accuracy = -1.0;
         double target_energy_accuracy = -1.0;
 
@@ -2136,15 +2135,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
         // calculate SCF TOL based on specified target accuracy
         if (target_force_accuracy > 0.0) { // find scf tol based on target force accuracy
-            const double a = 1.03;
-            const double b = -0.33145 + 1.1761 * log10_neatom;
-            double log10_target = log10(target_force_accuracy);
-            pSPARC->TOL_SCF = pow(10.0, (log10_target - b)/a);
+            const double a = 0.9090;
+            const double b = -0.9347;
+            double log_target = log(target_force_accuracy);
+            pSPARC->TOL_SCF = exp((log_target - b)/a);
         } else if (target_energy_accuracy > 0.0) { // find scf tol based on target energy accuracy
-            const double a = 2.02;
-            const double b = -0.25440 + 1.0000 * log10_neatom;
-            double log10_target = log10(target_energy_accuracy);
-            pSPARC->TOL_SCF = pow(10.0, (log10_target - b)/a);
+            const double a = 1.4312;
+            const double b = -1.5225;
+            double log_target = log(target_energy_accuracy);
+            pSPARC->TOL_SCF = exp((log_target - b)/a);
         }
     }
 
@@ -2814,7 +2813,7 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
 
         // find list of k-points after reduce for HF
         pSPARC->Nkpts_hf_red = 1;
-        pSPARC->kpts_hf_red_list = (int *) calloc(sizeof(int), pSPARC->Nkpts_sym);
+        pSPARC->kpts_hf_red_list = (int *) calloc((unsigned int)pSPARC->Nkpts_sym, sizeof(int));
         pSPARC->kpts_hf_red_list[0] = pSPARC->kpthf_ind[0];
         for (k_hf = 1; k_hf < pSPARC->Nkpts_hf; k_hf ++) {
             flag = 0;
@@ -3151,7 +3150,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Nov 07, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Nov 11, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
