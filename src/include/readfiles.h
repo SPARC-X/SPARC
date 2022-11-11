@@ -18,7 +18,7 @@
  * @brief   find the type name of element from the input name
  *
  */
-void find_element(char *element, char *atom_type);
+void find_element(char element[8], char *atom_type);
 
 /**
  * @brief   Read input file.

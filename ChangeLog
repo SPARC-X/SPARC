@@ -5,6 +5,17 @@
 
 
 --------------
+Nov 11, 2022
+Name: Xin Jing
+Changes: (initialization.c, electronicGroundState.c, exchangeCorrelation.c, readfiles.c)
+1. Fix a bug in calculating energy using specific electron density
+2. Change to use rho_mix for force and stress
+3. Update default TOL_SCF model for energy and force accuracy
+4. Fix a compile warning using strncpy
+5. Update testsuite
+
+
+--------------
 Nov 07, 2022
 Name: Qimen Xu
 Changes: (lapVecOrth.c, lapVecNonOrth.c, lapVecOrthKpt.c, lapVecNonOrthKpt.c)

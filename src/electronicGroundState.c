@@ -777,34 +777,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         // stop the loop if SCF error is smaller than tolerance
         // if (dEtot < pSPARC->TOL_SCF && dEband < pSPARC->TOL_SCF) break;
 
-        // STOP scf if scf error is less than the given tolerance
-        if (scf_conv && SCFcount >= pSPARC->MINIT_SCF-1) {
-            SCFcount++;
-            t_scf_e = MPI_Wtime();
-			#ifdef DEBUG
-            if (!rank) 
-            	printf("\nThis SCF took %.3f ms, scf error = %.3e\n", 
-            	       (t_scf_e-t_scf_s)*1e3, error);
-			#endif
-            t_cum_scf += t_scf_e-t_scf_s;
-            if (!rank) {
-                output_fp = fopen(pSPARC->OutFilename,"a");
-                if (output_fp == NULL) {
-                    printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
-                    exit(EXIT_FAILURE);
-                }
-                if(pSPARC->spin_typ == 0)
-                    fprintf(output_fp,"%-6d      %18.10E        %.3E        %.3f\n", 
-                    		SCFcount, pSPARC->Etot/pSPARC->n_atom, error, t_cum_scf);
-                else
-                    fprintf(output_fp,"%-6d      %18.10E        %11.4E        %.3E        %.3f\n", 
-                            SCFcount, pSPARC->Etot/pSPARC->n_atom, pSPARC->netM, error, t_cum_scf);
-                fclose(output_fp);
-                t_cum_scf = 0.0;
-            }
-            break;
-        }
-
         // Apply mixing and preconditioner, if required
         #ifdef DEBUG
         t1 = MPI_Wtime();
@@ -854,11 +826,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         	printf("rank = %d, Transfering Veff from phi-domain to psi-domain took %.3f ms\n", 
                    rank, (t2 - t1) * 1e3);
 		#endif  
-        
+
         SCFcount++;
-
         t_scf_e = MPI_Wtime();
-
         #ifdef DEBUG        
         if (!rank) printf("\nThis SCF took %.3f ms, scf error = %.3e\n", (t_scf_e-t_scf_s)*1e3, error);
         #endif
@@ -879,6 +849,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             fclose(output_fp);
             t_cum_scf = 0.0;
         }
+
+        // STOP scf if scf error is less than the given tolerance
+        if (scf_conv && SCFcount >= pSPARC->MINIT_SCF) break;
     }
     
     if (!rank) {
@@ -893,30 +866,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"Extra time for evaluating QE SCF Error: %.3f (sec)\n", pSPARC->t_qe_extra);
         }
         fclose(output_fp);
-    }
-
-    // Calculate actual energy for density mixing
-    if (pSPARC->MixingVariable == 0) {
-        // store/update input Veff for density mixing
-        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-            for (i = 0; i < NspinDMnd; i++) 
-                pSPARC->Veff_loc_dmcomm_phi_in[i] = pSPARC->Veff_loc_dmcomm_phi[i];
-        }
-        
-        // update potential
-        Calculate_elecstPotential(pSPARC);
-        Calculate_Vxc(pSPARC);
-        Calculate_Veff_loc_dmcomm_phi(pSPARC);
-        
-        // here potential is consistent with density
-        Calculate_Free_Energy(pSPARC, pSPARC->electronDens); 
-        double Escc = Calculate_Escc(
-            pSPARC, NspinDMnd, pSPARC->Veff_loc_dmcomm_phi, 
-            pSPARC->Veff_loc_dmcomm_phi_in, pSPARC->electronDens + sindx_rho,
-            pSPARC->dmcomm_phi
-        );
-        pSPARC->Escc = Escc;
-        pSPARC->Etot = pSPARC->Etot + Escc;
     }
 
     #ifdef USE_EVA_MODULE
