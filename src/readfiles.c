@@ -39,7 +39,7 @@
  * @param num       Maximum number of characters contained in atom_type.
  */
 //void find_element(char *element, char *atom_type, size_t num) 
-void find_element(char *element, char *atom_type) 
+void find_element(char element[8], char *atom_type) 
 {
     char *pch, key[]="0123456789", str[64];
     snprintf(str, sizeof(str), "%s", atom_type);
@@ -50,7 +50,8 @@ void find_element(char *element, char *atom_type)
         memcpy(element, str, pch-str);
         element[pch-str] = '\0';
     } else {
-        strncpy( element, str, min(sizeof(element),strlen(str)+1) );
+        // strncpy( element, str, min(sizeof(element)+1,strlen(str)) );
+        strncpy( element, str, 8 );
     }
 }
 

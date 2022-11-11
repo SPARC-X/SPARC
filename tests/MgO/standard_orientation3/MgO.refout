@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Sep 06, 2022)                      *
+*                       SPARC (version Nov 10, 2022)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Sep 29 15:31:20 2022                  *
+*                   Start time: Thu Nov 10 17:12:24 2022                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -64,14 +64,14 @@ NP_KPOINT_PARAL: 1
 NP_BAND_PARAL: 24
 NP_DOMAIN_PARAL: 2 1 1
 NP_DOMAIN_PHI_PARAL: 4 3 4
-EIG_SERIAL_MAXNS: 10000
+EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
 Number of processors               :  48
 Mesh spacing in x-direction        :  0.201277 (Bohr)
 Mesh spacing in y-direction        :  0.197659 (Bohr)
-Mesh spacing in z direction        :  0.197655 (Bohr)
+Mesh spacing in z-direction        :  0.197655 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  MgO/temp_run3/MgO.out
 Total number of atom types         :  2
@@ -91,17 +91,17 @@ Estimated memory per processor     :  1.32 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.6213443466E+01        1.511E-01        0.303
+1            -3.6213443466E+01        1.511E-01        0.331
 2            -3.6278693808E+01        6.276E-02        0.090
-3            -3.6283633112E+01        2.861E-02        0.089
-4            -3.6284022641E+01        4.805E-03        0.134
-5            -3.6284046085E+01        2.560E-03        0.082
-6            -3.6284057657E+01        3.241E-04        0.081
-7            -3.6284057705E+01        1.869E-04        0.075
+3            -3.6283633112E+01        2.861E-02        0.088
+4            -3.6284022641E+01        4.805E-03        0.086
+5            -3.6284046085E+01        2.560E-03        0.083
+6            -3.6284057657E+01        3.241E-04        0.079
+7            -3.6284057705E+01        1.869E-04        0.076
 8            -3.6284057738E+01        4.466E-05        0.076
-9            -3.6284057737E+01        1.277E-05        0.075
-10           -3.6284057767E+01        6.695E-06        0.072
-11           -3.6284057700E+01        1.395E-06        0.071
+9            -3.6284057737E+01        1.277E-05        0.074
+10           -3.6284057767E+01        6.695E-06        0.071
+11           -3.6284057700E+01        1.395E-06        0.070
 12           -3.6284057747E+01        5.165E-07        0.067
 Total number of SCF: 12    
 ====================================================================
@@ -112,18 +112,18 @@ Total free energy                  : -1.4513623099E+02 (Ha)
 Band structure energy              : -2.6686700588E+01 (Ha)
 Exchange correlation energy        : -2.3283495093E+01 (Ha)
 Self and correction energy         : -2.4991772258E+02 (Ha)
--Entropy*kb*T                      : -2.9852099820E-10 (Ha)
+-Entropy*kb*T                      : -2.9852099821E-10 (Ha)
 Fermi level                        :  1.4885110759E-01 (Ha)
-RMS force                          :  2.0620238021E-02 (Ha/Bohr)
-Maximum force                      :  2.4077193714E-02 (Ha/Bohr)
-Time for force calculation         :  0.035 (sec)
-Pressure                           :  9.1089631410E+00 (GPa)
-Maximum stress                     :  1.3479088431E+01 (GPa)
-Time for stress calculation        :  0.077 (sec)
+RMS force                          :  2.0620238023E-02 (Ha/Bohr)
+Maximum force                      :  2.4077193695E-02 (Ha/Bohr)
+Time for force calculation         :  0.034 (sec)
+Pressure                           :  9.1089631409E+00 (GPa)
+Maximum stress                     :  1.3479088432E+01 (GPa)
+Time for stress calculation        :  0.076 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  1.467 sec
+Total walltime                     :  1.446 sec
 ___________________________________________________________________________
 
 ***************************************************************************
