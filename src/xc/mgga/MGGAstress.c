@@ -38,11 +38,10 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
     Ns = pSPARC->Nstates; // total number of bands
     DMnd = pSPARC->Nd_d_dmcomm;
     size_s = ncol * DMnd;
-    int len_psi = DMnd * ncol * nspin;
     double *stress_mGGA_psi, *stress_mGGA_psi_cartesian, *dpsi_full; // the metaGGA term directly related to all wave functions psi
     stress_mGGA_psi = (double*) calloc(6, sizeof(double));
     stress_mGGA_psi_cartesian = (double*) calloc(6, sizeof(double));
-    dpsi_full = (double *)malloc( len_psi * sizeof(double) );
+    dpsi_full = (double *)malloc( size_s * sizeof(double) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
@@ -56,7 +55,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
         count = 0;
         for (dim = 0; dim < 3; dim++) {
             // find dPsi in direction dim
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, XorY+spn_i*size_s, YorZ+spn_i*size_s, dim, pSPARC->dmcomm);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, XorY+spn_i*size_s, YorZ, dim, pSPARC->dmcomm);
             // Kinetic stress
             if(dim == 0){
                 // component (1,1)
@@ -64,21 +63,20 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 double *dpsi_1p = YorZ; 
                 
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_1p + spn_i * size_s + n * DMnd; // dpsi_1p
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi1_dpsi1 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi1 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi1_dpsi1 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[0] += dpsi1_dpsi1 * g_nk; // component (1,1)
                 }
 
                 // component (1,2)
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 1, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 1, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_2
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
                     dpsi1_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
@@ -89,10 +87,10 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 
 
                 // component (1,3)
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full+spn_i*size_s, 2, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 2, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + spn_i * size_s + n * DMnd; // dpsi_3
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                     dpsi1_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
@@ -106,8 +104,8 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 
                 dpsi_3p = dpsi_full;
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_2
-                    dpsi_ptr2 = dpsi_3p + spn_i * size_s + n * DMnd; // dpsi_3
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_2
+                    dpsi_ptr2 = dpsi_3p + n * DMnd; // dpsi_3
                     dpsi2_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi2_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
@@ -120,11 +118,10 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 double *dpsi_2p = YorZ; 
                 
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_2p + spn_i * size_s + n * DMnd; // dpsi_1p
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi2_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[3] += dpsi2_dpsi2 * g_nk; // component (2,2)
@@ -134,11 +131,10 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 double *dpsi_3p = YorZ; 
                 
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + spn_i * size_s + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_3p + spn_i * size_s + n * DMnd; // dpsi_1p
+                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi3_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
-                        dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
+                        dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
                     }
                     g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
                     stress_mGGA_psi[5] += dpsi3_dpsi3 * g_nk; // component (3,3)
