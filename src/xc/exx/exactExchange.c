@@ -238,19 +238,6 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
         else
             evaluate_exact_exchange_energy_kpt(pSPARC);
 
-        if(count_xx > 0) {
-            err_Exx = fabs(Eexx_pre - pSPARC->Eexx)/pSPARC->n_atom;
-            MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
-            if(!rank) {
-                // write to .out file
-                output_fp = fopen(pSPARC->OutFilename,"a");
-                fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
-                fclose(output_fp);
-            }
-            if (err_Exx < pSPARC->TOL_FOCK && count_xx >= pSPARC->MINIT_FOCK) break;
-        }
-        Eexx_pre = pSPARC->Eexx;
-
         if(!rank) {
             // write to .out file
             output_fp = fopen(pSPARC->OutFilename,"a");
@@ -262,6 +249,32 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
         }
 
         scf_loop(pSPARC);
+
+        Eexx_pre = pSPARC->Eexx;
+        // update the final exact exchange energy
+        pSPARC->Exc -= pSPARC->Eexx;
+        pSPARC->Etot += 2 * pSPARC->Eexx;
+
+        // compute exact exchange energy with psi        
+        if (pSPARC->isGammaPoint == 1)
+            evaluate_exact_exchange_energy(pSPARC);
+        else
+            evaluate_exact_exchange_energy_kpt(pSPARC);
+        
+        pSPARC->Exc += pSPARC->Eexx;
+        pSPARC->Etot -= 2*pSPARC->Eexx;
+
+        // error evaluation
+        err_Exx = fabs(Eexx_pre - pSPARC->Eexx)/pSPARC->n_atom;
+        MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
+        if(!rank) {
+            // write to .out file
+            output_fp = fopen(pSPARC->OutFilename,"a");
+            fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
+            fclose(output_fp);
+        }
+        if (err_Exx < pSPARC->TOL_FOCK && (count_xx+1) >= pSPARC->MINIT_FOCK) break;        
+        
         count_xx ++;
     }
 
@@ -269,28 +282,6 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     if(!rank) 
         printf("\nFinished outer loop in %d steps!\n", count_xx);
     #endif  
-
-    if (count_xx == pSPARC->MAXIT_FOCK) {
-        // update the final exact exchange energy if necessary
-        pSPARC->Exc -= pSPARC->Eexx;
-        pSPARC->Etot += 2 * pSPARC->Eexx;
-        if (pSPARC->isGammaPoint == 1)
-            evaluate_exact_exchange_energy(pSPARC);
-        else
-            evaluate_exact_exchange_energy_kpt(pSPARC);
-
-        pSPARC->Exc += pSPARC->Eexx;
-        pSPARC->Etot -= 2*pSPARC->Eexx;
-
-        err_Exx = fabs(Eexx_pre - pSPARC->Eexx)/pSPARC->n_atom;
-        MPI_Bcast(&err_Exx, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);                 // TODO: Create bridge comm 
-        if(!rank && count_xx > 0) {
-            // write to .out file
-            output_fp = fopen(pSPARC->OutFilename,"a");
-            fprintf(output_fp,"Exx outer loop error: %.10e \n",err_Exx);
-            fclose(output_fp);
-        }
-    }
 
     if (err_Exx > pSPARC->TOL_FOCK) {
         if(!rank) {
@@ -1749,9 +1740,10 @@ void solve_allpair_poissons_equation_apply2Xi(
 {
     MPI_Comm blacscomm = pSPARC->blacscomm;
     if (blacscomm == MPI_COMM_NULL) return;
-    int size, rank;
+    int size, rank, grank;
     MPI_Comm_size(blacscomm, &size);
     MPI_Comm_rank(blacscomm, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &grank);
 
     // when blacscomm is composed of even number of processors
     // second half of them will solve one less rep than the first half to avoid repetition
@@ -1854,6 +1846,6 @@ void solve_allpair_poissons_equation_apply2Xi(
     
     #ifdef DEBUG
     t2 = MPI_Wtime();
-    if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
+    if(!grank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",grank,(t2-t1)*1e3); 
     #endif
 }

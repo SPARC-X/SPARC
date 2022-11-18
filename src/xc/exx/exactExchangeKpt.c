@@ -1392,9 +1392,10 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
     MPI_Comm blacscomm = pSPARC->blacscomm;
     if (blacscomm == MPI_COMM_NULL) return;
     if (ncol == 0) return;
-    int size, rank;
+    int size, rank, grank;
     MPI_Comm_size(blacscomm, &size);
     MPI_Comm_rank(blacscomm, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &grank);
 
     int i, j, k, kpt_k, Ns, dims[3], DMnd;
     int num_rhs, count, loop, batch_num_rhs, NL, base, Nkpts_kptcomm, Nband, DMndNsocc;
@@ -1512,6 +1513,6 @@ void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC,
 
     #ifdef DEBUG
     t2 = MPI_Wtime();
-    if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
+    if(!grank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",grank,(t2-t1)*1e3); 
     #endif
 }
