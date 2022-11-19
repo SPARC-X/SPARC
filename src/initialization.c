@@ -474,7 +474,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->accuracy_level = -1;        // default accuracy level (2 - 'medium', 1e-3 in energy and forces)
     pSPARC_Input->scf_err_type = 0;           // default scf error definition: relative error in rho or veff
     pSPARC_Input->MAXIT_SCF = 100;            // default maximum number of SCF iterations
-    pSPARC_Input->MINIT_SCF = 3;              // default minimum number of SCF iterations
+    pSPARC_Input->MINIT_SCF = 2;              // default minimum number of SCF iterations
     pSPARC_Input->MAXIT_POISSON = 3000;       // default maximum number of iterations for Poisson solver
     pSPARC_Input->Relax_Niter = 300;          // default maximum number of relaxation iterations, for RelaxFlag = 1 only
     pSPARC_Input->target_energy_accuracy = -1.0; // default target energy accuracy
@@ -3150,7 +3150,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Nov 18, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Nov 19, 2022)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
