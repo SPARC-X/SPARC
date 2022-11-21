@@ -213,7 +213,12 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
                 fprintf(output_fp,"Pressure                           :%18.10E (GPa)\n",pSPARC->pres*CONST_HA_BOHR3_GPA);
                 fprintf(output_fp,"Maximum stress                     :%18.10E (GPa)\n",maxS*CONST_HA_BOHR3_GPA);
             } else{
-                fprintf(output_fp,"Maximum stress                     :%18.10E (a.u.)\n",maxS);
+                double cellsizes[3] = {pSPARC->range_x, pSPARC->range_y, pSPARC->range_z};
+                int BCs[3] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
+                char stressUnit[16];
+                double maxSGPa = convertStressToGPa(maxS, cellsizes, BCs, stressUnit);
+                fprintf(output_fp,"Maximum stress                     :%18.10E (%s)\n",maxS,stressUnit);
+                fprintf(output_fp,"Maximum stress equiv. to periodic  :%18.10E (GPa)\n",maxSGPa);
             }
             fprintf(output_fp,"Time for stress calculation        :  %.3f (sec)\n",t2-t1);
             fclose(output_fp);
