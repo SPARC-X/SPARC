@@ -1960,7 +1960,10 @@ double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char o
     double StressGPa = Stress / scale * CONST_HA_BOHR3_GPA; 
 
     // find the original unit
-    snprintf(origUnit, 16, "Ha/Bohr**%d", nperiods);
-    
+    if (nperiods == 1)
+        snprintf(origUnit, 16, "Ha/Bohr");
+    else
+        snprintf(origUnit, 16, "Ha/Bohr**%d", nperiods);
+
     return StressGPa;
 }
