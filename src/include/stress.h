@@ -51,4 +51,20 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC);
 */
 void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp);
 
+
+/**
+ * @brief Convert stress component from Ha/Bohr**3 (or Ha/Bohr**2 for slabs, Ha/Bohr for wires) to
+ *        GPa. Note that for the Dirichlet directions, we directly scale by the domain size, which
+ *        is not physical in general. 
+ * 
+ * @param Stress Stress component in a.u. (Ha/Bohr**3, or Ha/Bohr**2, or Ha/Bohr,
+ *               which will be returned in Unit)
+
+ * @param cellsizes Cell sizes in all three direction.
+ * @param BCs Boundary condition, 0 - periodic, 1 - dirichlet
+ * @param origUnit (OUTPUT) Unit for the original stress.
+ * @return double Stress component in GPa.
+ */
+double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char origUnit[16]);
+
 #endif // STRESS_H 
