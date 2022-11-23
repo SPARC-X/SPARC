@@ -23,7 +23,7 @@
 #include "exactExchangeFinalization.h"
 #include "d3finalization.h"
 #include "vdWDFfinalization.h"
-#include "MGGAfinalization.h"
+#include "mGGAfinalization.h"
 #include "sqFinalization.h"
 /* ScaLAPACK routines */
 #ifdef USE_MKL

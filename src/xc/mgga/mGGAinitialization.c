@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #include "isddft.h"
-#include "MGGAinitialization.h"
+#include "mGGAinitialization.h"
 
 /**
  * @brief   allocate space to MGGA variables

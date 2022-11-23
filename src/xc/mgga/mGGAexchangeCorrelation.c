@@ -13,9 +13,8 @@
 #include <math.h>
 #include <assert.h>
 
-#include "MGGAscan.h"
-#include "MGGASscan.h"
-#include "MGGAexchangeCorrelation.h"
+#include "mGGAscan.h"
+#include "mGGAexchangeCorrelation.h"
 
 #include "isddft.h"
 #include "tools.h"

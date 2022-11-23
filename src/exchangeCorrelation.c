@@ -22,7 +22,7 @@
 #include "tools.h"
 #include "vdWDFexchangeLinearCorre.h"
 #include "vdWDFnonlinearCorre.h"
-#include "MGGAexchangeCorrelation.h"
+#include "mGGAexchangeCorrelation.h"
 
 
 

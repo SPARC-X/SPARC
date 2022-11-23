@@ -24,7 +24,7 @@
 #include "isddft.h"
 #include "exactExchange.h"
 #include "exactExchangeKpt.h"
-#include "MGGAhamiltonianTerm.h"
+#include "mGGAhamiltonianTerm.h"
 #include "spinOrbitCoupling.h"
 
 #ifdef USE_EVA_MODULE

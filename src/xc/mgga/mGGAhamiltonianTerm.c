@@ -14,7 +14,7 @@
 #include <assert.h>
 
 #include "isddft.h"
-#include "MGGAhamiltonianTerm.h"
+#include "mGGAhamiltonianTerm.h"
 #include "tools.h"
 #include "parallelization.h"
 #include "gradVecRoutines.h"
