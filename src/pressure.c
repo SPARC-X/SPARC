@@ -33,7 +33,7 @@
 #include "energy.h"
 #include "vdWDFstress.h"
 #include "d3forceStress.h"
-#include "MGGAstress.h"
+#include "mGGAstress.h"
 #include "spinOrbitCoupling.h"
 #include "exactExchangePressure.h"
 #include "sqProperties.h"

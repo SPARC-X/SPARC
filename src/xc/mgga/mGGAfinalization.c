@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 #include "isddft.h"
-#include "MGGAfinalization.h"
+#include "mGGAfinalization.h"
 
 /**
  * @brief   free space allocated to MGGA variables

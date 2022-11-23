@@ -30,7 +30,7 @@
 #include "isddft.h"
 #include "initialization.h"
 #include "electrostatics.h"
-#include "MGGAstress.h"
+#include "mGGAstress.h"
 #include "vdWDFstress.h"
 #include "d3forceStress.h"
 #include "exactExchangeStress.h"

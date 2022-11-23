@@ -15,7 +15,7 @@
 #include <assert.h>
 
 #include "isddft.h"
-#include "MGGAstress.h"
+#include "mGGAstress.h"
 #include "tools.h"
 #include "parallelization.h"
 #include "gradVecRoutines.h"
