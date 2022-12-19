@@ -281,7 +281,7 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
 			pSPARC->glogs[i] = 0.0;
 		}
 		// pSPARC->thermos_Ti = pSPARC->ion_T; // ion_T is decided by the kinetic energy of particles at that time step, changing with time
-		pSPARC->thermos_Ti = pSPARC->elec_T;
+		// pSPARC->thermos_Ti = pSPARC->elec_T; // It comes from restart file
 		pSPARC->thermos_T  = pSPARC->thermos_Ti;
 		pSPARC->prtarget /= 29421.02648438959; // transfer from GPa to Ha/Bohr^3
 
@@ -355,8 +355,8 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
         pSPARC->G_NPT_NP[1] = pSPARC->range_y * pSPARC->range_y;
         pSPARC->G_NPT_NP[2] = pSPARC->range_z * pSPARC->range_z;
 
-        pSPARC->thermos_Ti = pSPARC->elec_T;
-		pSPARC->thermos_T  = pSPARC->thermos_Ti;
+        // pSPARC->thermos_Ti = pSPARC->elec_T;
+		pSPARC->thermos_T = pSPARC->thermos_Ti; // It comes from restart file!
         pSPARC->prtarget /= 29421.02648438959; // transfer from GPa to Ha/Bohr^3
 		Calculate_ionic_stress(pSPARC);
     }
@@ -2075,7 +2075,8 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
     			fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z); //(no variable for position of barostat variable)
 			else 
 				fprintf(mdout,":LATVEC_SCALE: %.15g %.15g %.15g\n",pSPARC->range_x/pSPARC->initialLatVecLength[0],pSPARC->range_y/pSPARC->initialLatVecLength[1],pSPARC->range_z/pSPARC->initialLatVecLength[2]);
-    		fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
+    		fprintf(mdout,":TTHRMI(K): %.15g\n", pSPARC->thermos_Ti);
+			fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
     	}
     	// Print extended system parameters in case of NPT-NP
     	if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
@@ -2091,7 +2092,8 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
     			fprintf(mdout,":CELL: %.15g %.15g %.15g\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z); //(no variable for position of barostat variable)
 			else 
 				fprintf(mdout,":LATVEC_SCALE: %.15g %.15g %.15g\n",pSPARC->range_x/pSPARC->initialLatVecLength[0],pSPARC->range_y/pSPARC->initialLatVecLength[1],pSPARC->range_z/pSPARC->initialLatVecLength[2]);
-    		fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
+    		fprintf(mdout,":TTHRMI(K): %.15g\n", pSPARC->thermos_Ti);
+			fprintf(mdout,":TARGET_PRESSURE: %.15g GPa\n",pSPARC->prtarget * 29421.02648438959);
     		fprintf(mdout,":NPT_NP_ini_Hamiltonian: %.15g\n", pSPARC->init_Hamil_NPT_NP);
     	}
     	// Print temperature
@@ -2138,10 +2140,10 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 	if(pSPARC->RestartFlag == 1){
 	    // l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + 5) * sizeof(double);
 	    if (strcmpi(pSPARC->MDMeth,"NPT_NH") == 0){
-	    	l_buff = (2 + 1) * sizeof(int) + (6 * pSPARC->n_atom + (5 + 3*pSPARC->NPT_NHnnos + 8)) * sizeof(double);
+	    	l_buff = (2 + 1) * sizeof(int) + (6 * pSPARC->n_atom + (5 + 3*pSPARC->NPT_NHnnos + 9)) * sizeof(double);
 	    }
 	    else if (strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
-	    	l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + (5 + 13)) * sizeof(double);
+	    	l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + (5 + 14)) * sizeof(double);
 	    }
 	    else {
 	    	l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + 5) * sizeof(double);
@@ -2240,6 +2242,8 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		    pSPARC->range_y = nowRange_y;
         		    pSPARC->range_z = nowRange_z;
 				}
+				else if (strcmpi(str,":TTHRMI(K):") == 0)
+            		fscanf(rst_fp,"%lf", &pSPARC->thermos_Ti);
         		else if (strcmpi(str,":TARGET_PRESSURE:") == 0)
             		fscanf(rst_fp,"%lf", &pSPARC->prtarget);
 			}
@@ -2287,6 +2291,8 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		    pSPARC->range_y = nowRange_y;
         		    pSPARC->range_z = nowRange_z;
 				}
+				else if (strcmpi(str,":TTHRMI(K):") == 0)
+            		fscanf(rst_fp,"%lf", &pSPARC->thermos_Ti);
             	else if (strcmpi(str,":TARGET_PRESSURE:") == 0)
             		fscanf(rst_fp,"%lf", &pSPARC->prtarget);
             	else if (strcmpi(str,":NPT_NP_ini_Hamiltonian:") == 0)
@@ -2321,6 +2327,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
             	MPI_Pack(&pSPARC->range_x, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->range_y, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->range_z, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+				MPI_Pack(&pSPARC->thermos_Ti, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->prtarget, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             }
             else if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
@@ -2335,6 +2342,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
             	MPI_Pack(&pSPARC->range_x, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->range_y, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->range_z, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+				MPI_Pack(&pSPARC->thermos_Ti, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->prtarget, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             	MPI_Pack(&pSPARC->init_Hamil_NPT_NP, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             }
@@ -2378,6 +2386,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_x, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_y, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_z, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+				MPI_Unpack(buff, l_buff, &position, &pSPARC->thermos_Ti, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->prtarget, 1, MPI_DOUBLE, MPI_COMM_WORLD);
             }
             else if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0){
@@ -2393,6 +2402,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_x, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_y, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->range_z, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+				MPI_Unpack(buff, l_buff, &position, &pSPARC->thermos_Ti, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->prtarget, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         		MPI_Unpack(buff, l_buff, &position, &pSPARC->init_Hamil_NPT_NP, 1, MPI_DOUBLE, MPI_COMM_WORLD);
             }
