@@ -42,7 +42,7 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
 #define b(i,j,k) b[(k)*(xlen)*(ylen)+(j)*(xlen)+(i)]
 #define V_temp(i,j,k) V_temp[(k)*(xlen_ex)*(ylen_ex)+(j)*(xlen_ex)+(i)]
 // TODO: rb_max depends on finite difference order as well, improve this function
-#define RB_MAX(h) (h) < 1.5 ? (h)*10+5.5 : 20*(h)-9.5
+#define RB_MAX(h) (h) < 1.5 ? (h)*10+10 : 20*(h)-9.5
 #define RB_Y(y,L,typ) (typ) < 20 ? (y) : acos(1 - (y)*(y)/(2*(L)*(L))) + pSPARC->twist*y
 //#define RB_MAX(h) (h) < 1.5 ? (h)*30+5.5 : 40*(h)-9.5 
     double Rbmax_x, Rbmax_y, Rbmax_z;
