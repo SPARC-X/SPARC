@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Nov 17, 2022)                      *
+*                       SPARC (version JAN 24, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Fri Nov 18 16:24:31 2022                  *
+*                   Start time: Tue Jan 24 17:55:28 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -25,13 +25,13 @@ CHEB_DEGREE: 30
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
-MINIT_SCF: 3
+MINIT_SCF: 2
 MAXIT_POISSON: 3000
 TOL_SCF: 1.00E-06
 POISSON_SOLVER: AAR
 TOL_POISSON: 1.00E-08
 TOL_LANCZOS: 1.00E-02
-TOL_PSEUDOCHARGE: 1.00E-08
+TOL_PSEUDOCHARGE: 1.00E-09
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
 TOL_PRECOND: 9.57E-05
@@ -91,11 +91,11 @@ Total number of atoms              :  2
 Total number of electrons          :  16
 Atom type 1  (valence electrons)   :  Na 9
 Pseudopotential                    :  NaCl_PBE0/Na_ONCV_PBE-1.2.psp8
-Pseudocharge radii of atom type 1  :  8.35 8.35 8.35 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  8.97 8.97 8.97 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Cl 7
 Pseudopotential                    :  NaCl_PBE0/Cl_ONCV_PBE-1.2.psp8
-Pseudocharge radii of atom type 2  :  8.66 8.66 8.66 (x, y, z dir)
+Pseudocharge radii of atom type 2  :  8.97 8.97 8.97 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  77.63 MB
 Estimated memory per processor     :  1.62 MB
@@ -103,76 +103,76 @@ Estimated memory per processor     :  1.62 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.8521764622E+01        8.801E-02        0.288
-2            -2.8517204781E+01        6.185E-02        0.072
-3            -2.8511461968E+01        1.097E-02        0.097
-4            -2.8511369984E+01        3.767E-03        0.070
-5            -2.8511372351E+01        8.518E-04        0.069
+1            -2.8521764621E+01        8.801E-02        0.279
+2            -2.8517204781E+01        6.185E-02        0.070
+3            -2.8511461967E+01        1.097E-02        0.069
+4            -2.8511369983E+01        3.767E-03        0.096
+5            -2.8511372350E+01        8.518E-04        0.066
 Total number of SCF: 5     
 
-No.1 Exx outer loop. ACE timing: 0.028 (sec)
-1            -2.8534708414E+01        1.430E-03        0.080
-2            -2.8534729431E+01        9.751E-04        0.072
-3            -2.8534729374E+01        4.897E-04        0.072
-4            -2.8534728643E+01        1.799E-04        0.071
-5            -2.8534728722E+01        1.068E-04        0.071
-6            -2.8534728706E+01        3.502E-05        0.071
-7            -2.8534728712E+01        5.449E-06        0.070
-8            -2.8534728689E+01        1.477E-06        0.068
-9            -2.8534728683E+01        2.432E-07        0.068
+No.1 Exx outer loop. ACE timing: 0.044 (sec)
+1            -2.8534708414E+01        1.430E-03        0.077
+2            -2.8534729430E+01        9.751E-04        0.070
+3            -2.8534729373E+01        4.897E-04        0.069
+4            -2.8534728642E+01        1.799E-04        0.069
+5            -2.8534728721E+01        1.068E-04        0.068
+6            -2.8534728705E+01        3.502E-05        0.069
+7            -2.8534728711E+01        5.449E-06        0.067
+8            -2.8534728688E+01        1.477E-06        0.066
+9            -2.8534728683E+01        2.432E-07        0.066
 Total number of SCF: 9     
-Exx outer loop error: 5.4890642110e-04 
+Exx outer loop error: 5.4890642131e-04 
 
 No.2 Exx outer loop. ACE timing: 0.028 (sec)
-1            -2.8534747582E+01        1.638E-04        0.077
-2            -2.8534747667E+01        1.342E-04        0.070
-3            -2.8534747637E+01        3.703E-05        0.071
-4            -2.8534747663E+01        3.752E-06        0.068
-5            -2.8534747695E+01        2.550E-06        0.069
-6            -2.8534747723E+01        4.536E-07        0.068
+1            -2.8534747581E+01        1.638E-04        0.076
+2            -2.8534747666E+01        1.342E-04        0.072
+3            -2.8534747636E+01        3.703E-05        0.069
+4            -2.8534747662E+01        3.752E-06        0.067
+5            -2.8534747694E+01        2.550E-06        0.067
+6            -2.8534747722E+01        4.536E-07        0.066
 Total number of SCF: 6     
-Exx outer loop error: 5.5052994268e-05 
+Exx outer loop error: 5.5052994290e-05 
 
 No.3 Exx outer loop. ACE timing: 0.026 (sec)
-1            -2.8534747761E+01        2.278E-05        0.077
-2            -2.8534747809E+01        1.962E-05        0.070
-3            -2.8534747807E+01        4.437E-06        0.068
-4            -2.8534747841E+01        2.426E-06        0.069
-5            -2.8534747839E+01        2.768E-07        0.068
+1            -2.8534747761E+01        2.278E-05        0.075
+2            -2.8534747808E+01        1.962E-05        0.068
+3            -2.8534747806E+01        4.437E-06        0.066
+4            -2.8534747840E+01        2.426E-06        0.066
+5            -2.8534747839E+01        2.768E-07        0.066
 Total number of SCF: 5     
-Exx outer loop error: 6.0415377861e-06 
+Exx outer loop error: 6.0415377801e-06 
 
 No.4 Exx outer loop. ACE timing: 0.026 (sec)
-1            -2.8534747857E+01        3.783E-06        0.076
-2            -2.8534747797E+01        3.259E-06        0.069
-3            -2.8534747823E+01        6.483E-07        0.068
+1            -2.8534747856E+01        3.783E-06        0.074
+2            -2.8534747797E+01        3.259E-06        0.068
+3            -2.8534747822E+01        6.483E-07        0.066
 Total number of SCF: 3     
-Exx outer loop error: 6.9842682993e-07 
+Exx outer loop error: 6.9842687633e-07 
 
 No.5 Exx outer loop. ACE timing: 0.026 (sec)
-1            -2.8534747843E+01        5.793E-07        0.075
+1            -2.8534747842E+01        5.793E-07        0.073
 Total number of SCF: 1     
-Exx outer loop error: 1.0536175421e-07 
+Exx outer loop error: 1.0536173201e-07 
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.8534747633E+01 (Ha/atom)
-Total free energy                  : -5.7069495265E+01 (Ha)
-Band structure energy              : -2.6801417557E+00 (Ha)
-Exchange correlation energy        : -9.9789327069E+00 (Ha)
+Free energy per atom               : -2.8534747632E+01 (Ha/atom)
+Total free energy                  : -5.7069495263E+01 (Ha)
+Band structure energy              : -2.6801417540E+00 (Ha)
+Exchange correlation energy        : -9.9789327067E+00 (Ha)
 Self and correction energy         : -1.0164419457E+02 (Ha)
--Entropy*kb*T                      : -1.2814659251E-11 (Ha)
-Fermi level                        :  9.2826543323E-01 (Ha)
-RMS force                          :  3.8968762309E-01 (Ha/Bohr)
-Maximum force                      :  3.8968762309E-01 (Ha/Bohr)
-Time for force calculation         :  0.027 (sec)
-Pressure                           :  6.6153483836E+02 (GPa)
-Maximum stress                     :  8.1277313276E+02 (GPa)
-Time for stress calculation        :  0.276 (sec)
+-Entropy*kb*T                      : -2.1369552419E-12 (Ha)
+Fermi level                        :  6.1275733883E-01 (Ha)
+RMS force                          :  3.8968762449E-01 (Ha/Bohr)
+Maximum force                      :  3.8968762449E-01 (Ha/Bohr)
+Time for force calculation         :  0.021 (sec)
+Pressure                           :  6.6153447639E+02 (GPa)
+Maximum stress                     :  8.1277274715E+02 (GPa)
+Time for stress calculation        :  0.282 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  2.911 sec
+Total walltime                     :  2.894 sec
 ___________________________________________________________________________
 
 ***************************************************************************

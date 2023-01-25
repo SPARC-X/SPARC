@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Nov 10, 2022)                      *
+*                       SPARC (version JAN 24, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Nov 10 17:25:00 2022                  *
+*                   Start time: Tue Jan 24 17:54:04 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -25,7 +25,7 @@ CHEB_DEGREE: 29
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
-MINIT_SCF: 3
+MINIT_SCF: 2
 MAXIT_POISSON: 3000
 TOL_SCF: 1.00E-05
 POISSON_SOLVER: AAR
@@ -91,9 +91,9 @@ Estimated memory per processor     :  73.66 kB
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1414979157E+02         2.0000E+00        2.436E-01        0.048
+1            -1.1414979157E+02         2.0000E+00        2.436E-01        0.051
 2            -1.1415392840E+02         2.0000E+00        1.584E-01        0.018
-3            -1.1415696056E+02         2.0000E+00        2.115E-02        0.017
+3            -1.1415696056E+02         2.0000E+00        2.115E-02        0.019
 4            -1.1415698635E+02         2.0000E+00        1.145E-02        0.016
 5            -1.1415699737E+02         2.0000E+00        1.535E-03        0.017
 6            -1.1415699764E+02         2.0000E+00        1.773E-04        0.016
@@ -114,14 +114,14 @@ Fermi level                        :  2.0044734743E+00 (Ha)
 vdWDF energy                       :  9.0248000430E-02 (Ha)
 RMS force                          :  1.2369627968E+00 (Ha/Bohr)
 Maximum force                      :  1.2369627968E+00 (Ha/Bohr)
-Time for force calculation         :  0.231 (sec)
+Time for force calculation         :  0.237 (sec)
 Pressure                           :  1.5498295752E+04 (GPa)
 Maximum stress                     :  1.5618897735E+04 (GPa)
-Time for stress calculation        :  0.434 (sec)
+Time for stress calculation        :  0.441 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  56.535 sec
+Total walltime                     :  56.920 sec
 ___________________________________________________________________________
 
 ***************************************************************************

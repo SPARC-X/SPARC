@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Nov 10, 2022)                      *
+*                       SPARC (version JAN 24, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Nov 10 17:15:37 2022                  *
+*                   Start time: Tue Jan 24 17:44:35 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -26,7 +26,7 @@ CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 0
 CALC_PRES: 0
 MAXIT_SCF: 100
-MINIT_SCF: 3
+MINIT_SCF: 2
 MAXIT_POISSON: 3000
 TOL_SCF: 1.00E-04
 POISSON_SOLVER: AAR
@@ -94,11 +94,11 @@ Estimated memory per processor     :  69.47 kB
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
 1            -5.8961432883E+00        3.455E-01        0.030
 2            -5.9126465567E+00        5.244E-02        0.007
-3            -5.9129373237E+00        3.132E-02        0.007
+3            -5.9129373237E+00        3.132E-02        0.006
 4            -5.9129847894E+00        1.678E-02        0.006
-5            -5.9129842012E+00        1.317E-02        0.006
+5            -5.9129842012E+00        1.317E-02        0.005
 6            -5.9129980961E+00        3.123E-03        0.005
-7            -5.9129990594E+00        1.713E-03        0.005
+7            -5.9129990594E+00        1.713E-03        0.004
 8            -5.9129990209E+00        3.439E-04        0.004
 9            -5.9129987377E+00        2.626E-04        0.003
 10           -5.9129990338E+00        8.628E-05        0.003
@@ -115,11 +115,11 @@ Self and correction energy         : -2.7090222185E+01 (Ha)
 Fermi level                        : -1.8893553314E-01 (Ha)
 RMS force                          :  2.6700196418E-02 (Ha/Bohr)
 Maximum force                      :  3.1546333703E-02 (Ha/Bohr)
-Time for force calculation         :  0.005 (sec)
+Time for force calculation         :  0.006 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  0.128 sec
+Total walltime                     :  0.137 sec
 ___________________________________________________________________________
 
 ***************************************************************************
