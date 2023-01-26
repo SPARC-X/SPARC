@@ -1,0 +1,19 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+ATOM_TYPE: Mg                 # atom type
+PSEUDO_POT: ../../../psps/12_Mg_10_1.9_2.0_pbe_v1.0.psp8  # pseudopotential file
+N_TYPE_ATOM: 2                # number of atoms of this type
+# COORD:                      # Cartesian coordinates (au)
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+   0.3333333333333333    0.6666666666666666    0.2500000000000000
+   0.6666666666666667    0.3333333333333334    0.7500000000000000

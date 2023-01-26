@@ -13,7 +13,7 @@ import math
 
 # Other parameters to run the test (can be changed by the user)
 nprocs_tests = 24  # In default tests are run with 24 processors per node
-nnodes_tests = 2  # In default tests are run with 1 node
+nnodes_tests = 4  # In default tests are run with 1 node
 npbs = 1  # By default (number of PBS files the tests are distributed to)
 launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
@@ -99,6 +99,18 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 SYSTEMS["systemname"].append('Au_fcc211')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Cu_FCC')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('Mg_hcp')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'nonorth','smear_fd', 'kpt'])
+SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
+SYSTEMS["systemname"].append('MnAlCu2')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth','smear_fd', 'gamma'])
+SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MgO')
 SYSTEMS["Tags"].append(['bulk','gga','potmix','nonorth','smear_gauss','nlcc','orient'])
@@ -2920,7 +2932,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 29 September 2022)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 25 jan 2023)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")

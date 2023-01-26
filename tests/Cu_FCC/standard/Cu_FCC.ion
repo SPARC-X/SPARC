@@ -1,0 +1,22 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+ATOM_TYPE: Cu                 # atom type
+ATOMIC_MASS: 63.546           # atomic mass (amu)
+PSEUDO_POT: ../../../psps/29_Cu_19_1.7_1.9_pbe_n_v1.0.psp8  # pseudopotential file
+N_TYPE_ATOM: 4                # number of atoms of this type
+# COORD:                      # Cartesian coordinates (au)
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+   0.0 0.0 0.0
+   0.0 0.5 0.5
+   0.5 0.0 0.5
+   0.5 0.5 0.0

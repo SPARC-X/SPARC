@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Nov 11, 2022)                      *
+*                       SPARC (version JAN 24, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Fri Nov 11 00:16:52 2022                  *
+*                   Start time: Tue Jan 24 19:01:02 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -25,13 +25,13 @@ CHEB_DEGREE: 47
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
-MINIT_SCF: 3
+MINIT_SCF: 2
 MAXIT_POISSON: 3000
 TOL_SCF: 1.00E-05
 POISSON_SOLVER: AAR
 TOL_POISSON: 1.00E-07
 TOL_LANCZOS: 1.00E-02
-TOL_PSEUDOCHARGE: 1.00E-07
+TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
 TOL_PRECOND: 1.42E-05
@@ -81,15 +81,15 @@ Total number of atoms              :  5
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  Ba 10
 Pseudopotential                    :  ../psps/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 1  :  6.32 6.32 6.32 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  6.44 6.44 6.44 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Ti 12
 Pseudopotential                    :  ../psps/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 2  :  6.32 6.32 6.32 (x, y, z dir)
+Pseudocharge radii of atom type 2  :  6.44 6.44 6.44 (x, y, z dir)
 Number of atoms of type 2          :  1
 Atom type 3  (valence electrons)   :  O 6
 Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 3  :  6.32 6.32 6.32 (x, y, z dir)
+Pseudocharge radii of atom type 3  :  6.56 6.56 6.56 (x, y, z dir)
 Number of atoms of type 3          :  3
 Estimated total memory usage       :  404.00 MB
 Estimated memory per processor     :  4.21 MB
@@ -97,41 +97,41 @@ Estimated memory per processor     :  4.21 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.7515994330E+01        1.579E-01        0.864
-2            -2.7488987929E+01        6.592E-02        0.297
-3            -2.7484349509E+01        4.804E-02        0.370
-4            -2.7484454704E+01        3.497E-02        0.293
-5            -2.7481984731E+01        9.435E-03        0.292
-6            -2.7481901719E+01        4.634E-03        0.296
-7            -2.7481865293E+01        2.745E-03        0.291
-8            -2.7481851182E+01        7.862E-04        0.308
-9            -2.7481851201E+01        5.993E-04        0.283
-10           -2.7481850863E+01        1.261E-04        0.284
-11           -2.7481850668E+01        9.085E-05        0.278
-12           -2.7481850903E+01        1.565E-05        0.273
-13           -2.7481850844E+01        3.764E-06        0.264
+1            -2.7515994322E+01        1.579E-01        0.884
+2            -2.7488987915E+01        6.592E-02        0.304
+3            -2.7484349495E+01        4.804E-02        0.301
+4            -2.7484454690E+01        3.497E-02        0.331
+5            -2.7481984717E+01        9.435E-03        0.296
+6            -2.7481901705E+01        4.634E-03        0.299
+7            -2.7481865278E+01        2.745E-03        0.298
+8            -2.7481851167E+01        7.862E-04        0.300
+9            -2.7481851186E+01        5.993E-04        0.304
+10           -2.7481850848E+01        1.261E-04        0.293
+11           -2.7481850654E+01        9.085E-05        0.284
+12           -2.7481850889E+01        1.565E-05        0.277
+13           -2.7481850830E+01        3.764E-06        0.271
 Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.7481850844E+01 (Ha/atom)
-Total free energy                  : -1.3740925422E+02 (Ha)
-Band structure energy              : -1.0925167137E+01 (Ha)
-Exchange correlation energy        : -2.9060113030E+01 (Ha)
+Free energy per atom               : -2.7481850830E+01 (Ha/atom)
+Total free energy                  : -1.3740925415E+02 (Ha)
+Band structure energy              : -1.0925167094E+01 (Ha)
+Exchange correlation energy        : -2.9060113182E+01 (Ha)
 Self and correction energy         : -1.8459034599E+02 (Ha)
--Entropy*kb*T                      : -6.4470047926E-09 (Ha)
-Fermi level                        :  2.4037565782E-01 (Ha)
-vdWDF energy                       :  2.8213310270E-01 (Ha)
-RMS force                          :  1.1114755504E-01 (Ha/Bohr)
-Maximum force                      :  2.4132116767E-01 (Ha/Bohr)
-Time for force calculation         :  0.048 (sec)
-Pressure                           :  4.8393099920E+01 (GPa)
-Maximum stress                     :  5.6847800369E+01 (GPa)
-Time for stress calculation        :  0.100 (sec)
+-Entropy*kb*T                      : -1.6411986687E-10 (Ha)
+Fermi level                        :  2.9781506157E-01 (Ha)
+vdWDF energy                       :  2.8213310335E-01 (Ha)
+RMS force                          :  1.1114755810E-01 (Ha/Bohr)
+Maximum force                      :  2.4132117344E-01 (Ha/Bohr)
+Time for force calculation         :  0.079 (sec)
+Pressure                           :  4.8392046261E+01 (GPa)
+Maximum stress                     :  5.6847692178E+01 (GPa)
+Time for stress calculation        :  0.102 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  61.331 sec
+Total walltime                     :  60.963 sec
 ___________________________________________________________________________
 
 ***************************************************************************

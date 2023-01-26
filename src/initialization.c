@@ -2180,7 +2180,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     // magnitude smaller than rb tol. While the error in force due to rb
     // error is roughly the same order as rb tol.
     if (pSPARC->TOL_PSEUDOCHARGE < 0.0) { // if rb tol not provided by user
-        pSPARC->TOL_PSEUDOCHARGE = pSPARC->TOL_SCF * 0.01;
+        pSPARC->TOL_PSEUDOCHARGE = pSPARC->TOL_SCF * 0.001;
     }
 
     // The following will override the user-provided FixRandSeed
@@ -3150,7 +3150,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Dec 19, 2022)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version JAN 25, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
