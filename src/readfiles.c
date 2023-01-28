@@ -1564,17 +1564,6 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
             fscanf(psd_fp,"%lf %lf", &vtemp, &vtemp2);
         }
         
-        //// read rc from <INPUT> parameters
-        //do {
-        //  fscanf(psd_fp,"%s",str);
-        //} while (strcmpi(str,"qcut"));
-
-        //for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
-        //    fscanf(psd_fp,"%lf %lf",&vtemp2,&vtemp);
-        //    pSPARC->psd[ityp].rc[l] = vtemp;
-        //    fscanf(psd_fp, "%*[^\n]\n"); // go to next line
-        //}
-        
         /* check pseudopotential data */
         // check radial grid size
         if (pSPARC->psd[ityp].size < 2) {
@@ -1609,6 +1598,26 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
 
         if (pspcod == 8 && is_r_uniform == 0) {
             printf("\nWARNING: radial grid is non-uniform for psp8 format! (%s)\n\n", psd_filename);
+        }
+
+        // check if r_core is large enough
+        for (l = 0; l <= pSPARC->psd[ityp].lmax; l++) {
+            if (l == pSPARC->localPsd[ityp]) continue;
+            double r_core_read = pSPARC->psd[ityp].rc[l];            
+            for (kk = 0; kk < pSPARC->psd[ityp].ppl[l]; kk++) {
+                for (jj = 0; jj < pSPARC->psd[ityp].size; jj++) {
+                    double r = pSPARC->psd[ityp].RadialGrid[jj];
+                    // only check UdV after r_core
+                    if (r <= r_core_read) continue;
+                    if (fabs(pSPARC->psd[ityp].UdV[(lpos[l]+kk)*pSPARC->psd[ityp].size+jj]) > 1E-8 
+                        && r > pSPARC->psd[ityp].rc[l])
+                        pSPARC->psd[ityp].rc[l] = r;
+                }
+            }
+        #ifdef DEBUG
+            if (fabs(pSPARC->psd[ityp].rc[l]-r_core_read) > TEMP_TOL)
+                printf("l = %d, r_core read %.5f, change to rmax where |UdV| < 1E-8, %.5f.\n", l, r_core_read, pSPARC->psd[ityp].rc[l]);
+        #endif
         }
 
         // close the file

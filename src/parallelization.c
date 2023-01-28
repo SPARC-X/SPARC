@@ -1739,8 +1739,8 @@ double scaling_DMndbyNband(const int Ns, const int *gridsizes, const int npb, co
 {
     int Nd = gridsizes[0] * gridsizes[1] * gridsizes[2];
     double DMndbyNband = ceil_div(Nd,npd)/((double)ceil_div(Ns,npb));
-    // empirically DMndbyNband around 80 to 120 is good
-    double x = (DMndbyNband - 100)/20.0;
+    // empirically DMndbyNband around 40 to 80 is good
+    double x = (DMndbyNband - 60)/20.0;
     double cheby4 = max(0,16*pow(x,4)-12*pow(x,2)+1);
     return pow(0.98,cheby4);
 }
@@ -1751,17 +1751,16 @@ double skbd_weighted_efficiency(
     const int npk, const int npb, const int npd, const int isfock)
 {
     double eff;
-    if (!isfock) {
-        int ncols = workload_assigned(Nspin*Nk, Ns, nps*npk, npb);
-        eff = Nspin * Nk * Ns * npd / (double)(ncols * np);
-        // apply weight for band
-        eff *= skbd_band_efficiency(npb);
-        // apply weight for domain
-        eff *= skbd_domain_efficiency(npd);
-    } else {
-        int ncols = workload_assigned(Nspin, Nk, nps, npk);
-        eff = Nspin * Nk / (double)(ncols * nps * npk);
-        eff *= scaling_DMndbyNband(Ns, gridsizes, npb, npd);
+    int ncols = workload_assigned(Nspin*Nk, Ns, nps*npk, npb);
+    eff = Nspin * Nk * Ns * npd / (double)(ncols * np);
+    // apply weight for band
+    eff *= skbd_band_efficiency(npb);
+    // apply weight for domain
+    eff *= skbd_domain_efficiency(npd);
+    
+    if (isfock) {
+        // scale by DMndbyNband coefficients 
+        eff *= scaling_DMndbyNband(Ns, gridsizes, npb, npd);        
     }
     return eff;
 }
@@ -1771,9 +1770,8 @@ double work_load_efficiency_fock(
     const int np, const int np1, const int np2, const int np3
 )
 {
-    int ncols = workload_assigned(Nk, 1, np1, 1);
-    scaling_DMndbyNband(Ns, gridsizes, np2, np3);
-    double eff = Nk*(np2*np3)/(double)(ncols * np);
+    int ncols = workload_assigned(Nk, Ns, np1, np2);
+    double eff = Nk * Ns * np3 / (double)(ncols * np);
     eff *= scaling_DMndbyNband(Ns, gridsizes, np2, np3);
     return eff;
 }
@@ -1828,7 +1826,9 @@ void dims_divide_kbd_fock(
         int np_2d = np / npband;
         if (np_2d < 1) continue;
         
-        dims_divide_2d(Nk, gridsizes[0]*gridsizes[1]*gridsizes[2], np_2d, &npkpt, &npdm);
+        // Use as much npkpt as possible for fock
+        npkpt = min(np_2d,Nk);
+        npdm = np_2d / npkpt;
         npband = np / (npkpt * npdm);
         weight = work_load_efficiency_fock(Nk,Ns,gridsizes,np,npkpt,npband,npdm);
         if (weight > best_weight) {
