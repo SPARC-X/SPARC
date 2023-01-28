@@ -1197,11 +1197,12 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
         
     // sum over all kpoints
     if (pSPARC->npkpt > 1) {    
-        if (pSPARC->kptcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        } else{
-            MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        }
+        // if (pSPARC->kptcomm_index == 0){
+        //     MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        // } else{
+        //     MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        // }
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
     // sum over all bands
