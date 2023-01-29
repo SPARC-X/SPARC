@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version JAN 24, 2023)                      *
+*                       SPARC (version Jan 28, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Jan 24 16:48:48 2023                  *
+*                   Start time: Sat Jan 28 19:09:21 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -51,7 +51,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: cu
+OUTPUT_FILE: Cu_FCC/temp_run/Cu_FCC
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -75,12 +75,12 @@ EIG_SERIAL_MAXNS: 1500
 Number of processors               :  48
 Mesh spacing                       :  0.216677 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  cu.out
+Output printed to                  :  Cu_FCC/temp_run/Cu_FCC.out
 Total number of atom types         :  1
 Total number of atoms              :  4
 Total number of electrons          :  76
 Atom type 1  (valence electrons)   :  Cu 19
-Pseudopotential                    :  ../../../psps/29_Cu_19_1.7_1.9_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/29_Cu_19_1.7_1.9_pbe_n_v1.0.psp8
 Pseudocharge radii of atom type 1  :  6.93 6.93 6.93 (x, y, z dir)
 Number of atoms of type 1          :  4
 Estimated total memory usage       :  39.10 MB
@@ -89,33 +89,33 @@ Estimated memory per processor     :  834.15 kB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.8219383989E+02        1.309E-02        0.129
-2            -1.8219366335E+02        2.830E-03        0.030
-3            -1.8219480374E+02        1.155E-02        0.031
-4            -1.8219379481E+02        7.477E-03        0.030
-5            -1.8219366023E+02        2.475E-03        0.030
-6            -1.8219365150E+02        1.748E-03        0.030
-7            -1.8219364710E+02        1.178E-03        0.030
-8            -1.8219364389E+02        1.289E-04        0.030
-9            -1.8219364459E+02        5.125E-05        0.029
+1            -1.8219384019E+02        1.309E-02        0.132
+2            -1.8219366364E+02        2.830E-03        0.031
+3            -1.8219480403E+02        1.155E-02        0.031
+4            -1.8219379510E+02        7.477E-03        0.031
+5            -1.8219366053E+02        2.475E-03        0.031
+6            -1.8219365180E+02        1.748E-03        0.030
+7            -1.8219364739E+02        1.178E-03        0.030
+8            -1.8219364419E+02        1.289E-04        0.030
+9            -1.8219364489E+02        5.124E-05        0.030
 Total number of SCF: 9     
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.8219364459E+02 (Ha/atom)
-Total free energy                  : -7.2877457836E+02 (Ha)
-Band structure energy              : -5.1914418609E+01 (Ha)
-Exchange correlation energy        : -8.8853744962E+01 (Ha)
+Free energy per atom               : -1.8219364489E+02 (Ha/atom)
+Total free energy                  : -7.2877457955E+02 (Ha)
+Band structure energy              : -5.1914421254E+01 (Ha)
+Exchange correlation energy        : -8.8853744679E+01 (Ha)
 Self and correction energy         : -7.4614360114E+02 (Ha)
--Entropy*kb*T                      : -3.6282748769E-03 (Ha)
-Fermi level                        :  7.2899025215E-01 (Ha)
-RMS force                          :  9.6571506666E-06 (Ha/Bohr)
-Maximum force                      :  1.1835798028E-05 (Ha/Bohr)
-Time for force calculation         :  0.051 (sec)
+-Entropy*kb*T                      : -3.6282748788E-03 (Ha)
+Fermi level                        :  7.2899024066E-01 (Ha)
+RMS force                          :  9.6572462943E-06 (Ha/Bohr)
+Maximum force                      :  1.1835938815E-05 (Ha/Bohr)
+Time for force calculation         :  0.050 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  0.501 sec
+Total walltime                     :  0.533 sec
 ___________________________________________________________________________
 
 ***************************************************************************
