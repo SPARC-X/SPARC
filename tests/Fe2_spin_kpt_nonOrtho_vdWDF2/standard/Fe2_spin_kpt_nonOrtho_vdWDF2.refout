@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jan 28, 2023)                      *
+*                       SPARC (version Jan 31, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Jan 28 19:23:38 2023                  *
+*                   Start time: Fri Feb  3 11:48:37 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0.1 0 
 0.1 1 0 
 0 0 1 
-FD_GRID: 14 14 14
+FD_GRID: 15 15 15
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 3 3 3
@@ -21,7 +21,7 @@ ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001000000336
 EXCHANGE_CORRELATION: vdWDF2
 NSTATES: 24
-CHEB_DEGREE: 35
+CHEB_DEGREE: 37
 CHEFSI_BOUND_FLAG: 0
 CALC_STRESS: 1
 MAXIT_SCF: 100
@@ -35,7 +35,7 @@ TOL_PSEUDOCHARGE: 1.00E-08
 MIXING_VARIABLE: potential
 MIXING_PRECOND: kerker
 MIXING_PRECOND_MAG: none
-TOL_PRECOND: 4.14E-05
+TOL_PRECOND: 3.61E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -75,9 +75,9 @@ EIG_SERIAL_MAXNS: 1500
                              Initialization                                
 ***************************************************************************
 Number of processors               :  48
-Mesh spacing in x-direction        :  0.203873 (Bohr)
-Mesh spacing in y-direction        :  0.203873 (Bohr)
-Mesh spacing in z-direction        :  0.202861 (Bohr)
+Mesh spacing in x-direction        :  0.190281 (Bohr)
+Mesh spacing in y-direction        :  0.190281 (Bohr)
+Mesh spacing in z-direction        :  0.189337 (Bohr)
 Number of symmetry adapted k-points:  14
 Output printed to                  :  Fe2_spin_kpt_nonOrtho_vdWDF2/temp_run/Fe2_spin_kpt_nonOrtho_vdWDF2.out
 Total number of atom types         :  1
@@ -85,51 +85,50 @@ Total number of atoms              :  2
 Total number of electrons          :  32
 Atom type 1  (valence electrons)   :  Fe 16
 Pseudopotential                    :  ../psps/26_Fe_16_2.0_2.5_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 1  :  6.93 6.93 6.90 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  6.85 6.85 6.82 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  169.91 MB
-Estimated memory per processor     :  3.54 MB
+Estimated total memory usage       :  208.98 MB
+Estimated memory per processor     :  4.35 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -1.1336387920E+02         4.4445E-01        2.074E-01        1.934
-2            -1.1336869548E+02         1.4806E-01        1.297E-01        0.472
-3            -1.1337119793E+02        -2.0612E-02        2.924E-02        0.471
-4            -1.1337128264E+02         5.1283E-02        1.207E-02        0.471
-5            -1.1337129815E+02         1.0527E-01        5.274E-03        0.470
-6            -1.1337130118E+02         1.0474E-01        1.150E-03        0.469
-7            -1.1337130261E+02         1.1120E-01        9.099E-04        0.469
-8            -1.1337130523E+02         1.2475E-01        7.725E-04        0.469
-9            -1.1337130720E+02         1.4028E-01        3.300E-04        0.490
-10           -1.1337130720E+02         1.3889E-01        1.496E-04        0.470
-11           -1.1337130723E+02         1.4062E-01        8.121E-05        0.467
-12           -1.1337130720E+02         1.3862E-01        1.456E-04        0.468
-13           -1.1337130723E+02         1.4020E-01        1.602E-05        0.470
-14           -1.1337130723E+02         1.3997E-01        1.245E-05        0.511
-15           -1.1337130723E+02         1.4009E-01        2.221E-06        0.481
-Total number of SCF: 15    
+1            -1.1336370529E+02         4.4445E-01        2.078E-01        2.309
+2            -1.1336852264E+02         1.4806E-01        1.300E-01        0.573
+3            -1.1337102435E+02        -2.1078E-02        2.934E-02        0.572
+4            -1.1337110819E+02         5.0773E-02        1.215E-02        0.571
+5            -1.1337112357E+02         1.0489E-01        5.286E-03        0.572
+6            -1.1337112648E+02         1.0396E-01        1.142E-03        0.571
+7            -1.1337112784E+02         1.1026E-01        8.957E-04        0.570
+8            -1.1337113039E+02         1.2375E-01        7.667E-04        0.570
+9            -1.1337113242E+02         1.3999E-01        3.300E-04        0.571
+10           -1.1337113239E+02         1.3791E-01        1.924E-04        0.569
+11           -1.1337113245E+02         1.4069E-01        1.110E-04        0.570
+12           -1.1337113243E+02         1.3850E-01        1.331E-04        0.571
+13           -1.1337113246E+02         1.3996E-01        1.571E-05        0.570
+14           -1.1337113246E+02         1.3978E-01        7.461E-06        0.610
+Total number of SCF: 14    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.1337130723E+02 (Ha/atom)
-Total free energy                  : -2.2674261447E+02 (Ha)
-Band structure energy              : -5.5118953262E-01 (Ha)
-Exchange correlation energy        : -3.7839008152E+01 (Ha)
-Self and correction energy         : -2.3056985265E+02 (Ha)
--Entropy*kb*T                      : -1.2578548054E-04 (Ha)
-Fermi level                        :  1.8100126380E+00 (Ha)
-vdWDF energy                       :  9.1543206451E-02 (Ha)
-RMS force                          :  4.1688611967E-01 (Ha/Bohr)
-Maximum force                      :  4.1688611967E-01 (Ha/Bohr)
-Time for force calculation         :  0.173 (sec)
-Pressure                           :  2.1738251502E+04 (GPa)
-Maximum stress                     :  2.2623694602E+04 (GPa)
-Time for stress calculation        :  0.385 (sec)
+Free energy per atom               : -1.1337113246E+02 (Ha/atom)
+Total free energy                  : -2.2674226492E+02 (Ha)
+Band structure energy              : -5.5117740980E-01 (Ha)
+Exchange correlation energy        : -3.7838570162E+01 (Ha)
+Self and correction energy         : -2.3056986811E+02 (Ha)
+-Entropy*kb*T                      : -1.2607135157E-04 (Ha)
+Fermi level                        :  1.8100209439E+00 (Ha)
+vdWDF energy                       :  9.1537432422E-02 (Ha)
+RMS force                          :  4.1623633538E-01 (Ha/Bohr)
+Maximum force                      :  4.1623633538E-01 (Ha/Bohr)
+Time for force calculation         :  0.197 (sec)
+Pressure                           :  2.1738488517E+04 (GPa)
+Maximum stress                     :  2.2625034551E+04 (GPa)
+Time for stress calculation        :  0.444 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  66.289 sec
+Total walltime                     :  66.377 sec
 ___________________________________________________________________________
 
 ***************************************************************************
