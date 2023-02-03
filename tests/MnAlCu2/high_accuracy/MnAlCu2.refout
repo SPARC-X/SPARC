@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jan 28, 2023)                      *
+*                       SPARC (version Jan 31, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Jan 28 20:56:16 2023                  *
+*                   Start time: Fri Feb  3 13:32:49 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 5.921598 0 4e-16 
 1e-15 5.921598 4e-16 
 0 0 5.921598 
-FD_GRID: 93 93 93
+FD_GRID: 94 94 94
 FD_ORDER: 12
 BC: P P P
 KPOINT_GRID: 1 1 1
@@ -35,7 +35,7 @@ TOL_LANCZOS: 1.00E-02
 TOL_PSEUDOCHARGE: 1.00E-07
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
-TOL_PRECOND: 1.45E-05
+TOL_PRECOND: 1.42E-05
 PRECOND_KERKER_KTF: 1
 PRECOND_KERKER_THRESH: 0.1
 MIXING_PARAMETER: 0.3
@@ -73,7 +73,7 @@ EIG_SERIAL_MAXNS: 1500
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
-Mesh spacing                       :  0.120342 (Bohr)
+Mesh spacing                       :  0.119062 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  MnAlCu2/temp_run/MnAlCu2.out
 Total number of atom types         :  3
@@ -81,65 +81,65 @@ Total number of atoms              :  16
 Total number of electrons          :  224
 Atom type 1  (valence electrons)   :  Mn 15
 Pseudopotential                    :  ../psps/25_Mn_15_1.8_2.3_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 1  :  6.38 6.38 6.38 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  6.31 6.31 6.31 (x, y, z dir)
 Number of atoms of type 1          :  4
 Atom type 2  (valence electrons)   :  Al 3
 Pseudopotential                    :  ../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 2  :  6.38 6.38 6.38 (x, y, z dir)
+Pseudocharge radii of atom type 2  :  6.31 6.31 6.31 (x, y, z dir)
 Number of atoms of type 2          :  4
 Atom type 3  (valence electrons)   :  Cu 19
 Pseudopotential                    :  ../psps/29_Cu_19_1.7_1.9_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 3  :  6.50 6.50 6.50 (x, y, z dir)
+Pseudocharge radii of atom type 3  :  6.43 6.43 6.43 (x, y, z dir)
 Number of atoms of type 3          :  8
-Estimated total memory usage       :  5.17 GB
-Estimated memory per processor     :  55.10 MB
+Estimated total memory usage       :  5.33 GB
+Estimated memory per processor     :  56.90 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.1839400401E+02        2.012E-01        17.979
-2            -1.1856730178E+02        1.711E-01        4.505
-3            -1.1831816367E+02        6.892E-02        4.615
-4            -1.1829000365E+02        3.775E-02        4.526
-5            -1.1829719041E+02        8.220E-02        4.514
-6            -1.1828356038E+02        2.584E-02        4.481
-7            -1.1828334449E+02        2.296E-02        4.491
-8            -1.1828303116E+02        1.728E-02        4.500
-9            -1.1828300416E+02        2.768E-02        4.530
-10           -1.1828478606E+02        4.736E-02        4.559
-11           -1.1828291626E+02        2.895E-02        4.494
-12           -1.1828242397E+02        1.506E-02        4.546
-13           -1.1828228642E+02        8.838E-03        4.502
-14           -1.1828224060E+02        4.109E-03        4.530
-15           -1.1828228653E+02        9.497E-03        4.683
-16           -1.1828223699E+02        3.061E-03        4.496
-17           -1.1828224227E+02        4.189E-03        5.881
-18           -1.1828223416E+02        2.528E-03        4.509
-19           -1.1828223109E+02        1.633E-03        4.480
-20           -1.1828223000E+02        1.127E-03        4.476
-21           -1.1828223008E+02        3.818E-04        4.468
-22           -1.1828223060E+02        5.598E-04        4.485
-23           -1.1828222942E+02        2.694E-04        4.484
-24           -1.1828222990E+02        2.350E-04        4.552
-25           -1.1828222819E+02        8.623E-05        4.476
+1            -1.1839386356E+02        2.014E-01        17.347
+2            -1.1856808486E+02        1.712E-01        4.415
+3            -1.1831840372E+02        6.920E-02        4.476
+4            -1.1829425547E+02        6.765E-02        4.455
+5            -1.1829467073E+02        7.558E-02        4.470
+6            -1.1828716641E+02        5.511E-02        4.456
+7            -1.1828563921E+02        4.955E-02        4.455
+8            -1.1828370097E+02        3.009E-02        4.418
+9            -1.1828357453E+02        2.875E-02        4.451
+10           -1.1828278871E+02        1.455E-02        4.417
+11           -1.1828244476E+02        9.099E-03        4.411
+12           -1.1828231750E+02        7.778E-03        4.418
+13           -1.1828238693E+02        1.416E-02        4.409
+14           -1.1828227450E+02        5.105E-03        4.404
+15           -1.1828226712E+02        4.899E-03        4.393
+16           -1.1828243526E+02        1.731E-02        4.421
+17           -1.1828227107E+02        5.348E-03        4.404
+18           -1.1828229117E+02        7.844E-03        4.415
+19           -1.1828225240E+02        8.674E-04        4.403
+20           -1.1828225223E+02        4.268E-04        4.394
+21           -1.1828225214E+02        2.971E-04        4.388
+22           -1.1828225118E+02        2.960E-04        4.379
+23           -1.1828225183E+02        1.569E-04        4.373
+24           -1.1828224979E+02        1.658E-04        4.356
+25           -1.1828225031E+02        7.783E-05        4.336
 Total number of SCF: 25    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.1828222819E+02 (Ha/atom)
-Total free energy                  : -1.8925156510E+03 (Ha)
-Band structure energy              : -2.1606205813E+02 (Ha)
-Exchange correlation energy        : -2.4465025721E+02 (Ha)
-Self and correction energy         : -2.0053738071E+03 (Ha)
--Entropy*kb*T                      : -7.8014608177E-03 (Ha)
-Fermi level                        :  2.1884062813E-01 (Ha)
-RMS force                          :  1.3548047269E-05 (Ha/Bohr)
-Maximum force                      :  2.6977752597E-05 (Ha/Bohr)
-Time for force calculation         :  0.138 (sec)
+Free energy per atom               : -1.1828225031E+02 (Ha/atom)
+Total free energy                  : -1.8925160049E+03 (Ha)
+Band structure energy              : -2.1606325121E+02 (Ha)
+Exchange correlation energy        : -2.4465029381E+02 (Ha)
+Self and correction energy         : -2.0053738037E+03 (Ha)
+-Entropy*kb*T                      : -7.8084243062E-03 (Ha)
+Fermi level                        :  2.1882986799E-01 (Ha)
+RMS force                          :  1.1808153412E-05 (Ha/Bohr)
+Maximum force                      :  2.2807976075E-05 (Ha/Bohr)
+Time for force calculation         :  0.134 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  128.436 sec
+Total walltime                     :  123.878 sec
 ___________________________________________________________________________
 
 ***************************************************************************

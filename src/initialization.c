@@ -1536,13 +1536,13 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     // calculate number of finite-difference intervals in case it's provided indirectly
     if (pSPARC->ecut > 0) {
         double h_ecut = Ecut2h(pSPARC->ecut, FDn);
-        pSPARC->numIntervals_x = max(round(pSPARC->range_x/h_ecut),FDn);
-        pSPARC->numIntervals_y = max(round(pSPARC->range_y/h_ecut),FDn);
-        pSPARC->numIntervals_z = max(round(pSPARC->range_z/h_ecut),FDn);
+        pSPARC->numIntervals_x = max(ceil(pSPARC->range_x/h_ecut),FDn);
+        pSPARC->numIntervals_y = max(ceil(pSPARC->range_y/h_ecut),FDn);
+        pSPARC->numIntervals_z = max(ceil(pSPARC->range_z/h_ecut),FDn);
     } else if (pSPARC->mesh_spacing > 0) {
-        pSPARC->numIntervals_x = max(round(pSPARC->range_x/pSPARC->mesh_spacing),FDn);
-        pSPARC->numIntervals_y = max(round(pSPARC->range_y/pSPARC->mesh_spacing),FDn);
-        pSPARC->numIntervals_z = max(round(pSPARC->range_z/pSPARC->mesh_spacing),FDn);
+        pSPARC->numIntervals_x = max(ceil(pSPARC->range_x/pSPARC->mesh_spacing),FDn);
+        pSPARC->numIntervals_y = max(ceil(pSPARC->range_y/pSPARC->mesh_spacing),FDn);
+        pSPARC->numIntervals_z = max(ceil(pSPARC->range_z/pSPARC->mesh_spacing),FDn);
     }
 
     // calculate number of nodes in each direction
@@ -3150,7 +3150,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jan 29, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Feb 03, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

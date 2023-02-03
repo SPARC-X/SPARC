@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jan 28, 2023)                      *
+*                       SPARC (version Jan 31, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sat Jan 28 21:13:18 2023                  *
+*                   Start time: Fri Feb  3 13:16:37 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -11,7 +11,7 @@ LATVEC:
 1 0 0 
 0 1 0 
 0 0 1 
-FD_GRID: 51 151 151
+FD_GRID: 52 152 152
 FD_ORDER: 12
 BC: P D D
 KPOINT_GRID: 2 1 1
@@ -73,9 +73,9 @@ EIG_SERIAL_MAXNS: 1500
                              Initialization                                
 ***************************************************************************
 Number of processors               :  96
-Mesh spacing in x-direction        :  0.151178 (Bohr)
-Mesh spacing in y-direction        :  0.150177 (Bohr)
-Mesh spacing in z-direction        :  0.150177 (Bohr)
+Mesh spacing in x-direction        :  0.148271 (Bohr)
+Mesh spacing in y-direction        :  0.149189 (Bohr)
+Mesh spacing in z-direction        :  0.149189 (Bohr)
 Number of symmetry adapted k-points:  1
 Output printed to                  :  Au_wire_d3/temp_run/Au_wire_d3.out
 Total number of atom types         :  1
@@ -83,47 +83,46 @@ Total number of atoms              :  4
 Total number of electrons          :  76
 Atom type 1  (valence electrons)   :  Au 19
 Pseudopotential                    :  ../psps/79_Au_19_2.4_2.5_pbe_n_v1.0.psp8
-Pseudocharge radii of atom type 1  :  5.74 5.71 5.71 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  5.78 5.82 5.82 (x, y, z dir)
 Number of atoms of type 1          :  4
-Estimated total memory usage       :  5.51 GB
-Estimated memory per processor     :  58.81 MB
+Estimated total memory usage       :  5.70 GB
+Estimated memory per processor     :  60.75 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.4335710357E+02        5.161E-02        9.399
-2            -1.4345142304E+02        1.844E-02        2.681
-3            -1.4345743264E+02        1.149E-02        2.678
-4            -1.4345684096E+02        7.279E-03        2.654
-5            -1.4345654427E+02        4.659E-03        2.650
-6            -1.4345643779E+02        2.839E-03        2.631
-7            -1.4345643109E+02        7.511E-04        2.542
-8            -1.4345642950E+02        5.016E-04        2.550
-9            -1.4345642722E+02        2.224E-04        2.592
-10           -1.4345642785E+02        9.178E-05        2.492
-11           -1.4345642792E+02        5.014E-05        2.428
-12           -1.4345642797E+02        1.931E-05        2.445
-13           -1.4345642789E+02        1.250E-05        2.574
-14           -1.4345642789E+02        4.429E-06        2.357
-Total number of SCF: 14    
+1            -1.4333976554E+02        4.790E-02        9.181
+2            -1.4344544606E+02        1.583E-02        2.593
+3            -1.4345670355E+02        1.174E-02        2.599
+4            -1.4345665377E+02        6.528E-03        2.619
+5            -1.4345646048E+02        4.148E-03        2.565
+6            -1.4345649429E+02        2.715E-03        2.543
+7            -1.4345641613E+02        7.228E-04        2.465
+8            -1.4345641667E+02        4.007E-04        2.439
+9            -1.4345641626E+02        2.393E-04        2.851
+10           -1.4345641650E+02        7.206E-05        2.344
+11           -1.4345641657E+02        3.184E-05        2.354
+12           -1.4345641667E+02        2.099E-05        2.299
+13           -1.4345641658E+02        7.827E-06        2.288
+Total number of SCF: 13    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -1.4346109935E+02 (Ha/atom)
-Total free energy                  : -5.7384439738E+02 (Ha)
-Band structure energy              : -9.8729433441E+01 (Ha)
-Exchange correlation energy        : -9.3496677264E+01 (Ha)
-Self and correction energy         : -4.9247560977E+02 (Ha)
--Entropy*kb*T                      : -4.1467102420E-03 (Ha)
-Fermi level                        : -1.8884101875E-01 (Ha)
+Free energy per atom               : -1.4346108804E+02 (Ha/atom)
+Total free energy                  : -5.7384435215E+02 (Ha)
+Band structure energy              : -9.8729188780E+01 (Ha)
+Exchange correlation energy        : -9.3496716073E+01 (Ha)
+Self and correction energy         : -4.9247561106E+02 (Ha)
+-Entropy*kb*T                      : -4.1467104138E-03 (Ha)
+Fermi level                        : -1.8884003533E-01 (Ha)
 DFT-D3 correction                  : -1.8685839468E-02 (Ha)
-RMS force                          :  5.4997403559E-03 (Ha/Bohr)
-Maximum force                      :  5.5117073646E-03 (Ha/Bohr)
-Time for force calculation         :  0.080 (sec)
+RMS force                          :  5.5078213541E-03 (Ha/Bohr)
+Maximum force                      :  5.5210041599E-03 (Ha/Bohr)
+Time for force calculation         :  0.084 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  43.585 sec
+Total walltime                     :  40.110 sec
 ___________________________________________________________________________
 
 ***************************************************************************
