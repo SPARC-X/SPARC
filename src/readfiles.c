@@ -1270,6 +1270,12 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     free(ion_filename);
     free(str);
     fclose(ion_fp);
+
+    // calculate total mass
+    pSPARC->TotalMass = 0;
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        pSPARC->TotalMass += pSPARC->Mass[ityp] * pSPARC->nAtomv[ityp];
+    }    
 }
 
 

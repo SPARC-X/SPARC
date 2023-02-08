@@ -66,6 +66,9 @@
 // Ha/Bohr^3 in GPa (converted by Ha->N*m, Bohr->m)
 #define CONST_HA_BOHR3_GPA 29421.01569650548
 
+// amu/Bohr^3 in g/cc
+#define CONST_AMU_BOHR3_GCC 11.2058730627683
+
 typedef struct _D2D_OBJ {
     int n_target; // number of target processes to communicate with
     int *target_ranks; // target ranks in union communicator
@@ -556,6 +559,7 @@ typedef struct _SPARC_OBJ{
     int *localPsd;          // respective local component of pseudopotential for 
                             // each type of atom. 0 for s, 1 for p, 2 for d, 3 for f                  
     double *Mass;           // atomic mass (for MD)
+    double TotalMass;       // Total atomic mass
     char *atomType;         // atom type name for every type of atom    
     int *Zatom;             // atom number
     int *Znucl;             // valence charge of each type
