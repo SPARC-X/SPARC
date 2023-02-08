@@ -3150,7 +3150,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Feb 03, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Feb 07, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3482,6 +3482,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
     fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
     fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
+    fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet), 
+                                                pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet) * CONST_AMU_BOHR3_GCC);
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");
     fprintf(output_fp,"***************************************************************************\n");

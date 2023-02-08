@@ -1,12 +1,13 @@
 #!/bin/bash
-#SBATCH -JMLFF_train_spacegroup
-#SBATCH --account=gts-phanish6-coda20
-#SBATCH -p inferno
-#SBATCH -N 4 --ntasks-per-node=24
+#SBATCH -J SPARC_testsuite
+#SBATCH -A hive-phanish6                    # Account name
+#SBATCH -p hive                             # Partition
+#SBATCH -N 2 --ntasks-per-node=24
 #SBATCH --mem-per-cpu=7G
 #SBATCH -t4:00:00
 cd $SLURM_SUBMIT_DIR
 
+module reset
 module load mkl
 echo $PWD 
 
