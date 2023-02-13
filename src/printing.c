@@ -27,6 +27,7 @@
 #include "exchangeCorrelation.h"
 #include "exactExchangeEnergyDensity.h"
 #include "mGGAexchangeCorrelation.h"
+#include "initialization.h"
 
 
 /**
@@ -184,6 +185,9 @@ void printDens_cube(SPARC_OBJ *pSPARC, double *rho, char *fname, char *rhoname) 
             double x0 = pSPARC->atom_pos[3*atmcount];
             double y0 = pSPARC->atom_pos[3*atmcount+1];
             double z0 = pSPARC->atom_pos[3*atmcount+2];
+            if(pSPARC->cell_typ != 0){
+                nonCart2Cart_coord(pSPARC, &x0, &y0, &z0);	
+            }
             atmcount++;
             fprintf(output_fp, "%5d %11.6f %11.6f  %11.6f  %11.6f\n", zatom, (double)zion, x0, y0, z0);
         }
