@@ -50,11 +50,34 @@ typedef struct _SQIND
 typedef struct _SQ_OBJ
 {
     int nloc[3];                      // Number of finite difference intervals on each direction within Rcut distance
-    int Nd_loc;                       // Total number of finite difference nodes within Rcut domain
-    int Nd_PR;                        // Total number of finite difference nodes within PR (process+Rcut) domain    
     int coords[3];                    // Coordinates of each process
     int rem[3];                       // Remainder of total 
+
+    MPI_Comm dmcomm_SQ;             // SQ Communicator topology
+    int DMnx_SQ;
+    int DMny_SQ;
+    int DMnz_SQ;
+    int DMnd_SQ;
+    int DMVertices_SQ[6];
+
+    int Nx_loc;
+    int Ny_loc;
+    int Nz_loc;
+    int Nd_loc;                       // Total number of finite difference nodes within Rcut domain
+
+    int DMnx_PR;
+    int DMny_PR;
+    int DMnz_PR;
+    int DMnd_PR;
     int DMVertices_PR[6];             // Domain vertices of PR (process+Rcut) domain
+
+    int Nx_ex;
+    int Ny_ex;
+    int Nz_ex;
+    int Nd_ex;
+
+    MPI_Comm SQ_dist_graph_comm;      // SQ Communicator for transferring data in PR domain
+    SQIND *SqInd;                     // Communicator information for SQ_dist_graph_comm
 
     double **lanczos_vec_all;
     double **w_all;
@@ -64,25 +87,11 @@ typedef struct _SQ_OBJ
     double *mineig;
     double *maxeig;
     double *lambda_max;
-    double *low_eig_vec;
-    double *chi;
-    double *zee;
     double *Veff_loc_SQ;
     double **gnd;
     double **gwt;
-    double **Ci;
-    double ***Veff_PR;                // Veff operator within PR (process+Rcut) domain
-    double ****vec;                   // vec for Lanczos initial guess
-    
-    MPI_Comm dmcomm_SQ;             // SQ Communicator topology
-    int Nx_d_SQ;
-    int Ny_d_SQ;
-    int Nz_d_SQ;
-    int Nd_d_SQ;
-    int DMVertices_SQ[6];
-
-    MPI_Comm SQ_dist_graph_comm;      // SQ Communicator for transferring data in PR domain
-    SQIND *SqInd;                     // Communicator information for SQ_dist_graph_comm
+    double *Veff_PR;                // Veff operator within PR (process+Rcut) domain
+    double *x_ex;
 } SQ_OBJ;
 
 

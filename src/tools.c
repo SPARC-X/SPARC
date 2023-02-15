@@ -704,7 +704,11 @@ void Vector2Norm(const double *Vec, const int len, double *vec_2norm, MPI_Comm c
     double sqsum = 0.0;
     for(k = 0; k < len; k++)
         sqsum += Vec[k]*Vec[k];
-    MPI_Allreduce(&sqsum, vec_2norm, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&sqsum, vec_2norm, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_2norm = sqsum;
+    }
     *vec_2norm = sqrt(*vec_2norm);
 }
 
@@ -719,7 +723,11 @@ void Vector2Norm_complex(const double complex *Vec, const int len, double *vec_2
     double sqsum = 0.0;
     for(k = 0; k < len; k++)
         sqsum += conj(Vec[k]) * Vec[k];
-    MPI_Allreduce(&sqsum, vec_2norm, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&sqsum, vec_2norm, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_2norm = sqsum;
+    }
     *vec_2norm = sqrt(*vec_2norm);
 }
 
@@ -734,7 +742,11 @@ void VectorDotProduct(const double *Vec1, const double *Vec2, const int len, dou
     double vec_dot_loc = 0.0;
     for (i = 0; i < len; i++)
         vec_dot_loc += Vec1[i] * Vec2[i];
-    MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_dot = vec_dot_loc;
+    }
 }
 
 
@@ -747,7 +759,11 @@ void VectorDotProduct_wt(const double *Vec1, const double *Vec2, const double *I
     double vec_dot_loc = 0.0;
     for (i = 0; i < len; i++)
         vec_dot_loc += Vec1[i] * Vec2[i] * Intgwt[i];
-    MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_dot = vec_dot_loc;
+    }
 }
 
 
@@ -761,7 +777,11 @@ void VectorDotProduct_complex(const double complex *Vec1, const double complex *
     double vec_dot_loc = 0.0;
     for (i = 0; i < len; i++)
         vec_dot_loc += conj(Vec1[i]) * Vec2[i];
-    MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&vec_dot_loc, vec_dot, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_dot = vec_dot_loc;
+    }
 }
 
 
@@ -776,7 +796,11 @@ void VectorSum(const double *Vec, const int len, double *vec_sum, MPI_Comm comm)
     double sum = 0.0;
     for (k = 0; k < len; k++)
         sum += Vec[k];
-    MPI_Allreduce(&sum, vec_sum, 1, MPI_DOUBLE, MPI_SUM, comm);
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&sum, vec_sum, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_sum = sum;
+    }
 }
 
 
@@ -2513,4 +2537,58 @@ double expint(const int n, const double x)
         }
     }
     return ans;
+}
+
+
+
+/**
+ * @brief Restrict any function defined on a FD grid to a sub-grid by extracting
+ *        the values that fall in the sub-grid.
+ *
+ *        Note that all the input indices for v_i are relative to the grid owned
+ *        by the current process, while the indices for v_o are relative to the
+ *        sub-grid in the current process.
+ *
+ * @param v_i              : Input data on the original grid
+ * @param v_o (OUT)        : Output data on the sub-grid
+ * @param stride_y_o       : Distance between v_o(i, j, k) and v_o(i, j+1, k)
+ * @param stride_y_i       : Distance between v_i(i, j, k) and v_i(i, j+1, k)
+ * @param stride_z_o       : Distance between v_o(i, j, k) and v_o(i, j, k+1)
+ * @param stride_z_i       : Distance between v_i(i, j, k) and v_i(i, j, k+1)
+ * @param [x_spos, x_epos] : X index range of v_o that will be computed
+ * @param [y_spos, y_epos] : Y index range of v_o that will be computed
+ * @param [z_spos, z_epos] : Z index range of v_o that will be computed
+ * @param x_i_spos         : X start index in v_i that will be restricted
+ * @param y_i_spos         : Y start index in v_i that will be restricted
+ * @param z_i_spos         : Z start index in v_i that will be restricted
+ *
+ */
+void restrict_to_subgrid(
+    const double *v_i,    double *v_o,
+    const int stride_y_o, const int stride_y_i,
+    const int stride_z_o, const int stride_z_i,
+    const int x_o_spos,   const int x_o_epos,
+    const int y_o_spos,   const int y_o_epos,
+    const int z_o_spos,   const int z_o_epos,
+    const int x_i_spos,   const int y_i_spos,
+    const int z_i_spos
+)
+{
+    const int shift_ip = x_i_spos - x_o_spos;
+    const int shift_jp = y_i_spos - y_o_spos;
+    const int shift_kp = z_i_spos - z_o_spos;
+    for (int k = z_o_spos; k <= z_o_epos; k++) {
+        int kp = k + shift_kp;
+        for (int j = y_o_spos; j <= y_o_epos; j++) {
+            int jp = j + shift_jp;
+            int offset = k * stride_z_o + j * stride_y_o;
+            int offset_i = kp * stride_z_i + jp * stride_y_i;
+            for (int i = x_o_spos; i <= x_o_epos; i++) {
+                int ip     = i + shift_ip;
+                int idx    = offset + i;
+                int idx_i  = offset_i + ip;
+                v_o[idx] = v_i[idx_i];
+            }
+        }
+    }
 }

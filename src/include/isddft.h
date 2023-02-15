@@ -869,17 +869,11 @@ typedef struct _SPARC_OBJ{
 
     /* SQ methods */
     int SQFlag;                     // Flag of SQ method
-    int SQ_typ;                     // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for energy
-    int SQ_typ_dm;                  // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for density matrix of properties
     int SQ_gauss_mem;               // Memory option for gauss quadrature 
-    int SQ_npl_c;                   // Degree of polynomial (should be a multiple of 4) for Clenshaw Curtis
     int SQ_npl_g;                   // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
-    int SQ_EigshiftFlag;            // Flag for choosing to use minmax eigenvalues of Gauss for Clenshaw Curtis in forces/stress after shifting by eigshift.
     int SQ_correction;              // Flag for culculating "charge overlap correction".
-    double SQ_rcut;                 // Truncation or localization radius
-    double SQ_fac_g2c;              // SQ_npl_c = SQ_fac_g2c * SQ_npl_G. Used if npl_c is not specified.
+    double SQ_rcut;                 // Truncation or localization radius    
     double SQ_tol_occ;              // Tolerance for occupation corresponding to maximum eigenvalue
-    double SQ_eigshift;             // Percentage shift in eigenspectrum
     int npNdx_SQ;           // number of processes for paral. over domain in x-dir
     int npNdy_SQ;           // number of processes for paral. over domain in y-dir
     int npNdz_SQ;           // number of processes for paral. over domain in z-dir
@@ -1171,15 +1165,10 @@ typedef struct _SPARC_INPUT_OBJ{
 
     /* SQ methods */
     int SQFlag;             // Flag of SQ method
-    int SQ_typ_dm;          // 1 --> Clenshaw Curtis, 2--> Gauss Quadrature for density matrix of properties
     int SQ_gauss_mem;       // Memory option for gauss quadrature 
-    int SQ_npl_c;           // Degree of polynomial (should be a multiple of 4) for Clenshaw Curtis
     int SQ_npl_g;           // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
-    int SQ_EigshiftFlag;    // Flag for choosing to use minmax eigenvalues of Gauss for Clenshaw Curtis in forces/stress after shifting by eigshift.
     double SQ_rcut;         // Truncation or localization radius
-    double SQ_fac_g2c;      // SQ_npl_c = SQ_fac_g2c * SQ_npl_G. Used if npl_c is not specified.
     double SQ_tol_occ;      // Tolerance for occupation corresponding to maximum eigenvalue
-    double SQ_eigshift;     // Percentage shift in eigenspectrum
     int npNdx_SQ;           // number of processes for paral. over domain in x-dir
     int npNdy_SQ;           // number of processes for paral. over domain in y-dir
     int npNdz_SQ;           // number of processes for paral. over domain in z-dir

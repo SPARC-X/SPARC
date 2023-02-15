@@ -22,11 +22,7 @@ void Calculate_elecDens_SQ(SPARC_OBJ *pSPARC, int SCFcount);
 /**
  * @brief   Compute column of density matrix using Gauss Quadrature
  */
-void Gauss_density_matrix_col(SPARC_OBJ *pSPARC, int Nd, int npl, double ***DMcol, double *V, double *w, double *D);
+void Gauss_density_matrix_col(SPARC_OBJ *pSPARC, int Nd, int npl, double *DMcol, double *V, double *w, double *D);
 
-/**
- * @brief   Compute column of density matrix using Clenshaw curtis Quadrature
- */
-void Clenshaw_curtis_density_matrix_col(SPARC_OBJ *pSPARC, double ***DMcol, int i, int j, int k, int nd);
 
 #endif 

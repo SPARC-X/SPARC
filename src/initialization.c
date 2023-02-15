@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 167
+#define N_MEMBR 162
 
 
 
@@ -657,15 +657,10 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     /* Default SQ method option */
     pSPARC_Input->SQFlag = 0;
-    pSPARC_Input->SQ_typ_dm = 2;                // default using Gauss quadrature for density matrix
     pSPARC_Input->SQ_gauss_mem = 0;             // default not saving Lanczos vectors and eigenvectors 
-    pSPARC_Input->SQ_npl_c = -1;
-    pSPARC_Input->SQ_npl_g = -1;
-    pSPARC_Input->SQ_EigshiftFlag = 0;
+    pSPARC_Input->SQ_npl_g = -1;    
     pSPARC_Input->SQ_rcut = -1;
-    pSPARC_Input->SQ_fac_g2c = 2.0;
     pSPARC_Input->SQ_tol_occ = 1e-6;
-    pSPARC_Input->SQ_eigshift = 5;
     pSPARC_Input->npNdx_SQ = 0;
     pSPARC_Input->npNdy_SQ = 0;
     pSPARC_Input->npNdz_SQ = 0;
@@ -1122,11 +1117,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->EXXDownsampling[2] = pSPARC_Input->EXXDownsampling[2];
     pSPARC->MINIT_FOCK = pSPARC_Input->MINIT_FOCK;
     pSPARC->SQFlag = pSPARC_Input->SQFlag;
-    pSPARC->SQ_typ_dm = pSPARC_Input->SQ_typ_dm;
     pSPARC->SQ_gauss_mem = pSPARC_Input->SQ_gauss_mem;
-    pSPARC->SQ_npl_c = pSPARC_Input->SQ_npl_c;
     pSPARC->SQ_npl_g = pSPARC_Input->SQ_npl_g;
-    pSPARC->SQ_EigshiftFlag = pSPARC_Input->SQ_EigshiftFlag;
     pSPARC->npNdx_SQ = pSPARC_Input->npNdx_SQ;
     pSPARC->npNdy_SQ = pSPARC_Input->npNdy_SQ;
     pSPARC->npNdz_SQ = pSPARC_Input->npNdz_SQ;
@@ -1206,9 +1198,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->hyb_range_pbe = pSPARC_Input->hyb_range_pbe;
     pSPARC->exx_frac = pSPARC_Input->exx_frac;
     pSPARC->SQ_rcut = pSPARC_Input->SQ_rcut;
-    pSPARC->SQ_fac_g2c = pSPARC_Input->SQ_fac_g2c;
     pSPARC->SQ_tol_occ = pSPARC_Input->SQ_tol_occ;
-    pSPARC->SQ_eigshift = pSPARC_Input->SQ_eigshift;
 
     // char type values
     strncpy(pSPARC->MDMeth , pSPARC_Input->MDMeth,sizeof(pSPARC->MDMeth));
@@ -2374,9 +2364,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: NSTATES is not vaild in SQ method.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        // Only Gauss Quadrature has been implemented.
-        // TODO: Add Clenshaw Curtis method and SQ_typ input option. 
-        pSPARC->SQ_typ = 2;
+        
         if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->mGGAflag) {
             if (!rank) 
                 printf(RED "ERROR: Hybrid functional, spin-orbit coupling, and SCAN are not supported in this version of SQ implementation." RESET);
@@ -2387,40 +2375,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: SQ_RCUT must be provided when SQ method is turned on.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        // if (pSPARC->SQ_typ == 1) {
-            // npl_c is set to nearest factor of 4 to facilitate Cleanshaw Curtis for Energy
-            // pSPARC->SQ_npl_c = (int) ceil(pSPARC->SQ_fac_g2c * pSPARC->SQ_npl_g / 4.0) * 4;
-        // }
-        if (pSPARC->SQ_typ == 2) {
-            if (pSPARC->SQ_npl_g <= 0) {
-                if (!rank)
-                    printf(RED "ERROR: SQ_NPL_G must be provided a positive integer when Gauss Quadrature method is turned on in SQ method.\n" RESET);
-                exit(EXIT_FAILURE);
-            }
 
-            if (pSPARC->SQ_npl_c <= 0) {
-                if (pSPARC->SQ_fac_g2c <= 0) {
-                    if (!rank)
-                        printf(RED "ERROR: SQ_FAC_G2C must be positive when Gauss Quadrature method is turned on \n"
-                                "and npl_c is not provided correctly in SQ method.\n" RESET);
-                    exit(EXIT_FAILURE);
-                }
-                // If npl_c is not provided, then npl_c = fac_g2c * npl_g. 
-                pSPARC->SQ_npl_c = (int) ceil(pSPARC->SQ_fac_g2c * pSPARC->SQ_npl_g);
-            } else {
-                // if npl_c is provided correctly, then SQ_FAC_G2C is set to negative and not printed 
-                pSPARC->SQ_fac_g2c = -1;
-            }
-        }
-        if (pSPARC->PrintEigenFlag > 0) {
+        if (pSPARC->SQ_npl_g <= 0) {
             if (!rank)
+                printf(RED "ERROR: SQ_NPL_G must be provided a positive integer when Gauss Quadrature method is turned on in SQ method.\n" RESET);
+            exit(EXIT_FAILURE);
+        }
+        
+        if (pSPARC->PrintEigenFlag > 0) {
+            if (!rank) 
                 printf(RED "ERROR: PRINT_EIGEN is not valid in SQ method.\n" RESET);
-                exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
         pSPARC->SQ_correction = 0;          // The correction term in energy and forces hasn't been implemented in this version.
-        if (pSPARC->SQ_typ_dm == 1) {
-            pSPARC->SQ_gauss_mem = 0;       // Ensure the high memory option is only valid for Gauss Qaudrature
-        }
     }
 
     if (pSPARC->PrintPsiFlag[0] == 1 && pSPARC->PrintPsiFlag[1] < 0) {
@@ -2443,19 +2410,15 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
         SQ_OBJ *pSQ = pSPARC->pSQ;
         // TODO: add accurate memory estimation
         double mem_PR, mem_Rcut, mem_phi, mem_chi;
-        mem_PR = (double) sizeof(double) * pSQ->Nd_PR;
+        mem_PR = (double) sizeof(double) * pSQ->DMnd_PR * nproc;
         mem_Rcut = 0;
-        mem_phi = (double) sizeof(double) * pSPARC->Nd_d * (6+pSPARC->SQ_npl_g*2+pSPARC->SQ_npl_c+1);
-        mem_chi = (double) sizeof(double) * pSPARC->Nd_d * pSQ->Nd_loc * 0.3; 
-        if (pSPARC->SQ_typ_dm == 2) { 
-            if (pSPARC->SQ_gauss_mem == 1) {                    // save vectors for all FD nodes
-                mem_Rcut += (double) sizeof(double) * pSPARC->Nd_d * pSQ->Nd_loc * pSPARC->SQ_npl_g;
-                mem_phi += (double) sizeof(double) * pSPARC->Nd_d * pSPARC->SQ_npl_g * pSPARC->SQ_npl_g;
-            } else {
-                mem_Rcut += (double) sizeof(double) * pSQ->Nd_loc * pSPARC->SQ_npl_g;
-            }
-        } else if (pSPARC->SQ_typ_dm == 1) {
-            mem_Rcut += (double) sizeof(double) * pSPARC->Nd_d * pSQ->Nd_loc;
+        mem_phi = (double) sizeof(double) * pSPARC->Nd_d * (6+pSPARC->SQ_npl_g*2+1) * nproc;
+        mem_chi = (double) sizeof(double) * pSPARC->Nd_d * pSQ->Nd_loc * 0.3 * nproc; 
+        if (pSPARC->SQ_gauss_mem == 1) {                    // save vectors for all FD nodes
+            mem_Rcut += (double) sizeof(double) * pSPARC->Nd_d * pSQ->Nd_loc * pSPARC->SQ_npl_g * nproc;
+            mem_phi += (double) sizeof(double) * pSPARC->Nd_d * pSPARC->SQ_npl_g * pSPARC->SQ_npl_g * nproc;
+        } else {
+            mem_Rcut += (double) sizeof(double) * pSQ->Nd_loc * pSPARC->SQ_npl_g * nproc;
         }
 
         double memory_usage = 0.0;
@@ -3150,7 +3113,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Feb 13, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Feb 15, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3195,26 +3158,13 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
     if (pSPARC->SQFlag == 1) {
         fprintf(output_fp,"SQ_FLAG: %d\n", pSPARC->SQFlag);
-        if (pSPARC->SQ_typ == 2)
-            fprintf(output_fp,"SQ_TYPE: GAUSS\n");
-        if (pSPARC->SQ_typ_dm == 1) {
-            fprintf(output_fp,"SQ_TYPE_DM: CC\n");
-            fprintf(output_fp,"SQ_NPL_C: %d\n", pSPARC->SQ_npl_c);
-        } else if (pSPARC->SQ_typ_dm == 2) {
-            fprintf(output_fp,"SQ_TYPE_DM: GAUSS\n");
-            if (pSPARC->SQ_gauss_mem == 1) {
-                fprintf(output_fp,"SQ_GAUSS_MEM: HIGH\n");
-            } else {
-                fprintf(output_fp,"SQ_GAUSS_MEM: LOW\n");
-            }
-        }    
-        fprintf(output_fp,"SQ_NPL_G: %d\n", pSPARC->SQ_npl_g);
         fprintf(output_fp,"SQ_RCUT: %.10g\n", pSPARC->SQ_rcut);
-        if (pSPARC->SQ_fac_g2c > 0)
-            fprintf(output_fp,"SQ_FAC_G2C: %.10g\n", pSPARC->SQ_fac_g2c);
-        fprintf(output_fp,"SQ_EIGSHIFT_FLAG: %d\n", pSPARC->SQ_EigshiftFlag);
-        if (pSPARC->SQ_EigshiftFlag == 1)
-            fprintf(output_fp,"SQ_EIGSHIFT: %.10g\n", pSPARC->SQ_eigshift);
+        fprintf(output_fp,"SQ_NPL_G: %d\n", pSPARC->SQ_npl_g);
+        if (pSPARC->SQ_gauss_mem == 1) {
+            fprintf(output_fp,"SQ_GAUSS_MEM: HIGH\n");
+        } else {
+            fprintf(output_fp,"SQ_GAUSS_MEM: LOW\n");
+        }  
         fprintf(output_fp,"SQ_TOL_OCC: %.2E\n", pSPARC->SQ_tol_occ);    
     } else {
         fprintf(output_fp,"NSTATES: %d\n",pSPARC->Nstates);
@@ -3635,7 +3585,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3648,7 +3598,6 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                                         MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {1, 1, 1, 1, 1,
@@ -3669,8 +3618,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 3, 1, 1, 
                           1, 1, 1, 1, 1, 
                           3, 1, 1, 1, 1, 
-                          1, 1, 1, 1, 1, 
-                          1, 7, 1, 1, /* int */ 
+                          1, 1, 1, 7, 1, 
+                          1, /* int */ 
                           1, 1, 1, 1, 1, 
                           1, 9, 1, 1, 3,
                           1, 1, 1, 1, 1,
@@ -3682,8 +3631,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, L_QMASS, 1,
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, 1, 1,
-                          1, 1, /* double */
+                          1, 1, 1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -3780,11 +3728,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.EXXDownsampling, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MINIT_FOCK, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQFlag, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.SQ_typ_dm, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_gauss_mem, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.SQ_npl_c, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_npl_g, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.SQ_EigshiftFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npNdx_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npNdy_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.npNdz_SQ, addr + i++);
@@ -3851,9 +3796,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.hyb_range_pbe, addr + i++);
     MPI_Get_address(&sparc_input_tmp.exx_frac, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_rcut, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.SQ_fac_g2c, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_tol_occ, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.SQ_eigshift, addr + i++);
     // char type
     MPI_Get_address(&sparc_input_tmp.MDMeth, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxMeth, addr + i++);

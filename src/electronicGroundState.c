@@ -884,7 +884,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             // Find occupation corresponding to maximum eigenvalue
             double maxeig, occ_maxeig;
             maxeig = pSQ->maxeig[0];
-            for (k = 1; k < pSQ->Nd_d_SQ; k++) {
+            for (k = 1; k < pSQ->DMnd_SQ; k++) {
                 if (pSQ->maxeig[k] > maxeig)
                     maxeig = pSQ->maxeig[k];
             }

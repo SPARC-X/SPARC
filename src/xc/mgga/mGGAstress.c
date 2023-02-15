@@ -59,9 +59,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
             // Kinetic stress
             if(dim == 0){
                 // component (1,1)
-                // find d(Psi*Ds)
-                double *dpsi_1p = YorZ; 
-                
+                // find d(Psi*Ds)                
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi1_dpsi1 = 0.0;
@@ -115,8 +113,6 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                 }
 
                 // component (2,2)
-                double *dpsi_2p = YorZ; 
-                
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi2_dpsi2 = 0.0;
@@ -127,9 +123,7 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
                     stress_mGGA_psi[3] += dpsi2_dpsi2 * g_nk; // component (2,2)
                 }
             } else if (dim == 2) {
-                // component (3,3)
-                double *dpsi_3p = YorZ; 
-                
+                // component (3,3)                
                 for(n = 0; n < ncol; n++){
                     dpsi_ptr = YorZ + n * DMnd; // dpsi_1
                     dpsi3_dpsi3 = 0.0;

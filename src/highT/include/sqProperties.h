@@ -11,6 +11,8 @@
 #ifndef SQPROPERTIES_H
 #define SQPROPERTIES_H 
 
+#include "isddft.h"
+
 /**
  * @brief   Calculate nonlocal forces using SQ method
  */
@@ -32,5 +34,15 @@ void Calculate_nonlocal_kinetic_stress_SQ(SPARC_OBJ *pSPARC);
  * TODO:    Add implementation from SQDFT 
  */
 void OverlapCorrection_forces_SQ(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   Calculate second derivative of 1 point
+ */
+double D2_1point(double *vec, int N, double *D2_stencil_coeffs, int FDn, int stride);
+
+/**
+ * @brief   Calculate first derivative of 1 point
+ */
+double D1_1point(double *vec, int N, double *D1_stencil_coeffs, int FDn, int stride);
 
 #endif

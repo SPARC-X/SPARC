@@ -40,12 +40,9 @@
 double Calculate_Eband_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
     double Eband = 0;
-    int DMnd = pSQ->Nd_d_SQ;
+    int DMnd = pSQ->DMnd_SQ;
 
-    // TODO: add Clenshaw Curtis method
-    if (pSPARC->SQ_typ == 2) {
-        Eband = Calculate_Eband_SQ_Gauss(pSPARC, DMnd, pSQ->dmcomm_SQ);
-    }
+    Eband = Calculate_Eband_SQ_Gauss(pSPARC, DMnd, pSQ->dmcomm_SQ);
     return Eband;
 }
 
@@ -55,12 +52,9 @@ double Calculate_Eband_SQ(SPARC_OBJ *pSPARC) {
 double Calculate_electronicEntropy_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
     double Entropy = 0;
-    int DMnd = pSQ->Nd_d_SQ;
+    int DMnd = pSQ->DMnd_SQ;
 
-    // TODO: add Clenshaw Curtis method
-    if (pSPARC->SQ_typ == 2) {
-        Entropy = Calculate_electronicEntropy_SQ_Gauss(pSPARC, DMnd, pSQ->dmcomm_SQ);
-    }
+    Entropy = Calculate_electronicEntropy_SQ_Gauss(pSPARC, DMnd, pSQ->dmcomm_SQ);
     return Entropy;
 }
 
@@ -127,7 +121,7 @@ double occ_constraint_SQ_gauss(SPARC_OBJ *pSPARC, double lambda_f) {
     MPI_Comm_rank(pSQ->dmcomm_SQ, &rank);
 
     g = 0.0;
-    for (k = 0; k < pSQ->Nd_d_SQ; k++) {
+    for (k = 0; k < pSQ->DMnd_SQ; k++) {
         for (j = 0; j < pSPARC->SQ_npl_g; j++) {
             g += 2 * pSQ->gwt[k][j] * smearing_function(
                 pSPARC->Beta, pSQ->gnd[k][j], lambda_f, pSPARC->elec_T_type);

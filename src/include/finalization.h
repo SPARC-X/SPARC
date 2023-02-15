@@ -23,7 +23,10 @@
  */
 void Finalize(SPARC_OBJ *pSPARC);
 
-
+/**
+ * @brief   Deallocates basic arrays in SPARC.
+ */
+void Free_basic(SPARC_OBJ *pSPARC);
 
 /**
  * @brief   Deallocates dynamic arrays in SPARC.

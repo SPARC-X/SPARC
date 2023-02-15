@@ -1,0 +1,14 @@
+----------------
+-Date
+-Name
+-changes
+
+--------------
+Feb 15, 2023
+Name: Xin Jing
+Changes: (all files inside highT/)
+1. Rewrite the nodal Hamiltonian times vector routines
+2. Rewrite 3-dimensional arrays into 1-dimensional arrays
+3. Test Gauss method for force and stress at both high T (1E6 K) and low T (1E4 K)
+4. Remove Cleanshaw-Curtis method for force and stress
+5. Optimize the code to get around 1.5 ~ 2 times speedup compared to previous version 

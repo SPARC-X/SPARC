@@ -35,7 +35,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
 /**
  * @brief   Transferring Veff to PR domain use SQ type communication 
  */
-void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq);
+void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double *Veff_PR, MPI_Comm comm_sq);
 
 /**
  * @brief   Create a D2D object for communication from SQ domain to phi domain 

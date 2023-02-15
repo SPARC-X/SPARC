@@ -118,25 +118,25 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         gridsizes[2] = pSPARC->Nz;
 
         // find size of distributed domain
-        pSQ->Nx_d_SQ = block_decompose(gridsizes[0], dims[0], coord_dmcomm[0]);
-        pSQ->Ny_d_SQ = block_decompose(gridsizes[1], dims[1], coord_dmcomm[1]);
-        pSQ->Nz_d_SQ = block_decompose(gridsizes[2], dims[2], coord_dmcomm[2]);
-        pSQ->Nd_d_SQ = pSQ->Nx_d_SQ * pSQ->Ny_d_SQ * pSQ->Nz_d_SQ;
+        pSQ->DMnx_SQ = block_decompose(gridsizes[0], dims[0], coord_dmcomm[0]);
+        pSQ->DMny_SQ = block_decompose(gridsizes[1], dims[1], coord_dmcomm[1]);
+        pSQ->DMnz_SQ = block_decompose(gridsizes[2], dims[2], coord_dmcomm[2]);
+        pSQ->DMnd_SQ = pSQ->DMnx_SQ * pSQ->DMny_SQ * pSQ->DMnz_SQ;
 
         // find corners of the distributed domain
         pSQ->DMVertices_SQ[0] = block_decompose_nstart(gridsizes[0], dims[0], coord_dmcomm[0]);
-        pSQ->DMVertices_SQ[1] = pSQ->DMVertices_SQ[0] + pSQ->Nx_d_SQ - 1;
+        pSQ->DMVertices_SQ[1] = pSQ->DMVertices_SQ[0] + pSQ->DMnx_SQ - 1;
         pSQ->DMVertices_SQ[2] = block_decompose_nstart(gridsizes[1], dims[1], coord_dmcomm[1]);
-        pSQ->DMVertices_SQ[3] = pSQ->DMVertices_SQ[2] + pSQ->Ny_d_SQ - 1;
+        pSQ->DMVertices_SQ[3] = pSQ->DMVertices_SQ[2] + pSQ->DMny_SQ - 1;
         pSQ->DMVertices_SQ[4] = block_decompose_nstart(gridsizes[2], dims[2], coord_dmcomm[2]);
-        pSQ->DMVertices_SQ[5] = pSQ->DMVertices_SQ[4] + pSQ->Nz_d_SQ - 1;
+        pSQ->DMVertices_SQ[5] = pSQ->DMVertices_SQ[4] + pSQ->DMnz_SQ - 1;
     } else {
         rank_dmcomm = -1;
         coord_dmcomm[0] = -1; coord_dmcomm[1] = -1; coord_dmcomm[2] = -1;
-        pSQ->Nx_d_SQ = 0;
-        pSQ->Ny_d_SQ = 0;
-        pSQ->Nz_d_SQ = 0;
-        pSQ->Nd_d_SQ = 0;
+        pSQ->DMnx_SQ = 0;
+        pSQ->DMny_SQ = 0;
+        pSQ->DMnz_SQ = 0;
+        pSQ->DMnd_SQ = 0;
         pSQ->DMVertices_SQ[0] = 0;
         pSQ->DMVertices_SQ[1] = 0;
         pSQ->DMVertices_SQ[2] = 0;
@@ -375,7 +375,7 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         printf("== SQ domain ==\n");
         printf("Total number of processors used for SQ domain: %d\n", pSPARC->npNdx_SQ*pSPARC->npNdy_SQ*pSPARC->npNdz_SQ);
         printf("Embeded Cartesian topology dims: (%d,%d,%d)\n", pSPARC->npNdx_SQ, pSPARC->npNdy_SQ, pSPARC->npNdz_SQ);
-        printf("# of FD-grid points per processor: %d = (%d,%d,%d)\n", pSQ->Nd_d_SQ,pSQ->Nx_d_SQ,pSQ->Ny_d_SQ,pSQ->Nz_d_SQ);
+        printf("# of FD-grid points per processor: %d = (%d,%d,%d)\n", pSQ->DMnd_SQ,pSQ->DMnx_SQ,pSQ->DMny_SQ,pSQ->DMnz_SQ);
         printf("-----------------------------------------------\n");
         printf("== Phi domain ==\n");
         printf("Total number of processors used for Phi domain: %d\n", pSPARC->npNdx_phi * pSPARC->npNdy_phi * pSPARC->npNdz_phi);
@@ -446,7 +446,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
         Find_size_dir(rem[i], coords[i], DMnxnynz[i], &small, &large);
 
         for (j = 0; j < 2; j++) {                                                // loop over 2 directions
-            Vec_copy(neigh_coords, coords, 3);
+            memcpy(neigh_coords, coords, 3*sizeof(int));
             sum  = nloc[i];
             send_layers(i, j) = 0;
             neigh_size = 0;
@@ -471,7 +471,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
     for (k = -send_layers[4]; k <= send_layers[5]; k++) {
         for (j = -send_layers[2]; j <= send_layers[3]; j++) {
             for (i = -send_layers[0]; i <= send_layers[1]; i++) {
-                Vec_copy(neigh_coords, coords, 3);
+                memcpy(neigh_coords, coords, 3*sizeof(int));
                 if(i || j || k) {
                     neigh_coords[0] = (neigh_coords[0] + i + np[0]) % np[0];     // shift coordinates 
                     neigh_coords[1] = (neigh_coords[1] + j + np[1]) % np[1];     // shift coordinates 
@@ -492,7 +492,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
         Find_size_dir(rem[i], coords[i], DMnxnynz[i], &small, &large);
 
         for (j = 0; j < 2; j++) {
-            Vec_copy(neigh_coords, coords, 3);
+            memcpy(neigh_coords, coords, 3*sizeof(int));
             sum  = nloc[i];
             rec_layers(i, j) = 0;
 
@@ -518,7 +518,7 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
     for (k = rec_layers[5]; k >= -rec_layers[4]; k--) {
         for (j = rec_layers[3]; j >= -rec_layers[2]; j--) {
             for (i = rec_layers[1]; i >= -rec_layers[0]; i--) {
-                Vec_copy(neigh_coords, coords, 3);
+                memcpy(neigh_coords, coords, 3*sizeof(int));
                 if(i || j || k) {
                     neigh_coords[0] = (neigh_coords[0] + i + np[0]) % np[0];     // shift coordinates 
                     neigh_coords[1] = (neigh_coords[1] + j + np[1]) % np[1];     // shift coordinates 
@@ -603,16 +603,21 @@ void Comm_topologies_sq(SPARC_OBJ *pSPARC, int DMnxnynz[3], int np[3], MPI_Comm 
 /**
  * @brief   Transferring Veff to PR domain use SQ type communication 
  */
-void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
+void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double *Veff_PR, MPI_Comm comm_sq) {
+#define Veff_PR(i,j,k) Veff_PR[(i)+(j)*DMnx_PR+(k)*DMnxny_PR]
     int i, j, k, ii, jj, kk, count, *nloc, rank;
     double *x_in, *x_out;
+    int DMnx_PR, DMny_PR, DMnxny_PR;
     MPI_Request request;
     SQ_OBJ *pSQ  = pSPARC->pSQ;
     SQIND *SqInd = pSQ->SqInd;
-    int psize[3] = {pSQ->Nx_d_SQ, pSQ->Ny_d_SQ, pSQ->Nz_d_SQ};        // number of nodes in each direction
+    int psize[3] = {pSQ->DMnx_SQ, pSQ->DMny_SQ, pSQ->DMnz_SQ};        // number of nodes in each direction
     
     MPI_Comm_rank(comm_sq, &rank);
     nloc = pSQ->nloc;
+    DMnx_PR = pSQ->DMnx_SQ + 2*pSQ->nloc[0];
+    DMny_PR = pSQ->DMny_SQ + 2*pSQ->nloc[1];
+    DMnxny_PR = DMnx_PR * DMny_PR;
     //////////////////////////////////////////////////////////////////////
 
     x_in  = (double*) calloc(SqInd->n_in,  sizeof(double));                                // number of elements received from each neighbor 
@@ -649,10 +654,13 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
                     else
                         start[2] = psize[2] - SqInd->z_scounts[k];
 
-                    for (kk = start[2]; kk < end[2]; kk++)
-                        for (jj = start[1]; jj < end[1]; jj++)
-                            for (ii = start[0]; ii < end[0]; ii++)
-                                x_out[count++] = Veff_PR[kk + nloc[2]][jj + nloc[1]][ii + nloc[0]];
+                    for (kk = start[2]; kk < end[2]; kk++) {
+                        for (jj = start[1]; jj < end[1]; jj++) {
+                            for (ii = start[0]; ii < end[0]; ii++) {
+                                x_out[count++] = Veff_PR(ii + nloc[0], jj + nloc[1], kk + nloc[2]);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -677,11 +685,15 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
                 start[1] = end[1] - SqInd->y_rcounts[j];
                 start[2] = end[2] - SqInd->z_rcounts[k];
 
-                if (i != SqInd->rec_layers[0] || j != SqInd->rec_layers[2] || k != SqInd->rec_layers[4])
-                    for (kk = start[2]; kk < end[2]; kk++)
-                        for (jj = start[1]; jj < end[1]; jj++)
-                            for (ii = start[0]; ii < end[0]; ii++)
-                                Veff_PR[kk][jj][ii] = x_in[count++];
+                if (i != SqInd->rec_layers[0] || j != SqInd->rec_layers[2] || k != SqInd->rec_layers[4]) {
+                    for (kk = start[2]; kk < end[2]; kk++) {
+                        for (jj = start[1]; jj < end[1]; jj++) {
+                            for (ii = start[0]; ii < end[0]; ii++) {
+                                Veff_PR(ii,jj,kk) = x_in[count++];
+                            }
+                        }
+                    }
+                }
                 
                 end[0] = start[0];
             }
@@ -696,6 +708,7 @@ void Transfer_Veff_PR(SPARC_OBJ *pSPARC, double ***Veff_PR, MPI_Comm comm_sq) {
     #endif  
     free(x_in);
     free(x_out);
+#undef Veff_PR
 }
 
 /**

@@ -12,14 +12,29 @@
 #define SQTOOL_H 
 
 
-void Vec_copy(int *a, int *b, int n);
+/**
+ * @brief tools in SQ-type communication 
+ */
 void Get_xyz_rs_counts(int *counts, int *layers, int *psize, int *x_counts, int *y_counts, int *z_counts);
+
+/**
+ * @brief tools in SQ-type communication 
+ */
 void Get_reverse(int *start, int shift1, int n, int *array, int shift2);
+
+/**
+ * @brief tools in SQ-type communication 
+ */
 void Get_in_order(int *start, int shift1, int n, int *array, int shift2);
+
+/**
+ * @brief tools in SQ-type communication 
+ */
 void Find_size_dir(int rem, int coords, int psize, int *small, int *large);
 
-void VectorDotProduct_local(double ***v1, double ***v2, int Nd[3], double *val);
-void Vector2Norm_local(double ***vec, int Nd[3], double * val);
-void Vec3Dto1D(double ***vec_in, double *vec_out, int *dims);
+/**
+ * @brief symmetrize SQ stress
+ */
 void symmetrize_stress_SQ(double *stress_out, double *stress_in);
-#endif // SQ_H
+
+#endif
