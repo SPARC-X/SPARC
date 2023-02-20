@@ -80,9 +80,9 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o xc/exx/exactExchangeInitialization.o      \
         xc/exx/exactExchangeFinalization.o xc/exx/exactExchangeStress.o                            \
         xc/exx/exactExchangePressure.o xc/exx/exactExchangeEnergyDensity.o \
-        orderN/sq/sq.o orderN/sq/sqInitialization.o orderN/sq/sqFinalization.o orderN/sq/sqEnergy.o\
-        orderN/sq/sqDensity.o orderN/sq/sqNlocVecRoutines.o orderN/sq/sqParallelization.o          \
-        orderN/sq/sqProperties.o orderN/sq/sqtool.o   
+        highT/sq.o highT/sqInitialization.o highT/sqFinalization.o highT/sqEnergy.o\
+        highT/sqDensity.o highT/sqNlocVecRoutines.o highT/sqParallelization.o          \
+        highT/sqProperties.o highT/sqtool.o   
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci

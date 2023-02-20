@@ -695,18 +695,6 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"SQ_FLAG:") == 0) {    
             fscanf(input_fp,"%d",&pSPARC_Input->SQFlag);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_TYPE_DM:") == 0) {    
-            fscanf(input_fp,"%s",temp);
-            if (strcmpi(temp,"CC") == 0 || strcmpi(temp,"cc") == 0) {
-                pSPARC_Input->SQ_typ_dm = 1;
-            } else if (strcmpi(temp,"GAUSS") == 0 || strcmpi(temp,"gauss") == 0) {
-                pSPARC_Input->SQ_typ_dm = 2;
-            } else {
-                printf("Cannot recognize the SQ type for density matrix: \"%s\"\n", temp);
-                printf("Please use GAUSS (gauss) for Gauss quadrature or CC (cc) for Clenshaw-Curtis\n");
-                exit(EXIT_FAILURE);
-            }
-            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"SQ_GAUSS_MEM:") == 0) {    
             fscanf(input_fp,"%s",temp);
             if (strcmpi(temp,"LOW") == 0 || strcmpi(temp,"low") == 0) {
@@ -719,26 +707,14 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_NPL_C:") == 0) {
-            fscanf(input_fp,"%d",&pSPARC_Input->SQ_npl_c);
-            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"SQ_NPL_G:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->SQ_npl_g);
-            fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_EIGSHIFT_FLAG:") == 0) {
-            fscanf(input_fp,"%d",&pSPARC_Input->SQ_EigshiftFlag);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"SQ_RCUT:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->SQ_rcut);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_FAC_G2C:") == 0) {
-            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_fac_g2c);
-            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"SQ_TOL_OCC:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->SQ_tol_occ);
-            fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_EIGSHIFT:") == 0) {
-            fscanf(input_fp,"%lf",&pSPARC_Input->SQ_eigshift);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"NP_DOMAIN_SQ_PARAL:") == 0) {
             fscanf(input_fp,"%d", &pSPARC_Input->npNdx_SQ);

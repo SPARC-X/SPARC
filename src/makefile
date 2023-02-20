@@ -33,7 +33,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IorderN/sq/include
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -66,7 +66,7 @@ endif
 
 # to compile with DEBUG mode
 ifeq ($(DEBUG_MODE), 1)
-CPPFLAGS += -Wall -g -DDEBUG # -Werror-implicit-function-declaration
+CPPFLAGS += -Wall -g -DDEBUG # -Werror-implicit-function-declaration -Wformat-truncation=0 -Wno-stringop-truncation
 endif
 
 # to enable SIMD for complex stencil routines
@@ -94,9 +94,9 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o xc/exx/exactExchangeInitialization.o      \
         xc/exx/exactExchangeFinalization.o xc/exx/exactExchangeStress.o                            \
         xc/exx/exactExchangePressure.o xc/exx/exactExchangeEnergyDensity.o \
-        orderN/sq/sq.o orderN/sq/sqInitialization.o orderN/sq/sqFinalization.o orderN/sq/sqEnergy.o\
-        orderN/sq/sqDensity.o orderN/sq/sqNlocVecRoutines.o orderN/sq/sqParallelization.o          \
-        orderN/sq/sqProperties.o orderN/sq/sqtool.o   
+        highT/sq.o highT/sqInitialization.o highT/sqFinalization.o highT/sqEnergy.o\
+        highT/sqDensity.o highT/sqNlocVecRoutines.o highT/sqParallelization.o          \
+        highT/sqProperties.o highT/sqtool.o   
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci

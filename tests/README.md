@@ -52,7 +52,7 @@ The systems in the testing suites are classified with a set of tags which descri
  * MD type: `nvtnh`,`nvkg`,`nve`,`npt`.
  * K-point sampling: `gamma`,`kpt`.
  * Spin polarization: `spin`,`SOC`.
- * Methods: `SQ`,`SQ3`.
+ * Methods: `highT`,`SQ3`.
  * Smearing: `smear_fd`,`smear_gauss`.
  * Bandgap: `bandgap`.
  * Others: `nlcc`,`memcheck`,`fast`.
