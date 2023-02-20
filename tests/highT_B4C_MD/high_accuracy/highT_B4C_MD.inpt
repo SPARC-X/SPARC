@@ -1,0 +1,25 @@
+CELL: 3.279103517594741 3.279103517594741 3.279103517594741
+MESH_SPACING: 0.12
+FD_ORDER: 12
+BC: P P P
+ELEC_TEMP: 1000000
+ELEC_TEMP_TYPE: Fermi-Dirac
+EXCHANGE_CORRELATION: LDA_PZ
+TOL_SCF: 1E-3
+RESTART_FLAG: 1
+CALC_PRES: 1
+
+
+SQ_FLAG: 1
+SQ_NPL_G: 50
+SQ_RCUT: 1.8
+
+MD_FLAG: 1                  # 1= MD, 0= no MD (default)
+ION_TEMP: 1010479                 # kelvin
+ION_TEMP_END: 1010479             # kelvin: vary temp linearly from ION_TEMP to ION_TEMP_END
+MD_METHOD: NVK_G              # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+MD_TIMESTEP: 0.04              # fs
+MD_NSTEP: 10                  # run MD_NSTEP steps or TWTIME minutes, whichever comes first
+ION_VEL_DSTR: 1               # initial velocity distrib: 1= uniform, 2= Maxwell-Boltzmann (default)
+ION_VEL_DSTR_RAND: 0          # initial velocity distrib seed: 0= fixed (default), 1= random
+PRINT_RESTART: 0              # output .restart files for restarting

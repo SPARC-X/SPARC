@@ -533,4 +533,37 @@ void FFTW_MDiFFT_real(int *dim_sizes, double _Complex *c2r_3dinput, double *c2r_
  */
 double expint(const int n, const double x);
 
+/**
+ * @brief Restrict any function defined on a FD grid to a sub-grid by extracting
+ *        the values that fall in the sub-grid.
+ *
+ *        Note that all the input indices for v_i are relative to the grid owned
+ *        by the current process, while the indices for v_o are relative to the
+ *        sub-grid in the current process.
+ *
+ * @param v_i              : Input data on the original grid
+ * @param v_o (OUT)        : Output data on the sub-grid
+ * @param stride_y_o       : Distance between v_o(i, j, k) and v_o(i, j+1, k)
+ * @param stride_y_i       : Distance between v_i(i, j, k) and v_i(i, j+1, k)
+ * @param stride_z_o       : Distance between v_o(i, j, k) and v_o(i, j, k+1)
+ * @param stride_z_i       : Distance between v_i(i, j, k) and v_i(i, j, k+1)
+ * @param [x_spos, x_epos] : X index range of v_o that will be computed
+ * @param [y_spos, y_epos] : Y index range of v_o that will be computed
+ * @param [z_spos, z_epos] : Z index range of v_o that will be computed
+ * @param x_i_spos         : X start index in v_i that will be restricted
+ * @param y_i_spos         : Y start index in v_i that will be restricted
+ * @param z_i_spos         : Z start index in v_i that will be restricted
+ *
+ */
+void restrict_to_subgrid(
+    const double *v_i,    double *v_o,
+    const int stride_y_o, const int stride_y_i,
+    const int stride_z_o, const int stride_z_i,
+    const int x_o_spos,   const int x_o_epos,
+    const int y_o_spos,   const int y_o_epos,
+    const int z_o_spos,   const int z_o_epos,
+    const int x_i_spos,   const int y_i_spos,
+    const int z_i_spos
+);
+
 #endif // TOOL_H
