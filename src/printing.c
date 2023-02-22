@@ -170,7 +170,8 @@ void printDens_cube(SPARC_OBJ *pSPARC, double *rho, char *fname, char *rhoname) 
     if (c_time_str[strlen(c_time_str)-1] == '\n') 
         c_time_str[strlen(c_time_str)-1] = '\0'; 
     fprintf(output_fp, "%s in Cube format printed by SPARC-X (Print time: %s)\n", rhoname, c_time_str);
-    fprintf(output_fp, "OUTER LOOP: X, MIDDLE LOOP: Y, INNER LOOP: Z.\n");
+    fprintf(output_fp, "Cell length: %.6f %.6f %.6f, boundary condition: %s %s %s.\n", pSPARC->range_x,pSPARC->range_y,pSPARC->range_z, 
+        pSPARC->BCx == 0 ? "P" : "D", pSPARC->BCy == 0 ? "P" : "D", pSPARC->BCz == 0 ? "P" : "D");
     fprintf(output_fp, "%5d %11.6f  %11.6f  %11.6f\n", pSPARC->n_atom, 0.0, 0.0, 0.0);
     fprintf(output_fp, "%5d %11.6f  %11.6f  %11.6f\n", Nx, pSPARC->LatUVec[0]*dx, pSPARC->LatUVec[1]*dx, pSPARC->LatUVec[2]*dx);
     fprintf(output_fp, "%5d %11.6f  %11.6f  %11.6f\n", Ny, pSPARC->LatUVec[3]*dy, pSPARC->LatUVec[4]*dy, pSPARC->LatUVec[5]*dy);
