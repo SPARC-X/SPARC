@@ -268,7 +268,8 @@ void Init_orbital(SPARC_OBJ *pSPARC)
                 gridsizes[0] = pSPARC->Nx;
                 gridsizes[1] = pSPARC->Ny;
                 gridsizes[2] = pSPARC->Nz;
-                int size_kg = pSPARC->Nd * pSPARC->Nspinor * pSPARC->Nstates;
+                int size_ng = pSPARC->Nd * pSPARC->Nspinor;
+                int size_kg = size_ng * pSPARC->Nstates;
                 int size_sg = size_kg * pSPARC->Nkpts_sym;
                 for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
                     int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
@@ -276,9 +277,9 @@ void Init_orbital(SPARC_OBJ *pSPARC)
                         int kg  = pSPARC->kpt_start_indx + k; // global kpt index
                         for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
                             int ng = pSPARC->band_start_indx + n; // global band index
-                            int shift_g = sg * size_sg + kg * size_kg + ng * pSPARC->Nd * pSPARC->Nspinor; // global shift
                             int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
                             for (spinor = 0; spinor < pSPARC->Nspinor; spinor ++) {
+                                int shift_g = sg * size_sg + kg * size_kg + ng * size_ng + pSPARC->Nd * spinor; // global shift
                                 double complex *Psi_kn = pSPARC->Xorb_kpt + shift + spinor * pSPARC->Nd_d_dmcomm;
                                 SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
                             }
