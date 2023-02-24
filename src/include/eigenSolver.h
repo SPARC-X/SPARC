@@ -22,6 +22,21 @@
 
 void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error);
 
+/*
+ * @brief Set up initial guess for Lanczos.
+ *        The eigvecs of Laplacian can be used as good initial guess for the Hamiltonian. 
+ *        On the other hand, one can also use random vectors as initial guess.
+ *
+ * @param x0         Output vector.
+ * @param gridsizes  Global grid sizes, [Nx,Ny,Nz].
+ * @param DMVert     Local domain vertices owned by the current process.
+ * @param RandFlag   Flag that specifies whether random vectors are used.
+ * @param comm       The communicator where the vector is distributed.
+ */
+void init_guess_Lanczos(
+    double *x0, double cellsizes[3], int gridsizes[3], double meshes[3], 
+    int DMVert[6], int RandFlag, MPI_Comm comm
+);
 
 /**
  * @brief   Lanczos algorithm for calculating min and max eigenvalues
@@ -79,7 +94,49 @@ void ChebyshevFiltering(SPARC_OBJ *pSPARC, int *DMVertices, double *X, double *Y
                         int m, double a, double b, double a0, int k, int spn_i, MPI_Comm comm, double *time_info);
 
 
+/* ============================================================================= 
+   For solving the standard subspace eigenproblem instead of the generalized one 
+   ============================================================================= */
+void Solve_standard_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i);
+
+/* ============================================================================= 
+   ============================================================================= */
+
 #ifdef USE_DP_SUBEIG
+struct DP_CheFSI_s
+{
+    int      nproc_row;         // Number of processes in process row, == comm size of pSPARC->blacscomm
+    int      nproc_kpt;         // Number of processes in kpt_comm 
+    int      rank_row;          // Rank of this process in process row, == rank in pSPARC->blacscomm
+    int      rank_kpt;          // Rank of this process in kpt_comm;
+    int      Ns_bp;             // Number of bands this process has in the original band parallelization (BP), 
+                                // == number of local states (bands) in SPARC == pSPARC->{band_end_indx-band_start_indx} + 1
+    int      Ns_dp;             // Number of bands this process has in the converted domain parallelization (DP),
+                                // == number of total states (bands) in SPARC == pSPARC->Nstates
+    int      Nd_bp;             // Number of FD points this process has in the original band parallelization (BP), == pSPARC->Nd_d_dmcomm
+    int      Nd_dp;             // Number of FD points this process has after converted to domain parallelization (DP)
+    #if defined(USE_MKL) || defined(USE_SCALAPACK)
+    int      desc_Hp_local[9];  // descriptor for Hp_local on each ictxt_blacs_topo
+    int      desc_Mp_local[9];  // descriptor for Mp_local on each ictxt_blacs_topo
+    int      desc_eig_vecs[9];  // descriptor for eig_vecs on each ictxt_blacs_topo
+    #endif
+    int      *Ns_bp_displs;     // Size nproc_row+1, the pSPARC->band_start_indx on each process in pSPARC->blacscomm
+    int      *Nd_dp_displs;     // Size nproc_row+1, displacements of FD points for each process in DP
+    int      *bp2dp_sendcnts;   // BP to DP send counts
+    int      *bp2dp_sdispls;    // BP to DP displacements
+    int      *dp2bp_sendcnts;   // DP to BP send counts
+    int      *dp2bp_sdispls;    // DP to BP send displacements
+    double   *Y_packbuf;        // Y pack buffer
+    double   *HY_packbuf;       // HY pack buffer
+    double   *Y_dp;             // Y block in DP
+    double   *HY_dp;            // HY block in DP
+    double   *Mp_local;         // Local Mp result
+    double   *Hp_local;         // Local Hp result
+    double   *eig_vecs;         // Eigen vectors from solving generalized eigenproblem
+    MPI_Comm kpt_comm;          // MPI communicator that contains all active processes in pSPARC->kptcomm
+};
+typedef struct DP_CheFSI_s* DP_CheFSI_t;
+
 /**
  * @brief   Initialize domain parallelization data structures for calculating projected Hamiltonian,  
  *          solving generalized eigenproblem, and performing subspace rotation in CheFSI().
@@ -97,6 +154,12 @@ void init_DP_CheFSI(SPARC_OBJ *pSPARC);
  *          MPI_Reduce to get the final Hp and Mp on rank 0 of each kpt_comm.
  */
 void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, double *Hp, double *Mp, int spn_i);
+
+/**
+ * @brief   Calculate projected Hamiltonian and overlap matrix with domain parallelization
+ *          data partitioning for standard eigenvalue problem.
+ */
+void DP_Project_Hamiltonian_std(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int spn_i);
 
 /**
  * @brief   Solve generalized eigenproblem Hp * x = lambda * Mp * x using domain parallelization
@@ -166,5 +229,9 @@ void Subspace_Rotation(SPARC_OBJ *pSPARC, double *Psi, double *Q, double *PsiQ, 
  */
 int Mesh2ChebDegree(double h);
 
+/**
+ * @brief   Orthogonalization of dense matrix A by Choleskey factorization
+ */
+void Chol_orth(double *A, const int *descA, double *z, const int *descz, const int *m, const int *n);
 
 #endif // EIGENSOLVER_H 

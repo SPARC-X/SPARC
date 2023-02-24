@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 162
+#define N_MEMBR 163
 
 
 
@@ -267,7 +267,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
             if (pSPARC->eig_paral_maxnp < 0) {
                 char RorC, SorG;
                 RorC = (pSPARC->isGammaPoint) ? 'R' : 'C';
-                SorG = 'G'; // standard or generalized eigenproblem
+                SorG = (pSPARC->StandardEigenFlag) ? 'S' : 'G';
                 pSPARC->eig_paral_maxnp = parallel_eigensolver_max_processor(pSPARC->Nstates, RorC, SorG);
             }
                 
@@ -283,9 +283,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
                                     pSPARC->eig_paral_subdims[0], pSPARC->eig_paral_subdims[1]);
         #endif
         }
-    }
-    
-    // estimate memory usage here
+    }    
 
     // Allocate memory space for Exx methods
     if (pSPARC->usefock == 1) {
@@ -633,6 +631,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     
     /* Default pSPARC members */
     pSPARC->is_default_psd = 0;               // default pseudopotential path is disabled
+
+    /* Eigenvalue Problem */
+    pSPARC_Input->StandardEigenFlag = 0;      // default using standard eigenvalue problem is disabled
 
     /* Default Exact exchange potential */    
     pSPARC_Input->TOL_FOCK = -1.0;            // default tolerance for Fock operator 
@@ -1125,7 +1126,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     for (i = 0; i < 7; i++)
         pSPARC->PrintPsiFlag[i] = pSPARC_Input->PrintPsiFlag[i];
     pSPARC->PrintEnergyDensFlag = pSPARC_Input->PrintEnergyDensFlag;
-    
+    pSPARC->StandardEigenFlag = pSPARC_Input->StandardEigenFlag;
+
     // double type values
     pSPARC->range_x = pSPARC_Input->range_x;
     pSPARC->range_y = pSPARC_Input->range_y;
@@ -1877,8 +1879,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     // set up real space preconditioner coefficients
     if (pSPARC->MixingPrecond == 2) { // coeff for Resta preconditioner
         pSPARC->precondcoeff_n = 1;
-        pSPARC->precondcoeff_a = (double complex *)malloc(pSPARC->precondcoeff_n * sizeof(double complex));
-        pSPARC->precondcoeff_lambda_sqr = (double complex *)malloc(pSPARC->precondcoeff_n * sizeof(double complex));
+        pSPARC->precondcoeff_a = (double _Complex *)malloc(pSPARC->precondcoeff_n * sizeof(double _Complex));
+        pSPARC->precondcoeff_lambda_sqr = (double _Complex *)malloc(pSPARC->precondcoeff_n * sizeof(double _Complex));
         pSPARC->precondcoeff_a[0]          = 0.820368124615603 - 0.330521220406859 * I;
         pSPARC->precondcoeff_lambda_sqr[0] = 1.539184309857566 + 1.454446707757472 * I;
         pSPARC->precondcoeff_k             = 0.179473117041025;
@@ -1899,8 +1901,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
                 pSPARC->precondcoeff_n = 1;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 0.897326075519806 - 0.837703986538753 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.328766315380339 + 0.183508748834006 * I;
                 pSPARC->precondcoeff_k             = 0.102576229227011;
@@ -1910,8 +1912,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 3;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 0.797410061005122 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = -0.000029265620523 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[2]          = 0.103239343777798 - 0.003381206211038 * I;
@@ -1927,8 +1929,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 1;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 0.914678024418436 - 1.055347015597097 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.238671535971552 + 0.106323808659314 * I;
                 pSPARC->precondcoeff_k             = 0.085289070702772;
@@ -1938,8 +1940,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 3;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = -0.000124974499632 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = 0.822613437367865 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[2]          = 0.094666235811611 - 0.004627781592542 * I;
@@ -1955,8 +1957,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 1;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 0.8206 - 0.3427 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.4284 + 0.4019 * I;
                 pSPARC->precondcoeff_k             = 0.1793;
@@ -1966,8 +1968,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 // pSPARC->precondcoeff_n = 3;
                 // // reallocate memory
-                // pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                // pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                // pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                // pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 // pSPARC->precondcoeff_a[0]          = -0.000124974499632 + 0.000000000000000 * I;
                 // pSPARC->precondcoeff_a[1]          = 0.822613437367865 + 0.000000000000000 * I;
                 // pSPARC->precondcoeff_a[2]          = 0.094666235811611 - 0.004627781592542 * I;
@@ -1979,8 +1981,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     } else if (pSPARC->MixingPrecond == 3) { // coeff for truncated Kerker preconditioner
         pSPARC->precondcoeff_n = 1;
-        pSPARC->precondcoeff_a = (double complex *)malloc(pSPARC->precondcoeff_n * sizeof(double complex));
-        pSPARC->precondcoeff_lambda_sqr = (double complex *)malloc(pSPARC->precondcoeff_n * sizeof(double complex));
+        pSPARC->precondcoeff_a = (double _Complex *)malloc(pSPARC->precondcoeff_n * sizeof(double _Complex));
+        pSPARC->precondcoeff_lambda_sqr = (double _Complex *)malloc(pSPARC->precondcoeff_n * sizeof(double _Complex));
         pSPARC->precondcoeff_a[0]          = 0.740197283447608 - 2.187940485005530 * I;
         pSPARC->precondcoeff_lambda_sqr[0] = 0.515764278984552 + 0.261718938132583 * I;
         pSPARC->precondcoeff_k             = 0.259680843800232;
@@ -2000,8 +2002,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 2;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 1.069131757115932 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = -0.171827850593795 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.261519729188790 + 0.000000000000000 * I;
@@ -2013,8 +2015,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 3;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 0.000011385765477 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = 0.994255001880647 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[2]          = -0.093994967542657 - 0.006240439304379 * I;
@@ -2030,8 +2032,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 2;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 1.045423322787217 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = -0.130145326907590 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.267115428215830 + 0.000000000000000 * I;
@@ -2043,8 +2045,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 3;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = -0.000450002447564 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[1]          = 0.991616958994114 + 0.000000000000000 * I;
                 pSPARC->precondcoeff_a[2]          = -0.074468796694241 - 0.014060128507695 * I;
@@ -2060,8 +2062,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 pSPARC->precondcoeff_n = 2;
                 // reallocate memory
-                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 pSPARC->precondcoeff_a[0]          = 1.2926 + 0.0000 * I;
                 pSPARC->precondcoeff_a[1]          = -0.4780 + 0.0000 * I;
                 pSPARC->precondcoeff_lambda_sqr[0] = 0.2310 + 0.0000 * I;
@@ -2073,8 +2075,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 #endif
                 // pSPARC->precondcoeff_n = 3;
                 // // reallocate memory
-                // pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double complex));
-                // pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double complex));
+                // pSPARC->precondcoeff_a = realloc(pSPARC->precondcoeff_a, pSPARC->precondcoeff_n * sizeof(double _Complex));
+                // pSPARC->precondcoeff_lambda_sqr = realloc(pSPARC->precondcoeff_lambda_sqr, pSPARC->precondcoeff_n * sizeof(double _Complex));
                 // pSPARC->precondcoeff_a[0]          = -0.000124974499632 + 0.000000000000000 * I;
                 // pSPARC->precondcoeff_a[1]          = 0.822613437367865 + 0.000000000000000 * I;
                 // pSPARC->precondcoeff_a[2]          = 0.094666235811611 - 0.004627781592542 * I;
@@ -2456,7 +2458,7 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     if (pSPARC->isGammaPoint) {
         type_size = sizeof(double);
     } else {
-        type_size = sizeof(double complex);
+        type_size = sizeof(double _Complex);
     }
 
     // orbitals (dominant)
@@ -3113,7 +3115,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Feb 22, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Feb 24, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3358,6 +3360,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"REFERENCE_CUTOFF: %.10g\n",pSPARC->REFERENCE_CUTOFF);
     fprintf(output_fp,"RHO_TRIGGER: %d\n",pSPARC->rhoTrigger);
     fprintf(output_fp,"FIX_RAND: %d\n",pSPARC->FixRandSeed);
+    if (pSPARC->StandardEigenFlag == 1)
+        fprintf(output_fp,"STANDARD_EIGEN: %d\n",pSPARC->StandardEigenFlag);
     fprintf(output_fp,"VERBOSITY: %d\n",pSPARC->Verbosity);
     fprintf(output_fp,"PRINT_FORCES: %d\n",pSPARC->PrintForceFlag);
     fprintf(output_fp,"PRINT_ATOMS: %d\n",pSPARC->PrintAtomPosFlag);
@@ -3566,7 +3570,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
 void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     SPARC_INPUT_OBJ sparc_input_tmp;
 
-    MPI_Datatype SPARC_types[N_MEMBR] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+    MPI_Datatype SPARC_types[N_MEMBR] = {MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
@@ -3584,8 +3589,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
-                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, 
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3597,7 +3602,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
+                                         MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
@@ -3619,7 +3624,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, /* int */ 
+                          1, 1, 1, 1, /* int */ 
                           9, 3, L_QMASS, /* double array */
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
@@ -3721,16 +3726,14 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.Calc_pres, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Poisson_solver, addr + i++);
     MPI_Get_address(&sparc_input_tmp.d3Flag, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.NPT_NHnnos, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.NPTscaleVecs, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.NPT_NHnnos, addr + i++);    
     MPI_Get_address(&sparc_input_tmp.vdWDFKernelGenFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MAXIT_FOCK, addr + i++);
     MPI_Get_address(&sparc_input_tmp.EXXMeth_Flag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.ACEFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.EXXMem_batch, addr + i++);
     MPI_Get_address(&sparc_input_tmp.EXXACEVal_state, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.EXXDiv_Flag, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.EXXDownsampling, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.EXXDiv_Flag, addr + i++);    
     MPI_Get_address(&sparc_input_tmp.MINIT_FOCK, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_gauss_mem, addr + i++);
@@ -3740,6 +3743,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.npNdz_SQ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PrintEnergyDensFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.eig_paral_maxnp, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.StandardEigenFlag, addr + i++);
     // double array type
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
     MPI_Get_address(&sparc_input_tmp.kptshift, addr + i++);

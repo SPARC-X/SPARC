@@ -47,7 +47,7 @@ void print_orbital_real(
  * @brief   Print complex Kohn-Sham orbitals
  */
 void print_orbital_complex(
-    double complex *x, int *gridsizes, int *DMVertices, double dV,
+    double _Complex *x, int *gridsizes, int *DMVertices, double dV,
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 );
 

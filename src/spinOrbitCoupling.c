@@ -59,7 +59,7 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
     int l, np, lcount, lcount2, m, psd_len, col_count, indx, ityp, iat, ipos, ndc, lloc, lmax, pspsoc;
     int DMnx, DMny, i_DM, j_DM, k_DM;
     double x0_i, y0_i, z0_i, *rc_pos_x, *rc_pos_y, *rc_pos_z, *rc_pos_r, *UdV_sort, x2, y2, z2, x, y, z;
-    double complex *Ylm;
+    double _Complex *Ylm;
 
     // number of nodes in the local distributed domain
     DMnx = DMVertices[1] - DMVertices[0] + 1;
@@ -73,7 +73,7 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
             continue; 
         }
         // allocate memory for projectors
-        nlocProj[ityp].Chiso = (double complex **)malloc( sizeof(double complex *) * Atom_Influence_nloc[ityp].n_atom);
+        nlocProj[ityp].Chiso = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;
         psd_len = pSPARC->psd[ityp].size;
@@ -91,12 +91,12 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
             z0_i = Atom_Influence_nloc[ityp].coords[iat*3+2];
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            nlocProj[ityp].Chiso[iat] = (double complex *)malloc( sizeof(double complex) * ndc * nlocProj[ityp].nprojso);
+            nlocProj[ityp].Chiso[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso);
             rc_pos_x = (double *)malloc( sizeof(double) * ndc );
             rc_pos_y = (double *)malloc( sizeof(double) * ndc );
             rc_pos_z = (double *)malloc( sizeof(double) * ndc );
             rc_pos_r = (double *)malloc( sizeof(double) * ndc );
-            Ylm = (double complex *)malloc( sizeof(double complex) * ndc );
+            Ylm = (double _Complex *)malloc( sizeof(double _Complex) * ndc );
             UdV_sort = (double *)malloc( sizeof(double) * ndc );
             // use spline to fit UdV
             if(pSPARC->cell_typ == 0){
@@ -201,9 +201,9 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
         nlocProj[ityp].nprojso_ext = 0;
         if (!pspsoc) continue; 
         // allocate memory for projectors
-        nlocProj[ityp].Chisowt0 = (double complex **)malloc( sizeof(double complex *) * Atom_Influence_nloc[ityp].n_atom);
-        nlocProj[ityp].Chisowtl = (double complex **)malloc( sizeof(double complex *) * Atom_Influence_nloc[ityp].n_atom);
-        nlocProj[ityp].Chisowtnl = (double complex **)malloc( sizeof(double complex *) * Atom_Influence_nloc[ityp].n_atom);
+        nlocProj[ityp].Chisowt0 = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        nlocProj[ityp].Chisowtl = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        nlocProj[ityp].Chisowtnl = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;      
         
@@ -218,9 +218,9 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
         for (iat = 0; iat < Atom_Influence_nloc[ityp].n_atom; iat++) {
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            nlocProj[ityp].Chisowt0[iat] = (double complex *)malloc( sizeof(double complex) * ndc * nlocProj[ityp].nprojso_ext);
-            nlocProj[ityp].Chisowtl[iat] = (double complex *)malloc( sizeof(double complex) * ndc * nlocProj[ityp].nprojso_ext);
-            nlocProj[ityp].Chisowtnl[iat] = (double complex *)malloc( sizeof(double complex) * ndc * nlocProj[ityp].nprojso_ext);
+            nlocProj[ityp].Chisowt0[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+            nlocProj[ityp].Chisowtl[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+            nlocProj[ityp].Chisowtnl[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
 
             // extract Chi without m = 0
             count1 = count2 = 0;
@@ -315,14 +315,14 @@ void CalculateNonlocalInnerProductIndexSOC(SPARC_OBJ *pSPARC)
  *          0.5*sum_{J,n,lm} m*gamma_{Jln} (sum_{J'} ChiSO_{J'lmn}>)(sum_{J'} <ChiSO_{J'lmn}|x>)
  */
 void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
-                      NLOC_PROJ_OBJ *nlocProj, int ncol, double complex *x, double complex *Hx, int spinor, int kpt, MPI_Comm comm)
+                      NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, double _Complex *Hx, int spinor, int kpt, MPI_Comm comm)
 {
     int i, n, np, count;
     /* compute nonlocal operator times vector(s) */
     int ityp, iat, l, m, ldispl, lmax, ndc, atom_index;
     double x0_i, y0_i, z0_i;
-    double complex *alpha, *x_rc, *Vnlx;
-    alpha = (double complex *) calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, sizeof(double complex));
+    double _Complex *alpha, *x_rc, *Vnlx;
+    alpha = (double _Complex *) calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, sizeof(double _Complex));
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
@@ -330,7 +330,7 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
     double k2 = pSPARC->k2_loc[kpt];
     double k3 = pSPARC->k3_loc[kpt];
     double theta;
-    double complex bloch_fac, a, b;
+    double _Complex bloch_fac, a, b;
     double spinorfac;
     
     //first find inner product
@@ -345,7 +345,7 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
             a = bloch_fac * pSPARC->dV;
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            x_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
@@ -406,7 +406,7 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
             b = 0.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
-            Vnlx = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            Vnlx = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, ndc, ncol, nlocProj[ityp].nprojso_ext, &bloch_fac, nlocProj[ityp].Chisowt0[iat], ndc, 
                           alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext, &b, Vnlx, ndc); 
             for (n = 0; n < ncol; n++) {
@@ -428,14 +428,14 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
  *          (sum_{J'} ChiSO_{J'lm+sigma,n}>)(sum_{J'} <ChiSO_{J'lmn}|x_sigma'>)
  */
 void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
-        NLOC_PROJ_OBJ *nlocProj, int ncol, double complex *xos, double complex *Hx, int spinor, int kpt, MPI_Comm comm)
+        NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *xos, double _Complex *Hx, int spinor, int kpt, MPI_Comm comm)
 {
     int i, n, np, count;
     /* compute nonlocal operator times vector(s) */
     int ityp, iat, l, m, ldispl, lmax, ndc, atom_index;
     double x0_i, y0_i, z0_i;
-    double complex *alpha, *x_rc, *Vnlx;
-    alpha = (double complex *) calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, sizeof(double complex));
+    double _Complex *alpha, *x_rc, *Vnlx;
+    alpha = (double _Complex *) calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, sizeof(double _Complex));
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
@@ -443,8 +443,8 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
     double k2 = pSPARC->k2_loc[kpt];
     double k3 = pSPARC->k3_loc[kpt];
     double theta;
-    double complex bloch_fac, a, b;
-    double complex **Chiso;
+    double _Complex bloch_fac, a, b;
+    double _Complex **Chiso;
     
     //first find inner product
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
@@ -459,7 +459,7 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
             a = bloch_fac * pSPARC->dV;
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            x_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
@@ -520,7 +520,7 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
             b = 0.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
-            Vnlx = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            Vnlx = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, ndc, ncol, nlocProj[ityp].nprojso_ext, &bloch_fac, Chiso[iat], ndc, 
                           alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext, &b, Vnlx, ndc); 
             for (n = 0; n < ncol; n++) {
@@ -559,13 +559,13 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
     size_k = DMnd * ncol;    
     size_s = size_k * Nk;
 
-    double complex *alpha, *alpha_so1, *alpha_so2, *beta;
+    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta;
     double *force_nloc;
 
     // alpha stores integral in order: Nstate ,image, type, kpt, spin
-    alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double complex));
-    alpha_so1 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double complex));
-    alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double complex));
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
+    alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
+    alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
 
     force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
     double k1, k2, k3, kpt_vec;
@@ -683,7 +683,7 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int spn_i, int kpt, char *option) 
+void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double _Complex *beta, int spn_i, int kpt, char *option) 
 {
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index, Nk;
     int spinor, Nspinor, DMndbyNspinor, size_k, size_s, nproj, spinorshift, *IP_displ;
@@ -695,13 +695,13 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int s
     size_k = DMnd * ncol;    
     size_s = size_k * Nk;
 
-    double complex *x_ptr, *x_rc, *x_rc_ptr;
+    double _Complex *x_ptr, *x_rc, *x_rc_ptr;
 
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double complex bloch_fac, a, b, **Chi = NULL;
+    double _Complex bloch_fac, a, b, **Chi = NULL;
 
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -726,7 +726,7 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int s
             a = bloch_fac * pSPARC->dV;
             b = 1.0;
             ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-            x_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
             /* first find inner product <Psi_n, Chi_Jlm>, here we calculate <Chi_Jlm, Psi_n> instead */
             for (spinor = 0; spinor < Nspinor; spinor++) {
@@ -755,7 +755,7 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double complex *beta, int s
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, double complex *beta, int spn_i, int kpt, char *option) 
+void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int spn_i, int kpt, char *option) 
 {
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
     int spinor, Nspinor, DMndbyNspinor, spinorshift, *IP_displ, nproj, ispinor;
@@ -764,12 +764,12 @@ void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, doub
     DMndbyNspinor = pSPARC->Nd_d_dmcomm;    
     Nspinor = pSPARC->Nspinor;    
 
-    double complex *dx_ptr, *dx_rc, *dx_rc_ptr;
+    double _Complex *dx_ptr, *dx_rc, *dx_rc_ptr;
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double complex bloch_fac, b, **Chi = NULL;
+    double _Complex bloch_fac, b, **Chi = NULL;
 
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -793,7 +793,7 @@ void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, doub
             bloch_fac = cos(theta) + sin(theta) * I;
             b = 1.0;
             ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-            dx_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
             for (spinor = 0; spinor < Nspinor; spinor++) {
                 if (!strcmpi(option, "SO2")) 
@@ -828,7 +828,7 @@ void Compute_Integral_Chi_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi, doub
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, double complex *alpha, char *option) 
+void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, double _Complex *alpha, char *option) 
 {
     int k, n, np, ldispl, ityp, iat, ncol, atom_index, count, l, m, lmax, Nk;
     int spinor, Nspinor, spn_i, nspin, l_start, mexclude, ppl, *IP_displ;
@@ -837,7 +837,7 @@ void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, doub
     nspin = pSPARC->Nspin_spincomm;
     Nspinor = pSPARC->Nspinor;
 
-    double complex *beta_x, *beta_y, *beta_z;
+    double _Complex *beta_x, *beta_y, *beta_z;
     double fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk, scaled_gamma_Jl = 0;
 
     // go over all atoms and find nonlocal force components
@@ -935,19 +935,19 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     size_s = size_k * Nk;
     Nspinor = pSPARC->Nspinor;
     
-    double complex *alpha, *alpha_so1, *alpha_so2, *beta, *dpsi_full;
-    double complex *dpsi_xi, *dpsi_xj, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv;
+    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta, *dpsi_full;
+    double _Complex *dpsi_xi, *dpsi_xj, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv;
     double temp_k, g_nk;
     double dpsii_dpsij, energy_nl = 0.0, stress_k[6], stress_nl[6];
     
     for (i = 0; i < 6; i++) stress_nl[i] = stress_k[i] = 0;
 
-    dpsi_full = (double complex *)malloc( 3 * size_s * nspin * sizeof(double complex) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
+    dpsi_full = (double _Complex *)malloc( 3 * size_s * nspin * sizeof(double _Complex) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
     assert(dpsi_full != NULL);
     
-    alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double complex));
-    alpha_so1 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double complex));
-    alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double complex));
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double _Complex));
+    alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double _Complex));
+    alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 7 * Nspinor, sizeof(double _Complex));
     assert(alpha != NULL && alpha_so1 != NULL && alpha_so2 != NULL);
     double k1, k2, k3, kpt_vec;
 #ifdef DEBUG 
@@ -974,7 +974,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
             }
         }
     } else {
-        dpsi_xi_lv = (double complex *)malloc( size_k * sizeof(double complex) );  // dpsi_x, dpsi_y, dpsi_z along lattice vecotrs
+        dpsi_xi_lv = (double _Complex *)malloc( size_k * sizeof(double _Complex) );  // dpsi_x, dpsi_y, dpsi_z along lattice vecotrs
         assert(dpsi_xi_lv != NULL);
         dpsi_x1 = dpsi_full;
         dpsi_x2 = dpsi_full + size_s*nspin;
@@ -1046,7 +1046,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
         }
     }
     
-    double complex *dpsi_xi_ptr, *dpsi_xj_ptr;
+    double _Complex *dpsi_xi_ptr, *dpsi_xj_ptr;
     // Kinetic stress
     count = 0;
     for (dim = 0; dim < 3; dim++) {
@@ -1179,7 +1179,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi_xi, double complex *beta, int spn_i, int kpt, int dim2, char *option) 
+void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int spn_i, int kpt, int dim2, char *option) 
 {
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
     int spinor, Nspinor, DMndbyNspinor, spinorshift, nproj, ispinor, *IP_displ;
@@ -1191,12 +1191,12 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double comple
     DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
 
-    double complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double _Complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, StXmRjp;
-    double complex bloch_fac, b, **Chi = NULL;
+    double _Complex bloch_fac, b, **Chi = NULL;
     
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -1220,7 +1220,7 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double comple
             bloch_fac = cos(theta) + sin(theta) * I;
             b = 1.0;
             ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-            dpsi_xi_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            dpsi_xi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             assert(dpsi_xi_rc);
             atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
             for (spinor = 0; spinor < Nspinor; spinor++) {
@@ -1263,7 +1263,7 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double comple
 /**
  * @brief   Compute nonlocal Energy with spin-orbit coupling
  */
-double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double complex *alpha, double complex *alpha_so1, double complex *alpha_so2)
+double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double _Complex *alpha, double _Complex *alpha_so1, double _Complex *alpha_so2)
 {
     int k, n, np, ldispl, ityp, iat, ncol, Ns;
     int count, count2, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor, shift;
@@ -1389,7 +1389,7 @@ double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double complex *a
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_nl, double complex *alpha, char *option)
+void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_nl, double _Complex *alpha, char *option)
 {
     int i, k, n, np, ldispl, ityp, iat, ncol, Ns;
     int count, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor;
@@ -1404,7 +1404,7 @@ void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_n
     l_start = !strcmpi(option, "SC") ? 0 : 1;
     IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
 
-    double complex *beta1_x1, *beta2_x1, *beta3_x1, *beta2_x2, *beta3_x2, *beta3_x3; 
+    double _Complex *beta1_x1, *beta2_x1, *beta3_x1, *beta2_x2, *beta3_x2, *beta3_x3; 
     beta1_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin;
     beta2_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin * 2;
     beta3_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin * 3;
@@ -1493,12 +1493,12 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
     size_s = size_k * Nk;
     Nspinor = pSPARC->Nspinor;
     
-    double complex *alpha, *alpha_so1, *alpha_so2, *beta;    
+    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta;    
     double pressure_nloc = 0.0, energy_nl;
 
-    alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double complex));
-    alpha_so1 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double complex));
-    alpha_so2 = (double complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double complex));
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double _Complex));
+    alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double _Complex));
+    alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, sizeof(double _Complex));
     assert(alpha != NULL && alpha_so1 != NULL && alpha_so2 != NULL);
 
     double k1, k2, k3, kpt_vec;    
@@ -1613,7 +1613,7 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex *dpsi_xi, double complex *beta, int spn_i, int kpt, int dim2, char *option) 
+void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int spn_i, int kpt, int dim2, char *option) 
 {
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
     int spinor, Nspinor, DMndbyNspinor, spinorshift, nproj, ispinor, *IP_displ;
@@ -1625,12 +1625,12 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex 
     DMny = pSPARC->Ny_d_dmcomm;
     Nspinor = pSPARC->Nspinor;
 
-    double complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double _Complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
-    double complex bloch_fac, b, **Chi = NULL;
+    double _Complex bloch_fac, b, **Chi = NULL;
     
     k1 = pSPARC->k1_loc[kpt];
     k2 = pSPARC->k2_loc[kpt];
@@ -1654,7 +1654,7 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex 
             bloch_fac = cos(theta) + sin(theta) * I;
             b = 1.0;
             ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-            dpsi_xi_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            dpsi_xi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             assert(dpsi_xi_rc);
             atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
             for (spinor = 0; spinor < Nspinor; spinor++) {
@@ -1700,7 +1700,7 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double complex 
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc, double complex *alpha, char *option)
+void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc, double _Complex *alpha, char *option)
 {
     int k, n, np, ldispl, ityp, iat, ncol, Ns;
     int count, l, m, lmax, Nk, spn_i, nspin, spinor, Nspinor;
@@ -1715,7 +1715,7 @@ void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc
     l_start = !strcmpi(option, "SC") ? 0 : 1;
     IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
 
-    double complex *beta1_x1, *beta2_x2, *beta3_x3; 
+    double _Complex *beta1_x1, *beta2_x2, *beta3_x3; 
     beta1_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin;
     beta2_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin * 2;
     beta3_x3 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk*nspin * 3;

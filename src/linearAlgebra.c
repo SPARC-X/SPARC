@@ -8,7 +8,7 @@
 /* BLAS and LAPACK routines */
 #ifdef USE_MKL
     #include <mkl.h>
-	#define MKL_Complex16 double complex
+	#define MKL_Complex16 double _Complex
 #else
     #include <cblas.h>
     #include <lapacke.h>
@@ -316,10 +316,10 @@ if(!grank) {
  *        do the calculation.
  */
 void automem_pzhegvx_ ( 
-	int *ibtype, char *jobz, char *range, char *uplo, int *n, double complex *a, int *ia,
-	int *ja, int *desca, double complex *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
-	double *orfac, double complex *z, int *iz, int *jz, int *descz, int *ifail, int *info)
+	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info)
 {
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
@@ -331,11 +331,11 @@ void automem_pzhegvx_ (
 	Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
 	int ZERO = 0, lwork, lrwork, *iwork, liwork, *icluster;
-	double complex *work;
+	double _Complex *work;
 	double *rwork, *gap;
 
 	lwork = lrwork = liwork = -1;
-	work  = (double complex *)malloc(100 * sizeof(double complex));
+	work  = (double _Complex *)malloc(100 * sizeof(double _Complex));
 	rwork  = (double *)malloc(100 * sizeof(double));
 	gap   = (double *)malloc(nprow * npcol * sizeof(double));
 	iwork = (int *)malloc(100 * sizeof(int));
@@ -376,7 +376,7 @@ void automem_pzhegvx_ (
 	//lwork += min(10*lwork,2000000); // TODO: for safety, to be optimized
 	if (fabs(*orfac) < TEMP_TOL) lwork += 200000;   // TODO: Additioal 1.5Mb, to be optimized
 	if (fabs(*orfac) > TEMP_TOL) lwork += max(N*N, min(10*lwork,2000000));
-	work = realloc(work, lwork * sizeof(double complex));
+	work = realloc(work, lwork * sizeof(double _Complex));
 	
 	lrwork = (int) fabs(rwork[0]);
 	lrwork = max(lrwork, 4 * N + max(5 * NN, NP0 * MQ0) 
@@ -744,10 +744,10 @@ void pdsyevx_subcomm_ (
  *         commmunicator with a better grid dimension.
  */
 void pzhegvx_subcomm_ (
-    int *ibtype, char *jobz, char *range, char *uplo, int *n, double complex *a, int *ia,
-	int *ja, int *desca, double complex *b, int *ib, int *jb, int *descb, double *vl, 
+    int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
-	double *orfac, double complex *z, int *iz, int *jz, int *descz, int *ifail, int *info,
+	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info,
     MPI_Comm comm, int *dims, int blksz)
 {
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
@@ -794,9 +794,9 @@ void pzhegvx_subcomm_ (
         descinit_(descZ_BLCYC, &N, &N, &mb, &nb, &ZERO, &ZERO, &ictxt, &llda, &info2);
         assert(info2 == 0);
         
-        double complex *A_BLCYC  = (double complex *)calloc(m_loc*n_loc,sizeof(double complex));
-        double complex *B_BLCYC  = (double complex *)calloc(m_loc*n_loc,sizeof(double complex));
-        double complex *Z_BLCYC  = (double complex *)calloc(m_loc*n_loc,sizeof(double complex));
+        double _Complex *A_BLCYC  = (double _Complex *)calloc(m_loc*n_loc,sizeof(double _Complex));
+        double _Complex *B_BLCYC  = (double _Complex *)calloc(m_loc*n_loc,sizeof(double _Complex));
+        double _Complex *Z_BLCYC  = (double _Complex *)calloc(m_loc*n_loc,sizeof(double _Complex));
         assert(A_BLCYC != NULL && B_BLCYC != NULL && Z_BLCYC != NULL);
 
         #ifdef DEBUGSUBGRID
@@ -839,7 +839,7 @@ void pzhegvx_subcomm_ (
         Cblacs_gridexit(ictxt);
     } else {
         int i, ONE = 1, descA_BLCYC[9], descB_BLCYC[9], descZ_BLCYC[9];
-        double complex *A_BLCYC, *B_BLCYC, *Z_BLCYC;
+        double _Complex *A_BLCYC, *B_BLCYC, *Z_BLCYC;
         A_BLCYC = B_BLCYC = Z_BLCYC = NULL;
         for (i = 0; i < 9; i++)
             descA_BLCYC[i] = descB_BLCYC[i] = descZ_BLCYC[i] = -1;

@@ -25,13 +25,13 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
 /**
  * @brief   Apply Chebyshev-filtered subspace iteration steps.
  */
-void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double complex *x0, int count, int kpt, int spn_i);
+void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, int count, int kpt, int spn_i);
 
 /**
  * @brief   Find Chebyshev filtering bounds and cutoff constants.
  */
 void Chebyshevfilter_constants_kpt(
-    SPARC_OBJ *pSPARC, double complex *x0, double *lambda_cutoff, double *eigmin, 
+    SPARC_OBJ *pSPARC, double _Complex *x0, double *lambda_cutoff, double *eigmin, 
     double *eigmax, int count, int kpt, int spn_i
 );
 
@@ -39,7 +39,7 @@ void Chebyshevfilter_constants_kpt(
  * @brief   Perform Chebyshev filtering.
  */
 void ChebyshevFiltering_kpt(
-    SPARC_OBJ *pSPARC, int *DMVertices, double complex *X, double complex *Y, int ncol, 
+    SPARC_OBJ *pSPARC, int *DMVertices, double _Complex *X, double _Complex *Y, int ncol, 
     int m, double a, double b, double a0, int kpt, int spn_i, MPI_Comm comm, 
     double *time_info
 );
@@ -61,7 +61,7 @@ void init_DP_CheFSI_kpt(SPARC_OBJ *pSPARC);
  *          in each original domain parallelization part (blacscomm). Then we need 2 
  *          MPI_Reduce to get the final Hp and Mp on rank 0 of each kpt_comm.
  */
-void DP_Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex *Y, double complex *Hp, double complex *Mp, int spn_i, int kpt);
+void DP_Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Complex *Y, double _Complex *Hp, double _Complex *Mp, int spn_i, int kpt);
 
 /**
  * @brief   Solve generalized eigenproblem Hp * x = lambda * Mp * x using domain parallelization
@@ -81,7 +81,7 @@ void DP_Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i
  *          layout. We use MPI_Alltoallv to convert the obtained YQ back to the band + domain 
  *          parallelization format in SPARC and copy the transformed YQ to Psi_rot. 
  */
-void DP_Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi_rot);
+void DP_Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double _Complex *Psi_rot);
 
 /**
  * @brief   Free domain parallelization data structures for calculating projected Hamiltonian, 
@@ -96,8 +96,8 @@ void free_DP_CheFSI_kpt(SPARC_OBJ *pSPARC);
  *          Hp = Y' * H * Y, 
  *          Mp = Y' * Y.
  */
-void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double complex *Y, 
-                         double complex *Hp, double complex *Mp, int kpt, int spn_i, MPI_Comm comm);
+void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Complex *Y, 
+                         double _Complex *Hp, double _Complex *Mp, int kpt, int spn_i, MPI_Comm comm);
 
 
 /**
@@ -120,7 +120,7 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i);
  *          Note that Psi, Q and PsiQ are distributed block cyclically, Psi_rot is
  *          the band + domain parallelization format of PsiQ.
  */
-void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double complex  *Q, double complex *PsiQ, double complex *Psi_rot, int kpt, int spn_i);
+void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double _Complex *Psi, double _Complex  *Q, double _Complex *PsiQ, double _Complex *Psi_rot, int kpt, int spn_i);
 
 
 /**
@@ -129,7 +129,7 @@ void Subspace_Rotation_kpt(SPARC_OBJ *pSPARC, double complex *Psi, double comple
  */
 void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
              ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-             double *eigmin, double *eigmax, double complex *x0, double TOL_min, double TOL_max, 
+             double *eigmin, double *eigmax, double _Complex *x0, double TOL_min, double TOL_max, 
              int MAXIT, int kpt, int spn_i, MPI_Comm comm, MPI_Request *req_veff_loc);
              
 
@@ -139,7 +139,7 @@ void Lanczos_kpt(const SPARC_OBJ *pSPARC, int *DMVertices, double *Veff_loc,
  */
 void Lanczos_laplacian_kpt(
     const SPARC_OBJ *pSPARC, const int *DMVertices, double *eigmin, 
-    double *eigmax, double complex *x0, const double TOL_min, const double TOL_max, 
+    double *eigmax, double _Complex *x0, const double TOL_min, const double TOL_max, 
     const int MAXIT, int kpt, int spn_i, MPI_Comm comm
 );            
 

@@ -37,10 +37,10 @@ void AAR(
 
 void AAR_complex(
     SPARC_OBJ *pSPARC, 
-    void (*res_fun)(SPARC_OBJ *, int, double complex, double complex *, double complex *, double complex *, MPI_Comm, double *),
-    void (*precond_fun)(SPARC_OBJ *,int,double complex,double complex *,double complex *, MPI_Comm),
-    double complex c, 
-    int N, double complex *x, double complex *b, 
+    void (*res_fun)(SPARC_OBJ *, int, double _Complex, double _Complex *, double _Complex *, double _Complex *, MPI_Comm, double *),
+    void (*precond_fun)(SPARC_OBJ *,int,double _Complex,double _Complex *,double _Complex *, MPI_Comm),
+    double _Complex c, 
+    int N, double _Complex *x, double _Complex *b, 
     double omega, double beta, int m, int p, double tol, 
     int max_iter, MPI_Comm comm
 );

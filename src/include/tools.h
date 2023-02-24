@@ -13,7 +13,7 @@
 #define TOOL_H
 
 #ifdef USE_MKL
-    #define MKL_Complex16 double complex
+    #define MKL_Complex16 double _Complex
     #include <mkl.h>
 #endif
 #ifdef USE_FFTW
@@ -226,7 +226,7 @@ void Vector2Norm(const double *Vec, const int len, double *vec_2norm, MPI_Comm c
  * @brief   Calculate global 2-norm of a vector among the given communicator. 
  *          
  */
-void Vector2Norm_complex(const double complex *Vec, const int len, double *vec_2norm, MPI_Comm comm);
+void Vector2Norm_complex(const double _Complex *Vec, const int len, double *vec_2norm, MPI_Comm comm);
 
 
 /**
@@ -246,7 +246,7 @@ void VectorDotProduct_wt(const double *Vec1, const double *Vec2, const double *I
  * @brief   Calculate global 2-norm of a vector among the given communicator. 
  *          
  */
-void VectorDotProduct_complex(const double complex *Vec1, const double complex *Vec2, const int len, double *vec_dot, MPI_Comm comm);
+void VectorDotProduct_complex(const double _Complex *Vec1, const double _Complex *Vec2, const int len, double *vec_dot, MPI_Comm comm);
 
 
 /**
@@ -298,7 +298,7 @@ void SetRandMat(double *Mat, int m, int n, double rand_min, double rand_max, MPI
  * @param m     Number of rows of the local copy of the matrix.
  * @param n     Number of columns of the local part of the matrix.
  */
-void SetRandMat_complex(double complex *Mat, int m, int n, double rand_min, double rand_max, MPI_Comm comm);
+void SetRandMat_complex(double _Complex *Mat, int m, int n, double rand_min, double rand_max, MPI_Comm comm);
 
 
 /**
@@ -323,7 +323,7 @@ void SeededRandVec (
  *          execution.
  */
 void SeededRandVec_complex (
-	double complex *Vec, const int DMVert[6], const int gridsizes[3],
+	double _Complex *Vec, const int DMVert[6], const int gridsizes[3],
 	const double rand_min, const double rand_max,
 	const int seed_offset
 );
@@ -437,7 +437,7 @@ void RealSphericalHarmonic(const int len, double *x, double *y,double *z, double
  *          Only for l = 0, 1, ..., 6.
  */
 void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, 
-                            const int l, const int m, double complex *Ylm);
+                            const int l, const int m, double _Complex *Ylm);
 
 
 void Calc_dist(SPARC_OBJ *pSPARC, int nxp, int nyp, int nzp, double x0_i_shift, double y0_i_shift, double z0_i_shift, double *R, double rchrg, int *count_interp);

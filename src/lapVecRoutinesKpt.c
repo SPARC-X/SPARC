@@ -39,7 +39,7 @@
  */
 void Lap_vec_mult_kpt(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double c, double complex *x, double complex *Lapx, int kpt, MPI_Comm comm
+    const int ncol, const double c, double _Complex *x, double _Complex *Lapx, int kpt, MPI_Comm comm
 ) 
 {
     int dims[3], periods[3], my_coords[3];
@@ -66,8 +66,8 @@ void Lap_vec_mult_kpt(
  */
 void Lap_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double complex *x, 
-        double complex *y, MPI_Comm comm, const int *dims, const int kpt
+        const int ncol, const double a, const double c, const double _Complex *x, 
+        double _Complex *y, MPI_Comm comm, const int *dims, const int kpt
 ) 
 {   
     unsigned i;
@@ -118,7 +118,7 @@ void Lap_vec_mult_orth_kpt(
  * Copyright (c) 2018-2019 Edmond Group at Georgia Tech.
  */
 void stencil_3axis_thread_complex_v2(
-    const double complex *x0, const int radius,
+    const double _Complex *x0, const int radius,
     const int stride_y,  const int stride_y_ex,
     const int stride_z,  const int stride_z_ex,
     const int x_spos,    const int x_epos,
@@ -128,7 +128,7 @@ void stencil_3axis_thread_complex_v2(
     const int z_ex_spos,                       // calc inner part of Lx
     const double *stencil_coefs, 
     const double coef_0, const double b,
-    const double *v0,    double complex *y
+    const double *v0,    double _Complex *y
 )
 {
     int i, j, k, jp, kp, r;
@@ -147,14 +147,14 @@ void stencil_3axis_thread_complex_v2(
                 int ip     = i + shift_ip;
                 int idx    = offset + i;
                 int idx_ex = offset_ex + ip;
-                double complex res = coef_0 * x0[idx_ex];
+                double _Complex res = coef_0 * x0[idx_ex];
                 for (r = 1; r <= radius; r++)
                 {
                     int stride_y_r = r * stride_y_ex;
                     int stride_z_r = r * stride_z_ex;
-                    double complex res_x = (x0[idx_ex - r]          + x0[idx_ex + r])          * stencil_coefs[3*r];
-                    double complex res_y = (x0[idx_ex - stride_y_r] + x0[idx_ex + stride_y_r]) * stencil_coefs[3*r+1];
-                    double complex res_z = (x0[idx_ex - stride_z_r] + x0[idx_ex + stride_z_r]) * stencil_coefs[3*r+2];
+                    double _Complex res_x = (x0[idx_ex - r]          + x0[idx_ex + r])          * stencil_coefs[3*r];
+                    double _Complex res_y = (x0[idx_ex - stride_y_r] + x0[idx_ex + stride_y_r]) * stencil_coefs[3*r+1];
+                    double _Complex res_z = (x0[idx_ex - stride_z_r] + x0[idx_ex + stride_z_r]) * stencil_coefs[3*r+2];
                     res += res_x + res_y + res_z;
                 }
                 y[idx] = res + b * (v0[idx] * x0[idx_ex]);
@@ -179,7 +179,7 @@ void stencil_3axis_thread_complex_v2(
 void Lap_plus_diag_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double complex *x, double complex *y, MPI_Comm comm,
+        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,
         const int *dims, int kpt
 ) 
 {
@@ -261,7 +261,7 @@ void Lap_plus_diag_vec_mult_orth_kpt(
     
     int nbrcount;
     MPI_Request request;
-    double complex *x_in, *x_out;
+    double _Complex *x_in, *x_out;
     x_in = NULL; x_out = NULL;
     if (nproc > 1) { // pack info and init Halo exchange
         // TODO: we have to take BC into account here!
@@ -269,8 +269,8 @@ void Lap_plus_diag_vec_mult_orth_kpt(
         int nd_out = nd_in;
         
         // Notice here we init x_in to 0
-        x_in  = (double complex *)calloc( nd_in, sizeof(double complex)); 
-        x_out = (double complex *)malloc( nd_out * sizeof(double complex)); // no need to init x_out
+        x_in  = (double _Complex *)calloc( nd_in, sizeof(double _Complex)); 
+        x_out = (double _Complex *)malloc( nd_out * sizeof(double _Complex)); // no need to init x_out
         assert(x_in != NULL && x_out != NULL);
 
         int nbr_i, n, k, j, i, count = 0;
@@ -329,7 +329,7 @@ void Lap_plus_diag_vec_mult_orth_kpt(
     int *pshiftz    = (int *)malloc( (FDn+1) * sizeof(int));
     int *pshifty_ex = (int *)malloc( (FDn+1) * sizeof(int));
     int *pshiftz_ex = (int *)malloc( (FDn+1) * sizeof(int));
-    double complex *x_ex = (double complex *)malloc(ncol * DMnd_ex * sizeof(double complex));
+    double _Complex *x_ex = (double _Complex *)malloc(ncol * DMnd_ex * sizeof(double _Complex));
     pshifty[0] = pshiftz[0] = pshifty_ex[0] = pshiftz_ex[0] = 0;
     for (p = 1; p <= FDn; p++) {
         // for x
@@ -370,13 +370,13 @@ void Lap_plus_diag_vec_mult_orth_kpt(
     int kstart_in[6] = {FDn,     FDn,      FDn,     FDn,      0,        DMnz_out}; 
     int   kend_in[6] = {DMnz_out,DMnz_out, DMnz_out,DMnz_out, FDn,      DMnz_ex};
 
-    double complex phase_fac_l_x = cos(pSPARC->k1_loc[kpt] * pSPARC->range_x) - sin(pSPARC->k1_loc[kpt] * pSPARC->range_x) * I;
-    double complex phase_fac_l_y = cos(pSPARC->k2_loc[kpt] * pSPARC->range_y) - sin(pSPARC->k2_loc[kpt] * pSPARC->range_y) * I;
-    double complex phase_fac_l_z = cos(pSPARC->k3_loc[kpt] * pSPARC->range_z) - sin(pSPARC->k3_loc[kpt] * pSPARC->range_z) * I;
-    double complex phase_fac_r_x = conj(phase_fac_l_x);
-    double complex phase_fac_r_y = conj(phase_fac_l_y);
-    double complex phase_fac_r_z = conj(phase_fac_l_z);
-    double complex phase_factors[6]; // xl, xr, yl, yr, zl, zr
+    double _Complex phase_fac_l_x = cos(pSPARC->k1_loc[kpt] * pSPARC->range_x) - sin(pSPARC->k1_loc[kpt] * pSPARC->range_x) * I;
+    double _Complex phase_fac_l_y = cos(pSPARC->k2_loc[kpt] * pSPARC->range_y) - sin(pSPARC->k2_loc[kpt] * pSPARC->range_y) * I;
+    double _Complex phase_fac_l_z = cos(pSPARC->k3_loc[kpt] * pSPARC->range_z) - sin(pSPARC->k3_loc[kpt] * pSPARC->range_z) * I;
+    double _Complex phase_fac_r_x = conj(phase_fac_l_x);
+    double _Complex phase_fac_r_y = conj(phase_fac_l_y);
+    double _Complex phase_fac_r_z = conj(phase_fac_l_z);
+    double _Complex phase_factors[6]; // xl, xr, yl, yr, zl, zr
     phase_factors[0] = phase_fac_l_x;
     phase_factors[1] = phase_fac_r_x;
     phase_factors[2] = phase_fac_l_y;
@@ -408,7 +408,7 @@ void Lap_plus_diag_vec_mult_orth_kpt(
             const int i_s = istart_in[nbrcount];
             const int i_e = iend_in  [nbrcount];
             // apply phase factor if the domain goes outside the global domain
-            const double complex phase_factor = phase_factors[nbrcount];
+            const double _Complex phase_factor = phase_factors[nbrcount];
             for (n = 0; n < ncol; n++) {
                 for (k = k_s; k < k_e; k++) {
                     for (j = j_s; j < j_e; j++) {
@@ -453,7 +453,7 @@ void Lap_plus_diag_vec_mult_orth_kpt(
                 const int i_s = istart[nbrcount];
                 const int i_e = iend  [nbrcount];
                 // apply phase factor if the domain goes outside the global domain
-                const double complex phase_factor = phase_factors[nbr_i];
+                const double _Complex phase_factor = phase_factors[nbr_i];
                 for (n = 0; n < ncol; n++) {
                     for (k = k_s, kp = kp_s; k < k_e; k++, kp++) {
                         for (j = j_s, jp = jp_s; j < j_e; j++, jp++) {
@@ -534,8 +534,8 @@ void Lap_plus_diag_vec_mult_orth_kpt(
  */
 void Lap_vec_mult_nonorth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-        const int ncol, const double a, const double c, const double complex *x,
-        double complex *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
+        const int ncol, const double a, const double c, const double _Complex *x,
+        double _Complex *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
 )
 {
     unsigned i;
@@ -561,7 +561,7 @@ void Lap_vec_mult_nonorth_kpt(
  * @param trans_vec Translation vector.
  * @return double 
  */
-double complex calculate_phase_factor(double kpt_vec[3], double trans_vec[3])
+double _Complex calculate_phase_factor(double kpt_vec[3], double trans_vec[3])
 {
     double theta = kpt_vec[0] * trans_vec[0]
                  + kpt_vec[1] * trans_vec[1]
@@ -582,7 +582,7 @@ double complex calculate_phase_factor(double kpt_vec[3], double trans_vec[3])
 void Lap_plus_diag_vec_mult_nonorth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c,
-        const double *v, const double complex *x, double complex *y, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,  MPI_Comm comm2,
         const int *dims, const int kpt
 )
 {
@@ -648,7 +648,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
     int kp, jp, ip;
 
     MPI_Request request;
-    double complex *x_in, *x_out;
+    double _Complex *x_in, *x_out;
     x_in = NULL; x_out = NULL;
     // set up send-receive buffer based on the ordering of the neighbors
     int istart[26], iend[26], jstart[26], jend[26], kstart[26], kend[26];
@@ -656,7 +656,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
     snd_rcv_buffer(nproc, dims, periods, FDn, DMnx, DMny, DMnz, istart, iend, jstart, jend, kstart, kend, istart_in, iend_in, jstart_in, jend_in, kstart_in, kend_in, isnonzero);
 
-    double complex phase_factors[26];
+    double _Complex phase_factors[26];
     count = 0; // count for neighbor index
     for (int k = -1; k <= 1; k++) {
         for (int j = -1; j <= 1; j++) {
@@ -695,8 +695,8 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
         int nd_in = ncol * 2 * FDn* (4 * FDn * FDn + 2 * FDn * (DMnx + DMny + DMnz) + (DMnxny + DMnx * DMnz + DMny * DMnz) );
         int nd_out = nd_in;
-        x_in  = (double complex *)calloc( nd_in, sizeof(double complex)); // TODO: init to 0
-        x_out = (double complex *)malloc( nd_out * sizeof(double complex)); // no need to init x_out
+        x_in  = (double _Complex *)calloc( nd_in, sizeof(double _Complex)); // TODO: init to 0
+        x_out = (double _Complex *)malloc( nd_out * sizeof(double _Complex)); // no need to init x_out
         assert(x_in != NULL && x_out != NULL);
 
         int nbr_i;
@@ -742,7 +742,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
     int pshifty_ex = DMnx_ex;
     int pshiftz_ex = pshifty_ex * DMny_ex;
 
-    double complex *x_ex = (double complex *)calloc(ncol * DMnd_ex, sizeof(double complex));
+    double _Complex *x_ex = (double _Complex *)calloc(ncol * DMnd_ex, sizeof(double _Complex));
     assert(x_ex != NULL);
     // copy x into extended x_ex
     count = 0;
@@ -772,29 +772,29 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
     int DMnxnyex = DMnx * DMny_ex;
     int DMnd_yex = DMnxnyex * DMnz;
     int DMnd_zex = DMnxny * DMnz_ex;
-    double complex *Dx1, *Dx2;
+    double _Complex *Dx1, *Dx2;
     Dx1 = NULL; Dx2 = NULL;
     if(pSPARC->cell_typ == 11){
-        Dx1 = (double complex *) malloc(ncol * DMnd_xex * sizeof(double complex) ); // df/dy
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_xex * sizeof(double _Complex) ); // df/dy
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 12){
-        Dx1 = (double complex*) malloc(ncol * DMnd_xex * sizeof(double complex) ); // df/dz
+        Dx1 = (double _Complex*) malloc(ncol * DMnd_xex * sizeof(double _Complex) ); // df/dz
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 13){
-        Dx1 = (double complex *) malloc(ncol * DMnd_yex * sizeof(double complex) ); // df/dz
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_yex * sizeof(double _Complex) ); // df/dz
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 14){
-        Dx1 = (double complex *) malloc(ncol * DMnd_xex * sizeof(double complex) ); // 2*T_12*df/dy + 2*T_13*df/dz
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_xex * sizeof(double _Complex) ); // 2*T_12*df/dy + 2*T_13*df/dz
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 15){
-        Dx1 = (double complex *) malloc(ncol * DMnd_zex * sizeof(double complex) ); // 2*T_13*dV/dx + 2*T_23*dV/dy
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_zex * sizeof(double _Complex) ); // 2*T_13*dV/dx + 2*T_23*dV/dy
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 16){
-        Dx1 = (double complex *) malloc(ncol * DMnd_yex * sizeof(double complex) ); // 2*T_12*dV/dx + 2*T_23*dV/dz
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_yex * sizeof(double _Complex) ); // 2*T_12*dV/dx + 2*T_23*dV/dz
         assert(Dx1 != NULL);
     } else if(pSPARC->cell_typ == 17){
-        Dx1 = (double complex *) malloc(ncol * DMnd_xex * sizeof(double complex) ); // 2*T_12*df/dy + 2*T_13*df/dz
-        Dx2 = (double complex *) malloc(ncol * DMnd_yex * sizeof(double complex) ); // df/dz
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_xex * sizeof(double _Complex) ); // 2*T_12*df/dy + 2*T_13*df/dz
+        Dx2 = (double _Complex *) malloc(ncol * DMnd_yex * sizeof(double _Complex) ); // df/dz
         assert(Dx1 != NULL && Dx2 != NULL);
     }
 
@@ -821,7 +821,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
                 istart_in[nbrcount], jstart_in[nbrcount], kstart_in[nbrcount],
                 -FDn, -FDn, -FDn, DMVertices, gridsizes
             );
-            double complex phase_factor = block_region >= 0 ? phase_factors[block_region] : 1.0;
+            double _Complex phase_factor = block_region >= 0 ? phase_factors[block_region] : 1.0;
             for (n = 0; n < ncol; n++) {
                 nshift = n * DMnd_ex;
                 for (k = kstart_in[nbrcount]; k < kend_in[nbrcount]; k++) {
@@ -850,7 +850,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
         // copy the extended part from x into x_ex
         for (nbr_i = 0; nbr_i < 26; nbr_i++) {
             if(isnonzero[nbr_i]){
-                const double complex phase_factor = phase_factors[nbr_i];
+                const double _Complex phase_factor = phase_factors[nbr_i];
                 for (n = 0; n < ncol; n++) {
                     nshift = n * DMnd; nshift1 = n * DMnd_ex;
                     for (k = kstart[nbr_i], kp = kstart_in[nbr_i]; k < kend[nbr_i]; k++, kp++) {
@@ -984,7 +984,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
  * @brief: function to calculate two derivatives together
  */
 void Calc_DX1_DX2_kpt(
-    const double complex *X, double complex *DX,
+    const double _Complex *X, double _Complex *DX,
     const int radius,
     const int stride_X_1,    const int stride_X_2,
     const int stride_y_X,    const int stride_y_DX,
@@ -1015,8 +1015,8 @@ void Calc_DX1_DX2_kpt(
             {
                 int ishift_DX = jshift_DX + i + x_DX_spos;
                 int ishift_X = jshift_X + i + x_X_spos;
-                double complex temp1 = 0.0;
-                double complex temp2 = 0.0;
+                double _Complex temp1 = 0.0;
+                double _Complex temp2 = 0.0;
                 for (r = 1; r <= radius; r++)
                 {
                     int stride_X_1_r = r * stride_X_1;
@@ -1036,7 +1036,7 @@ void Calc_DX1_DX2_kpt(
  * @brief: function to perform 4 component stencil operation
  */
 void stencil_4comp_kpt(
-    const double complex *X,   const double complex *DX,
+    const double _Complex *X,   const double _Complex *DX,
     const int radius,
     const int stride_DX,       const int stride_y_X1,
     const int stride_y_X,      const int stride_y_DX,
@@ -1049,7 +1049,7 @@ void stencil_4comp_kpt(
     const int x_DX_spos,       const int y_DX_spos,
     const int z_DX_spos,       const double *stencil_coefs, // ordered [x0 y0 z0 Dx0 x1 y1 y2 ... x_radius y_radius z_radius Dx_radius]
     const double coef_0,       const double b,
-    const double *v0,          double complex *X1)
+    const double *v0,          double _Complex *X1)
 {
     int i, j, k, jj, kk, jjj, kkk, r;
 
@@ -1072,17 +1072,17 @@ void stencil_4comp_kpt(
                 int ishift_X1    = jshift_X1 + i + x_X1_spos;
                 int ishift_X     = jshift_X  + i + x_X_spos;
                 int ishift_DX    = jshift_DX + i + x_DX_spos;
-                double complex res = coef_0 * X[ishift_X];
+                double _Complex res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {
                     int stride_DX_r = r * stride_DX;
                     int stride_y_r = r * stride_y_X;
                     int stride_z_r = r * stride_z_X;
                     int r_fac = 4 * r + 1;
-                    double complex res_x = (X[ishift_X - r]             + X[ishift_X + r]            ) * stencil_coefs[r_fac];
-                    double complex res_y = (X[ishift_X - stride_y_r]    + X[ishift_X + stride_y_r]   ) * stencil_coefs[r_fac+1];
-                    double complex res_z = (X[ishift_X - stride_z_r]    + X[ishift_X + stride_z_r]   ) * stencil_coefs[r_fac+2];
-                    double complex res_m = (DX[ishift_DX + stride_DX_r] - DX[ishift_DX - stride_DX_r]) * stencil_coefs[r_fac+3];
+                    double _Complex res_x = (X[ishift_X - r]             + X[ishift_X + r]            ) * stencil_coefs[r_fac];
+                    double _Complex res_y = (X[ishift_X - stride_y_r]    + X[ishift_X + stride_y_r]   ) * stencil_coefs[r_fac+1];
+                    double _Complex res_z = (X[ishift_X - stride_z_r]    + X[ishift_X + stride_z_r]   ) * stencil_coefs[r_fac+2];
+                    double _Complex res_m = (DX[ishift_DX + stride_DX_r] - DX[ishift_DX - stride_DX_r]) * stencil_coefs[r_fac+3];
                     res += res_x + res_y + res_z + res_m;
                 }
                 X1[ishift_X1] = (res + b * (v0[ishift_X1] * X[ishift_X]));
@@ -1097,8 +1097,8 @@ void stencil_4comp_kpt(
  @ brief: function to perform 5 component stencil operation
 */
 void stencil_5comp_kpt(
-    const double complex *X,   const double complex *DX1,
-    const double complex *DX2, const int radius,
+    const double _Complex *X,   const double _Complex *DX1,
+    const double _Complex *DX2, const int radius,
     const int stride_DX1,      const int stride_DX2,
     const int stride_y_X1,     const int stride_y_X,
     const int stride_y_DX1,    const int stride_y_DX2,
@@ -1113,7 +1113,7 @@ void stencil_5comp_kpt(
     const int x_DX2_spos,      const int y_DX2_spos,
     const int z_DX2_spos,      const double *stencil_coefs,
     const double coef_0,       const double b,
-    const double *v0,          double complex *X1)
+    const double *v0,          double _Complex *X1)
 {
     int i, j, k, jj, kk, jjj, kkk, jjjj, kkkk, r;
     for (k = z_X1_spos, kk = z_X_spos, kkk = z_DX1_spos, kkkk = z_DX2_spos; k < z_X1_epos; k++, kk++, kkk++, kkkk++)
@@ -1138,7 +1138,7 @@ void stencil_5comp_kpt(
                 int ishift_X   = jshift_X   + i + x_X_spos;
                 int ishift_DX1 = jshift_DX1 + i + x_DX1_spos;
                 int ishift_DX2 = jshift_DX2 + i + x_DX2_spos;
-                double complex res = coef_0 * X[ishift_X];
+                double _Complex res = coef_0 * X[ishift_X];
                 for (r = 1; r <= radius; r++)
                 {
                     int stride_DX1_r = r * stride_DX1;
@@ -1146,11 +1146,11 @@ void stencil_5comp_kpt(
                     int stride_y_r = r * stride_y_X;
                     int stride_z_r = r * stride_z_X;
                     int r_fac = 5 * r;
-                    double complex res_x  = (X[ishift_X - r]                + X[ishift_X + r]               ) * stencil_coefs[r_fac];
-                    double complex res_y  = (X[ishift_X - stride_y_r]       + X[ishift_X + stride_y_r]      ) * stencil_coefs[r_fac+1];
-                    double complex res_z  = (X[ishift_X - stride_z_r]       + X[ishift_X + stride_z_r]      ) * stencil_coefs[r_fac+2];
-                    double complex res_m1 = (DX1[ishift_DX1 + stride_DX1_r] - DX1[ishift_DX1 - stride_DX1_r]) * stencil_coefs[r_fac+3];
-                    double complex res_m2 = (DX2[ishift_DX2 + stride_DX2_r] - DX2[ishift_DX2 - stride_DX2_r]) * stencil_coefs[r_fac+4];
+                    double _Complex res_x  = (X[ishift_X - r]                + X[ishift_X + r]               ) * stencil_coefs[r_fac];
+                    double _Complex res_y  = (X[ishift_X - stride_y_r]       + X[ishift_X + stride_y_r]      ) * stencil_coefs[r_fac+1];
+                    double _Complex res_z  = (X[ishift_X - stride_z_r]       + X[ishift_X + stride_z_r]      ) * stencil_coefs[r_fac+2];
+                    double _Complex res_m1 = (DX1[ishift_DX1 + stride_DX1_r] - DX1[ishift_DX1 - stride_DX1_r]) * stencil_coefs[r_fac+3];
+                    double _Complex res_m2 = (DX2[ishift_DX2 + stride_DX2_r] - DX2[ishift_DX2 - stride_DX2_r]) * stencil_coefs[r_fac+4];
                     res += res_x + res_y + res_z + res_m1 + res_m2;
                 }
                 X1[ishift_X1] = (res + b * (v0[ishift_X1] * X[ishift_X]));

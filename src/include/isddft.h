@@ -158,13 +158,13 @@ typedef struct _ATOM_NLOC_INFLUENCE_OBJ {
 typedef struct _NLOC_PROJ_OBJ {
     int nproj;                  // number of projectors per atom
     double **Chi;               // projector real
-    double complex **Chi_c;     // projector complex
+    double _Complex **Chi_c;     // projector complex
     int nprojso;                // number of SO projectors per atom
-    double complex **Chiso;     // SO projector complex
+    double _Complex **Chiso;     // SO projector complex
     int nprojso_ext;            // number of SO projectors (columns) of Chiso matrix in SOC (after extraction)
-    double complex **Chisowt0;  // Chi matrix withou m = 0
-    double complex **Chisowtl;  // Chi matrix without m = l
-    double complex **Chisowtnl; // Chi matrix without m = -l
+    double _Complex **Chisowt0;  // Chi matrix withou m = 0
+    double _Complex **Chisowtl;  // Chi matrix without m = l
+    double _Complex **Chisowtnl; // Chi matrix without m = -l
 } NLOC_PROJ_OBJ;
 
 
@@ -403,8 +403,8 @@ typedef struct _SPARC_OBJ{
     double precond_resta_q0;
     double precond_resta_Rs;
     double precondcoeff_k; // constant term in the rational fit of the preconditioner
-    double complex *precondcoeff_a; // coeff in the numerator of the rational fit of the preconditioner
-    double complex *precondcoeff_lambda_sqr; // coeff in the denominator of the rational fit of the preconditioner
+    double _Complex *precondcoeff_a; // coeff in the numerator of the rational fit of the preconditioner
+    double _Complex *precondcoeff_lambda_sqr; // coeff in the denominator of the rational fit of the preconditioner
 
     int RelaxCount;     // current relaxation step
     int StressCount;    // current stress count used in full relaxation
@@ -415,7 +415,7 @@ typedef struct _SPARC_OBJ{
     double *CUTOFF_z;       // pseudocharge cutoff radius in z-direction
     
     double *Lanczos_x0;                       // initial guess vector for Lanczos
-    double complex *Lanczos_x0_complex;       // initial guess vector (complex) for Lanczos
+    double _Complex *Lanczos_x0_complex;       // initial guess vector (complex) for Lanczos
     //double *electronDensGLB;    // global electron density (whole vector), "rho" (GLOBAL)
     //double *Veff_loc;           // global effective local potential vector (GLOBAL)
     double *Veff_loc_dmcomm;      // effective local potential distributed in psi-domain (LOCAL)
@@ -457,10 +457,10 @@ typedef struct _SPARC_OBJ{
     double *Yorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Xorb_BLCYC;           // block-cyclically distributed orbitals (LOCAL)
     double *Yorb_BLCYC;           // block-cyclically distributed orbitals (LOCAL)
-    double complex *Xorb_kpt;                 // Kohn-Sham orbitals (LOCAL)
-    double complex *Yorb_kpt;                 // Kohn-Sham orbitals (LOCAL)
-    double complex *Xorb_BLCYC_kpt;           // block-cyclically distributed orbitals (LOCAL)
-    double complex *Yorb_BLCYC_kpt;           // block-cyclically distributed orbitals (LOCAL)
+    double _Complex *Xorb_kpt;                 // Kohn-Sham orbitals (LOCAL)
+    double _Complex *Yorb_kpt;                 // Kohn-Sham orbitals (LOCAL)
+    double _Complex *Xorb_BLCYC_kpt;           // block-cyclically distributed orbitals (LOCAL)
+    double _Complex *Yorb_BLCYC_kpt;           // block-cyclically distributed orbitals (LOCAL)
     int    nr_orb_BLCYC;          // number of rows of the local distributed orbitals owned by the process (LOCAL)
     int    nc_orb_BLCYC;          // number of cols of the local distributed orbitals owned by the process (LOCAL)
     int    nr_Hp_BLCYC;           // number of rows of the local distributed projected Hamiltonian owned by the process (LOCAL)
@@ -472,9 +472,9 @@ typedef struct _SPARC_OBJ{
     double *Hp;                   // projected Hamiltonian matrix: Hp = Psi' * H * Psi (LOCAL)
     double *Mp;                   // projected mass matrix: Mp = Psi' * Psi (LOCAL)
     double *Q;                    // eigenvectors of the generalized eigenproblem: Hp * Q_i  = lambda_i * Mp * Q_i
-    double complex *Hp_kpt;                   // projected Hamiltonian matrix: Hp = Psi' * H * Psi (LOCAL)
-    double complex *Mp_kpt;                   // projected mass matrix: Mp = Psi' * Psi (LOCAL)
-    double complex *Q_kpt;                    // eigenvectors of the generalized eigenproblem: Hp * Q_i  = lambda_i * Mp * Q_i
+    double _Complex *Hp_kpt;                   // projected Hamiltonian matrix: Hp = Psi' * H * Psi (LOCAL)
+    double _Complex *Mp_kpt;                   // projected mass matrix: Mp = Psi' * Psi (LOCAL)
+    double _Complex *Q_kpt;                    // eigenvectors of the generalized eigenproblem: Hp * Q_i  = lambda_i * Mp * Q_i
     double *Hp_s;                 // whole projected Hamiltonian Hp redistributed for solving eigenproblem (GLOBAL)   
     double *Mp_s;                 // whole projected mass matrix Mp redistributed for solving eigenproblem (GLOBAL)
     #ifdef ACCEL
@@ -810,12 +810,12 @@ typedef struct _SPARC_OBJ{
     double *psi_outer;              // outer orbitals to construct Hartree-Fock operator 
     double *occ_outer;              // outer occupations to construct Hartree-Fock operator 
     double *psi_outer_kptcomm_topo; // outer orbitals in kptcomm for Lanczos 
-    double complex *psi_outer_kpt;  // outer orbitals to construct Hartree-Fock operator 
-    double complex *psi_outer_kptcomm_topo_kpt; // outer orbitals in kptcomm for Lanczos 
+    double _Complex *psi_outer_kpt;  // outer orbitals to construct Hartree-Fock operator 
+    double _Complex *psi_outer_kptcomm_topo_kpt; // outer orbitals in kptcomm for Lanczos 
     double *Xi;                     // ACE operator
     double *Xi_kptcomm_topo;        // ACE operator in kptcomm_topo
-    double complex *Xi_kpt;                 // ACE operator
-    double complex *Xi_kptcomm_topo_kpt;    // ACE operator in kptcomm_topo
+    double _Complex *Xi_kpt;                 // ACE operator
+    double _Complex *Xi_kptcomm_topo_kpt;    // ACE operator in kptcomm_topo
     // k-points variables for hybrid calculation
     int Nkpts_hf;                   // number of k-points for hybrid calculation
     int Kx_hf;                      // number of k-points for hybrid calculation in x direction
@@ -840,8 +840,8 @@ typedef struct _SPARC_OBJ{
     int kpthf_start_indx;           // starting index for k-point for hybrid calculation
     int *kpthf_start_indx_list;     // starting index for k-point for hybrid calculation
     int *kpts_hf_red_list;          // list of reduced k-point for hybrid calculation 
-    double complex *neg_phase;      // exp(-i*r*k_shift)
-    double complex *pos_phase;      // exp(i*r*k_shift)
+    double _Complex *neg_phase;      // exp(-i*r*k_shift)
+    double _Complex *pos_phase;      // exp(i*r*k_shift)
     int (*kpthfred2kpthf)[3];       // mapping from kpthf_red to kpthf
     // tool variables for hybrid calculation
     double ACEtime;                 // Time for creating ace operator
@@ -926,6 +926,9 @@ typedef struct _SPARC_OBJ{
     // generalized eigen problem, and subspace rotation
     void *DP_CheFSI;     // Pointer to a DP_CheFSI_s data structure for those three procedures w/o Kpt
     void *DP_CheFSI_kpt; // Pointer to a DP_CheFSI_kpt_s data structure for those three procedures w/ Kpt
+
+    /* EigenValue problem*/
+    int StandardEigenFlag;
 }SPARC_OBJ;
 
 
@@ -1173,6 +1176,9 @@ typedef struct _SPARC_INPUT_OBJ{
     int npNdy_SQ;           // number of processes for paral. over domain in y-dir
     int npNdz_SQ;           // number of processes for paral. over domain in z-dir
 
+    /* EigenValue problem*/
+    int StandardEigenFlag;
+    
     /* File names */
     char filename[L_STRING]; 
     char filename_out[L_STRING];

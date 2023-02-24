@@ -265,7 +265,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     size_k = DMnd * ncol;
     size_s = size_k * Nk;
 
-    double complex *dpsi_ptr, *dpsi_ptr2, *dpsi_full;
+    double _Complex *dpsi_ptr, *dpsi_ptr2, *dpsi_full;
     double *temp_k, *stress_mGGA_psi, *stress_mGGA_psi_cartesian, g_nk;
     double dpsi1_dpsi1, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi2, dpsi2_dpsi3, dpsi3_dpsi3;
 
@@ -273,8 +273,8 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     stress_mGGA_psi = (double*) calloc(6, sizeof(double));
     stress_mGGA_psi_cartesian = (double*) calloc(6, sizeof(double));
 
-    // dpsi_full = (double complex *)malloc( size_s * nspin * sizeof(double complex) );
-    dpsi_full = (double complex *)malloc( size_k * sizeof(double complex) );
+    // dpsi_full = (double _Complex *)malloc( size_s * nspin * sizeof(double _Complex) );
+    dpsi_full = (double _Complex *)malloc( size_k * sizeof(double _Complex) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);

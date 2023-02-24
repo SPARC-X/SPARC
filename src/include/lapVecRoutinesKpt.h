@@ -24,7 +24,7 @@
  */
 void Lap_vec_mult_kpt(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double c, double complex *x, double complex *Lapx, int kpt, MPI_Comm comm
+    const int ncol, const double c, double _Complex *x, double _Complex *Lapx, int kpt, MPI_Comm comm
 );
 
 
@@ -43,7 +43,7 @@ void Lap_vec_mult_kpt(
 void Lap_plus_diag_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double complex *x, double complex *y, MPI_Comm comm,
+        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,
         const int *dims, int kpt
 );
 
@@ -57,8 +57,8 @@ void Lap_plus_diag_vec_mult_orth_kpt(
  */
 void Lap_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double complex *x, 
-        double complex *y, MPI_Comm comm, const int *dims, const int kpt
+        const int ncol, const double a, const double c, const double _Complex *x, 
+        double _Complex *y, MPI_Comm comm, const int *dims, const int kpt
 );
 
 
@@ -99,7 +99,7 @@ void Lap_vec_mult_orth_kpt(
  * Copyright (c) 2018-2019 Edmond Group at Georgia Tech.
  */
 void stencil_3axis_thread_complex_v2(
-    const double complex *x0, const int radius,
+    const double _Complex *x0, const int radius,
     const int stride_y,  const int stride_y_ex,
     const int stride_z,  const int stride_z_ex,
     const int x_spos,    const int x_epos,
@@ -109,7 +109,7 @@ void stencil_3axis_thread_complex_v2(
     const int z_ex_spos,                       // calc inner part of Lx
     const double *stencil_coefs, 
     const double coef_0, const double b,
-    const double *v0,    double complex *y
+    const double *v0,    double _Complex *y
 );
 
 
@@ -119,8 +119,8 @@ void stencil_3axis_thread_complex_v2(
  */
 void Lap_vec_mult_nonorth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double complex *x, 
-        double complex *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
+        const int ncol, const double a, const double c, const double _Complex *x, 
+        double _Complex *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
 );
 
 
@@ -136,7 +136,7 @@ void Lap_vec_mult_nonorth_kpt(
 void Lap_plus_diag_vec_mult_nonorth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double complex *x, double complex *y, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,  MPI_Comm comm2,
         const int *dims, const int kpt
 );
 
@@ -146,7 +146,7 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
  @ brief: function to calculate two derivatives together
 */
 void Calc_DX1_DX2_kpt(
-    const double complex *X, double complex *DX,
+    const double _Complex *X, double _Complex *DX,
     const int radius,
     const int stride_X_1,    const int stride_X_2,
     const int stride_y_X,    const int stride_y_DX,
@@ -166,7 +166,7 @@ void Calc_DX1_DX2_kpt(
  @ brief: function to perform 4 component stencil operation
 */
 void stencil_4comp_kpt(
-    const double complex *X,   const double complex *DX,
+    const double _Complex *X,   const double _Complex *DX,
     const int radius,
     const int stride_DX,       const int stride_y_X1,
     const int stride_y_X,      const int stride_y_DX,
@@ -179,7 +179,7 @@ void stencil_4comp_kpt(
     const int x_DX_spos,       const int y_DX_spos,
     const int z_DX_spos,       const double *stencil_coefs, // ordered [x0 y0 z0 Dx0 x1 y1 y2 ... x_radius y_radius z_radius Dx_radius]
     const double coef_0,       const double b,
-    const double *v0,          double complex *X1
+    const double *v0,          double _Complex *X1
 );
 
 
@@ -188,8 +188,8 @@ void stencil_4comp_kpt(
  @ brief: function to perform 5 component stencil operation
 */
 void stencil_5comp_kpt(
-    const double complex *X,   const double complex *DX1,
-    const double complex *DX2, const int radius,
+    const double _Complex *X,   const double _Complex *DX1,
+    const double _Complex *DX2, const int radius,
     const int stride_DX1,      const int stride_DX2,
     const int stride_y_X1,     const int stride_y_X,
     const int stride_y_DX1,    const int stride_y_DX2,
@@ -204,7 +204,7 @@ void stencil_5comp_kpt(
     const int x_DX2_spos,      const int y_DX2_spos,
     const int z_DX2_spos,      const double *stencil_coefs,
     const double coef_0,       const double b,
-    const double *v0,          double complex *X1
+    const double *v0,          double _Complex *X1
 );
 
 #endif // LAPVECROUTINESKPT_H

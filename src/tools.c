@@ -717,7 +717,7 @@ void Vector2Norm(const double *Vec, const int len, double *vec_2norm, MPI_Comm c
 /**
  * @brief   Calculate global 2-norm of a vector among the given communicator.      
  */
-void Vector2Norm_complex(const double complex *Vec, const int len, double *vec_2norm, MPI_Comm comm)
+void Vector2Norm_complex(const double _Complex *Vec, const int len, double *vec_2norm, MPI_Comm comm)
 {
     int k;
     double sqsum = 0.0;
@@ -771,7 +771,7 @@ void VectorDotProduct_wt(const double *Vec1, const double *Vec2, const double *I
 /**
  * @brief   Calculate global 2-norm of a vector among the given communicator. 
  */
-void VectorDotProduct_complex(const double complex *Vec1, const double complex *Vec2, const int len, double *vec_dot, MPI_Comm comm) 
+void VectorDotProduct_complex(const double _Complex *Vec1, const double _Complex *Vec2, const int len, double *vec_dot, MPI_Comm comm) 
 {
     int i;
     double vec_dot_loc = 0.0;
@@ -864,7 +864,7 @@ void SetRandMat(double *Mat, int m, int n, double rand_min, double rand_max, MPI
  * @param m     Number of rows of the local copy of the matrix.
  * @param n     Number of columns of the local part of the matrix.
  */
-void SetRandMat_complex(double complex *Mat, int m, int n, double rand_min, double rand_max, MPI_Comm comm)
+void SetRandMat_complex(double _Complex *Mat, int m, int n, double rand_min, double rand_max, MPI_Comm comm)
 {
     int rank, i, len_tot;
     MPI_Comm_rank(comm, &rank);
@@ -926,7 +926,7 @@ void SeededRandVec (
  *          execution.
  */
 void SeededRandVec_complex (
-	double complex *Vec, const int DMVert[6], const int gridsizes[3],
+	double _Complex *Vec, const int DMVert[6], const int gridsizes[3],
 	const double rand_min, const double rand_max,
 	const int seed_offset
 )
@@ -1585,7 +1585,7 @@ void RealSphericalHarmonic(const int len, double *x, double *y,double *z, double
  *
  *          Only for l = 0, 1, ..., 6.
  */
-void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, const int l, const int m, double complex *Ylm)
+void ComplexSphericalHarmonic(const int len, double *x, double *y,double *z, double *r, const int l, const int m, double _Complex *Ylm)
 {
     // only l=0,1,2,3,4,5,6 implemented for now
 

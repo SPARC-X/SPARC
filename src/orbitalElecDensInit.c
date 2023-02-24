@@ -249,8 +249,8 @@ void Init_orbital(SPARC_OBJ *pSPARC)
             }
         } else {
             // allocate memory in the very first relax/MD step
-            pSPARC->Xorb_kpt = (double complex *) malloc( len_tot * sizeof(double complex) );
-            pSPARC->Yorb_kpt = (double complex *) malloc( size_k * sizeof(double complex) );
+            pSPARC->Xorb_kpt = (double _Complex *) malloc( len_tot * sizeof(double _Complex) );
+            pSPARC->Yorb_kpt = (double _Complex *) malloc( size_k * sizeof(double _Complex) );
             if (pSPARC->Xorb_kpt == NULL || pSPARC->Yorb_kpt == NULL) {
                 printf("\nMemory allocation failed!\n");
                 exit(EXIT_FAILURE);
@@ -280,7 +280,7 @@ void Init_orbital(SPARC_OBJ *pSPARC)
                             int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
                             for (spinor = 0; spinor < pSPARC->Nspinor; spinor ++) {
                                 int shift_g = sg * size_sg + kg * size_kg + ng * size_ng + pSPARC->Nd * spinor; // global shift
-                                double complex *Psi_kn = pSPARC->Xorb_kpt + shift + spinor * pSPARC->Nd_d_dmcomm;
+                                double _Complex *Psi_kn = pSPARC->Xorb_kpt + shift + spinor * pSPARC->Nd_d_dmcomm;
                                 SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
                             }
                         }

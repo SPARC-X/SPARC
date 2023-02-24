@@ -18,7 +18,7 @@
 #include <limits.h>
 /** BLAS and LAPACK routines */
 #ifdef USE_MKL
-    #define MKL_Complex16 double complex
+    #define MKL_Complex16 double _Complex
     #include <mkl.h>
 #else
     #include <cblas.h>
@@ -111,10 +111,10 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
     // starts to create Xi
     t_comm = 0;
     memset(Xi_kpt, 0, sizeof(double _Complex) * DMndNsocc * pSPARC->Nkpts_kptcomm);
-    psi_storage1_kpt = (double complex *) calloc(sizeof(double complex), DMnd * Nband * Nkpthf_red_max);
+    psi_storage1_kpt = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband * Nkpthf_red_max);
     assert(psi_storage1_kpt != NULL);
     if (reps_kpt > 0) {
-        psi_storage2_kpt = (double complex *) calloc(sizeof(double complex), DMnd * Nband * Nkpthf_red_max);
+        psi_storage2_kpt = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband * Nkpthf_red_max);
         assert(psi_storage2_kpt != NULL);
     }
     // extract and store all the orbitals for hybrid calculation
@@ -126,8 +126,8 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
         count ++;
     }
     if (reps_band > 0) {
-        psi_storage1_band = (double complex *) calloc(sizeof(double complex), DMnd * Nband_max);
-        psi_storage2_band = (double complex *) calloc(sizeof(double complex), DMnd * Nband_max);
+        psi_storage1_band = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband_max);
+        psi_storage2_band = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband_max);
         assert(psi_storage1_band != NULL && psi_storage2_band != NULL);
     }
 
@@ -1332,7 +1332,7 @@ void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec)
 /**
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
-void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs)
+void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs)
 {
     MPI_Comm blacscomm = pSPARC->blacscomm;
     if (blacscomm == MPI_COMM_NULL) return;
@@ -1359,7 +1359,7 @@ void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, double complex *sendbuff
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
 void transfer_orbitals_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, 
-    double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs)
+    double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs)
 {
     MPI_Comm kpt_bridge_comm = pSPARC->kpt_bridge_comm;
     if (kpt_bridge_comm == MPI_COMM_NULL) return;
@@ -1387,7 +1387,7 @@ void transfer_orbitals_kptbridgecomm_kpt(SPARC_OBJ *pSPARC,
  * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
  */
 void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC, 
-    int ncol, double complex *psi, double complex *psi_storage, double *occ, double complex *Xi_kpt, int kpt_q, int shift, int Ns_occ)
+    int ncol, double _Complex *psi, double _Complex *psi_storage, double *occ, double _Complex *Xi_kpt, int kpt_q, int shift, int Ns_occ)
 {
     MPI_Comm blacscomm = pSPARC->blacscomm;
     if (blacscomm == MPI_COMM_NULL) return;

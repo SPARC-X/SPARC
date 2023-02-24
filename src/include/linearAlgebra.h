@@ -51,10 +51,10 @@ void automem_pdsygvx_ (
  *        do the calculation.
  */
 void automem_pzhegvx_ ( 
-	int *ibtype, char *jobz, char *range, char *uplo, int *n, double complex *a, int *ia,
-	int *ja, int *desca, double complex *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
-	double *orfac, double complex *z, int *iz, int *jz, int *descz, int *ifail, int *info);
+	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info);
 
 
 /**
@@ -98,10 +98,10 @@ void pdsyevx_subcomm_ (
  *         commmunicator with a better grid dimension.
  */
 void pzhegvx_subcomm_ (
-    int *ibtype, char *jobz, char *range, char *uplo, int *n, double complex *a, int *ia,
-	int *ja, int *desca, double complex *b, int *ib, int *jb, int *descb, double *vl, 
+    int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
-	double *orfac, double complex *z, int *iz, int *jz, int *descz, int *ifail, int *info,
+	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info,
     MPI_Comm comm, int *dims, int blksz);
 
 

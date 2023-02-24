@@ -640,7 +640,7 @@ void print_orbital_real(
  * @brief   Print complex Kohn-Sham orbitals
  */
 void print_orbital_complex(
-    double complex *x, int *gridsizes, int *DMVertices, double dV,
+    double _Complex *x, int *gridsizes, int *DMVertices, double dV,
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 ) 
 {
@@ -654,10 +654,10 @@ void print_orbital_complex(
     int Ny = gridsizes[1];
     int Nz = gridsizes[2];
     int Nd = Nx * Ny * Nz;
-    double complex *x_global = NULL;
+    double _Complex *x_global = NULL;
 
     if (rank_comm == 0) {
-        x_global = (double complex *)malloc(Nd * sizeof(double complex));
+        x_global = (double _Complex *)malloc(Nd * sizeof(double _Complex));
     }
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
@@ -697,7 +697,7 @@ void print_orbital_complex(
         
         if (!rank_comm) MPI_Comm_free(&recv_comm);
     } else {
-        memcpy(x_global, x, sizeof(double complex) * Nd);
+        memcpy(x_global, x, sizeof(double _Complex) * Nd);
     }
     
     if (rank_comm == 0) {
@@ -714,7 +714,7 @@ void print_orbital_complex(
         fwrite(&kpt_index, sizeof(int), 1, output_fp);
         fwrite(kpt_vec, 3, sizeof(double) , output_fp);
         fwrite(&band_index, sizeof(int), 1, output_fp);
-        fwrite( x_global, Nd, sizeof(double complex) , output_fp );
+        fwrite( x_global, Nd, sizeof(double _Complex) , output_fp );
         fclose(output_fp);
     }
     

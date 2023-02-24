@@ -17,7 +17,7 @@
 #include <mpi.h>
 /* BLAS, LAPACK, LAPACKE routines */
 #ifdef USE_MKL
-    #define MKL_Complex16 double complex
+    #define MKL_Complex16 double _Complex
     #include <mkl.h>
 #else
     #include <cblas.h>

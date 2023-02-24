@@ -37,6 +37,11 @@
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
 
+#ifdef SPARCX_ACCEL
+	#include "accel.h"
+	#include "accel_kpt.h"
+#endif
+
 #define TEMP_TOL 1e-12
 
 
@@ -1047,15 +1052,33 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
  */
 void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
     if (pSPARC->isGammaPoint) {
-        if (pSPARC->SQFlag == 1)
+        if (pSPARC->SQFlag == 1) {
             Calculate_nonlocal_kinetic_stress_SQ(pSPARC);
-        else
-            Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+        } else {
+        #ifdef SPARCX_ACCEL
+			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+			{
+				ACCEL_Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+			} else
+        #endif
+			{
+				Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+			}
+        }
     } else {
-        if (pSPARC->Nspinor == 1)
-            Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
-        else if (pSPARC->Nspinor == 2)
+        if (pSPARC->Nspinor == 1) {
+        #ifdef SPARCX_ACCEL
+			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+			{
+				ACCEL_Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
+			} else
+        #endif
+			{
+				Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
+			}
+        } else if (pSPARC->Nspinor == 2) {
             Calculate_nonlocal_kinetic_stress_kpt_spinor(pSPARC);
+        }
     }
  }
 
@@ -1446,8 +1469,8 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     DMnx = pSPARC->Nx_d_dmcomm;
     DMny = pSPARC->Ny_d_dmcomm;
     
-    double complex *alpha, *beta, *beta1, *beta2, *beta3, *psi_ptr, *dpsi_ptr, *dpsi_ptr2, *psi_rc, *dpsi_x1_rc, *dpsi_x2_rc, *dpsi_x3_rc, *psi_rc_ptr, *dpsi_x1_rc_ptr, *dpsi_x2_rc_ptr, *dpsi_x3_rc_ptr, *dpsi_full;
-    double complex *beta1_x1, *beta1_x2, *beta1_x3, *beta2_x1, *beta2_x2, *beta2_x3, *beta3_x1, *beta3_x2, *beta3_x3;
+    double _Complex *alpha, *beta, *beta1, *beta2, *beta3, *psi_ptr, *dpsi_ptr, *dpsi_ptr2, *psi_rc, *dpsi_x1_rc, *dpsi_x2_rc, *dpsi_x3_rc, *psi_rc_ptr, *dpsi_x1_rc_ptr, *dpsi_x2_rc_ptr, *dpsi_x3_rc_ptr, *dpsi_full;
+    double _Complex *beta1_x1, *beta1_x2, *beta1_x3, *beta2_x1, *beta2_x2, *beta2_x3, *beta3_x1, *beta3_x2, *beta3_x3;
     double *SJ, eJ, *temp_k, temp_e, *temp_s, temp2_e, *temp2_s, g_nk, gamma_jl, kptwt,  R1, R2, R3, x1_R1, x2_R2, x3_R3;
     double dpsi1_dpsi1, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi2, dpsi2_dpsi3, dpsi3_dpsi3;
 
@@ -1459,19 +1482,19 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     temp_s = (double*) malloc(9 * sizeof(double));
     temp2_s = (double*) malloc(9 * sizeof(double));
     
-    // dpsi_full = (double complex *)malloc( size_s * nspin * sizeof(double complex) );
-    dpsi_full = (double complex *)malloc( size_k * sizeof(double complex) );
+    // dpsi_full = (double _Complex *)malloc( size_s * nspin * sizeof(double _Complex) );
+    dpsi_full = (double _Complex *)malloc( size_k * sizeof(double _Complex) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
     }
     
-    alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 10, sizeof(double complex));
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 10, sizeof(double _Complex));
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, kpt_vec;
-    double complex bloch_fac, a, b;
+    double _Complex bloch_fac, a, b;
 #ifdef DEBUG 
     if (!rank) printf("Start calculating stress contributions from kinetic and nonlocal psp. \n");
 #endif
@@ -1495,7 +1518,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                     b = 1.0;
                     
                     ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    psi_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+                    psi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
                     atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                     
                     /* first find inner product <Psi_n, Chi_Jlm> */
@@ -1540,9 +1563,9 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                         bloch_fac = cos(theta) + sin(theta) * I;
                         b = 1.0;
                         ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                        dpsi_x1_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
-                        dpsi_x2_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
-                        dpsi_x3_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+                        dpsi_x1_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
+                        dpsi_x2_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
+                        dpsi_x3_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
                         atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                         for (n = 0; n < ncol; n++) {
                             dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd;

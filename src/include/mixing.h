@@ -48,8 +48,8 @@ void  AndersonExtrapolation(
 );
 
 void  AndersonExtrapolation_complex(
-        const int N, const int m, double complex *x_kp1, const double complex *x_k, 
-        const double complex *f_k, const double complex *X, const double complex *F, 
+        const int N, const int m, double _Complex *x_kp1, const double _Complex *x_k, 
+        const double _Complex *f_k, const double _Complex *X, const double _Complex *F, 
         const double beta, MPI_Comm comm
 );
 
@@ -67,8 +67,8 @@ void  AndersonExtrapWtdAvg(
 );
 
 void  AndersonExtrapWtdAvg_complex(
-        const int N, const int m, const double complex *x_k, const double complex *f_k, 
-        const double complex *X, const double complex *F, double complex *x_wavg, double complex *f_wavg, 
+        const int N, const int m, const double _Complex *x_k, const double _Complex *f_k, 
+        const double _Complex *X, const double _Complex *F, double _Complex *x_wavg, double _Complex *f_wavg, 
         MPI_Comm comm
 );
 
@@ -84,8 +84,8 @@ void AndersonExtrapCoeff(
 );
 
 void AndersonExtrapCoeff_complex(
-    const int N, const int m, const double complex *f, const double complex *F, 
-    double complex *Gamma, MPI_Comm comm
+    const int N, const int m, const double _Complex *f, const double _Complex *F, 
+    double _Complex *Gamma, MPI_Comm comm
 );
 
 
@@ -149,8 +149,8 @@ void TruncatedKerker_precond(
  */
 void RSfit_Precond(
     SPARC_OBJ *pSPARC, double *f, const int npow, 
-    const double complex *a, 
-    const double complex *lambda_sqr, 
+    const double _Complex *a, 
+    const double _Complex *lambda_sqr, 
     const double k,  // k should always be real
     const double tol, const int DMnd, const int *DMVertices, 
     double *Pf, MPI_Comm comm

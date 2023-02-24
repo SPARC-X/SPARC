@@ -151,18 +151,18 @@ void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec)
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
 void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, 
-        double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs);
+        double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs);
 
 /**
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
 void transfer_orbitals_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, 
-        double complex *sendbuff, double complex *recvbuff, int shift, MPI_Request *reqs);
+        double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs);
 
 /**
  * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
  */
 void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC, 
-    int ncol, double complex *psi, double complex *psi_storage, double *occ, double complex *Xi_kpt, int kpt_q, int shift, int Ns_occ);
+    int ncol, double _Complex *psi, double _Complex *psi_storage, double *occ, double _Complex *Xi_kpt, int kpt_q, int shift, int Ns_occ);
 
 #endif // EXACTEXCHANGEPOTENTIAL_KPT_H 

@@ -27,8 +27,8 @@
  *          the multiplication together. TODO: think of a more efficient way!
  */
 void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                              const int ncol, const double c, const double complex *x, 
-                              double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm);
+                              const int ncol, const double c, const double _Complex *x, 
+                              double _Complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm);
 
 
 
@@ -38,8 +38,8 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
 void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                      const int ncol, const double c, const double complex *x,
-                      double complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm, const int* dims);
+                      const int ncol, const double c, const double _Complex *x,
+                      double _Complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm, const int* dims);
 
 
 
@@ -47,7 +47,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
  @brief: function to calculate derivative
 */
 void Calc_DX_kpt(
-    const double complex *X, double complex *DX,
+    const double _Complex *X, double _Complex *DX,
     const int radius,      const int stride_X,
     const int stride_y_X,  const int stride_y_DX,
     const int stride_z_X,  const int stride_z_DX,
