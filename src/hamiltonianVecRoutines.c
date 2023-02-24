@@ -131,7 +131,7 @@ void Hamiltonian_vectors_mult(
 void Hamiltonian_vectors_mult_kpt(
     const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-    int ncol, double c, double complex *x, double complex *Hx, int spin, int kpt, MPI_Comm comm
+    int ncol, double c, double _Complex *x, double _Complex *Hx, int spin, int kpt, MPI_Comm comm
 )
 {
     unsigned i, j;

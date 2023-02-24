@@ -580,7 +580,7 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
     (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
         // allocate memory for projectors
-        (*nlocProj)[ityp].Chi_c = (double complex **)malloc( sizeof(double complex *) * Atom_Influence_nloc[ityp].n_atom);
+        (*nlocProj)[ityp].Chi_c = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;
         psd_len = pSPARC->psd[ityp].size;
@@ -598,7 +598,7 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
             z0_i = Atom_Influence_nloc[ityp].coords[iat*3+2];
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            (*nlocProj)[ityp].Chi_c[iat] = (double complex *)malloc( sizeof(double complex) * ndc * (*nlocProj)[ityp].nproj);
+            (*nlocProj)[ityp].Chi_c[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * (*nlocProj)[ityp].nproj);
             rc_pos_x = (double *)malloc( sizeof(double) * ndc );
             rc_pos_y = (double *)malloc( sizeof(double) * ndc );
             rc_pos_z = (double *)malloc( sizeof(double) * ndc );
@@ -808,14 +808,14 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
  * @brief   Calculate Vnl times vectors in a matrix-free way with Bloch factor
  */
 void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
-                      NLOC_PROJ_OBJ *nlocProj, int ncol, double complex *x, double complex *Hx, int kpt, MPI_Comm comm)
+                      NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, double _Complex *Hx, int kpt, MPI_Comm comm)
 {
     int i, n, np, count;
     /* compute nonlocal operator times vector(s) */
     int ityp, iat, l, m, ldispl, lmax, ndc, atom_index;
     double x0_i, y0_i, z0_i;
-    double complex *alpha, *x_rc, *Vnlx;
-    alpha = (double complex *) calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol, sizeof(double complex));
+    double _Complex *alpha, *x_rc, *Vnlx;
+    alpha = (double _Complex *) calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol, sizeof(double _Complex));
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
@@ -823,7 +823,7 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
     double k2 = pSPARC->k2_loc[kpt];
     double k3 = pSPARC->k3_loc[kpt];
     double theta;
-    double complex bloch_fac, a, b;
+    double _Complex bloch_fac, a, b;
     
     //first find inner product
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
@@ -837,7 +837,7 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
             a = bloch_fac * pSPARC->dV;
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
-            x_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
@@ -895,7 +895,7 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
             b = 0.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
-            Vnlx = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+            Vnlx = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, ndc, ncol, nlocProj[ityp].nproj, &bloch_fac, nlocProj[ityp].Chi_c[iat], ndc, 
                           alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj, &b, Vnlx, ndc); 
             for (n = 0; n < ncol; n++) {

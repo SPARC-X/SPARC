@@ -38,6 +38,11 @@
 #include "exactExchangePressure.h"
 #include "sqProperties.h"
 
+#ifdef SPARCX_ACCEL
+	#include "accel.h"
+	#include "accel_kpt.h"
+#endif
+
 #define TEMP_TOL 1e-12
 
 
@@ -808,13 +813,31 @@ void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
     if (pSPARC->isGammaPoint) {
         if (pSPARC->SQFlag == 1) 
             Calculate_nonlocal_pressure_SQ(pSPARC);
-        else
-            Calculate_nonlocal_pressure_linear(pSPARC);
+        else {
+        #ifdef SPARCX_ACCEL
+			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+			{
+				ACCEL_Calculate_nonlocal_pressure_linear(pSPARC);
+			} else
+        #endif
+			{
+				Calculate_nonlocal_pressure_linear(pSPARC);
+			}
+        }
     } else {
-        if (pSPARC->Nspinor == 1)
-            Calculate_nonlocal_pressure_kpt(pSPARC);  
-        else if (pSPARC->Nspinor == 2)
+        if (pSPARC->Nspinor == 1) {
+        #ifdef SPARCX_ACCEL
+			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+			{
+				ACCEL_Calculate_nonlocal_pressure_kpt_linear(pSPARC);
+			} else
+        #endif
+			{
+				Calculate_nonlocal_pressure_kpt(pSPARC);
+			}
+        } else if (pSPARC->Nspinor == 2) {
             Calculate_nonlocal_pressure_kpt_spinor(pSPARC);
+        }
     }
 }
 
@@ -1023,16 +1046,16 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
     DMnx = pSPARC->Nx_d_dmcomm;
     DMny = pSPARC->Ny_d_dmcomm;
     
-    double complex *alpha, *beta, *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr, *beta_x, *beta_y, *beta_z;
+    double _Complex *alpha, *beta, *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr, *beta_x, *beta_y, *beta_z;
     double R1, R2, R3, pJ, eJ, temp_e, temp_p, temp2_e, temp2_p, g_nk;
     double pressure_nloc = 0.0;
     
-    alpha = (double complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, sizeof(double complex));
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, sizeof(double _Complex));
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
     double k1, k2, k3, theta, kpt_vec;
-    double complex bloch_fac, a, b;
+    double _Complex bloch_fac, a, b;
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal pressure\n");
 #endif
@@ -1055,7 +1078,7 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
                     a = bloch_fac * pSPARC->dV;
                     b = 1.0;
                     ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    x_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+                    x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
                     atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                     
                     /* first find inner product <Psi_n, Chi_Jlm>, and <Chi_Jlm, Psi_n> */
@@ -1097,7 +1120,7 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
                         bloch_fac = cos(theta) + sin(theta) * I;
                         b = 1.0;
                         ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                        dx_rc = (double complex *)malloc( ndc * ncol * sizeof(double complex));
+                        dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
                         atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
                         for (n = 0; n < ncol; n++) {
                             dx_ptr = pSPARC->Yorb_kpt + n * DMnd;

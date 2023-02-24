@@ -230,10 +230,9 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     pSPARC->npNdz_kptcomm = dims[2];
 
 #ifdef DEBUG
-    if (!rank_kptcomm)
+    if (!rank)
     printf("\n kpt_topo #%d, kptcomm topology dims = {%d, %d, %d}, nodes/proc = {%.2f,%.2f,%.2f}\n", pSPARC->kptcomm_index,
             dims[0],dims[1],dims[2],(double)gridsizes[0]/dims[0],(double)gridsizes[1]/dims[1],(double)gridsizes[2]/dims[2]);
-    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     if (pSPARC->kptcomm_index >= 0) {
@@ -830,9 +829,9 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         pSPARC->Mp = (double *)malloc(pSPARC->nr_Mp_BLCYC * pSPARC->nc_Mp_BLCYC * sizeof(double));
         pSPARC->Q  = (double *)malloc(pSPARC->nr_Q_BLCYC * pSPARC->nc_Q_BLCYC * sizeof(double));
     } else{
-        pSPARC->Hp_kpt = (double complex *) malloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC * sizeof(double complex));
-        pSPARC->Mp_kpt = (double complex *) malloc(pSPARC->nr_Mp_BLCYC * pSPARC->nc_Mp_BLCYC * sizeof(double complex));
-        pSPARC->Q_kpt  = (double complex *) malloc(pSPARC->nr_Q_BLCYC * pSPARC->nc_Q_BLCYC * sizeof(double complex));
+        pSPARC->Hp_kpt = (double _Complex *) malloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC * sizeof(double _Complex));
+        pSPARC->Mp_kpt = (double _Complex *) malloc(pSPARC->nr_Mp_BLCYC * pSPARC->nc_Mp_BLCYC * sizeof(double _Complex));
+        pSPARC->Q_kpt  = (double _Complex *) malloc(pSPARC->nr_Q_BLCYC * pSPARC->nc_Q_BLCYC * sizeof(double _Complex));
     }
 #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
     pSPARC->useLAPACK = 1;
@@ -1036,7 +1035,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     }
 
     if (pSPARC->isGammaPoint != 1 && pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-        pSPARC->Lanczos_x0_complex = (double complex *)malloc(pSPARC->Nd_d_kptcomm * pSPARC->Nspinor * sizeof(double complex));
+        pSPARC->Lanczos_x0_complex = (double _Complex *)malloc(pSPARC->Nd_d_kptcomm * pSPARC->Nspinor * sizeof(double _Complex));
         assert(pSPARC->Lanczos_x0_complex != NULL);
     }
 

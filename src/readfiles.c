@@ -446,6 +446,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"PULAY_RESTART:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PulayRestartFlag);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"STANDARD_EIGEN:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->StandardEigenFlag);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"TWTIME:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->TWtime);
             fscanf(input_fp, "%*[^\n]\n");

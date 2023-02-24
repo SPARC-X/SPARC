@@ -364,7 +364,7 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC, 
-    double complex *psi_outer, double *occ_outer, double complex *psi, double *pres_exx)
+    double _Complex *psi_outer, double *occ_outer, double _Complex *psi, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int k, kpt_q;
@@ -390,14 +390,14 @@ void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC, 
-    double complex *psi, double *occ_outer, double *pres_exx)
+    double _Complex *psi, double *occ_outer, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, k, grank, kpt_q;
     int Ns, DMnd, Nband, NB, size_k, count, rep_kpt, rep_band;
     int source, Nband_source, band_start_indx_source;
-    double complex *psi_storage1_kpt, *psi_storage2_kpt, *psi_storage1_band, *psi_storage2_band;
-    double complex *sendbuff_kpt, *recvbuff_kpt, *sendbuff_band, *recvbuff_band;
+    double _Complex *psi_storage1_kpt, *psi_storage2_kpt, *psi_storage1_band, *psi_storage2_band;
+    double _Complex *sendbuff_kpt, *recvbuff_kpt, *sendbuff_band, *recvbuff_band;
     psi_storage1_kpt = psi_storage2_kpt = psi_storage1_band = psi_storage2_band = NULL;
     sendbuff_kpt = recvbuff_kpt = sendbuff_band = recvbuff_band = NULL;
 
@@ -425,10 +425,10 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
     for (k = 0; k < pSPARC->npkpt; k++) 
         Nkpthf_red_max = max(Nkpthf_red_max, pSPARC->Nkpts_hf_list[k]);
 
-    psi_storage1_kpt = (double complex *) calloc(sizeof(double complex), DMnd * Nband * Nkpthf_red_max);
+    psi_storage1_kpt = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband * Nkpthf_red_max);
     assert(psi_storage1_kpt != NULL);
     if (reps_kpt > 0) {
-        psi_storage2_kpt = (double complex *) calloc(sizeof(double complex), DMnd * Nband * Nkpthf_red_max);
+        psi_storage2_kpt = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband * Nkpthf_red_max);
         assert(psi_storage2_kpt != NULL);
     }
     // extract and store all the orbitals for hybrid calculation
@@ -440,8 +440,8 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
         count ++;
     }
     if (reps_band > 0) {
-        psi_storage1_band = (double complex *) calloc(sizeof(double complex), DMnd * Nband_max);
-        psi_storage2_band = (double complex *) calloc(sizeof(double complex), DMnd * Nband_max);
+        psi_storage1_band = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband_max);
+        psi_storage2_band = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband_max);
         assert(psi_storage1_band != NULL && psi_storage2_band != NULL);
     }
 
@@ -514,8 +514,8 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
 /**
  * @brief   Calculate Exact Exchange pressure
  */
-void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double complex *psi_storage, 
-    double complex *psi, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx)
+void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, 
+    double _Complex *psi, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, ll, grank, rank, size, kpt_k;
