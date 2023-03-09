@@ -1,0 +1,46 @@
+name: Build test using conda-build
+
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: "3.10"
+        activate-environment: sparc-test
+        conda-build-version: ">=3.20"
+        mamba-version: "*"
+        channels: conda-forge,defaults
+        channel-priority: true
+    - name: Install boa dependencies
+      run: |
+        mamba install -c conda-forge "conda-build>=3.20" colorama pip ruamel ruamel.yaml rich mamba jsonschema
+        pip install git+https://github.com/mamba-org/boa.git
+    - name: Build with mambabuild
+      run: |
+        echo $CONDA_PREFIX
+        conda info
+        CPU_COUNT=2 conda mambabuild .conda/
+    - name: Install local build
+      run: |
+        mamba install --use-local sparc
+    - name: Test simple sparc run
+      run: |
+        cd tests/Cu_FCC/standard/
+        mpirun -n 2 sparc -name Cu_FCC
