@@ -40,3 +40,7 @@ jobs:
     - name: Install local build
       run: |
         mamba install --use-local sparc
+    - name: Test simple sparc run
+      run: |
+        cd tests/Cu_FCC/standard/
+        mpirun -n 2 sparc -name Cu_FCC
