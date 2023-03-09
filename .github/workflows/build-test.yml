@@ -1,4 +1,4 @@
-name: Build test using conda-build
+name: Build SPARC using conda-build toolchains and perform quick test (no upload)
 
 on: 
   push:
@@ -44,3 +44,8 @@ jobs:
       run: |
         cd tests/Cu_FCC/standard/
         mpirun -n 2 sparc -name Cu_FCC
+    - name: Perform comprehensive tests using `quick_run`
+      run: |
+        cp $(which sparc) lib/
+        cd tests
+        python SPARC_testing_script.py quick_run
