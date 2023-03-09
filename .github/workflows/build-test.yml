@@ -1,0 +1,31 @@
+name: Build test using conda-build
+
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: sparc-test
+        conda-build-version: ">=3.20"
+        mamba-version: "*"
+    - name: Install boa dependencies
+      run: |
+        mamba install -c conda-forge colorama pip ruamel ruamel.yaml rich mamba jsonschema
+        pip install git+https://github.com/mamba-org/boa.git
+    - name: Build with mambabuild
+      run: |
+        CPU_COUNT=2 conda mambabuild .conda/
