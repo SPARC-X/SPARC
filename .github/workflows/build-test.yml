@@ -31,4 +31,6 @@ jobs:
         pip install git+https://github.com/mamba-org/boa.git
     - name: Build with mambabuild
       run: |
+        echo $CONDA_PREFIX
+        conda info
         CPU_COUNT=2 conda mambabuild .conda/
