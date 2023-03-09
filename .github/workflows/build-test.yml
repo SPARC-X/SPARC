@@ -48,4 +48,5 @@ jobs:
       run: |
         cp $(which sparc) lib/
         cd tests
+        export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}
         python SPARC_testing_script.py quick_run

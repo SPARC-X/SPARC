@@ -9,7 +9,7 @@
 {% set month = date_list[0].lower() %}
 {% set version = date_list[2] ~ "." ~ month_mapping[month] ~ "." ~ date_list[1] %}
 {% set file_ext = "tar.gz" %}
-{% set readme = load_file_regex(load_file="README.md", regex_pattern="\\s\\S*")[0] %}
+{% set readme = load_file_regex(load_file="README.md", regex_pattern=".*")[0] %}
 
 package:
   name: '{{ name|lower }}'
@@ -21,7 +21,7 @@ source:
 requirements:
   target:
     - linux-64
-    - linux-aarch64
+    # - linux-aarch64
   host:
     - compilers
     - openmpi
