@@ -1,0 +1,48 @@
+{% set name = "SPARC" %}
+# A bit complex date version parsing from src/initialization.c
+# convert version Feb 22, 2023 --> 2023.02.22
+# Match the 1st group. The conda-build documentation is wrong, see https://github.com/conda/conda-build/issues/4585
+{% set raw_version = load_file_regex(load_file="src/initialization.c", regex_pattern='SPARC\\s*\\(\\s*version\\s*([^\\)]+)\\s*\\)')[1]|replace(",", "") %}
+{% set date_list = raw_version.split(" ")  %}
+# Hard-coded 3-letter-to-2-digit month conversion, since we're limited by default jinja2
+{% set month_mapping = dict(jan="01", feb="02", mar="03", apr="04", may="05", jun="06", jul="07", aug="08", sep="09", oct="10", nov="11", dec="12") %}
+{% set month = date_list[0].lower() %}
+{% set version = date_list[2] ~ "." ~ month_mapping[month] ~ "." ~ date_list[1] %}
+{% set file_ext = "tar.gz" %}
+{% set readme = load_file_regex(load_file="README.md", regex_pattern="\\s\\S*")[0] %}
+
+package:
+  name: '{{ name|lower }}'
+  version: '{{ version }}'
+
+source:
+  path: ../
+
+requirements:
+  target:
+    - linux-64
+    - linux-aarch64
+  host:
+    - compilers
+    - openmpi
+    - openblas
+    - scalapack
+    - fftw
+  run:
+    - openmpi
+    - openblas
+    - scalapack
+    - fftw
+
+about:
+  home: https://www.sparc-x.com
+  license: GNU General Public License v3.0
+  license_family: GPL3
+  license_file: LICENSE
+  summary: SPARC is an open-source software package for the accurate, effcient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem
+  description: {{ readme }}
+  doc_url: https://github.com/SPARC-X/SPARC/blob/master/doc/Manual.pdf
+  dev_url: https://github.com/SPARC-X/SPARC
+
+extra:
+  recipe-maintainers: The SPARC developers

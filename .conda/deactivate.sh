@@ -1,0 +1,1 @@
+unset SPARC_PSP_PATH
