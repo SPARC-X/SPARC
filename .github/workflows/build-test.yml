@@ -49,8 +49,8 @@ jobs:
         cp $(which sparc) lib/
         cd tests
         export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}
-        python SPARC_testing_script.py quick_run | tee sparc_test_output.txt
-        n_failed=$(grep -o 'Tests failed: [0-9]\+' sparc_test_output.txt | grep -o '[0-9]\+$')
+        python SPARC_testing_script.py quick_run | tee output
+        n_failed=$(grep -o 'Tests failed: [0-9]\+' output | grep -o '[0-9]\+$')
         # Force fail, see what happens
         unset LD_LIBRARY_PATH
-        if [ ${n_failed} -eq "0" ]; then fail; fi
+        python -c "import re; match = re.findall(r'Tests failed: (\d+)', open('output').read()); print(match[0])"
