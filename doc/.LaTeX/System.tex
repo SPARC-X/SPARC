@@ -706,37 +706,6 @@ D3\_CN\_THR should be smaller or equal to cutoff radius of DFT-D3 correction cut
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}[allowframebreaks]{\texttt{VDWDF\_GEN\_KERNEL}} \label{VDWDF_GEN_KERNEL}
-\vspace*{-12pt}
-\begin{columns}
-\column{0.4\linewidth}
-\begin{block}{Type}
-0 or 1
-\end{block}
-
-\begin{block}{Default}
-\texttt{1}
-\end{block}
-
-\column{0.4\linewidth}
-\begin{block}{Unit}
-No Unit
-\end{block}
-
-\begin{block}{Example}
-\texttt{VDWDF\_GEN\_KERNEL}: \texttt{1}
-\end{block}
-\end{columns}
-
-\begin{block}{Description}
-Flag for computing the kernel functions, its 2nd derivatives and the 2nd derivative of spline functions. If 0 is set, the program will read the files (kernel\_d2.txt; spline\_d2.txt in the folder saving input files) directly; if 1 is set, the program will generate these files before computation.
-\end{block}
-\begin{block}{Remark}
-If this is the first time to use \texttt{vdWDF1} or \texttt{vdWDF2} as \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}}, setting the flag as 1 is necessary, which is also the default setting. After the two files are generated, you can use the two generated files by copying them into the folders saving input files of other vdWDF tasks, and \texttt{VDWDF\_GEN\_KERNEL} flag can be closed to save the time of generating the two files.
-\end{block}
-\end{frame}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks]{\texttt{EXX\_RANGE\_FOCK}} \label{EXX_RANGE_FOCK}

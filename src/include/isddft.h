@@ -748,7 +748,6 @@ typedef struct _SPARC_OBJ{
 
     // vdW-DF1 and vdW-DF2
     int vdWDFFlag;
-    int vdWDFKernelGenFlag;
     int vdWDFnrpoints;
     int vdWDFnqs;
     double *vdWDFecLinear;
@@ -769,6 +768,7 @@ typedef struct _SPARC_OBJ{
     double **vdWDFps;
     double **vdWDFdpdq0s;
     MPI_Comm zAxisComm;
+    int newzAxisDims[3];
     int zAxisVertices[6];
     D2D_OBJ gatherThetasSender;
     D2D_OBJ gatherThetasRecvr;
@@ -1148,9 +1148,6 @@ typedef struct _SPARC_INPUT_OBJ{
     double d3Rthr;        // cutoff radius for calculating d3 energy correction
     double d3Cn_thr;      // cutoff radius for calculating CN parameter of every atom
 
-    /* vdW-DF options */
-    int vdWDFKernelGenFlag; // generate the kernel functions or read kernel functions from files
-    
     /* Exact Exchange */
     double TOL_FOCK;        // Exact exchange potential option
     double TOL_SCF_INIT;    // Exact exchange potential option
