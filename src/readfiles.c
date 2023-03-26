@@ -608,9 +608,6 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"NPT_NP_BMASS:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NP_bmass);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"VDWDF_GEN_KERNEL:") == 0) {
-            fscanf(input_fp,"%d",&pSPARC_Input->vdWDFKernelGenFlag);
-            fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"VERBOSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Verbosity);
             fscanf(input_fp, "%*[^\n]\n");

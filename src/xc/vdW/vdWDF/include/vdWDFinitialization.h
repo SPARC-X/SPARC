@@ -41,16 +41,18 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC);
  */
 int kernel_label(int firstq, int secondq, int nqs);
 
-/**
- * @brief read kernel function and its 2nd derivative for every model energy ratios (p1, p2)
- * @param kernelFile: the route of the kernel file
- */
-void vdWDF_read_kernel(SPARC_OBJ *pSPARC, char *kernelFile);
+// /**
+//  * @brief read kernel function and its 2nd derivative for every model energy ratios (p1, p2)
+//  * @param kernelFile: the route of the kernel file
+//  */
+// void vdWDF_read_kernel(SPARC_OBJ *pSPARC, char *kernelFile);
 
 /**
  * @brief If there is a spline_d2_qmesh function file, read it.
  * @param kernelFile: the route of the spline_d2_qmesh function file
  */
-void read_spline_d2_qmesh(SPARC_OBJ *pSPARC, char *splineD2QmeshFile);
+void read_spline_d2_qmesh(SPARC_OBJ *pSPARC);
+
+void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims);
 
 #endif

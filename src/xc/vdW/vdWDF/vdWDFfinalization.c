@@ -33,6 +33,7 @@
 
 #include "vdWDFfinalization.h"
 #include "parallelization.h"
+#include "vdWDFparallelization.h"
 
 void vdWDF_free(SPARC_OBJ *pSPARC) {
 	int nqs = pSPARC->vdWDFnqs;
@@ -81,8 +82,8 @@ void vdWDF_free(SPARC_OBJ *pSPARC) {
         free(pSPARC->timeReciLattice);
         free(pSPARC->vdWDFreciLatticeGrid);
         free(pSPARC->vdWDFreciLength);
-        Free_D2D_Target(&pSPARC->gatherThetasSender, &pSPARC->gatherThetasRecvr, pSPARC->dmcomm_phi, pSPARC->zAxisComm);
-        Free_D2D_Target(&pSPARC->scatterThetasSender, &pSPARC->scatterThetasRecvr, pSPARC->zAxisComm, pSPARC->dmcomm_phi);
+        Free_D2D_Target_AnyDMVert(&pSPARC->gatherThetasSender, &pSPARC->gatherThetasRecvr, pSPARC->dmcomm_phi, pSPARC->zAxisComm);
+        Free_D2D_Target_AnyDMVert(&pSPARC->scatterThetasSender, &pSPARC->scatterThetasRecvr, pSPARC->zAxisComm, pSPARC->dmcomm_phi);
         if (pSPARC->zAxisComm != MPI_COMM_NULL) {
             int FFTrank;
             MPI_Comm_rank(pSPARC->zAxisComm, &FFTrank);
