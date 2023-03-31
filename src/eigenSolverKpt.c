@@ -341,18 +341,18 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, in
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation_kpt(pSPARC, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s);
     #else
-    double _Complex *YQ_BLCYC;
     if (pSPARC->npband > 1) {
-        YQ_BLCYC = (double _Complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double _Complex));
-        assert(YQ_BLCYC != NULL);
+        pSPARC->Xorb_BLCYC_kpt = (double _Complex *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double _Complex));
+        assert(pSPARC->Xorb_BLCYC_kpt != NULL);
     } else {
-        YQ_BLCYC = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
+        pSPARC->Xorb_BLCYC_kpt = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
     }
     // ScaLAPACK stores the eigenvectors in Q
     Subspace_Rotation_kpt(pSPARC, pSPARC->Yorb_BLCYC_kpt, pSPARC->Q_kpt, 
-                      YQ_BLCYC, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, spn_i);
+                      pSPARC->Xorb_BLCYC_kpt, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, kpt, spn_i);
     if (pSPARC->npband > 1) {
-        free(YQ_BLCYC);
+        free(pSPARC->Xorb_BLCYC_kpt);
+        pSPARC->Xorb_BLCYC_kpt = NULL;
         free(pSPARC->Yorb_BLCYC_kpt);
         pSPARC->Yorb_BLCYC_kpt = NULL;
     }

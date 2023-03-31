@@ -434,20 +434,20 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*size_s);
     #else
-    double *YQ_BLCYC;
     if (pSPARC->npband > 1) {
-        // find Y * Q, store the result in Xorb (band+domain) and YQ_BLCYC (block cyclic format)
-        YQ_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-        assert(YQ_BLCYC != NULL);
+        // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
+        pSPARC->Xorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        assert(pSPARC->Xorb_BLCYC != NULL);
     } else {
-        YQ_BLCYC = pSPARC->Xorb + spn_i*size_s;
+        pSPARC->Xorb_BLCYC = pSPARC->Xorb + spn_i*size_s;
     }
 
     // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
     Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
-                        YQ_BLCYC, pSPARC->Xorb + spn_i*size_s, k, spn_i);
+                        pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*size_s, k, spn_i);
     if (pSPARC->npband > 1) {
-        free(YQ_BLCYC);
+        free(pSPARC->Xorb_BLCYC);
+        pSPARC->Xorb_BLCYC = NULL;
         free(pSPARC->Yorb_BLCYC);
         pSPARC->Yorb_BLCYC = NULL;
     }

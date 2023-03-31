@@ -5,6 +5,13 @@
 
 --------------
 Mar 31, 2023
+Name: Xin Jing
+Changes: (initialization.c, eigenSolver.c, eigenSolver_kpt.c)
+1. Restore correct memory estimation which is accidently deleted before
+2. change variable name to make it consistent
+
+--------------
+Mar 31, 2023
 Name: Boqin Zhang
 Changes: (xc/vdW/vdWDF/vdWDFparallelization.c, md.c)
 1. Fix the problem of MKL FFT returning negative LengthK
