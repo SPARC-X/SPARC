@@ -25,6 +25,14 @@
 #include "isddft.h"
 #include "exchangeCorrelation.h"
 
+/**
+ * @brief To detect whether there is weird space decomposition in FFT communicators
+ *        if there is 0 (FFTW) or negative number (MKL) in array allLengthK, then return 1; otherwise return 0
+ * @param FFTsize    the number of processors in zAxisComm
+ * @param allLengthK the array collecting local length on z axis of all processors
+**/ 
+int judgeUnavailableLengthK(int FFTsize, int *allLengthK);
+
 void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims);
 
 /**
