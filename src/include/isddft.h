@@ -671,6 +671,7 @@ typedef struct _SPARC_OBJ{
     double vlogs[L_QMASS];       // Velocities of virtual thermal variables
     double vlogv;          // Velocity of virtual baro variables
     double xlogs[L_QMASS];       // Positions of virtual thermal variables
+    double Hamiltonian_NPT_NH; // Hamiltonian of the NPT-NH system
     // NPT-NP
     int maxTimeIter;     // largest allowed amount of iteration
     double NPT_NP_qmass; // qmass used in NPT_NP

@@ -1290,6 +1290,8 @@ void hamiltonian_NPT_NH(SPARC_OBJ *pSPARC){
     for (i = 1; i < pSPARC->NPT_NHnnos; i++){
     	potentialTher += ktemp * pSPARC->xlogs[i];
     }
+	hamiltonian += kineticBaro + kineticTher + potentialBaro + potentialTher;
+	pSPARC->Hamiltonian_NPT_NH = hamiltonian;
     if (rank == 0) {
     	printf("\n");
     	printf("rank %d", rank);
@@ -1300,7 +1302,6 @@ void hamiltonian_NPT_NH(SPARC_OBJ *pSPARC){
 	    printf("thermostat kinetic energy (Ha)  : %12.9f\n", kineticTher);
 	    printf("barostat potential energy (Ha)  : %12.9f\n", potentialBaro);
 	    printf("thermostat potential energy (Ha): %12.9f\n", potentialTher);
-	    hamiltonian += kineticBaro + kineticTher + potentialBaro + potentialTher;
 	    printf("Hamiltonian (Ha)                : %12.9f\n", hamiltonian);
 	}
 }
@@ -1373,11 +1374,12 @@ void initialize_Hamiltonian(SPARC_OBJ *pSPARC){
 	pSPARC->Kbaro = 0.5 * pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) * (a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 	pSPARC->Ubaro = pSPARC->prtarget * pSPARC->volumeCell;
 
-	pSPARC->Hamiltonian_NPT_NP = pSPARC->Etot;
-	pSPARC->Hamiltonian_NPT_NP += pSPARC->KE + pSPARC->Kther + pSPARC->Uther + pSPARC->Kbaro + pSPARC->Ubaro;
+	double sumAllHamilTerms = pSPARC->Etot;
+	sumAllHamilTerms += pSPARC->KE + pSPARC->Kther + pSPARC->Uther + pSPARC->Kbaro + pSPARC->Ubaro;
 	if ((pSPARC->MDCount == 1)  && (pSPARC->RestartFlag != 1)) {
-		pSPARC->init_Hamil_NPT_NP = pSPARC->Hamiltonian_NPT_NP;
+		pSPARC->init_Hamil_NPT_NP = sumAllHamilTerms;
 	}
+	pSPARC->Hamiltonian_NPT_NP = pSPARC->S_NPT_NP * (sumAllHamilTerms - pSPARC->init_Hamil_NPT_NP);
 	#ifdef DEBUG
 	if (rank == 0) {
     	printf("\n");
@@ -1389,7 +1391,8 @@ void initialize_Hamiltonian(SPARC_OBJ *pSPARC){
 	    printf("thermostat kinetic energy (Ha)  : %12.9f\n", pSPARC->Kther);
 	    printf("barostat potential energy (Ha)  : %12.9f\n", pSPARC->Ubaro);
 	    printf("thermostat potential energy (Ha): %12.9f\n", pSPARC->Uther);
-	    printf("Hamiltonian (Ha)                : %12.9f\n", pSPARC->Hamiltonian_NPT_NP);
+	    printf("Sum of all energy terms (Ha)    : %12.9f\n", sumAllHamilTerms);
+		printf("Hamiltonian (Ha)                : %12.9f\n", pSPARC->Hamiltonian_NPT_NP);
 	}
 	#endif
 }
@@ -1767,6 +1770,10 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 				fprintf(output_md,":Desc_CELL: lengths of three lattice vectors. Unit = Bohr \n");
 			else
 				fprintf(output_md,":Desc_LATVEC_SCALE: ratio of cell lattice vectors over input lattice vector. Unit = 1 \n");
+			if (strcmpi(pSPARC->MDMeth,"NPT_NH") == 0)
+				fprintf(output_md,":Desc_NPT_NH_HAMIL: Hamiltonian of the NPT_NH system, formula (5.4) in (M. E. Tuckerman et al, 2006). Unit = Ha/atom \n");
+			else 
+				fprintf(output_md,":Desc_NPT_NP_HAMIL: Hamiltonian of the NPT_NP system, formula (10) in (E. Hernandez, 2001). Unit = Ha/atom \n");
 		}
     	if(pSPARC->Calc_stress == 1){
 	    	fprintf(output_md,":Desc_STRESS: Stress, excluding ion-kinetic contribution. Unit=GPa(all periodic),Ha/Bohr**2(surface),Ha/Bohr(wire) \n");
@@ -1803,6 +1810,10 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 		if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
 			fprintf(output_md,":TENX:%18.10E \n", pSPARC->TE_ext);
 		}
+		if(strcmpi(pSPARC->MDMeth,"NPT_NH") == 0)
+			fprintf(output_md,":NPT_NH_HAMIL:%18.10E \n", pSPARC->Hamiltonian_NPT_NH/pSPARC->n_atom);
+		if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0)
+			fprintf(output_md,":NPT_NP_HAMIL:%18.10E \n", pSPARC->Hamiltonian_NPT_NP/pSPARC->n_atom);
 
 	    // Print atomic position
 	    if(pSPARC->PrintAtomPosFlag){

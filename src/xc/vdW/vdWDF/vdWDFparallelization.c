@@ -55,12 +55,13 @@
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
-int judgeEmptyProcessor(int FFTsize, int *allLengthK) { // if there is 0 in array allLengthK, then return 1; otherwise return 0
-    int product = 1;
+int judgeUnavailableLengthK(int FFTsize, int *allLengthK) {
+    // if there is 0 (FFTW) or negative number (MKL) in array allLengthK, then return 1; otherwise return 0
     for (int i = 0; i < FFTsize; i++) {
-        product *= allLengthK[i];
+        // printf("%d, ", allLengthK[i]);
+        if (allLengthK[i] <= 0) return 1;
     }
-    return !product;
+    return 0;
 }
 
 void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims) {
@@ -73,15 +74,15 @@ void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims) {
     int *newzAxisDims = pSPARC->newzAxisDims;
     newzAxisDims[0] = 1;
     newzAxisDims[1] = 1;
-    int flagEmptyProcessor = 1;
+    int flagUnavailableLengthK = 1;
     newzAxisDims[2] = (gridsizes[2] > 2) ? (gridsizes[2] / 2) : 1; // initial number of processors is set as 16
     if (nproc < newzAxisDims[2]) {
         newzAxisDims[2] = nproc;
     }
-
+    pSPARC->zAxisComm = MPI_COMM_NULL;
     MPI_Barrier(pSPARC->dmcomm_phi);
     int periods[3] = {1, 1, 1};
-    while (flagEmptyProcessor) {
+    while (flagUnavailableLengthK) {
         MPI_Cart_create(pSPARC->dmcomm_phi, 3, newzAxisDims, periods, 1, &(pSPARC->zAxisComm));
         int *allLengthK;
         int FFTrank = -1;
@@ -123,24 +124,27 @@ void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims) {
             #endif
             MPI_Allgather(&lengthKint, 1, MPI_INT, allLengthK, 1, MPI_INT, pSPARC->zAxisComm);
             if (FFTrank == 0) {
-                flagEmptyProcessor = judgeEmptyProcessor(FFTsize, allLengthK);
+                flagUnavailableLengthK = judgeUnavailableLengthK(FFTsize, allLengthK);
             }
             free(allLengthK);
         }
         // MPI_Request req[2];
         // MPI_Status sta[2];
-        // if (FFTrank == 0) MPI_Isend(&flagEmptyProcessor, 1, MPI_INT, 0, 0, pSPARC->dmcomm_phi, req);
+        // if (FFTrank == 0) MPI_Isend(&flagUnavailableLengthK, 1, MPI_INT, 0, 0, pSPARC->dmcomm_phi, req);
         // if (rank == 0) {
-        //     MPI_Irecv(&flagEmptyProcessor, 1, MPI_INT, MPI_ANY_SOURCE, 0, pSPARC->dmcomm_phi, &req[1]);
+        //     MPI_Irecv(&flagUnavailableLengthK, 1, MPI_INT, MPI_ANY_SOURCE, 0, pSPARC->dmcomm_phi, &req[1]);
         //     MPI_Wait(&req[1], &sta[1]);
         // }
         MPI_Barrier(pSPARC->dmcomm_phi);
-        MPI_Bcast(&flagEmptyProcessor, 1, MPI_INT, 0, pSPARC->dmcomm_phi); // Since zAxisComm comes from dmcomm_phi by MPI_Cart_Create, the two comms have
+        MPI_Bcast(&flagUnavailableLengthK, 1, MPI_INT, 0, pSPARC->dmcomm_phi); // Since zAxisComm comes from dmcomm_phi by MPI_Cart_Create, the two comms have
         // similar root processor
         MPI_Barrier(pSPARC->dmcomm_phi);
-        if (flagEmptyProcessor) { // if there is empty processor in zAxisComm, then we remove a processor, and reset the zAxisComm
+        if (flagUnavailableLengthK) { // if there is empty processor in zAxisComm, then we remove a processor, and reset the zAxisComm
             newzAxisDims[2] --;
-            if (pSPARC->zAxisComm != MPI_COMM_NULL) MPI_Comm_free(&pSPARC->zAxisComm);
+            if (pSPARC->zAxisComm != MPI_COMM_NULL) {
+                MPI_Comm_free(&pSPARC->zAxisComm);
+                pSPARC->zAxisComm = MPI_COMM_NULL;
+            }
         }
     }
     if (pSPARC->zAxisComm != MPI_COMM_NULL) {
