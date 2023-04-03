@@ -153,8 +153,10 @@ void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims) {
         MPI_Comm_size(pSPARC->zAxisComm, &FFTsize);
         int coord_newZAxisComm[3];
         MPI_Cart_coords(pSPARC->zAxisComm, FFTrank, 3, coord_newZAxisComm);
+#ifdef DEBUG
         printf("I am rank %d in zAxisComm, my coord is %d %d %d, my ZAxisVertices is %d %d, there are %d processors in it.\n",
             FFTrank, coord_newZAxisComm[0], coord_newZAxisComm[1], coord_newZAxisComm[2], pSPARC->zAxisVertices[4], pSPARC->zAxisVertices[5], FFTsize);
+#endif
     }
 
     // compose the sender and receiver for gathering thetas to do parallel FFT
