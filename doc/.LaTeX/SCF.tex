@@ -190,7 +190,7 @@ Double
 \end{block}
 
 \begin{block}{Default}
-Automatically set for $10^{-3}$ Ha/Bohr accuracy in force
+see description
 \end{block}
 
 \column{0.4\linewidth}
@@ -204,6 +204,9 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
+In case of single point calculation, \texttt{TOL\_SCF} is set for $10^{-5}$ Ha/atom energy accuracy.
+In case of MD, \texttt{TOL\_SCF} is set for $10^{-3}$ Ha/Bohr force accuracy.
+In case of relaxation, \texttt{TOL\_SCF} is set for \hyperlink{TOL_RELAX}{\texttt{TOL\_RELAX}}/5 Ha/Bohr force accuracy. \\
 The tolerance on the normalized residual of the effective potential or the electron density for convergence of the SCF iteration. 
 \end{block}
 
