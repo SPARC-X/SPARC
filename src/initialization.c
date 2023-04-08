@@ -2094,39 +2094,56 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     // default SCF tolerance based on accuracy_level
     // we use a model curve to correlate scf tolerance and energy and force accuracy
     //     log(y) = a * log(x) + b
-    // (1) if y is energy accuracy (Ha/atom), a = 1.4312, b = -1.5225
-    // (2) if y is force accuracy  (Ha/Bohr), a = 0.9090, b = -0.9347
+    // y could be either energy accuracy (Ha/atom) or force accuracy  (Ha/Bohr)
     // if scf tol is not set, we'll use accuracy_level to find scf tol
-    if (pSPARC->TOL_SCF < 0.0) {        
-        double target_force_accuracy = -1.0;
-        double target_energy_accuracy = -1.0;
-
-        // accuracy_levels      : 0 - minimal | 1 - low  | 2 - medium | 3 - high | 4 - extreme
-        // target force accuracy: 0 - 1e-1    | 1 - 1e-2 | 2 - 1e-3   | 3 - 1e-4 | 4 - 1e-5
-        if (pSPARC->accuracy_level >= 0) {
-            target_force_accuracy = pow(10.0, -(pSPARC->accuracy_level + 1.0));
-        } else if (pSPARC->target_force_accuracy > 0.0) {
-            target_force_accuracy = pSPARC->target_force_accuracy;
-        } else if (pSPARC->target_energy_accuracy > 0.0) {
-            target_energy_accuracy = pSPARC->target_energy_accuracy;
-        }
-
-        // if none of the accuracy levels are specified, set force_accuracy to 1e-3
-        if (target_force_accuracy < 0  && target_energy_accuracy < 0) {
-            target_force_accuracy = 1e-3;
-        }
-
-        // calculate SCF TOL based on specified target accuracy
-        if (target_force_accuracy > 0.0) { // find scf tol based on target force accuracy
-            const double a = 0.9090;
-            const double b = -0.9347;
+    // All models satisfy 90% dataset
+    if (pSPARC->TOL_SCF < 0.0) {
+        if (pSPARC->MDFlag != 0) {
+            // in case of MD, using 1E-3 Ha/Bohr force accuracy as target
+            double target_force_accuracy = 1E-3;
+            const double a = 1.025;
+            const double b = 1.368;
             double log_target = log(target_force_accuracy);
             pSPARC->TOL_SCF = exp((log_target - b)/a);
-        } else if (target_energy_accuracy > 0.0) { // find scf tol based on target energy accuracy
-            const double a = 1.4312;
-            const double b = -1.5225;
-            double log_target = log(target_energy_accuracy);
+        } else if (pSPARC->RelaxFlag != 0) {
+            // in case of relaxation, using TOL_RELAX/5 force accuracy as target
+            double target_force_accuracy = pSPARC->TOL_RELAX/5;
+            const double a = 1.025;
+            const double b = 1.468;
+            double log_target = log(target_force_accuracy);
             pSPARC->TOL_SCF = exp((log_target - b)/a);
+        } else {
+            // in case of single point calculation, using 1E-5 Ha/atom energy accuracy as target
+            double target_force_accuracy = -1.0;
+            double target_energy_accuracy = -1.0;
+
+            // accuracy_levels      : 0 - minimal | 1 - low  | 2 - medium | 3 - high | 4 - extreme
+            // target force accuracy: 0 - 1e-1    | 1 - 1e-2 | 2 - 1e-3   | 3 - 1e-4 | 4 - 1e-5
+            if (pSPARC->accuracy_level >= 0) {
+                target_force_accuracy = pow(10.0, -(pSPARC->accuracy_level + 1.0));
+            } else if (pSPARC->target_force_accuracy > 0.0) {
+                target_force_accuracy = pSPARC->target_force_accuracy;
+            } else if (pSPARC->target_energy_accuracy > 0.0) {
+                target_energy_accuracy = pSPARC->target_energy_accuracy;
+            }
+
+            // if none of the accuracy levels are specified, set energy_accuracy to 1e-5 Ha/atom
+            if (target_force_accuracy < 0  && target_energy_accuracy < 0) {
+                target_energy_accuracy = 1e-5;
+            }
+
+            // calculate SCF TOL based on specified target accuracy
+            if (target_energy_accuracy > 0.0) { // find scf tol based on target energy accuracy
+                const double a = 1.502;
+                const double b = 1.165;
+                double log_target = log(target_energy_accuracy);
+                pSPARC->TOL_SCF = exp((log_target - b)/a);
+            } else if (target_force_accuracy > 0.0) { // find scf tol based on target force accuracy
+                const double a = 1.025;
+                const double b = 1.368;
+                double log_target = log(target_force_accuracy);
+                pSPARC->TOL_SCF = exp((log_target - b)/a);
+            }
         }
     }
 
@@ -3137,7 +3154,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 03, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Apr 08, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

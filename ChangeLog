@@ -4,6 +4,15 @@
 -changes
 
 --------------
+Apr 08, 2023
+Name: Xin Jing
+Changes: (initialization.c)
+1. Change the default SCF tolerance for 1E-5 Ha/atom energy accuracy in single point calculation.
+2. Change the default SCF tolerance for 1E-3 Ha/bohr force accuracy in MD context.
+3. Change the default SCF tolerance for TOL_RELAX/5 Ha/bohr force accuracy in relaxation context.
+4. Update documentation.
+
+--------------
 Apr 03, 2023
 Name: Boqin Zhang
 Changes: (xc/vdW/vdWDF/vdWDFparallelization.c)
