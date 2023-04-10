@@ -76,6 +76,9 @@ void vdWDF_Setup_Comms(SPARC_OBJ *pSPARC, int *gridsizes, int *phiDims) {
     newzAxisDims[1] = 1;
     int flagUnavailableLengthK = 1;
     newzAxisDims[2] = (gridsizes[2] > 2) ? (gridsizes[2] / 2) : 1; // initial number of processors is set as 16
+    if (gridsizes[1] < newzAxisDims[2]) { // length of y and z dim should not be less than nproc
+        newzAxisDims[2] = gridsizes[1];
+    }
     if (nproc < newzAxisDims[2]) {
         newzAxisDims[2] = nproc;
     }

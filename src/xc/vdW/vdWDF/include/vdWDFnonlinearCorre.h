@@ -56,34 +56,17 @@ void spline_interpolation(SPARC_OBJ *pSPARC);
  */
 void compute_Gvectors(SPARC_OBJ *pSPARC);
 
-/**
- * @brief Not sure whether the dividing method of SPARC on z axis can always be the same as the dividing method of DftiGetValueDM
- the usage of this function is to re-divide data on z axis for fitting the dividing of parallel FFT functions
- For example, the global grid has 22 nodes on z direction, and 3 processors are on z axis (0, 0, z). If SPARC divides it into 8+8+7,
- but DftiGetValueDM divides it into 7+8+8, then it is necessary to reorganize data
- * @param gridsizes: a 3-entries array containing Nx, Ny and Nz of the system
- * @param length: the length of grids arranged on the z-axis processor (0, 0, z), DMnz
- * @param start: a length npNdz_phi array saving all start index on z dir of all z-axis processors in dmcomm_phi, got by function block_decompose_nstart(gridsizes[2], pSPARC->npNdz_phi, z)
- * @param FFTInput: a double _Complex array allocated for saving the FFT input array. The size of the space is got by function DftiGetValueDM(desc, CDFT_LOCAL_SIZE, &localArrayLength)
- * @param allStartK: a length npNdz_phi array saving all start index on z dir of all z-axis processors for FFT, got by function DftiGetValueDM(desc, CDFT_LOCAL_X_START, &startK); then gather
- * @param inputData: a double _Complex array saving the data to compute their FFT or iFFT. The length is Nx*Ny*DMnz
- * @param zAxisComm: the cartesion topology communicator linking all z-axis processors (0, 0, z)
- */
-void compose_FFTInput(int *gridsizes, int length, int *start, double _Complex *FFTInput, int* allStartK, double _Complex *inputData, MPI_Comm zAxisComm);
-
-/**
- * @brief Like the usage of compose_FFTInput
- * @param FFTOutput: a double _Complex array saving the FFT result array
- * @param allLengthK: a length npNdz_phi array saving allocated length on z dir of all z-axis processors for FFT, got by function DftiGetValueDM(desc, CDFT_LOCAL_NX, &lengthK); then gather
- * @param outputData: a double _Complex array allocated for saving the rearranged FFT output array. The length is Nx*Ny*DMnz
- */
-void compose_FFTOutput(int *gridsizes, int length, int *start, double _Complex *FFTOutput, int* allStartK, int* allLengthK, double _Complex *outputData, MPI_Comm zAxisComm);
 
 /**
  * @brief compose parallel FFT on data gatheredThetaCompl
+ * @param inputDataRealSpace: a double _Complex array saving the data to compute their FFT or iFFT. The length is Nx*Ny*DMnz
+ * @param outputDataReciSpace: a double _Complex array saving the result of FFT or iFFT. The length is Nx*Ny*DMnz
+ * @param gridsizes: a 3-entries array containing Nx, Ny and Nz of the system
+ * @param DMnz: the length of grids arranged on the z-axis processor (0, 0, z), it should be equal to data distribution lengthK from FFT modules
  * @param q: the model energy ratio index of the theta vector to compute FFT
+ * @param zAxisComm: the cartesion topology communicator linking all z-axis processors (0, 0, z)
  */
-void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int *zAxis_Starts, int DMnz, int q, MPI_Comm zAxisComm);
+void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
 
 /**
  * @brief generating thetas (ps*rho) in real space, then using FFT to transform thetas to reciprocal space. array vdWDFthetaFTs is the output.
@@ -105,10 +88,14 @@ void vdWDF_energy(SPARC_OBJ *pSPARC);
 
 /**
  * @brief compose parallel inverse FFT on data gathereduFT
- * @param gathereduFT: the data to compute its inverse FFT
- * @param gatheredu: the double _Complex array allocated for saving the result of inverse FFT
+ * @param inputDataReciSpace: a double _Complex array saving the data to compute their FFT or iFFT. The length is Nx*Ny*DMnz
+ * @param outputDataRealSpace: a double _Complex array saving the result of FFT or iFFT. The length is Nx*Ny*DMnz
+ * @param gridsizes: a 3-entries array containing Nx, Ny and Nz of the system
+ * @param DMnz: the length of grids arranged on the z-axis processor (0, 0, z), it should be equal to data distribution lengthK from FFT modules
+ * @param q: the model energy ratio index of the theta vector to compute FFT
+ * @param zAxisComm: the cartesion topology communicator linking all z-axis processors (0, 0, z)
  */
-void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int *zAxis_Starts, int DMnz, int q, MPI_Comm zAxisComm);
+void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
 
 /**
  * @brief compute u vectors in reciprocal space, then transform them back to real space by inverse FFT
