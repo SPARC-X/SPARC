@@ -262,7 +262,7 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, in
     t1 = MPI_Wtime();
 
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->spin_typ == 0 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 	{
     	ACCEL_ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s, 
                            pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
@@ -733,7 +733,7 @@ void DP_Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Comp
     double _Complex *HY = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
     st = MPI_Wtime();
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->spin_typ == 0 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 	{
 	}
 	else
