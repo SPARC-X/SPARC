@@ -1331,8 +1331,9 @@ double BrentsFun(SPARC_OBJ *pSPARC, double x1, double x2, double tol_x, double t
 
     int iter;
     double tol1q, eq;
-    double a = x1, b = x2, c = b, d, e = 0.0, min1, min2;
+    double a = x1, b = x2, c = b, d, e, min1, min2;
     double fa = volrelax_constraint(pSPARC,a), fb = volrelax_constraint(pSPARC,b), fc, p, q, r, s, tol1, xm;
+    d = e = min1 = min2 = fc = p = q = r = s = tol1 = xm = 0;
 
     // if the given upperbound and lowerbound are not good enough, expand the bounds automatically
     int ext_count = 0;

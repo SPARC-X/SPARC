@@ -495,7 +495,7 @@ void Calculate_Exc_GSGA_vdWDF_ExchangeLinearCorre(SPARC_OBJ *pSPARC, double *ele
 }
 
 void find_folder_route(SPARC_OBJ *pSPARC, char *folderRoute) { // used for returning the folder route of the input files
-    strncpy(folderRoute, pSPARC->filename, sizeof(L_STRING));
+    strncpy(folderRoute, pSPARC->filename, L_STRING);
     int indexEndFolderRoute = 0;
     while (folderRoute[indexEndFolderRoute] != '\0') {
         indexEndFolderRoute++;

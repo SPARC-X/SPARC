@@ -165,8 +165,9 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     // let all root processors in each kptcomm work together to find fermi energy.
     int iter;
     double tol1q, eq;
-    double a = min(x1,x2), b = max(x1,x2), c = b, d, e = 0.0, min1, min2;
+    double a = min(x1,x2), b = max(x1,x2), c = b, d, e, min1, min2;
     double fa = constraint(pSPARC,a), fb = constraint(pSPARC,b), fc, p, q, r, s, tol1, xm;
+    d = e = min1 = min2 = fc = p = q = r = s = tol1 = xm = 0;
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -278,8 +279,9 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
     // let all root processors in each kptcomm work together to find fermi energy.
     int iter;
     double tol1q, eq;
-    double a = min(x1, x2), b = max(x1, x2), c = b, d, e = 0.0, min1, min2;
+    double a = min(x1, x2), b = max(x1, x2), c = b, d, e, min1, min2;
     double fa = constraint(pSPARC, a), fb = constraint(pSPARC, b), fc, p, q, r, s, tol1, xm;
+    d = e = min1 = min2 = fc = p = q = r = s = tol1 = xm = 0;
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

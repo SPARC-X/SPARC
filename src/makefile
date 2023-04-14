@@ -66,7 +66,7 @@ endif
 
 # to compile with DEBUG mode
 ifeq ($(DEBUG_MODE), 1)
-CPPFLAGS += -Wall -g -DDEBUG # -Werror-implicit-function-declaration -Wformat-truncation=0 -Wno-stringop-truncation
+CPPFLAGS += -Wall -g -DDEBUG -Wno-format-truncation -Wno-stringop-truncation
 endif
 
 # to enable SIMD for complex stencil routines
