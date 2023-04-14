@@ -2473,7 +2473,7 @@ double estimate_memory(const SPARC_OBJ *pSPARC) {
     }
 
     // orbitals (dominant)
-    int ncpy_orbitals; // extra copies required during CheFSI 
+    double ncpy_orbitals; // extra copies required during CheFSI 
     if (pSPARC->npband > 1) {
         // MKL pdgemr2d internally creates ~2.5 copies during pdgemr2d in projection + Yorb, Yorb_BLCYC, HY_BLCYC
         ncpy_orbitals = 5.5; 
@@ -3154,7 +3154,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 11, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Apr 14, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
