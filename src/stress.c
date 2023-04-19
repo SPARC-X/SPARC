@@ -1391,25 +1391,15 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
 
 
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-            MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+    if (pSPARC->npspin > 1) {            
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
     
     // sum over all bands
     if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-            MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
 
@@ -1802,39 +1792,21 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     
     // sum over all spin
     if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-            MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
 
 
     // sum over all kpoints
     if (pSPARC->npkpt > 1) {    
-        // if (pSPARC->kptcomm_index == 0){
-        //     MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        //     MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        // } else{
-        //     MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        //     MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        // }
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
     // sum over all bands
     if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-            MPI_Reduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(pSPARC->stress_nl, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-
-            MPI_Reduce(pSPARC->stress_k, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
     if (!rank) {

@@ -241,6 +241,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     }
 
     if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1){
+        // force are only correct in intersection of all dmcomm and dmcomm_phi
 		MPI_Bcast(pSPARC->forces, 3*pSPARC->n_atom, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	    // convert non cartesian atom coordinates to cartesian 
 	    if(pSPARC->cell_typ != 0){
@@ -1022,8 +1023,7 @@ void Evaluate_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv) {
     }
 
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-        // MPI_Allreduce(sbuf, rbuf, 2, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-        MPI_Reduce(sbuf, rbuf, 2, MPI_DOUBLE, MPI_SUM, 0, pSPARC->dmcomm_phi);
+        MPI_Allreduce(sbuf, rbuf, 2, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
         error = sqrt(rbuf[1] / rbuf[0]);
     }
     MPI_Bcast(&error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -1072,7 +1072,7 @@ void Evaluate_QE_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv)
                        (pSPARC->elecstPotential[i] - pSPARC->phi_dmcomm_phi_in[i]);
         }
         loc_err = fabs(loc_err * pSPARC->dV); // in case error is not numerically positive
-        MPI_Reduce(&loc_err, &error, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->dmcomm_phi);
+        MPI_Allreduce(&loc_err, &error, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     }
 
     MPI_Bcast(&error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);   

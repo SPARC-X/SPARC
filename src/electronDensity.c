@@ -115,10 +115,7 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
 
     // sum over all band groups
     if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        else
-            MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
 #ifdef DEBUG
@@ -189,10 +186,7 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
 
     // sum over spin comm
     if(pSPARC->npspin > 1) {
-        if (pSPARC->spincomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        else
-            MPI_Reduce(rho, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
 
 #ifdef DEBUG
@@ -202,11 +196,8 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
 #endif
 
     // sum over all band groups
-    if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0) {
-        if (pSPARC->bandcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        else
-            MPI_Reduce(rho, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
+    if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0) {        
+        MPI_Allreduce(MPI_IN_PLACE, rho, 3*pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     } // TODO: can be made only 2*Nd
 
 #ifdef DEBUG
@@ -283,11 +274,8 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
 #endif
     
     // sum over all k-point groups
-    if (pSPARC->npkpt > 1) {    
-        if (pSPARC->kptcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        else
-            MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+    if (pSPARC->npkpt > 1) {            
+        MPI_Allreduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
 #ifdef DEBUG
@@ -297,11 +285,8 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
 #endif
     
     // sum over all band groups (only in the first k point group)
-    if (pSPARC->npband > 1 && pSPARC->kptcomm_index == 0) {
-        if (pSPARC->bandcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        else
-            MPI_Reduce(rho, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
+    if (pSPARC->npband > 1 && pSPARC->kptcomm_index == 0) {        
+        MPI_Allreduce(MPI_IN_PLACE, rho, pSPARC->Nd_d_dmcomm, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
 #ifdef DEBUG
@@ -368,11 +353,8 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
 #endif
 
     // sum over spin comm group
-    if(pSPARC->npspin > 1) {
-        if (pSPARC->spincomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        else
-            MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
+    if(pSPARC->npspin > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
     }
 
 #ifdef DEBUG
@@ -383,10 +365,7 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
 
     // sum over all k-point groups
     if (pSPARC->spincomm_index == 0 &&  pSPARC->npkpt > 1) {    
-        if (pSPARC->kptcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        else
-            MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);        
     }
 
 #ifdef DEBUG
@@ -397,10 +376,7 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
     
     // sum over all band groups (only in the first k point group)
     if (pSPARC->npband > 1 && pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0) {
-        if (pSPARC->bandcomm_index == 0)
-            MPI_Reduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        else
-            MPI_Reduce(rho, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, rho, 3*Nd, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
 #ifdef DEBUG
