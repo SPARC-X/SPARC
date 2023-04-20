@@ -4,6 +4,13 @@
 -changes
 
 --------------
+Apr 19, 2023
+Name: Xin Jing
+Changes: (forces.c, stress.c, pressure.c, electronDensity.c, etc)
+1. Switch from MPI_Reduce to MPI_Allreduce for avoiding unexpected MPI internal bug.
+2. The bug happens when doing MPI_Reduce over processors from different nodes on cluster. 
+
+--------------
 Apr 14, 2023
 Name: Xin Jing
 Changes: (initialization.c )

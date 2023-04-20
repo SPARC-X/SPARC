@@ -994,21 +994,13 @@ void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
     
     // sum over all spin
     if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
 
 
     // sum over all bands
     if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
     
     if (!rank) {
@@ -1211,30 +1203,17 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
         
     // sum over all spin
     if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
         
     // sum over all kpoints
     if (pSPARC->npkpt > 1) {    
-        // if (pSPARC->kptcomm_index == 0){
-        //     MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        // } else{
-        //     MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->kpt_bridge_comm);
-        // }
         MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
     // sum over all bands
-    if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(&pressure_nloc, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+    if (pSPARC->npband > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
     
     if (!rank) {

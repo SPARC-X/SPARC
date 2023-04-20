@@ -189,20 +189,12 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
 
     // sum over all spin
     if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(stress_mGGA_psi_cartesian, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
     
     // sum over all bands
-    if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(stress_mGGA_psi_cartesian, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+    if (pSPARC->npband > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
     if (pSPARC->Calc_stress == 1) {
@@ -399,11 +391,8 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     
     // sum over all spin
     if (pSPARC->npspin > 1) {    
-        if (pSPARC->spincomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        } else{
-            MPI_Reduce(stress_mGGA_psi_cartesian, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->spin_bridge_comm);
-        }
+
+        MPI_Allreduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
     // sum over all kpoints
     if (pSPARC->npkpt > 1) {    
@@ -411,11 +400,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     }
     // sum over all bands
     if (pSPARC->npband > 1) {
-        if (pSPARC->bandcomm_index == 0){
-            MPI_Reduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        } else{
-            MPI_Reduce(stress_mGGA_psi_cartesian, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, 0, pSPARC->blacscomm);
-        }
+        MPI_Allreduce(MPI_IN_PLACE, stress_mGGA_psi_cartesian, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
     }
 
     if (pSPARC->Calc_stress == 1) {

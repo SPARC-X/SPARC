@@ -704,12 +704,8 @@ void GetInfluencingAtoms(SPARC_OBJ *pSPARC) {
 
         }
     } 
-    if (pSPARC->BCx == 1 || pSPARC->BCy == 1 || pSPARC->BCz == 1) {
-        if (rank == 0) { 
-            MPI_Reduce(MPI_IN_PLACE, isRbOut, 3, MPI_INT, MPI_LAND, 0, pSPARC->dmcomm_phi);
-        } else {
-            MPI_Reduce(isRbOut, isRbOut, 3, MPI_INT, MPI_LAND, 0, pSPARC->dmcomm_phi);
-        }        
+    if (pSPARC->BCx == 1 || pSPARC->BCy == 1 || pSPARC->BCz == 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, isRbOut, 3, MPI_INT, MPI_LAND, pSPARC->dmcomm_phi);
         #ifdef DEBUG
         if (!rank) printf("Is Rb region out? isRbOut = [%d, %d, %d]\n", isRbOut[0], isRbOut[1], isRbOut[2]);
         #endif
@@ -1037,8 +1033,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     #ifdef DEBUG
     t1 = MPI_Wtime();
     #endif
-    MPI_Reduce(&Esc, &pSPARC->Esc, 1, MPI_DOUBLE,
-               MPI_SUM , 0, pSPARC->dmcomm_phi);
+    MPI_Allreduce(&Esc, &pSPARC->Esc, 1, MPI_DOUBLE, MPI_SUM ,pSPARC->dmcomm_phi);
     // find integral rho to get negative charge of the system
     double vt[2],vsum[2]={0,0};
     vt[0] = int_b; vt[1] = int_rho;
@@ -1095,8 +1090,8 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
         printf("PosCharge = %.12f, NegCharge = %.12f, scal_fac = %.12f\n",pSPARC->PosCharge, pSPARC->NegCharge, scal_fac);
     }
 #endif
-    MPI_Reduce(&Nelectron_check, &pSPARC->NegCharge, 1, MPI_DOUBLE,
-               MPI_SUM , 0, pSPARC->dmcomm_phi);
+    MPI_Allreduce(&Nelectron_check, &pSPARC->NegCharge, 1, MPI_DOUBLE, 
+        MPI_SUM , pSPARC->dmcomm_phi);
     pSPARC->NegCharge *= -1;
 #ifdef DEBUG
     if (rank == 0) printf("After scaling, int_rho = %.13f, PosCharge + NegCharge - NetCharge = %.3e\n", -pSPARC->NegCharge, -pSPARC->NetCharge + pSPARC->PosCharge + pSPARC->NegCharge);
@@ -1108,7 +1103,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
         printf("--Calculate rho_guess took %.3f ms\n", ttot2 * 1e3);
     }
     if (rank == 0) {
-        printf("\n integral of b = %.13f,\n int{b} + Nelectron + NetCharge = %.3e,\n Esc = %.13f,\n MPI_Reduce took %.3f ms\n",
+        printf("\n integral of b = %.13f,\n int{b} + Nelectron + NetCharge = %.3e,\n Esc = %.13f,\n MPI_Allreduce took %.3f ms\n",
                           -pSPARC->PosCharge, -pSPARC->PosCharge + pSPARC->Nelectron + pSPARC->NetCharge,pSPARC->Esc,(t2-t1)*1e3);
     }
 #endif
