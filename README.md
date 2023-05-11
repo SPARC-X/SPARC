@@ -12,7 +12,7 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 * Spin-orbit coupling.
 * Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
 
-SPARC is straightforward to install/use and highly competitive with state-of-the-art planewave codes, demonstrating comparable performance on a small number of processors and order-of-magnitude advantages as the number of processors increases. Notably, the current version of SPARC brings solution times down to a few seconds for systems with O(100-500) atoms on large-scale parallel computers, outperforming planewave counterparts by an order of magnitude and more. Additional details regarding the formulation and implementation of SPARC can be found in the paper referenced below. Future versions will target similar solution times for large-scale systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
+SPARC is straightforward to install, use, and modify, with minimal external library dependencies. It has shown to be an order of magnitude faster than state-of-the-art planewave codes, with a range of exchange-correlation functionals, and with increasing advantages as the number of processors is increased. In particular, SPARC efficiently scales to thousands of processors in regular operation, bringing solution times down to about a minute for systems with O(500-1000) atoms, and a few seconds for O(100-500) atoms. Future versions will target similar solution times for larger systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
 
 ### (2) Installation:
 
@@ -144,7 +144,7 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
   Information necessary to perform a restarted structural relaxation calculation. Only created if atomic relaxation is performed.
 
-**Quantum molecular dynamics (QMD) calculations**
+**Ab initio molecular dynamics (AIMD) calculations**
 
 - `.out` file  
 
