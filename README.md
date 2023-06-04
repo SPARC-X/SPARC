@@ -168,7 +168,7 @@ If you publish work using/regarding SPARC, please cite some of the following art
 * **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
 * **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
 * **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
-* **SPMS pseudopotentials**: https://doi.org/10.48550/arXiv.2209.09806
+* **SPMS pseudopotentials**: https://doi.org/10.1016/j.cpc.2022.108594
 
 
 ### (7) Acknowledgement:
