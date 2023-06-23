@@ -36,6 +36,7 @@
 #include "exactExchangeStress.h"
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
+#include "cyclix_stress.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -48,9 +49,15 @@
 /*
 @ brief: function to calculate ionic stress/pressure and add to the electronic stress/pressure
 */
-
-
 void Calculate_ionic_stress(SPARC_OBJ *pSPARC){
+    if (pSPARC->CyclixFlag) {
+        Calculate_ionic_stress_cyclix(pSPARC);
+    } else {
+        Calculate_ionic_stress_linear(pSPARC);
+    }
+}
+
+void Calculate_ionic_stress_linear(SPARC_OBJ *pSPARC){
     double *stress_i, *avgvel, mass_tot = 0.0;
     stress_i = (double*) calloc(6, sizeof(double));
     avgvel = (double*) calloc(3, sizeof(double));
@@ -110,8 +117,16 @@ void Calculate_ionic_stress(SPARC_OBJ *pSPARC){
 /*
 @ brief: function to calculate electronic stress
 */
-
 void Calculate_electronic_stress(SPARC_OBJ *pSPARC) {
+    if (pSPARC->CyclixFlag) {
+        Calculate_electronic_stress_cyclix(pSPARC);
+    } else {
+        Calculate_electronic_stress_linear(pSPARC);
+    }
+}
+
+
+void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC) {
 	int i, rank;
 #ifdef DEBUG
     double t1, t2;
@@ -1538,7 +1553,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
             for (dim = 0; dim < 3; dim++) {
                 // find dPsi in direction dim
                 kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
                 beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 1) + count);
                 beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 2) + count);
                 beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 3) + count);
@@ -1594,7 +1609,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                 // Kinetic stress
                 if(dim == 0){
                     kpt_vec = k2;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, &kpt_vec, pSPARC->dmcomm);
                     //ts = MPI_Wtime();
                     temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
                     for(n = 0; n < ncol; n++){
@@ -1616,7 +1631,7 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
                     stress_k[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
 
                     kpt_vec = k3;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, &kpt_vec, pSPARC->dmcomm);
                     temp_k[2] = temp_k[5] = 0.0;
                     for(n = 0; n < ncol; n++){
                         dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
@@ -1876,6 +1891,9 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp) {
                 printf(" (Ha/Bohr): \n %.15f \n", stress[5]);
                 printf("Stress equiv. to all periodic (GPa): \n %.15f \n", stress[5]*CONST_HA_BOHR3_GPA/(pSPARC->range_x * pSPARC->range_y));
             }
+        }  else if (pSPARC->BC >= 5 && pSPARC->BC <= 7){
+            printf(" (Ha/Bohr): \n %.15f \n", stress[5]);
+            printf("Stress equiv. to all periodic (GPa): \n %.15f \n", stress[5]*CONST_HA_BOHR3_GPA/(M_PI * ( pow(pSPARC->xout,2.0) - pow(pSPARC->xin,2.0) ) ) );
         }
     } else {
         if (pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
@@ -1903,6 +1921,9 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp) {
                     fprintf(fp, " (Ha/Bohr): \n%18.10E \n", stress[5]);
                     fprintf(fp, "Stress equiv. to all periodic (GPa): \n%18.10E \n", stress[5]*CONST_HA_BOHR3_GPA/(pSPARC->range_x * pSPARC->range_y));
                 }
+            } else if (pSPARC->BC >= 5 && pSPARC->BC <= 7){
+                fprintf(fp, " (Ha/Bohr): \n%18.10E \n", stress[5]);
+                fprintf(fp, "Stress equiv. to all periodic (GPa): \n%18.10E \n", stress[5]*CONST_HA_BOHR3_GPA/(M_PI * ( pow(pSPARC->xout,2.0) - pow(pSPARC->xin,2.0) ) ) );
             }
         } else {
             if (pSPARC->BC == 2){
@@ -1923,6 +1944,8 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp) {
                 } else if (pSPARC->BCz == 0){
                     fprintf(fp, "%18.10E \n", stress[5]);
                 }
+            } else if (pSPARC->BC >= 5 && pSPARC->BC <= 7){
+                fprintf(fp, "%18.10E \n", stress[5]);
             }
         }
         

@@ -107,9 +107,9 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
             sg  = pSPARC->spin_start_indx + spn_i;
             for (kpt = 0; kpt < Nk; kpt++) {
                 X_kpt = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dx_kpt, 0, pSPARC->k1_loc[kpt], pSPARC->dmcomm);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dy_kpt, 1, pSPARC->k2_loc[kpt], pSPARC->dmcomm);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dz_kpt, 2, pSPARC->k3_loc[kpt], pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dx_kpt, 0, &pSPARC->k1_loc[kpt], pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dy_kpt, 1, &pSPARC->k2_loc[kpt], pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dz_kpt, 2, &pSPARC->k3_loc[kpt], pSPARC->dmcomm);
                 
                 count = 0;
                 for (n = nstart; n <= nend; n++) {

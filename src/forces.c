@@ -33,6 +33,8 @@
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
 #include "d3forceStress.h"
+#include "cyclix_forces.h"
+#include "cyclix_tools.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -84,7 +86,6 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
         t1 = MPI_Wtime();
 #endif
         double *forces_xc = (double *)calloc(3*pSPARC->n_atom, sizeof(double));
-        void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc);
         Calculate_forces_xc(pSPARC, forces_xc); // note that forces_xc is already in Cartesian basis
         for (i = 0; i < 3 * pSPARC->n_atom; i++) {
             pSPARC->forces[i] += forces_xc[i];
@@ -112,6 +113,24 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
 
     // Apply constraint on motion of atoms for Relaxation\MD
     if(pSPARC->RelaxFlag == 1 || pSPARC->MDFlag == 1) {
+        if (pSPARC->CyclixFlag) {
+            double fx, fy;
+            double ty, tz;
+            if (pSPARC->elecgs_Count > 0) {
+                for(i = 0; i < pSPARC->n_atom; i++){
+                    Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos_nm[3*i], &pSPARC->atom_pos_nm[3*i+1], &pSPARC->atom_pos_nm[3*i+2]);
+                    
+                    ty = (pSPARC->atom_pos_nm[3*i+1] - pSPARC->atom_pos[3*i+1])/pSPARC->range_y;
+                    tz = (pSPARC->atom_pos_nm[3*i+2] - pSPARC->atom_pos[3*i+2])/pSPARC->range_z;
+                    RotMat_cyclix(pSPARC, ty, tz);
+                    fx = pSPARC->forces[3*i]; fy = pSPARC->forces[3*i+1];
+                    pSPARC->forces[3*i] = pSPARC->RotM_cyclix[0] * fx + pSPARC->RotM_cyclix[1] * fy;
+                    pSPARC->forces[3*i+1] = pSPARC->RotM_cyclix[3] * fx + pSPARC->RotM_cyclix[4] * fy;
+
+                    nonCart2Cart_coord(pSPARC, &pSPARC->atom_pos_nm[3*i], &pSPARC->atom_pos_nm[3*i+1], &pSPARC->atom_pos_nm[3*i+2]);
+                }
+            }
+        }
         for(i = 0; i < 3*pSPARC->n_atom; i++)
             pSPARC->forces[i] *= pSPARC->mvAtmConstraint[i];
     }
@@ -149,6 +168,12 @@ void Symmetrize_forces(SPARC_OBJ *pSPARC)
     shift_fx /= n_atom;
     shift_fy /= n_atom;
     shift_fz /= n_atom;
+    
+    if (pSPARC->CyclixFlag) {
+        // Do not symmetrize forces in x-y plane for cyclix systems (TODO: But do symmetrize if all the atoms are taken into account)
+        shift_fx = 0.0;
+        shift_fy = 0.0;
+    }
     for (i = 0; i < n_atom; i++) {
         pSPARC->forces[i*3] -= shift_fx;
         pSPARC->forces[i*3+1] -= shift_fy;
@@ -165,6 +190,8 @@ void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
     if (pSPARC->isGammaPoint) {
         if (pSPARC->SQFlag == 1) {
             Calculate_nonlocal_forces_SQ(pSPARC);
+        } else if (pSPARC->CyclixFlag) {
+            Calculate_nonlocal_forces_cyclix(pSPARC);
         } else {            
         #ifdef SPARCX_ACCEL
             if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
@@ -178,17 +205,25 @@ void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
         }
     } else {
         if (pSPARC->Nspinor == 1) {
-        #ifdef SPARCX_ACCEL
-            if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-            {
-                ACCEL_Calculate_nonlocal_forces_kpt_linear(pSPARC);
-            } else
-        #endif	
-            {
-                Calculate_nonlocal_forces_kpt_linear(pSPARC);
-            }    
+            if (pSPARC->CyclixFlag) {
+                Calculate_nonlocal_forces_kpt_cyclix(pSPARC);
+            } else {
+            #ifdef SPARCX_ACCEL
+                if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+                {
+                    ACCEL_Calculate_nonlocal_forces_kpt_linear(pSPARC);
+                } else
+            #endif	
+                {
+                    Calculate_nonlocal_forces_kpt_linear(pSPARC);
+                }    
+            }
         } else if (pSPARC->Nspinor == 2) {
-            Calculate_nonlocal_forces_kpt_spinor_linear(pSPARC); 
+            if (pSPARC->CyclixFlag) {
+                Calculate_nonlocal_forces_kpt_spinor_cyclix(pSPARC);
+            } else {
+                Calculate_nonlocal_forces_kpt_spinor_linear(pSPARC); 
+            }
         }
     }
 }
@@ -486,7 +521,7 @@ void Calculate_nonlocal_forces_kpt_linear(SPARC_OBJ *pSPARC)
                 k3 = pSPARC->k3_loc[kpt];
                 kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
                 // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
                 beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (dim + 1) + count);
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
                     //lmax = pSPARC->psd[ityp].lmax;
@@ -632,7 +667,11 @@ void Calculate_nonlocal_forces_kpt_linear(SPARC_OBJ *pSPARC)
  */
 void Calculate_local_forces(SPARC_OBJ *pSPARC)
 {
-    Calculate_local_forces_linear(pSPARC);
+    if (pSPARC->CyclixFlag) {
+        Calculate_local_forces_cyclix(pSPARC);
+    } else {
+        Calculate_local_forces_linear(pSPARC);
+    }
 }
 
 
@@ -948,8 +987,21 @@ void Calculate_local_forces_linear(SPARC_OBJ *pSPARC)
 /**
  * @brief    Calculate xc force components for nonlinear core 
  *           correction (NLCC).
- */ 
+ */
 void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc) {
+
+    if (pSPARC->CyclixFlag)
+        Calculate_forces_xc_cyclix(pSPARC,forces_xc);
+    else
+        Calculate_forces_xc_linear(pSPARC,forces_xc);
+}
+
+
+/**
+ * @brief    Calculate xc force components for nonlinear core 
+ *           correction (NLCC).
+ */ 
+void Calculate_forces_xc_linear(SPARC_OBJ *pSPARC, double *forces_xc) {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
     int rank;
     MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);

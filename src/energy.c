@@ -65,25 +65,40 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     }
     
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-        VectorDotProduct(pSPARC->psdChrgDens, pSPARC->elecstPotential, pSPARC->Nd_d, &E1, pSPARC->dmcomm_phi);
-        VectorDotProduct(electronDens, pSPARC->elecstPotential, pSPARC->Nd_d, &E2, pSPARC->dmcomm_phi);
-        if (pSPARC->spin_typ == 0)
-            VectorDotProduct(electronDens, pSPARC->XCPotential, pSPARC->Nd_d, &E3, pSPARC->dmcomm_phi);
-        else
-            VectorDotProduct(electronDens + pSPARC->Nd_d, pSPARC->XCPotential, 2*pSPARC->Nd_d, &E3, pSPARC->dmcomm_phi);
-
-        E1 *= 0.5 * pSPARC->dV;
-        E2 *= 0.5 * pSPARC->dV;
-        E3 *= pSPARC->dV;
-
-        if (pSPARC->mGGAflag == 1) {
-            double Emgga;
+        if (pSPARC->CyclixFlag) {
+            double E30, E31;
+            VectorDotProduct_wt(pSPARC->psdChrgDens, pSPARC->elecstPotential, pSPARC->Intgwt_phi, pSPARC->Nd_d, &E1, pSPARC->dmcomm_phi);
+            VectorDotProduct_wt(electronDens, pSPARC->elecstPotential, pSPARC->Intgwt_phi, pSPARC->Nd_d, &E2, pSPARC->dmcomm_phi);
             if (pSPARC->spin_typ == 0)
-                VectorDotProduct(pSPARC->KineticTauPhiDomain, pSPARC->vxcMGGA3, pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
+                VectorDotProduct_wt(electronDens, pSPARC->XCPotential, pSPARC->Intgwt_phi, pSPARC->Nd_d, &E3, pSPARC->dmcomm_phi);
+            else {
+                VectorDotProduct_wt(electronDens + pSPARC->Nd_d, pSPARC->XCPotential, pSPARC->Intgwt_phi,  pSPARC->Nd_d, &E30, pSPARC->dmcomm_phi);
+                VectorDotProduct_wt(electronDens + 2*pSPARC->Nd_d, pSPARC->XCPotential + pSPARC->Nd_d, pSPARC->Intgwt_phi,  pSPARC->Nd_d, &E31, pSPARC->dmcomm_phi);         
+                E3 = E30 + E31;
+            }
+            E1 *= 0.5;
+            E2 *= 0.5;
+        } else {
+            VectorDotProduct(pSPARC->psdChrgDens, pSPARC->elecstPotential, pSPARC->Nd_d, &E1, pSPARC->dmcomm_phi);
+            VectorDotProduct(electronDens, pSPARC->elecstPotential, pSPARC->Nd_d, &E2, pSPARC->dmcomm_phi);
+            if (pSPARC->spin_typ == 0)
+                VectorDotProduct(electronDens, pSPARC->XCPotential, pSPARC->Nd_d, &E3, pSPARC->dmcomm_phi);
             else
-                VectorDotProduct(pSPARC->KineticTauPhiDomain + pSPARC->Nd_d, pSPARC->vxcMGGA3, 2*pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
-            Emgga *= pSPARC->dV;
-            E3 += Emgga;
+                VectorDotProduct(electronDens + pSPARC->Nd_d, pSPARC->XCPotential, 2*pSPARC->Nd_d, &E3, pSPARC->dmcomm_phi);
+
+            E1 *= 0.5 * pSPARC->dV;
+            E2 *= 0.5 * pSPARC->dV;
+            E3 *= pSPARC->dV;
+
+            if (pSPARC->mGGAflag == 1) {
+                double Emgga;
+                if (pSPARC->spin_typ == 0)
+                    VectorDotProduct(pSPARC->KineticTauPhiDomain, pSPARC->vxcMGGA3, pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
+                else
+                    VectorDotProduct(pSPARC->KineticTauPhiDomain + pSPARC->Nd_d, pSPARC->vxcMGGA3, 2*pSPARC->Nd_d, &Emgga, pSPARC->dmcomm_phi);
+                Emgga *= pSPARC->dV;
+                E3 += Emgga;
+            }
         }
     }
     
@@ -292,9 +307,30 @@ double Calculate_Escc(
 
     double Escc_in, Escc_out, Escc;
     if (comm != MPI_COMM_NULL) {
-        VectorDotProduct(rho_out, Veff_out, DMnd, &Escc_out, comm);
-        VectorDotProduct(rho_out, Veff_in , DMnd, &Escc_in , comm);
-        Escc = (Escc_out - Escc_in) * pSPARC->dV;
+        if (pSPARC->CyclixFlag) {
+            double Escc0_out, Escc0_in, Escc1_out, Escc1_in;        
+        
+            if (pSPARC->spin_typ == 0){
+                VectorDotProduct_wt(rho_out, Veff_out, pSPARC->Intgwt_phi, DMnd, &Escc_out, comm);
+                VectorDotProduct_wt(rho_out, Veff_in,  pSPARC->Intgwt_phi, DMnd, &Escc_in , comm);
+            } else {
+                VectorDotProduct_wt(rho_out, Veff_out, pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc0_out, comm);
+                VectorDotProduct_wt(rho_out, Veff_in,  pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc0_in , comm);
+
+                VectorDotProduct_wt(rho_out+pSPARC->Nd_d, Veff_out+pSPARC->Nd_d, pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc1_out, comm);
+                VectorDotProduct_wt(rho_out+pSPARC->Nd_d, Veff_in+pSPARC->Nd_d,  pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc1_in , comm);
+
+                Escc_out = Escc0_out + Escc1_out;
+                Escc_in = Escc0_in + Escc1_in;
+
+            }
+            
+            Escc = (Escc_out - Escc_in);
+        } else {
+            VectorDotProduct(rho_out, Veff_out, DMnd, &Escc_out, comm);
+            VectorDotProduct(rho_out, Veff_in , DMnd, &Escc_in , comm);
+            Escc = (Escc_out - Escc_in) * pSPARC->dV;
+        }
     }
     if (size_comm < nproc)
         MPI_Bcast(&Escc, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);

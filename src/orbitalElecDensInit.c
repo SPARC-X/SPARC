@@ -88,10 +88,16 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
             
             // Scale density
 			double int_rho = 0.0, vscal;        
-        	for (i = 0; i < pSPARC->Nd_d; i++) {
-           		int_rho += pSPARC->electronDens[i];
-           	}
-            int_rho *= pSPARC->dV;
+        	if (pSPARC->CyclixFlag) {
+                for (i = 0; i < pSPARC->Nd_d; i++) {
+                    int_rho += pSPARC->electronDens[i] * pSPARC->Intgwt_phi[i];
+                }
+            } else {
+                for (i = 0; i < pSPARC->Nd_d; i++) {
+                    int_rho += pSPARC->electronDens[i];
+                }
+                int_rho *= pSPARC->dV;
+            }
             MPI_Allreduce(MPI_IN_PLACE, &int_rho, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi); 	
             vscal = pSPARC->PosCharge / int_rho;
             for (i = 0; i < DMnd; i++)

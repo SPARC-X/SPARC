@@ -397,14 +397,12 @@ First define a few variables and their types.
 name         & type, length       & description                                                                                                   \\ \hline
 Nx Ny Nz     & int, 1             & Number of FD nodes in x,y,z directions                                                                        \\ \hline
 Nd           & int, 1             & Total number of FD nodes                                                                                      \\ \hline
-dx, dy,dz     & double, 1         & mesh size in x,y,z directions
-                    \\ \hline
+dx, dy,dz    & double, 1         & mesh size in x,y,z directions                                                                                 \\ \hline
 dV           & double, 1          & unit Volume                                                                                                   \\ \hline
+Nspinor      & int, 2             & Number of spinor in orbitals                                                                                  \\ \hline
 isReal       & int, 1             & Flag for orbitals being real or complex                                                                       \\ \hline
 nspin        & int, 1             & Number of spin channel printed                                                                                \\ \hline
 nkpt         & int, 1             & Number of k-point printed                                                                                     \\ \hline
-nband        & int, 1             & Number of bands printed   
-                    \\ \hline
 \end{tabular}
 \end{table}
 \end{block}
@@ -413,18 +411,17 @@ nband        & int, 1             & Number of bands printed
 \begin{table}[]
 \begin{tabular}{|m{1.7cm}|m{3.2cm}|m{5cm}|}
 \hline
-name         & type, length       & description 
-                     \\ \hline
+nband        & int, 1             & Number of bands printed                                                                                        \\ \hline
+name         & type, length       & description                                                                                                   \\ \hline
 spin\_index  & int, 1             & spin index of specific orbital                                                                                \\ \hline
-kpt\_index   & int, 1             & k-point index of specific orbital 
-                     \\ \hline
+kpt\_index   & int, 1             & k-point index of specific orbital                                                                             \\ \hline
 kpt\_vec     & double, 3          & k-point in reduced coordinates                                                                                \\ \hline
 band\_index  & int, 1             & band index of specific orbital                                                                                \\ \hline
 psi\_real    & double, Nd         & real Kohn-Sham orbitals                                                                                       \\ \hline
 psi\_complex & double complex, Nd & complex Kohn-Sham orbitals                                                                                    \\ \hline
 \end{tabular}
 \end{table}
-The header is organized as: Nx, Ny, Nz, Nd, dx, dy, dz, dV, isReal, nspin, nkpt, nband, followed by the data for real or complex Kohn-sham orbital. Below is the pseudo-code to read orbitals after reading variables in headers. 
+The header is organized as: Nx, Ny, Nz, Nd, dx, dy, dz, dV, Nspinor, isReal, nspin, nkpt, nband, followed by the data for Kohn-sham orbital. Below is the pseudo-code to read orbitals after reading variables in headers. 
 \end{block}
 
 \begin{block}{Remark -- cont.}

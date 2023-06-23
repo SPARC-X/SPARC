@@ -1719,11 +1719,13 @@ void Check_atomlocation(SPARC_OBJ *pSPARC) {
 			BC = pSPARC->BCz;
 		}
 		if(BC == 1){
-			for(atm = 0; atm < pSPARC->n_atom; atm++){
-				if(pSPARC->atom_pos[atm * 3 + dir] >= length || pSPARC->atom_pos[atm * 3 + dir] < 0){
-					if(!rank)
-						printf("ERROR: Atom number %d has crossed the boundary in %d direction",atm, dir);
-					exit(EXIT_FAILURE);
+			if (!((pSPARC->CyclixFlag) && (dir == 0))) { // if it is in cyclix coordinate and in x (radial) direction, we will not check it
+				for(atm = 0; atm < pSPARC->n_atom; atm++){
+					if(pSPARC->atom_pos[atm * 3 + dir] >= length || pSPARC->atom_pos[atm * 3 + dir] < 0){
+						if(!rank)
+							printf("ERROR: Atom number %d has crossed the boundary in %d direction",atm, dir);
+						exit(EXIT_FAILURE);
+					}
 				}
 			}
 		}else if(BC == 0){

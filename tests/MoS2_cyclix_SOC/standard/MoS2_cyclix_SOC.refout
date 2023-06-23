@@ -1,0 +1,161 @@
+***************************************************************************
+*                       SPARC (version Jun 19, 2023)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Thu Jun 22 21:48:09 2023                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 29.9138161344 0.628318530717959 1.19631069102724 
+TWIST_ANGLE: 0.055786 
+FD_GRID: 85 149 25
+FD_ORDER: 12
+BC: D C H
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001
+EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 40
+CHEB_DEGREE: 70
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 5.29E-08
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 1
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Volume: 9.3925335922E+02 (Bohr^3)
+Density: 7.1195897338E+00 (amu/Bohr^3), 7.9781218816E+01 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 8
+NP_DOMAIN_PARAL: 2 3 1
+NP_DOMAIN_PHI_PARAL: 6 8 1
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing in x-direction        :  0.351927 (Bohr)
+Mesh spacing in y-direction        :  0.0042169 (Bohr)
+Mesh spacing in z-direction        :  0.0478524 (Bohr)
+Output printed to                  :  MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC.out
+Total number of atom types         :  2
+Total number of atoms              :  3
+Total number of electrons          :  26
+Atom type 1  (valence electrons)   :  Mo 14
+Pseudopotential                    :  MoS2_cyclix_SOC/Mo_fr.psp8
+Atomic mass                        :  95.95
+Pseudocharge radii of atom type 1  :  8.09 0.38 7.61 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  S 6
+Pseudopotential                    :  MoS2_cyclix_SOC/S_fr.psp8
+Atomic mass                        :  32.0675
+Pseudocharge radii of atom type 2  :  7.39 0.38 7.37 (x, y, z dir)
+Number of atoms of type 2          :  2
+Estimated total memory usage       :  1.44 GB
+Estimated memory per processor     :  30.70 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.6540206748E+01        5.184E-01        19.351
+2            -2.8035499990E+01        1.463E-01        6.400
+3            -2.8979022942E+01        1.986E-01        6.589
+4            -2.9545341092E+01        1.513E-01        6.334
+5            -3.0443608287E+01        1.617E-01        6.563
+6            -3.0911246651E+01        1.597E-01        6.440
+7            -3.1031331431E+01        1.556E-01        6.379
+8            -3.1041592359E+01        1.540E-01        6.374
+9            -3.1046211670E+01        1.577E-01        6.314
+10           -3.1056338105E+01        1.536E-01        6.413
+11           -3.1375650888E+01        3.436E-01        6.361
+12           -3.0985377427E+01        1.223E-01        6.309
+13           -3.0913061131E+01        4.941E-02        6.344
+14           -3.0907609134E+01        2.727E-02        6.338
+15           -3.0903898082E+01        1.338E-02        6.438
+16           -3.0904220497E+01        1.044E-02        6.394
+17           -3.0902497978E+01        5.931E-03        6.370
+18           -3.0902008217E+01        4.638E-03        6.378
+19           -3.0901634133E+01        3.010E-03        6.407
+20           -3.0901323269E+01        2.104E-03        6.342
+21           -3.0901078801E+01        1.261E-03        6.434
+22           -3.0901028686E+01        9.750E-04        6.431
+23           -3.0901030054E+01        4.926E-04        6.474
+24           -3.0901039688E+01        3.531E-04        6.472
+25           -3.0901055771E+01        2.122E-04        6.452
+26           -3.0901061671E+01        1.537E-04        6.567
+27           -3.0901067513E+01        8.335E-05        6.470
+28           -3.0901067654E+01        5.517E-05        6.453
+29           -3.0901069053E+01        2.167E-05        6.347
+30           -3.0901068533E+01        1.388E-05        5.622
+31           -3.0901068725E+01        1.086E-05        6.328
+32           -3.0901068783E+01        5.627E-06        5.303
+33           -3.0901068788E+01        4.196E-06        5.344
+34           -3.0901068883E+01        2.745E-06        5.249
+35           -3.0901068831E+01        1.997E-06        6.055
+36           -3.0901068903E+01        1.574E-06        5.201
+37           -3.0901068925E+01        1.266E-06        5.219
+38           -3.0901068945E+01        1.012E-06        5.081
+39           -3.0901068912E+01        6.472E-07        5.117
+Total number of SCF: 39    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.0901068912E+01 (Ha/atom)
+Total free energy                  : -9.2703206736E+01 (Ha)
+Band structure energy              : -2.3354467989E+01 (Ha)
+Exchange correlation energy        : -1.7653179898E+01 (Ha)
+Self and correction energy         : -1.6423044860E+02 (Ha)
+-Entropy*kb*T                      : -5.1479745611E-10 (Ha)
+Fermi level                        : -1.6774653637E-01 (Ha)
+RMS force                          :  1.3452856111E-01 (Ha/Bohr)
+Maximum force                      :  1.7277287430E-01 (Ha/Bohr)
+Time for force calculation         :  1.001 (sec)
+Maximum stress                     :  8.2517433920E+00 (Ha/Bohr**2)
+Maximum stress equiv. to periodic  :  8.1158041077E+03 (GPa)
+Time for stress calculation        :  1.115 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  259.371 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           

@@ -33,7 +33,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include -Icyclix/include
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -97,7 +97,9 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/exx/exactExchangePressure.o xc/exx/exactExchangeEnergyDensity.o \
         highT/sq.o highT/sqInitialization.o highT/sqFinalization.o highT/sqEnergy.o\
         highT/sqDensity.o highT/sqNlocVecRoutines.o highT/sqParallelization.o          \
-        highT/sqProperties.o highT/sqtool.o   
+        highT/sqProperties.o highT/sqtool.o   \
+        cyclix/cyclix_tools.o cyclix/cyclix_forces.o cyclix/cyclix_gradVec.o cyclix/cyclix_lapVec.o \
+        cyclix/cyclix_stress.o \
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci

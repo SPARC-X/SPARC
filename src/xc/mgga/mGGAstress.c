@@ -287,12 +287,12 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
             for (dim = 0; dim < 3; dim++) {
                 // find dPsi in direction dim
                 kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, kpt_vec, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
 
                 // Kinetic stress
                 if(dim == 0){
                     kpt_vec = k2;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, &kpt_vec, pSPARC->dmcomm);
                     //ts = MPI_Wtime();
                     temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
                     for(n = 0; n < ncol; n++){
@@ -314,7 +314,7 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                     stress_mGGA_psi[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
 
                     kpt_vec = k3;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, &kpt_vec, pSPARC->dmcomm);
                     temp_k[2] = temp_k[5] = 0.0;
                     for(n = 0; n < ncol; n++){
                         dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1

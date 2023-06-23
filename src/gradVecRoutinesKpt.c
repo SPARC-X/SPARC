@@ -22,7 +22,7 @@
 #include "gradVecRoutinesKpt.h"
 #include "tools.h"
 #include "isddft.h"
-
+#include "cyclix_gradVec.h"
 
 
 /**
@@ -34,7 +34,7 @@
  */
 void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                               const int ncol, const double c, const double _Complex *x, 
-                              double _Complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm)
+                              double _Complex *Dx, const int dir, const double *kpt_vec, MPI_Comm comm)
 {
     int nproc;
     MPI_Comm_size(comm, &nproc);
@@ -44,9 +44,13 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
         MPI_Cart_get(comm, 3, dims, periods, my_coords);
     else 
         dims[0] = dims[1] = dims[2] = 1;
-   
-    for (int i = 0; i < ncol; i++)
-        Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, kpt_vec, comm, dims);  
+    
+    if (pSPARC->CyclixFlag) {
+        Gradient_vectors_dir_kpt_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, Dx, dir, kpt_vec, comm, dims);
+    } else {
+        for (int i = 0; i < ncol; i++)
+            Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, kpt_vec, comm, dims);  
+    }
 }
 
 
@@ -58,7 +62,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  */
 void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
                       const int ncol, const double c, const double _Complex *x,
-                      double _Complex *Dx, const int dir, const double kpt_vec, MPI_Comm comm, const int* dims)
+                      double _Complex *Dx, const int dir, const double *kpt_vec, MPI_Comm comm, const int* dims)
 {
     int nproc = dims[0] * dims[1] * dims[2];
     double cellsizes[3];
@@ -172,9 +176,9 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     int pshift_ex = pshift_ex_dirs[dir];
 
     // note: here kpt_vec should have been different for different directions! But the other dirs won't be used
-    double _Complex phase_fac_l_x = cos(kpt_vec * cellsizes[0]) - sin(kpt_vec * cellsizes[0]) * I;
-    double _Complex phase_fac_l_y = cos(kpt_vec * cellsizes[1]) - sin(kpt_vec * cellsizes[1]) * I;
-    double _Complex phase_fac_l_z = cos(kpt_vec * cellsizes[2]) - sin(kpt_vec * cellsizes[2]) * I;
+    double _Complex phase_fac_l_x = cos(*kpt_vec * cellsizes[0]) - sin(*kpt_vec * cellsizes[0]) * I;
+    double _Complex phase_fac_l_y = cos(*kpt_vec * cellsizes[1]) - sin(*kpt_vec * cellsizes[1]) * I;
+    double _Complex phase_fac_l_z = cos(*kpt_vec * cellsizes[2]) - sin(*kpt_vec * cellsizes[2]) * I;
     double _Complex phase_fac_r_x = conj(phase_fac_l_x);
     double _Complex phase_fac_r_y = conj(phase_fac_l_y);
     double _Complex phase_fac_r_z = conj(phase_fac_l_z);

@@ -169,6 +169,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 pSPARC_Input->BCy = 0;
             } else if (strcmpi(temp,"d") == 0) {
                 pSPARC_Input->BCy = 1;
+            } else if (strcmpi(temp,"c") == 0) {
+                pSPARC_Input->BCy = 0;
+                pSPARC_Input->BC = 5;
             } else {
                 printf("Cannot recognize boundary condition: %s\n", temp);
                 exit(EXIT_FAILURE);
@@ -179,12 +182,22 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 pSPARC_Input->BCz = 0;
             } else if (strcmpi(temp,"d") == 0) {
                 pSPARC_Input->BCz = 1;
+            } else if (strcmpi(temp,"h") == 0) {
+                pSPARC_Input->BCz = 0;
+                if(pSPARC_Input->BC == 5){
+                    pSPARC_Input->BC = 7;
+                } else{
+                    pSPARC_Input->BC = 6;
+                }        
             } else {
                 printf("Cannot recognize boundary condition: %s\n", temp);
                 exit(EXIT_FAILURE);
             }
             snprintf(str, L_STRING, "undefined");    // initialize str
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmp(str,"TWIST_ANGLE:") == 0) {
+           fscanf(input_fp,"%lf", &pSPARC_Input->twist);
+           fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"POISSON_SOLVER:") == 0){
             // read solver type
             fscanf(input_fp,"%s",temp);
@@ -1618,10 +1631,8 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         soc_count += pSPARC->psd[ityp].pspsoc;
     }
     if (soc_count == 0) {
-        pSPARC->Nspinor = 1;
         pSPARC->SOC_Flag = 0;
     } else if (soc_count == pSPARC->Ntypes) {
-        pSPARC->Nspinor = 2;
         pSPARC->SOC_Flag = 1;
     } else {
         printf(RED "ERROR: Please provide fully relativistic pseudopotential for all types of atoms!\n" RESET);

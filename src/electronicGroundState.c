@@ -204,11 +204,16 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             // write max stress to .out file
             output_fp = fopen(pSPARC->OutFilename,"a");
             double maxS = 0.0, temp;
-            for (i = 0; i< 6; i++){
-            	temp = fabs(pSPARC->stress[i]);
-            	if(temp > maxS)
-            		maxS = temp;	
+            if (pSPARC->CyclixFlag) {
+                maxS = fabs(pSPARC->stress[5]);
+            } else {
+                for (i = 0; i< 6; i++){
+                    temp = fabs(pSPARC->stress[i]);
+                    if(temp > maxS)
+                        maxS = temp;	
+                }
             }
+
             if (pSPARC->BC == 2){
                 fprintf(output_fp,"Pressure                           :%18.10E (GPa)\n",pSPARC->pres*CONST_HA_BOHR3_GPA);
                 fprintf(output_fp,"Maximum stress                     :%18.10E (GPa)\n",maxS*CONST_HA_BOHR3_GPA);
@@ -1095,13 +1100,19 @@ void Calculate_magnetization(SPARC_OBJ *pSPARC)
     double spn_int[2], spn_sum[2] = {0.0,0.0};
     int DMnd = pSPARC->Nd_d, i;
     
-    for (i = 0; i < DMnd; i++) {
-        int_rhoup += pSPARC->electronDens[DMnd+i];
-        int_rhodn += pSPARC->electronDens[2*DMnd+i];
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < DMnd; i++) {
+            int_rhoup += pSPARC->electronDens[DMnd+i] * (pSPARC->Intgwt_phi[i]);
+            int_rhodn += pSPARC->electronDens[2*DMnd+i] * (pSPARC->Intgwt_phi[i]);
+        }
+    } else {
+        for (i = 0; i < DMnd; i++) {
+            int_rhoup += pSPARC->electronDens[DMnd+i];
+            int_rhodn += pSPARC->electronDens[2*DMnd+i];
+        }
+        int_rhoup *= pSPARC->dV;
+        int_rhodn *= pSPARC->dV;
     }
-
-    int_rhoup *= pSPARC->dV;
-    int_rhodn *= pSPARC->dV;
     
     spn_int[0] = int_rhoup; spn_int[1] = int_rhodn;
     MPI_Allreduce(spn_int, spn_sum, 2, MPI_DOUBLE,

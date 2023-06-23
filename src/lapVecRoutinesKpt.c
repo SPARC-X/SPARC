@@ -24,6 +24,7 @@
 #include "gradVecRoutinesKpt.h"
 #include "tools.h"
 #include "isddft.h"
+#include "cyclix_lapVec.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -637,7 +638,11 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
     // Laplacian coefficients
     double *Lap_wt, w2_diag;
-    w2_diag  = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0]) * a;
+    if (pSPARC->CyclixFlag) {
+        w2_diag  = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_z[0]) * a;
+    } else {
+        w2_diag  = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0]) * a;
+    }
     w2_diag += c; // shift the diagonal by c
     Lap_wt = (double *)malloc((5*(FDn+1))*sizeof(double));
     double *Lap_stencil = Lap_wt+5;
@@ -796,6 +801,11 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
         Dx1 = (double _Complex *) malloc(ncol * DMnd_xex * sizeof(double _Complex) ); // 2*T_12*df/dy + 2*T_13*df/dz
         Dx2 = (double _Complex *) malloc(ncol * DMnd_yex * sizeof(double _Complex) ); // df/dz
         assert(Dx1 != NULL && Dx2 != NULL);
+    } else if(pSPARC->cell_typ == 21){
+        // nothing required
+    } else if(pSPARC->cell_typ > 21 && pSPARC->cell_typ < 30){
+        Dx1 = (double _Complex *) malloc(ncol * DMnd_yex * sizeof(double _Complex) ); // df/dz
+        assert(Dx1 != NULL);
     }
 
     if (nproc > 1) { // unpack info and copy into x_ex
@@ -964,6 +974,25 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
         }
         free(Dx1); Dx1 = NULL;
         free(Dx2); Dx2 = NULL;
+    }  else if(pSPARC->cell_typ == 21){
+        // calculate Lx
+        for (n = 0; n < ncol; n++) {
+            stencil_4comp_kpt_cyclix(pSPARC, x_ex+n*DMnd_ex, DMVertices, FDn, pshifty, pshifty_ex, pshiftz, pshiftz_ex,
+                        0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, Lap_wt, w2_diag, _b, _v, y+n*DMnd, a);
+        }
+    } else if(pSPARC->cell_typ > 21 && pSPARC->cell_typ < 30){
+        // calculate Lx
+        for (n = 0; n < ncol; n++) {
+            Calc_DX_kpt(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, pshiftz_ex, pshifty_ex, DMnx, pshiftz_ex, DMnxnyex,
+                    0, DMnx, 0, DMny_ex, 0, DMnz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
+        }
+
+        for (n = 0; n < ncol; n++) {
+            stencil_5comp_kpt_cyclix(pSPARC, x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, DMVertices, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
+                        0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd, a);
+        }
+
+        free(Dx1); Dx1 = NULL;
     }
 
     free(x_ex);

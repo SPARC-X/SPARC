@@ -25,6 +25,8 @@
 #include "vdWDFfinalization.h"
 #include "mGGAfinalization.h"
 #include "sqFinalization.h"
+#include "cyclix_tools.h"
+
 /* ScaLAPACK routines */
 #ifdef USE_MKL
     #include "blacs.h"     // Cblacs_*
@@ -278,6 +280,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->Kptshift_map);
         free_exx(pSPARC);
     }
+
+    if (pSPARC->CyclixFlag) {
+        free_cyclix(pSPARC);
+    }
     
     if (pSPARC->Nkpts >= 1 && pSPARC->kptcomm_index != -1) {
         free(pSPARC->kptWts_loc); 
@@ -396,6 +402,12 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     free( pSPARC->nlocProj[ityp].Chi[iat] );
                 }
                 free( pSPARC->nlocProj[ityp].Chi );
+                if (pSPARC->CyclixFlag) {
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj[ityp].Chi_cyclix[iat] );
+                    }
+                    free( pSPARC->nlocProj[ityp].Chi_cyclix);
+                }
             }
             free(pSPARC->nlocProj);
         }
@@ -412,6 +424,12 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     free( pSPARC->nlocProj_kptcomm[ityp].Chi[iat] );
                 }
                 free( pSPARC->nlocProj_kptcomm[ityp].Chi );
+                if (pSPARC->CyclixFlag) {
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc_kptcomm[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chi_cyclix[iat] );
+                    }
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chi_cyclix );
+                }
             }
             free(pSPARC->nlocProj_kptcomm);
         }
@@ -428,6 +446,12 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     free( pSPARC->nlocProj[ityp].Chi_c[iat] );
                 }
                 free(pSPARC->nlocProj[ityp].Chi_c);
+                if (pSPARC->CyclixFlag) {
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj[ityp].Chi_c_cyclix[iat] );
+                    }
+                    free( pSPARC->nlocProj[ityp].Chi_c_cyclix);
+                }
             }
             if (pSPARC->SOC_Flag == 1) {
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
@@ -435,8 +459,14 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     if (! pSPARC->nlocProj[ityp].nprojso) continue;
                     for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
                         free( pSPARC->nlocProj[ityp].Chiso[iat] );
+                        if (pSPARC->CyclixFlag) {
+                            free(pSPARC->nlocProj[ityp].Chiso_cyclix[iat]);
+                        }
                     }
                     free( pSPARC->nlocProj[ityp].Chiso );
+                    if (pSPARC->CyclixFlag) {
+                        free(pSPARC->nlocProj[ityp].Chiso_cyclix);
+                    }
                 }
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
                     // if (! pSPARC->nlocProj[ityp].nproj) continue;
@@ -445,10 +475,20 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                         free( pSPARC->nlocProj[ityp].Chisowt0[iat] );
                         free( pSPARC->nlocProj[ityp].Chisowtl[iat] );
                         free( pSPARC->nlocProj[ityp].Chisowtnl[iat] );
+                        if (pSPARC->CyclixFlag) {
+                            free( pSPARC->nlocProj[ityp].Chisowt0_cyclix[iat] );
+                            free( pSPARC->nlocProj[ityp].Chisowtl_cyclix[iat] );
+                            free( pSPARC->nlocProj[ityp].Chisowtnl_cyclix[iat] );
+                        }
                     }
                     free( pSPARC->nlocProj[ityp].Chisowt0 );
                     free( pSPARC->nlocProj[ityp].Chisowtl );
                     free( pSPARC->nlocProj[ityp].Chisowtnl );
+                    if (pSPARC->CyclixFlag) {
+                        free( pSPARC->nlocProj[ityp].Chisowt0_cyclix );
+                        free( pSPARC->nlocProj[ityp].Chisowtl_cyclix );
+                        free( pSPARC->nlocProj[ityp].Chisowtnl_cyclix );
+                    }
                 }
             }
             free(pSPARC->nlocProj);
@@ -466,6 +506,12 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     free( pSPARC->nlocProj_kptcomm[ityp].Chi_c[iat] );
                 }
                 free(pSPARC->nlocProj_kptcomm[ityp].Chi_c);
+                if (pSPARC->CyclixFlag) {
+                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc_kptcomm[ityp].n_atom; iat++) {
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chi_c_cyclix[iat] );
+                    }
+                    free( pSPARC->nlocProj_kptcomm[ityp].Chi_c_cyclix);
+                }
             }
             if (pSPARC->SOC_Flag == 1) {
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
@@ -473,8 +519,14 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                     if (! pSPARC->nlocProj_kptcomm[ityp].nprojso) continue;
                     for (iat = 0; iat < pSPARC->Atom_Influence_nloc_kptcomm[ityp].n_atom; iat++) {
                         free( pSPARC->nlocProj_kptcomm[ityp].Chiso[iat] );
+                        if (pSPARC->CyclixFlag) {
+                            free(pSPARC->nlocProj_kptcomm[ityp].Chiso_cyclix[iat]);
+                        }
                     }
                     free( pSPARC->nlocProj_kptcomm[ityp].Chiso );
+                    if (pSPARC->CyclixFlag) {
+                        free(pSPARC->nlocProj_kptcomm[ityp].Chiso_cyclix);
+                    }
                 }
                 for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
                     // if (! pSPARC->nlocProj[ityp].nproj) continue;
@@ -483,10 +535,20 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                         free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0[iat] );
                         free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl[iat] );
                         free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl[iat] );
+                        if (pSPARC->CyclixFlag) {
+                            free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0_cyclix[iat] );
+                            free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl_cyclix[iat] );
+                            free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl_cyclix[iat] );
+                        }
                     }
                     free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0 );
                     free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl );
                     free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl );
+                    if (pSPARC->CyclixFlag) {
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowt0_cyclix );
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowtl_cyclix );
+                        free( pSPARC->nlocProj_kptcomm[ityp].Chisowtnl_cyclix );
+                    }
                 }
             }
             free(pSPARC->nlocProj_kptcomm);

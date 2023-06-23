@@ -21,6 +21,8 @@
 #include "gradVecRoutines.h"
 #include "initialization.h"
 #include "isddft.h"
+#include "cyclix_tools.h"
+#include "cyclix_lapVec.h"
 
 #include <mpi.h>
 // #include <cblas.h> 
@@ -64,10 +66,19 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
     dz = pSPARC->delta_z;
     
     // if Rbmax too small, change the function RB_MAX() or override Rbmax later!
-    pos_atm_x = pos_atm_y = pos_atm_z = 0.0;
-    Rbmax_x = RB_MAX(dx);
-    Rbmax_y = RB_MAX(dy);
-    Rbmax_z = RB_MAX(dz);
+    if (pSPARC->CyclixFlag) {
+        pos_atm_x = pSPARC->xmax_at;
+        pos_atm_y = 0.0;
+        pos_atm_z = 0.0;
+        Rbmax_x = pSPARC->xvac;
+        Rbmax_y = RB_Y(Rbmax_x, pos_atm_x, pSPARC->cell_typ);
+        Rbmax_z = 12;//RB_MAX(dz);
+    } else {
+        pos_atm_x = pos_atm_y = pos_atm_z = 0.0;
+        Rbmax_x = RB_MAX(dx);
+        Rbmax_y = RB_MAX(dy);
+        Rbmax_z = RB_MAX(dz);
+    }
     
     /******************************************************
      *  If Rbmax is not big enough, override Rbmax below  *
@@ -84,7 +95,11 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
     ny = ceil(Rbmax_y / dy - TEMP_TOL);
     nz = ceil(Rbmax_z / dz - TEMP_TOL);   
     FDn = pSPARC->order / 2;
-    w2_diag = pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0];
+    if (pSPARC->CyclixFlag) {
+        w2_diag = pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_z[0];
+    } else {
+        w2_diag = pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0];
+    }
     
 #ifdef DEBUG
     t31 = MPI_Wtime();
@@ -424,7 +439,23 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
                             Bint += val;
                         }
                 Bint = Bint / (-4*M_PI) * 2 * pSPARC->dV; 
+            } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                for(k = 0; k <= Ncube_z; k++) //for(k = nz - Ncube_z; k <= nz + Ncube_z; k++)
+                    for(j = ny - Ncube_y; j <= ny + Ncube_y; j++)
+                        for(i = nx - Ncube_x; i <= nx + Ncube_x; i++) {
+                            double x = (pos_atm_x + (i-nx)*dx);
+                            val = b(i,j,k) * x;
+                            if (k == 0) val *= 0.5; //if (k == nz - Ncube_z) val *= 0.5;
+                            if (k == Ncube_z) val *= 0.5; //if (k == nz + Ncube_z) val *= 0.5;
+                            if (j == ny - Ncube_y) val *= 0.5;
+                            if (j == ny + Ncube_y) val *= 0.5;
+                            if (i == nx - Ncube_x) val = (0.5 + 0.125*(dx/x)) * val;
+                            if (i == nx + Ncube_x) val = (0.5 - 0.125*(dx/x)) * val;
+                            Bint += val;
+                        }
+                Bint = Bint / (-4*M_PI) * 2 * pSPARC->dV;
             }
+            
             //error_cur = fabs(Bint + pSPARC->Znucl[ityp]) / fabs(pSPARC->Znucl[ityp]); 
             error_cur = fabs(Bint + pSPARC->Znucl[ityp]); 
             count++;
@@ -478,7 +509,23 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
                             Bint += val;
                         }
                 Bint = Bint / (-4*M_PI) * 2 * pSPARC->dV; 
+            } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                for(k = 0; k <= Ncube_z; k++) //for(k = nz - Ncube_z; k <= nz + Ncube_z; k++)
+                    for(j = ny - Ncube_y; j <= ny + Ncube_y; j++)
+                        for(i = nx - Ncube_x; i <= nx + Ncube_x; i++) {
+                            double x = (pos_atm_x + (i-nx)*dx);
+                            val = b(i,j,k) * x;
+                            if (k == 0) val *= 0.5; //if (k == nz - Ncube_z) val *= 0.5;
+                            if (k == Ncube_z) val *= 0.5; //if (k == nz + Ncube_z) val *= 0.5;
+                            if (j == ny - Ncube_y) val *= 0.5;
+                            if (j == ny + Ncube_y) val *= 0.5;
+                            if (i == nx - Ncube_x) val = (0.5 + 0.125*(dx/x)) * val;
+                            if (i == nx + Ncube_x) val = (0.5 - 0.125*(dx/x)) * val;
+                            Bint += val;
+                        }
+                Bint = Bint / (-4*M_PI) * 2 * pSPARC->dV;
             }
+            
             //error_cur = fabs(Bint + pSPARC->Znucl[ityp]) / fabs(pSPARC->Znucl[ityp]);
             error_cur = fabs(Bint + pSPARC->Znucl[ityp]);
         }
@@ -765,7 +812,11 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 #endif
    
     FDn = pSPARC->order / 2;
-    w2_diag = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0]) * -inv_4PI;
+    if (pSPARC->CyclixFlag) {
+        w2_diag = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_z[0]) * -inv_4PI;
+    } else {
+        w2_diag = (pSPARC->D2_stencil_coeffs_x[0] + pSPARC->D2_stencil_coeffs_y[0] + pSPARC->D2_stencil_coeffs_z[0]) * -inv_4PI;
+    }
     if(pSPARC->cell_typ == 0){
         Lap_wt = (double *)malloc((3*(FDn+1))*sizeof(double));
         Lap_stencil = Lap_wt;
@@ -839,8 +890,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
             
             // find distance between atom and finite-difference grids
             count = 0; 
-            count_interp = 0;
-            
+            count_interp = 0;        
             if(pSPARC->cell_typ == 0) {    
                 for (k = 0; k < nzp; k++) {
                     z = k * pSPARC->delta_z - z0_i_shift; 
@@ -862,14 +912,28 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                         for (i = 0; i < nxp; i++) {
                             x = i * pSPARC->delta_x - x0_i_shift;
                             R[count] = sqrt(pSPARC->metricT[0] * (x*x) + pSPARC->metricT[1] * (x*y) + pSPARC->metricT[2] * (x*z) 
-                                          + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z) );
+                                        + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z) );
                             //R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
                             if (R[count] <= rchrg) count_interp++;
                             count++;
                         }
                     }
                 }
-            }    
+            } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                for (k = kcor; k < kcor+nzp; k++) {
+                    z = k * pSPARC->delta_z;
+                    for (j = jcor; j < jcor+nyp; j++) {
+                        y = j * pSPARC->delta_y;
+                        for (i = icor; i < icor+nxp; i++) {
+                            x = pSPARC->xin + i * pSPARC->delta_x;
+                            CalculateDistance(pSPARC, x, y, z, x0_i, y0_i, z0_i, &R[count]);
+                            if (R[count] <= rchrg) count_interp++;
+                            count++;
+                        }
+                    }
+                }
+            }
+            
             //Calc_dist(pSPARC, nxp, nyp, nzp, x0_i_shift, y0_i_shift, z0_i_shift, R, rchrg, &count_interp);
             #ifdef DEBUG
             tt1 = MPI_Wtime();
@@ -1002,6 +1066,10 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                         pSPARC->psdChrgDens_ref[ishift_DM] += bJ_ref[ishift];
                         pSPARC->Vc[ishift_DM] += (VJ_ref[ishift_p] -  VJ[ishift_p]);
                         double bJvJ = bJ_ref[ishift] * VJ_ref[ishift_p];
+                        if (pSPARC->CyclixFlag) {
+                            x = xin + i*pSPARC->delta_x;
+                            bJvJ *= (x*pSPARC->dV);
+                        }
                         Esc -= bJvJ;
                     }
                 }
@@ -1018,18 +1086,34 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     /*  Calculate integral of b and Esc  */
     double int_b = 0.0, int_rho = 0.0;
     // find integral of b, Esc locally
-    for (k = 0; k < DMnz; k++) {
-        for (j = 0; j < DMny; j++) {
-            for (i = 0; i < DMnx; i++) {
-                int_b += pSPARC->psdChrgDens(i,j,k);
-                int_rho += pSPARC->electronDens_at(0,i,j,k);
-                Esc += (pSPARC->psdChrgDens(i,j,k) + pSPARC->psdChrgDens_ref(i,j,k)) * pSPARC->Vc(i,j,k);
+    if (pSPARC->CyclixFlag) {
+        count = 0;
+        for (k = 0; k < DMnz; k++) {
+            for (j = 0; j < DMny; j++) {
+                for (i = 0; i < DMnx; i++) {
+                    int_b += pSPARC->psdChrgDens(i,j,k) * pSPARC->Intgwt_phi[count];
+                    int_rho += pSPARC->electronDens_at(0,i,j,k) * pSPARC->Intgwt_phi[count];
+                    Esc += (pSPARC->psdChrgDens(i,j,k) + pSPARC->psdChrgDens_ref(i,j,k)) * pSPARC->Vc(i,j,k) * pSPARC->Intgwt_phi[count];
+                    count++;
+                }
             }
         }
+        Esc *= 0.5;
+    } else {
+        for (k = 0; k < DMnz; k++) {
+            for (j = 0; j < DMny; j++) {
+                for (i = 0; i < DMnx; i++) {
+                    int_b += pSPARC->psdChrgDens(i,j,k);
+                    int_rho += pSPARC->electronDens_at(0,i,j,k);
+                    Esc += (pSPARC->psdChrgDens(i,j,k) + pSPARC->psdChrgDens_ref(i,j,k)) * pSPARC->Vc(i,j,k);
+                }
+            }
+        }
+        int_b *= pSPARC->dV;
+        int_rho *= pSPARC->dV; 
+        Esc *= pSPARC->dV * 0.5; 
     }
-    int_b *= pSPARC->dV;
-    int_rho *= pSPARC->dV; 
-    Esc *= pSPARC->dV * 0.5; 
+
     #ifdef DEBUG
     t1 = MPI_Wtime();
     #endif
@@ -1049,31 +1133,62 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
 
     /*  Scale electron density so that PosCharge + NegCharge = NetCharge  */
     double Nelectron_check = 0.0, scal_fac = (pSPARC->NetCharge - pSPARC->PosCharge) / pSPARC->NegCharge;
-    for (k = 0; k < DMnz; k++) {
-        for (j = 0; j < DMny; j++) {
-            for (i = 0; i < DMnx; i++) {
-                pSPARC->electronDens_at(0,i,j,k) *= scal_fac;
-                Nelectron_check += pSPARC->electronDens_at(0,i,j,k);
-                for(spn_i = 1; spn_i < 2*pSPARC->Nspin - 1; spn_i++)
-                    pSPARC->electronDens_at(spn_i*DMnd,i,j,k) *= scal_fac;
+    if (pSPARC->CyclixFlag) {
+        count = 0;
+        for (k = 0; k < DMnz; k++) {
+            for (j = 0; j < DMny; j++) {
+                for (i = 0; i < DMnx; i++) {
+                    pSPARC->electronDens_at(0,i,j,k) *= scal_fac;
+                    assert(pSPARC->Nspden <= 2 && pSPARC->spin_typ <= 1);
+                    for(spn_i = 1; spn_i < 2*pSPARC->Nspin - 1; spn_i++)
+                        pSPARC->electronDens_at(spn_i*DMnd,i,j,k) *= scal_fac;
+
+                    Nelectron_check += pSPARC->electronDens_at(0,i,j,k) * pSPARC->Intgwt_phi[count];
+                    count++;                    
+                }
+            }
+        }    
+    } else {
+        for (k = 0; k < DMnz; k++) {
+            for (j = 0; j < DMny; j++) {
+                for (i = 0; i < DMnx; i++) {
+                    pSPARC->electronDens_at(0,i,j,k) *= scal_fac;
+                    Nelectron_check += pSPARC->electronDens_at(0,i,j,k);
+                    for(spn_i = 1; spn_i < 2*pSPARC->Nspin - 1; spn_i++)
+                        pSPARC->electronDens_at(spn_i*DMnd,i,j,k) *= scal_fac;
+                }
             }
         }
+        Nelectron_check *= pSPARC->dV;
     }
-    Nelectron_check *= pSPARC->dV;
+
     // Find net magnetization in the beginning
     double int_rhoup = 0.0, int_rhodn = 0.0;
     double spn_int[2], spn_sum[2] = {0.0,0.0};
     if(pSPARC->spin_typ != 0 && pSPARC->elecgs_Count == 0) {
-        for (k = 0; k < DMnz; k++) {
-            for (j = 0; j < DMny; j++) {
-                for (i = 0; i < DMnx; i++) {
-                    int_rhoup += pSPARC->electronDens_at(DMnd,i,j,k);
-                    int_rhodn += pSPARC->electronDens_at(2*DMnd,i,j,k);
+        if (pSPARC->CyclixFlag) {
+            count = 0;
+            for (k = 0; k < DMnz; k++) {
+                for (j = 0; j < DMny; j++) {
+                    for (i = 0; i < DMnx; i++) {
+                        int_rhoup += pSPARC->electronDens_at(DMnd,i,j,k) * pSPARC->Intgwt_phi[count];
+                        int_rhodn += pSPARC->electronDens_at(2*DMnd,i,j,k) * pSPARC->Intgwt_phi[count];
+                        count++;
+                    }
                 }
             }
+        } else {
+            for (k = 0; k < DMnz; k++) {
+                for (j = 0; j < DMny; j++) {
+                    for (i = 0; i < DMnx; i++) {
+                        int_rhoup += pSPARC->electronDens_at(DMnd,i,j,k);
+                        int_rhodn += pSPARC->electronDens_at(2*DMnd,i,j,k);
+                    }
+                }
+            }
+            int_rhoup *= pSPARC->dV;
+            int_rhodn *= pSPARC->dV;
         }
-        int_rhoup *= pSPARC->dV;
-        int_rhodn *= pSPARC->dV;
         spn_int[0] = int_rhoup; spn_int[1] = int_rhodn;
         MPI_Allreduce(spn_int, spn_sum, 2, MPI_DOUBLE,
                       MPI_SUM, pSPARC->dmcomm_phi);
@@ -1282,132 +1397,53 @@ void Calc_lapV(const SPARC_OBJ *pSPARC, const double *VJ, const double FDn,
             free(dV1); dV1 = NULL;
             free(dV2); dV2 = NULL;
             break; /* optional */
-          
+        
+        case 21  :
+            stencil_4comp_cyclix(pSPARC, VJ, FDn, nx, nxp, nxny, nxny_ex,
+                                0, nx, 0, ny, 0, nz, FDn, FDn, FDn,
+                                Lap_wt, w2_diag, 0.0, xin, coef, VJ, bJ);
+
+            break; /* optional */
+
+        case 22  :
+            dV1 = (double *)malloc( (nxnyex*nz) * sizeof(double) ); // dV/dz
+            if(dV1 == NULL){
+                printf("\nMemory allocation failed in pseudocharge radius!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            Calc_DX(VJ, dV1, FDn, nxny_ex, nxp, nx, nxny_ex, nxnyex,
+                    0, nx, 0, nyp, 0, nz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
+
+            stencil_5comp_cyclix(pSPARC, VJ, dV1, FDn, nx, nx, nxp, nx, nxny, nxny_ex, nxnyex,
+                                0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 0, FDn, 0,
+                                Lap_wt, w2_diag, 0.0, xin, coef, VJ, bJ);
+
+            free(dV1); dV1 = NULL;
+            break; /* optional */
+
+        case 23  :
+            dV1 = (double *)malloc( (nxnyex*nz) * sizeof(double) ); // dV/dz
+            if(dV1 == NULL){
+                printf("\nMemory allocation failed in pseudocharge radius!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            Calc_DX(VJ, dV1, FDn, nxny_ex, nxp, nx, nxny_ex, nxnyex,
+                    0, nx, 0, nyp, 0, nz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
+
+            stencil_5comp_cyclix(pSPARC, VJ, dV1, FDn, nx, nx, nxp, nx, nxny, nxny_ex, nxnyex,
+                                0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 0, FDn, 0,
+                                Lap_wt, w2_diag, 0.0, xin, coef, VJ, bJ);
+
+            free(dV1); dV1 = NULL;
+            break; /* optional */
+            
         /* you can have any number of case statements */
         default : /* Optional */
         printf("cell_typ = %d is not implemented!\n", pSPARC->cell_typ); 
         exit(EXIT_FAILURE); break;
     }
-
-    // if(pSPARC->cell_typ == 0){
-    //    stencil_3axis_thread_v2(
-    //            VJ, FDn, nx, nxp, nxny, nxny_ex, 
-    //            0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 
-    //            Lap_wt, w2_diag, 0.0, VJ, bJ);
-    // } else if(pSPARC->cell_typ == 11){
-    //    dV1 = (double *)malloc( (nxexny*nz) * sizeof(double) ); // dV/dy
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-       
-    //    Calc_DX(VJ, dV1, FDn, nxp, nxp, nxp, nxny_ex, nxexny, 
-    //            0, nxp, 0, ny, 0, nz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_y, 0.0);
-       
-    //    stencil_4comp(VJ, dV1, FDn, 1, nx, nxp, nxp, nxny, nxny_ex, nxexny,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, FDn, 0, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-       
-    //    free(dV1); dV1 = NULL;                                                     
-    // } else if(pSPARC->cell_typ == 12){
-    //    dV1 = (double *)malloc( (nxexny*nz) * sizeof(double) ); // dV/dz
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-       
-    //    Calc_DX(VJ, dV1, FDn, nxny_ex, nxp, nxp, nxny_ex, nxexny, 
-    //            0, nxp, 0, ny, 0, nz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-       
-    //    stencil_4comp(VJ, dV1, FDn, 1, nx, nxp, nxp, nxny, nxny_ex, nxexny,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, FDn, 0, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-                     
-    //    free(dV1); dV1 = NULL;
-    // } else if(pSPARC->cell_typ == 13){
-    //    dV1 = (double *)malloc( (nxnyex*nz) * sizeof(double) ); // dV/dz
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-
-    //    Calc_DX(VJ, dV1, FDn, nxny_ex, nxp, nx, nxny_ex, nxnyex, 
-    //            0, nx, 0, nyp, 0, nz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-       
-    //    stencil_4comp(VJ, dV1, FDn, nx, nx, nxp, nx, nxny, nxny_ex, nxnyex,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 0, FDn, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-       
-    //    free(dV1); dV1 = NULL;
-    // } else if(pSPARC->cell_typ == 14){
-    //    dV1 = (double *)malloc( (nxexny*nz) * sizeof(double) ); // 2*T_12*dV/dy + 2*T_13*dV/dz
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-       
-    //    Calc_DX1_DX2(VJ, dV1, FDn, nxp, nxny_ex, nxp, nxp, nxny_ex, nxexny, 
-    //                 0, nxp, 0, ny, 0, nz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-       
-    //    stencil_4comp(VJ, dV1, FDn, 1, nx, nxp, nxp, nxny, nxny_ex, nxexny,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, FDn, 0, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-                     
-    //    free(dV1); dV1 = NULL; 
-    // } else if(pSPARC->cell_typ == 15) {
-    //    dV1 = (double *)malloc( (nxny*nzp) * sizeof(double) ); // 2*T_13*dV/dx + 2*T_23*dV/dy
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-
-    //    Calc_DX1_DX2(VJ, dV1, FDn, 1, nxp, nxp, nx, nxny_ex, nxny, 
-    //                 0, nx, 0, ny, 0, nzp, FDn, FDn, 0, pSPARC->D1_stencil_coeffs_zx, pSPARC->D1_stencil_coeffs_zy);
-    //    // lap*V = T_11*d2/dx2 + T_22*d2/dy2 + T_33*d2/dz2 + d/dz(2*T_13*dV/dx + 2*T_23*dV/dy)
-       
-    //    stencil_4comp(VJ, dV1, FDn, nxny, nx, nxp, nx, nxny, nxny_ex, nxny,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 0, 0, FDn,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-                     
-    //    free(dV1); dV1 = NULL;
-    // } else if(pSPARC->cell_typ == 16){
-    //    dV1 = (double *)malloc( (nxnyex*nz) * sizeof(double) ); // 2*T_12*dV/dx + 2*T_23*dV/dz
-    //    if(dV1 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-
-    //    // 2*T_12*dV/dx + 2*T_23*dV/dz
-    //    Calc_DX1_DX2(VJ, dV1, FDn, 1, nxny_ex, nxp, nx, nxny_ex, nxnyex, 
-    //                 0, nx, 0, nyp, 0, nz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_yx, pSPARC->D1_stencil_coeffs_yz);
-    //    // lap*V = T_11*d2/dx2 + T_22*d2/dy2 + T_33*d2/dz2 + d/dy(2*T_12*dV/dx + 2*T_23*dV/dz)
-    //    stencil_4comp(VJ, dV1, FDn, nx, nx, nxp, nx, nxny, nxny_ex, nxnyex,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, 0, FDn, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-      
-    //    free(dV1); dV1 = NULL;
-    // } else if(pSPARC->cell_typ == 17) {
-    //    dV1 = (double *)malloc( (nxexny*nz) * sizeof(double) ); // 2*T_12*dV/dy + 2*T_13*dV/dz
-    //    dV2 = (double *)malloc( (nxnyex*nz) * sizeof(double) ); // dV/dz
-    //    if(dV1 == NULL || dV2 == NULL){
-    //        printf("\nMemory allocation failed in pseudocharge radius!\n");
-    //        exit(EXIT_FAILURE);
-    //    }
-
-    //    // 2*T_12*dV/dy + 2*T_13*dV/dz
-    //    Calc_DX1_DX2(VJ, dV1, FDn, nxp, nxny_ex, nxp, nxp, nxny_ex, nxexny, 
-    //                 0, nxp, 0, ny, 0, nz, 0, FDn, FDn, pSPARC->D1_stencil_coeffs_xy, pSPARC->D1_stencil_coeffs_xz);
-       
-    //    Calc_DX(VJ, dV2, FDn, nxny_ex, nxp, nx, nxny_ex, nxnyex, 
-    //            0, nx, 0, nyp, 0, nz, FDn, 0, FDn, pSPARC->D1_stencil_coeffs_z, 0.0);
-       
-    //    stencil_5comp(VJ, dV1, dV2, FDn, 1, nx, nx, nxp, nxp, nx, nxny, nxny_ex, nxexny, nxnyex,
-    //                  0, nx, 0, ny, 0, nz, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0,
-    //                  Lap_wt, w2_diag, 0.0, VJ, bJ);
-
-    //    free(dV1); dV1 = NULL;
-    //    free(dV2); dV2 = NULL;
-    // }
 }    
 
 
@@ -1476,7 +1512,12 @@ void poisson_RHS(SPARC_OBJ *pSPARC, double *rhs) {
 		}
     }
 
-    int n_periodic = 3 - (pSPARC->BCx + pSPARC->BCy + pSPARC->BCz);
+    int n_periodic;
+    if (pSPARC->CyclixFlag) {
+        n_periodic  = -1;
+    } else {
+        n_periodic = 3 - (pSPARC->BCx + pSPARC->BCy + pSPARC->BCz);
+    }
 
     // for Dirichlet BC
     if (n_periodic == 0) {
@@ -1542,8 +1583,6 @@ void poisson_RHS(SPARC_OBJ *pSPARC, double *rhs) {
  * @brief   Solve Poisson equation for electrostatic potential.
  */
 void Calculate_elecstPotential(SPARC_OBJ *pSPARC) {
-#define psdChrgDens(i,j,k) psdChrgDens[(k)*DMnx*DMny+(j)*DMnx+(i)]
-#define electronDens(i,j,k) electronDens[(k)*DMnx*DMny+(j)*DMnx+(i)]
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #ifdef DEBUG
@@ -1573,22 +1612,31 @@ void Calculate_elecstPotential(SPARC_OBJ *pSPARC) {
 #ifdef DEBUG
     double t1, t2;
     t1 = MPI_Wtime();
+    int i, j, k;
     double int_b = 0.0, int_rho = 0.0;
     // find integral of b, rho locally
-    for (int i = 0; i < DMnd; i++) {
-    	int_b += pSPARC->psdChrgDens[i];
-        int_rho += pSPARC->electronDens[i];
+    if (pSPARC->CyclixFlag) {
+        for (int i = 0; i < DMnd; i++) {
+            int_b += pSPARC->psdChrgDens[i] * pSPARC->Intgwt_phi[i];
+            int_rho += pSPARC->electronDens[i] * pSPARC->Intgwt_phi[i];
+        }
+    } else {
+        for (int i = 0; i < DMnd; i++) {
+            int_b += pSPARC->psdChrgDens[i];
+            int_rho += pSPARC->electronDens[i];
+        }
+        int_b *= pSPARC->dV;
+        int_rho *= pSPARC->dV;
     }
     double vt[2],vsum[2]={0,0};
     vt[0] = int_b; vt[1] = int_rho;
-    MPI_Allreduce(vt, vsum, 2, MPI_DOUBLE,
-                  MPI_SUM, pSPARC->dmcomm_phi); 
+    MPI_Allreduce(vt, vsum, 2, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi); 
     int_b   = vsum[0];
     int_rho = vsum[1];
     t2 = MPI_Wtime();
     if(!rank) 
-    printf("rank = %d, int_b = %18.14f, int_rho = %18.14f, int_b + int_rho = %.3e, checking this took %.3f ms\n",
-    	rank,int_b*pSPARC->dV,int_rho*pSPARC->dV,(int_b+int_rho)*pSPARC->dV,(t2-t1)*1e3);
+        printf("rank = %d, int_b = %18.14f, int_rho = %18.14f, int_b + int_rho = %.3e, checking this took %.3f ms\n",
+            rank,int_b,int_rho,(int_b+int_rho),(t2-t1)*1e3);
     t1 = MPI_Wtime();
 #endif    
 
@@ -1621,25 +1669,26 @@ void Calculate_elecstPotential(SPARC_OBJ *pSPARC) {
         VectorShift(pSPARC->elecstPotential, DMnd, -phi_shift, pSPARC->dmcomm_phi);
     }
     free(rhs);
-    
-#undef psdChrgDens
-#undef electronDens  
 }
 
 
 void Jacobi_preconditioner(SPARC_OBJ *pSPARC, int N, double c, double *r, double *f, MPI_Comm comm) {
-    int i;
-    double m_inv;
-    // TODO: m_inv can be calculated in advance and stored into pSPARC
-    m_inv =  pSPARC->D2_stencil_coeffs_x[0] 
-           + pSPARC->D2_stencil_coeffs_y[0] 
-           + pSPARC->D2_stencil_coeffs_z[0] + c;
-    if (fabs(m_inv) < 1e-14) {
-        m_inv = 1.0;
+    if (pSPARC->CyclixFlag) {
+        Jacobi_preconditioner_cyclix(pSPARC, N, c, r, f, comm);
+    } else {
+        int i;
+        double m_inv;
+        // TODO: m_inv can be calculated in advance and stored into pSPARC
+        m_inv =  pSPARC->D2_stencil_coeffs_x[0] 
+            + pSPARC->D2_stencil_coeffs_y[0] 
+            + pSPARC->D2_stencil_coeffs_z[0] + c;
+        if (fabs(m_inv) < 1e-14) {
+            m_inv = 1.0;
+        }
+        m_inv = - 1.0 / m_inv;
+        for (i = 0; i < N; i++)
+            f[i] = m_inv * r[i];
     }
-    m_inv = - 1.0 / m_inv;
-    for (i = 0; i < N; i++)
-        f[i] = m_inv * r[i];
 }
 
 

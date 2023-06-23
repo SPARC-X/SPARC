@@ -119,9 +119,9 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
     int j; // seems that in computations having k-point, there is no need to loop over bands
 
     double _Complex *X_kpt = x;
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_x_kpt, 0, pSPARC->k1_loc[kpt], comm);
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_y_kpt, 1, pSPARC->k2_loc[kpt], comm);
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_z_kpt, 2, pSPARC->k3_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_x_kpt, 0, &pSPARC->k1_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_y_kpt, 1, &pSPARC->k2_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, X_kpt, Dx_z_kpt, 2, &pSPARC->k3_loc[kpt], comm);
     if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){ // transform for unorthogonal cell
         double _Complex DxAfter[3] = {0.0};
         for (j = 0; j < size_k; j++) {
@@ -141,9 +141,9 @@ void compute_mGGA_term_hamil_kpt(const SPARC_OBJ *pSPARC, double _Complex *x, in
         Dx_y_kpt[j] *= vxcMGGA3_dm[j%colLength]; 
         Dx_z_kpt[j] *= vxcMGGA3_dm[j%colLength]; // Now the vectors are Vxc3*gradX
     }
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_x_kpt, Dvxc3Dx_x_kpt, 0, pSPARC->k1_loc[kpt], comm);
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_y_kpt, Dvxc3Dx_y_kpt, 1, pSPARC->k2_loc[kpt], comm);
-    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_z_kpt, Dvxc3Dx_z_kpt, 2, pSPARC->k3_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_x_kpt, Dvxc3Dx_x_kpt, 0, &pSPARC->k1_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_y_kpt, Dvxc3Dx_y_kpt, 1, &pSPARC->k2_loc[kpt], comm);
+    Gradient_vectors_dir_kpt(pSPARC, colLength, DMVertices, ncol, 0.0, Dx_z_kpt, Dvxc3Dx_z_kpt, 2, &pSPARC->k3_loc[kpt], comm);
     
     for (j = 0; j < size_k; j++) {
         mGGAterm[j] = Dvxc3Dx_x_kpt[j] + Dvxc3Dx_y_kpt[j] + Dvxc3Dx_z_kpt[j];

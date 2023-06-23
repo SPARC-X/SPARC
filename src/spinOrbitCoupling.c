@@ -29,6 +29,7 @@
 #include "initialization.h"
 #include "gradVecRoutinesKpt.h"
 #include "stress.h"
+#include "cyclix_tools.h"
 
 #define TEMP_TOL 1e-12
 
@@ -58,8 +59,17 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
 #endif    
     int l, np, lcount, lcount2, m, psd_len, col_count, indx, ityp, iat, ipos, ndc, lloc, lmax, pspsoc;
     int DMnx, DMny, i_DM, j_DM, k_DM;
-    double x0_i, y0_i, z0_i, *rc_pos_x, *rc_pos_y, *rc_pos_z, *rc_pos_r, *UdV_sort, x2, y2, z2, x, y, z;
+    double x0_i, y0_i, z0_i, *rc_pos_x, *rc_pos_y, *rc_pos_z, *rc_pos_r, *UdV_sort, x2, y2, z2, x, y, z, *Intgwt;
     double _Complex *Ylm;
+    double xin = pSPARC->xin + DMVertices[0] * pSPARC->delta_x;
+
+    if (pSPARC->CyclixFlag) {
+        if(comm == pSPARC->kptcomm_topo){
+            Intgwt = pSPARC->Intgwt_kpttopo;
+        } else{
+            Intgwt = pSPARC->Intgwt_psi;
+        }
+    }
 
     // number of nodes in the local distributed domain
     DMnx = DMVertices[1] - DMVertices[0] + 1;
@@ -74,6 +84,9 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
         }
         // allocate memory for projectors
         nlocProj[ityp].Chiso = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        if (pSPARC->CyclixFlag) {
+            nlocProj[ityp].Chiso_cyclix = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        }
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;
         psd_len = pSPARC->psd[ityp].size;
@@ -92,6 +105,9 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             nlocProj[ityp].Chiso[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso);
+            if (pSPARC->CyclixFlag) {
+                nlocProj[ityp].Chiso_cyclix[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso);
+            }
             rc_pos_x = (double *)malloc( sizeof(double) * ndc );
             rc_pos_y = (double *)malloc( sizeof(double) * ndc );
             rc_pos_z = (double *)malloc( sizeof(double) * ndc );
@@ -130,7 +146,34 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
                     x2 = x * x; y2 = y * y; z2 = z*z;
                     rc_pos_r[ipos] = sqrt(x2+y2+z2);
                 }
-            }    
+            } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                double y0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+1];
+                double z0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+2];
+                double ty = (y0 - y0_i)/pSPARC->range_y;
+                double tz = (z0 - z0_i)/pSPARC->range_z;                
+                RotMat_cyclix(pSPARC, ty, tz);                
+                double xi, yi, zi;
+                xi = x0_i; yi = y0_i; zi = z0_i;
+                nonCart2Cart_coord(pSPARC, &xi, &yi, &zi);
+                for (ipos = 0; ipos < ndc; ipos++) {
+                    indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                    k_DM = indx / (DMnx * DMny);
+                    j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                    i_DM = indx % DMnx;
+                    x = xin + i_DM * pSPARC->delta_x;
+                    y = (j_DM + DMVertices[2]) * pSPARC->delta_y;
+                    z = (k_DM + DMVertices[4]) * pSPARC->delta_z;
+                    nonCart2Cart_coord(pSPARC, &x, &y, &z);
+                    x -= xi;
+                    y -= yi;
+                    z -= zi;
+                    rc_pos_x[ipos] = pSPARC->RotM_cyclix[0] * x + pSPARC->RotM_cyclix[1] * y;
+                    rc_pos_y[ipos] = pSPARC->RotM_cyclix[3] * x + pSPARC->RotM_cyclix[4] * y;
+                    rc_pos_z[ipos] = z;
+                    x2 = x * x; y2 = y * y; z2 = z * z;
+                    rc_pos_r[ipos] = sqrt(x2+y2+z2);
+                }
+            }
 
             lcount = lcount2 = col_count = 0;
             // multiply spherical harmonics and UdV
@@ -155,6 +198,12 @@ void CalculateNonlocalProjectors_SOC(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
                         // calculate Chi = UdV * Ylm
                         for (ipos = 0; ipos < ndc; ipos++) {
                             nlocProj[ityp].Chiso[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos];
+                        }
+                        if (pSPARC->CyclixFlag) {
+                            for (ipos = 0; ipos < ndc; ipos++) {
+                                indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                                nlocProj[ityp].Chiso_cyclix[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos] * Intgwt[indx];
+                            }
                         }
                         col_count++;
                     }
@@ -204,6 +253,11 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
         nlocProj[ityp].Chisowt0 = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
         nlocProj[ityp].Chisowtl = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
         nlocProj[ityp].Chisowtnl = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        if (pSPARC->CyclixFlag) {
+            nlocProj[ityp].Chisowt0_cyclix = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+            nlocProj[ityp].Chisowtl_cyclix = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+            nlocProj[ityp].Chisowtnl_cyclix = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        }
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;      
         
@@ -221,6 +275,11 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
             nlocProj[ityp].Chisowt0[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
             nlocProj[ityp].Chisowtl[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
             nlocProj[ityp].Chisowtnl[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+            if (pSPARC->CyclixFlag) {
+                nlocProj[ityp].Chisowt0_cyclix[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+                nlocProj[ityp].Chisowtl_cyclix[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+                nlocProj[ityp].Chisowtnl_cyclix[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * nlocProj[ityp].nprojso_ext);
+            }
 
             // extract Chi without m = 0
             count1 = count2 = 0;
@@ -234,6 +293,12 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
                         // printf("col indx %d\n",count1+1);
                         for (ipos = 0; ipos < ndc; ipos++) {
                             nlocProj[ityp].Chisowt0[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso[iat][count1*ndc+ipos];
+                        }
+                        if (pSPARC->CyclixFlag) {
+                          for (ipos = 0; ipos < ndc; ipos++) {
+                              int indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                              nlocProj[ityp].Chisowt0_cyclix[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso_cyclix[iat][count1*ndc+ipos];
+                          }
                         }
                         count1++; count2++;
                     }
@@ -252,6 +317,12 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
                         for (ipos = 0; ipos < ndc; ipos++) {
                             nlocProj[ityp].Chisowtl[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso[iat][count1*ndc+ipos];
                         }
+                        if (pSPARC->CyclixFlag) {
+                          for (ipos = 0; ipos < ndc; ipos++) {
+                              int indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                              nlocProj[ityp].Chisowtl_cyclix[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso_cyclix[iat][count1*ndc+ipos];
+                          }
+                        }
                         count1++; count2++;
                     }
                 }
@@ -268,6 +339,12 @@ void CreateChiSOMatrix(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj,
                         if (m == -l) { count1++; continue;}
                         for (ipos = 0; ipos < ndc; ipos++) {
                             nlocProj[ityp].Chisowtnl[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso[iat][count1*ndc+ipos];
+                        }
+                        if (pSPARC->CyclixFlag) {
+                          for (ipos = 0; ipos < ndc; ipos++) {
+                              int indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                              nlocProj[ityp].Chisowtnl_cyclix[iat][count2*ndc+ipos] = nlocProj[ityp].Chiso_cyclix[iat][count1*ndc+ipos];
+                          }
                         }
                         count1++; count2++;
                     }
@@ -342,7 +419,11 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
             z0_i = Atom_Influence_nloc[ityp].coords[iat*3+2];
             theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
             bloch_fac = cos(theta) + sin(theta) * I;
-            a = bloch_fac * pSPARC->dV;
+            if (pSPARC->CyclixFlag) {
+                a = bloch_fac;
+            } else {
+                a = bloch_fac * pSPARC->dV;
+            }
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
@@ -352,9 +433,15 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
                     x_rc[n*ndc+i] = x[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
-            cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc, 
-                &a, nlocProj[ityp].Chisowt0[iat], ndc, x_rc, ndc, &b, 
-                alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            if (pSPARC->CyclixFlag) {
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc,
+                    &a, nlocProj[ityp].Chisowt0_cyclix[iat], ndc, x_rc, ndc, &b,
+                    alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            } else {
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc, 
+                    &a, nlocProj[ityp].Chisowt0[iat], ndc, x_rc, ndc, &b, 
+                    alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            }
             free(x_rc);
         }
     }
@@ -444,19 +531,26 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
     double k3 = pSPARC->k3_loc[kpt];
     double theta;
     double _Complex bloch_fac, a, b;
-    double _Complex **Chiso;
+    double _Complex **Chiso, **Chiso_cyclix;
     
     //first find inner product
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         if (! nlocProj[ityp].nprojso_ext) continue;
         Chiso = (spinor == 0) ? nlocProj[ityp].Chisowtnl : nlocProj[ityp].Chisowtl; 
+        if (pSPARC->CyclixFlag) {
+            Chiso_cyclix = (spinor == 0) ? nlocProj[ityp].Chisowtnl_cyclix : nlocProj[ityp].Chisowtl_cyclix;
+        }
         for (iat = 0; iat < Atom_Influence_nloc[ityp].n_atom; iat++) {
             x0_i = Atom_Influence_nloc[ityp].coords[iat*3  ];
             y0_i = Atom_Influence_nloc[ityp].coords[iat*3+1];
             z0_i = Atom_Influence_nloc[ityp].coords[iat*3+2];
             theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
             bloch_fac = cos(theta) + sin(theta) * I;
-            a = bloch_fac * pSPARC->dV;
+            if (pSPARC->CyclixFlag) {
+                a = bloch_fac;
+            } else {
+                a = bloch_fac * pSPARC->dV;
+            }
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
@@ -466,9 +560,15 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
                     x_rc[n*ndc+i] = xos[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
-            cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc, 
-                &a, Chiso[iat], ndc, x_rc, ndc, &b, 
-                alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            if (pSPARC->CyclixFlag) {
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc,
+                    &a, Chiso_cyclix[iat], ndc, x_rc, ndc, &b,
+                    alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            } else {
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nlocProj[ityp].nprojso_ext, ncol, ndc, 
+                    &a, Chiso[iat], ndc, x_rc, ndc, &b, 
+                    alpha+pSPARC->IP_displ_SOC[atom_index]*ncol, nlocProj[ityp].nprojso_ext);
+            }
             free(x_rc);
         }
     }
@@ -600,7 +700,7 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
                 for (spinor = 0; spinor < Nspinor; spinor++) {
                     // find dPsi in direction dim
                     Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                            pSPARC->Yorb_kpt+spinor*DMndbyNspinor, dim, kpt_vec, pSPARC->dmcomm);
+                                            pSPARC->Yorb_kpt+spinor*DMndbyNspinor, dim, &kpt_vec, pSPARC->dmcomm);
                 }
                 beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * (dim + 1) + count);
                 Compute_Integral_Chi_Dpsi_kpt(pSPARC, pSPARC->Yorb_kpt, beta, spn_i, kpt, "SC");
@@ -633,7 +733,7 @@ void Calculate_nonlocal_forces_kpt_spinor_linear(SPARC_OBJ *pSPARC)
     }
 
     // sum over all kpoints
-    if (pSPARC->npkpt > 1) {
+    if (pSPARC->npkpt > 1) {        
         MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
 
@@ -701,9 +801,9 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double _Complex *beta, int 
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         nproj = !strcmpi(option, "SC") ? pSPARC->nlocProj[ityp].nproj : pSPARC->nlocProj[ityp].nprojso_ext;
         if (!strcmpi(option, "SC")) 
-            Chi = pSPARC->nlocProj[ityp].Chi_c;
+            Chi = (pSPARC->CyclixFlag) ? pSPARC->nlocProj[ityp].Chi_c_cyclix : pSPARC->nlocProj[ityp].Chi_c;
         else if (!strcmpi(option, "SO1")) 
-            Chi = pSPARC->nlocProj[ityp].Chisowt0;
+            Chi = (pSPARC->CyclixFlag) ? pSPARC->nlocProj[ityp].Chisowt0_cyclix : pSPARC->nlocProj[ityp].Chisowt0;
 
         if (! nproj) continue; // this is typical for hydrogen
         for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
@@ -712,15 +812,23 @@ void Compute_Integral_psi_Chi_kpt(SPARC_OBJ *pSPARC, double _Complex *beta, int 
             z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
             theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
             bloch_fac = cos(theta) - sin(theta) * I;
-            a = bloch_fac * pSPARC->dV;
+            if (pSPARC->CyclixFlag) {
+                a = bloch_fac;
+            } else {
+                a = bloch_fac * pSPARC->dV;
+            }
             b = 1.0;
             ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
             x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
             atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
             /* first find inner product <Psi_n, Chi_Jlm>, here we calculate <Chi_Jlm, Psi_n> instead */
             for (spinor = 0; spinor < Nspinor; spinor++) {
-                if (!strcmpi(option, "SO2")) 
-                    Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtl : pSPARC->nlocProj[ityp].Chisowtnl; 
+                if (!strcmpi(option, "SO2")) {
+                    if (pSPARC->CyclixFlag)
+                        Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtl_cyclix : pSPARC->nlocProj[ityp].Chisowtnl_cyclix; 
+                    else
+                        Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtl : pSPARC->nlocProj[ityp].Chisowtnl; 
+                }
                 for (n = 0; n < ncol; n++) {
                     x_ptr = pSPARC->Xorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd + spinor * DMndbyNspinor;
                     x_rc_ptr = x_rc + n * ndc;
@@ -842,7 +950,7 @@ void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, doub
     count = 0; 
     for(spn_i = 0; spn_i < nspin; spn_i++) {
         for (k = 0; k < Nk; k++) {
-            kpt_spn_fac = (2.0/pSPARC->Nspin/Nspinor) * 2.0 * pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
+            kpt_spn_fac = pSPARC->occfac * 2.0 * pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
             for (spinor = 0; spinor < Nspinor; spinor++) {
                 double spinorfac = (spinor == 0) ? 1.0 : -1.0; 
                 atom_index = 0;
@@ -957,7 +1065,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
                         // find dPsi in direction dim
                         dpsi_xi = dpsi_full + dim*size_s*nspin;
                         Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                                 dpsi_xi+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, dim, kpt_vec, pSPARC->dmcomm);
+                                                 dpsi_xi+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, dim, &kpt_vec, pSPARC->dmcomm);
                     }
                 }
             }
@@ -980,7 +1088,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
                         // find dPsi in direction dim along lattice vector directions
                         Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
                                                 pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                                dpsi_xi_lv+spinor*DMndbyNspinor, dim, kpt_vec, pSPARC->dmcomm);
+                                                dpsi_xi_lv+spinor*DMndbyNspinor, dim, &kpt_vec, pSPARC->dmcomm);
                     }
                     // find dPsi in direction dim in cartesian coordinates
                     for (i = 0; i < size_k; i++) {
@@ -1056,7 +1164,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
                         g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
                         temp_k += dpsii_dpsij * g_nk;
                     }
-                    stress_k[count] -= (2.0/pSPARC->Nspin/pSPARC->Nspinor) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k;
+                    stress_k[count] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k;
                 }
             }
             count ++;
@@ -1090,9 +1198,9 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha, alpha_so1, alpha_so2);
     
     for(i = 0; i < 6; i++)
-        stress_nl[i] *= (2.0/pSPARC->Nspin/pSPARC->Nspinor) * 2.0;
+        stress_nl[i] *= pSPARC->occfac * 2.0;
     
-    energy_nl *= (2.0/pSPARC->Nspin/pSPARC->Nspinor)/pSPARC->dV;   
+    energy_nl *= pSPARC->occfac/pSPARC->dV;   
 
     pSPARC->stress_nl[0] = stress_nl[0] - energy_nl;
     pSPARC->stress_nl[1] = stress_nl[1];
@@ -1104,9 +1212,9 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
         pSPARC->stress_k[i] = stress_k[i];
     
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
+    if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
     }
 
 
@@ -1117,7 +1225,7 @@ void Calculate_nonlocal_kinetic_stress_kpt_spinor(SPARC_OBJ *pSPARC)
     }
 
     // sum over all bands
-    if (pSPARC->npband > 1) {
+    if (pSPARC->npband > 1) {        
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
     }
@@ -1512,7 +1620,7 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
                 for (spinor = 0; spinor < Nspinor; spinor++) {
                     // find dPsi in direction dim along lattice vector directions
                     Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                            pSPARC->Yorb_kpt+spinor*DMndbyNspinor, dim, kpt_vec, pSPARC->dmcomm);
+                                            pSPARC->Yorb_kpt+spinor*DMndbyNspinor, dim, &kpt_vec, pSPARC->dmcomm);
                 }
                 beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * count2 + count);
                 Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(pSPARC, pSPARC->Yorb_kpt, beta, spn_i, kpt, dim, "SC");
@@ -1527,9 +1635,9 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
     }
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
 
     /* calculate nonlocal pressure */
@@ -1537,25 +1645,25 @@ void Calculate_nonlocal_pressure_kpt_spinor(SPARC_OBJ *pSPARC)
     Compute_pressure_nloc_by_integrals(pSPARC, &pressure_nloc, alpha, "SC");
     Compute_pressure_nloc_by_integrals(pSPARC, &pressure_nloc, alpha_so1, "SO1");
     Compute_pressure_nloc_by_integrals(pSPARC, &pressure_nloc, alpha_so2, "SO2");
-    pressure_nloc *= 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+    pressure_nloc *= pSPARC->occfac;
 
     energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha, alpha_so1, alpha_so2);
-    energy_nl *= (2.0/pSPARC->Nspin/pSPARC->Nspinor)/pSPARC->dV;
+    energy_nl *= pSPARC->occfac/pSPARC->dV;
     pressure_nloc -= energy_nl;
     
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
+    if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
         
     // sum over all kpoints
-    if (pSPARC->npkpt > 1) {    
-        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+    if (pSPARC->npkpt > 1) {            
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);        
     }
 
     // sum over all bands
-    if (pSPARC->npband > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+    if (pSPARC->npband > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
     }
     
     if (!rank) {

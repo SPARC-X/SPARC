@@ -27,6 +27,7 @@
 #include "tools.h"
 #include "isddft.h"
 #include "initialization.h"
+#include "cyclix_tools.h"
 
 #define TEMP_TOL 1e-12
 
@@ -322,9 +323,27 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
                                     }
                                 }
                             } 
-                        } else {
+                        } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
                             count = 0;
-                        }   
+                            for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
+                                k_DM = k - DMVertices[4];
+                                z = k * pSPARC->delta_z;
+                                for (j = Atom_Influence_nloc_temp.ys[count_overlap_nloc]; j <= Atom_Influence_nloc_temp.ye[count_overlap_nloc]; j++) {
+                                    j_DM = j - DMVertices[2];
+                                    y = j * pSPARC->delta_y;
+                                    for (i = Atom_Influence_nloc_temp.xs[count_overlap_nloc]; i <= Atom_Influence_nloc_temp.xe[count_overlap_nloc]; i++) {
+                                        i_DM = i - DMVertices[0];
+                                        x = pSPARC->xin + i * pSPARC->delta_x;
+                                        CalculateDistance(pSPARC, x, y, z, x0_i, y0_i, z0_i, &r2);
+                                        r2 *= r2;
+                                        if (r2 <= rc2) {
+                                            Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc][count] = k_DM * (DMnx * DMny) + j_DM * DMnx + i_DM;
+                                            count++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         // TODO: in some cases count is 0! check if ndc is 0 and remove those!
                         Atom_Influence_nloc_temp.ndc[count_overlap_nloc] = count;
                         count_overlap_nloc++;
@@ -442,9 +461,23 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
     DMny = DMVertices[3] - DMVertices[2] + 1;
 
     (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
+    double *Intgwt = NULL;
+    double y0, z0, xi, yi, zi, xx, yy, zz;
+    double ty, tz;
+    double xin = pSPARC->xin + DMVertices[0] * pSPARC->delta_x;
+    if (pSPARC->CyclixFlag) {
+        if(comm == pSPARC->kptcomm_topo){
+            Intgwt = pSPARC->Intgwt_kpttopo;
+        } else{
+            Intgwt = pSPARC->Intgwt_psi;
+        }
+    }
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
         // allocate memory for projectors
         (*nlocProj)[ityp].Chi = (double **)malloc( sizeof(double *) * Atom_Influence_nloc[ityp].n_atom);
+        if (pSPARC->CyclixFlag) {
+            (*nlocProj)[ityp].Chi_cyclix = (double **)malloc( sizeof(double *) * Atom_Influence_nloc[ityp].n_atom);
+        }
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;
         psd_len = pSPARC->psd[ityp].size;
@@ -463,6 +496,9 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             (*nlocProj)[ityp].Chi[iat] = (double *)malloc( sizeof(double) * ndc * (*nlocProj)[ityp].nproj); 
+            if (pSPARC->CyclixFlag) {
+                (*nlocProj)[ityp].Chi_cyclix[iat] = (double *)malloc( sizeof(double) * ndc * (*nlocProj)[ityp].nproj);
+            }
             rc_pos_x = (double *)malloc( sizeof(double) * ndc );
             rc_pos_y = (double *)malloc( sizeof(double) * ndc );
             rc_pos_z = (double *)malloc( sizeof(double) * ndc );
@@ -501,7 +537,33 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
                     x2 = x * x; y2 = y * y; z2 = z*z;
                     rc_pos_r[ipos] = sqrt(x2+y2+z2);
                 }
-            }    
+            } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                y0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+1];
+                z0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+2];
+                ty = (y0 - y0_i)/pSPARC->range_y;
+                tz = (z0 - z0_i)/pSPARC->range_z;
+                RotMat_cyclix(pSPARC, ty, tz);
+                xi = x0_i; yi = y0_i; zi = z0_i;
+                nonCart2Cart_coord(pSPARC, &xi, &yi, &zi);
+                for (ipos = 0; ipos < ndc; ipos++) {
+                    indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                    k_DM = indx / (DMnx * DMny);
+                    j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                    i_DM = indx % DMnx;
+                    x = xin + i_DM * pSPARC->delta_x;
+                    y = (j_DM + DMVertices[2]) * pSPARC->delta_y;
+                    z = (k_DM + DMVertices[4]) * pSPARC->delta_z;
+                    nonCart2Cart_coord(pSPARC, &x, &y, &z);
+                    x2 = x - xi;
+                    y2 = y - yi;
+                    z2 = z - zi;
+                    rc_pos_x[ipos] = pSPARC->RotM_cyclix[0] * x2 + pSPARC->RotM_cyclix[1] * y2;
+                    rc_pos_y[ipos] = pSPARC->RotM_cyclix[3] * x2 + pSPARC->RotM_cyclix[4] * y2;
+                    rc_pos_z[ipos] = z2;
+                    x2 *= x2; y2 *= y2; z2 *= z2;
+                    rc_pos_r[ipos] = sqrt(x2+y2+z2);
+                }
+            }
 
             lcount = lcount2 = col_count = 0;
             // multiply spherical harmonics and UdV
@@ -527,6 +589,13 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
                         // calculate Chi = UdV * Ylm
                         for (ipos = 0; ipos < ndc; ipos++) {
                             (*nlocProj)[ityp].Chi[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos];
+                        }
+                        
+                        if (pSPARC->CyclixFlag) {
+                            for (ipos = 0; ipos < ndc; ipos++) {
+                                indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                                (*nlocProj)[ityp].Chi_cyclix[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos] * Intgwt[indx];
+                            }
                         }
                         col_count++;
                     }
@@ -575,12 +644,26 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
     // number of nodes in the local distributed domain
     DMnx = DMVertices[1] - DMVertices[0] + 1;
     DMny = DMVertices[3] - DMVertices[2] + 1;
-    // DMnz = DMVertices[5] - DMVertices[4] + 1;  
+    
+    double *Intgwt = NULL;   
+    double y0, z0, xi, yi, zi, ty, tz;
+    double xin = pSPARC->xin + DMVertices[0] * pSPARC->delta_x; 
+    if (pSPARC->CyclixFlag) {
+        if(comm == pSPARC->kptcomm_topo){
+            Intgwt = pSPARC->Intgwt_kpttopo;
+        } else{
+            Intgwt = pSPARC->Intgwt_psi;
+        }
+    }
 
     (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
         // allocate memory for projectors
         (*nlocProj)[ityp].Chi_c = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        if (pSPARC->CyclixFlag) {
+            (*nlocProj)[ityp].Chi_c_cyclix = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);
+        }
+
         lloc = pSPARC->localPsd[ityp]; // local projector index
         lmax = pSPARC->psd[ityp].lmax;
         psd_len = pSPARC->psd[ityp].size;
@@ -599,6 +682,9 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
             // grid nodes in (spherical) rc-domain
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             (*nlocProj)[ityp].Chi_c[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * (*nlocProj)[ityp].nproj);
+            if (pSPARC->CyclixFlag) {
+                (*nlocProj)[ityp].Chi_c_cyclix[iat] = (double _Complex *)malloc( sizeof(double _Complex) * ndc * (*nlocProj)[ityp].nproj);
+            }
             rc_pos_x = (double *)malloc( sizeof(double) * ndc );
             rc_pos_y = (double *)malloc( sizeof(double) * ndc );
             rc_pos_z = (double *)malloc( sizeof(double) * ndc );
@@ -637,7 +723,33 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
                     x2 = x * x; y2 = y * y; z2 = z*z;
                     rc_pos_r[ipos] = sqrt(x2+y2+z2);
                 }
-            }    
+            } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
+                y0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+1];
+                z0 = pSPARC->atom_pos[3*Atom_Influence_nloc[ityp].atom_index[iat]+2];
+                ty = (y0 - y0_i)/pSPARC->range_y;
+                tz = (z0 - z0_i)/pSPARC->range_z;
+                RotMat_cyclix(pSPARC, ty, tz);
+                xi = x0_i; yi = y0_i; zi = z0_i;
+                nonCart2Cart_coord(pSPARC, &xi, &yi, &zi);
+                for (ipos = 0; ipos < ndc; ipos++) {
+                    indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                    k_DM = indx / (DMnx * DMny);
+                    j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                    i_DM = indx % DMnx;
+                    x = xin + i_DM * pSPARC->delta_x;
+                    y = (j_DM + DMVertices[2]) * pSPARC->delta_y;
+                    z = (k_DM + DMVertices[4]) * pSPARC->delta_z;
+                    nonCart2Cart_coord(pSPARC, &x, &y, &z);
+                    x2 = x - xi;
+                    y2 = y - yi;
+                    z2 = z - zi;
+                    rc_pos_x[ipos] = pSPARC->RotM_cyclix[0] * x2 + pSPARC->RotM_cyclix[1] * y2;
+                    rc_pos_y[ipos] = pSPARC->RotM_cyclix[3] * x2 + pSPARC->RotM_cyclix[4] * y2;
+                    rc_pos_z[ipos] = z2;
+                    x2 *= x2; y2 *= y2; z2 *= z2;
+                    rc_pos_r[ipos] = sqrt(x2+y2+z2);
+                }
+            }
 
             lcount = lcount2 = col_count = 0;
             // multiply spherical harmonics and UdV
@@ -662,6 +774,12 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
                         // calculate Chi = UdV * Ylm
                         for (ipos = 0; ipos < ndc; ipos++) {
                             (*nlocProj)[ityp].Chi_c[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos];
+                        }
+                        if (pSPARC->CyclixFlag) {
+                            for (ipos = 0; ipos < ndc; ipos++) {
+                                indx = Atom_Influence_nloc[ityp].grid_pos[iat][ipos];
+                                (*nlocProj)[ityp].Chi_c_cyclix[iat][col_count*ndc+ipos] = Ylm[ipos] * UdV_sort[ipos] * Intgwt[indx];
+                            }
                         }
                         col_count++;
                     }
@@ -744,9 +862,15 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
                     x_rc[n*ndc+i] = x[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
-            cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
-                pSPARC->dV, nlocProj[ityp].Chi[iat], ndc, x_rc, ndc, 1.0, 
-                alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);          
+            if (pSPARC->CyclixFlag) {
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
+                    1.0, nlocProj[ityp].Chi_cyclix[iat], ndc, x_rc, ndc, 1.0, 
+                    alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);
+            } else {
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
+                    pSPARC->dV, nlocProj[ityp].Chi[iat], ndc, x_rc, ndc, 1.0, 
+                    alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);          
+            }
             free(x_rc);
         }
     }
@@ -834,7 +958,11 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
             z0_i = Atom_Influence_nloc[ityp].coords[iat*3+2];
             theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
             bloch_fac = cos(theta) + sin(theta) * I;
-            a = bloch_fac * pSPARC->dV;
+            if (pSPARC->CyclixFlag) {
+                a = bloch_fac;
+            } else {
+                a = bloch_fac * pSPARC->dV;
+            }
             b = 1.0;
             ndc = Atom_Influence_nloc[ityp].ndc[iat]; 
             x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
@@ -844,9 +972,15 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
                     x_rc[n*ndc+i] = x[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
-            cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
-                &a, nlocProj[ityp].Chi_c[iat], ndc, x_rc, ndc, &b, 
-                alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);
+            if (pSPARC->CyclixFlag) {
+                cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
+                    &a, nlocProj[ityp].Chi_c_cyclix[iat], ndc, x_rc, ndc, &b, 
+                    alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);
+            } else {
+                cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, nlocProj[ityp].nproj, ncol, ndc, 
+                    &a, nlocProj[ityp].Chi_c[iat], ndc, x_rc, ndc, &b, 
+                    alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj);
+            }
             free(x_rc);
         }
     }

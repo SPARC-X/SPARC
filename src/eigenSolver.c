@@ -46,6 +46,7 @@
 #include "isddft.h"
 #include "parallelization.h"
 #include "linearAlgebra.h"
+#include "cyclix_tools.h"
 
 #ifdef SPARCX_ACCEL
 #include "accel.h"
@@ -208,6 +209,20 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
             CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
         
         t1 = MPI_Wtime();
+        
+        int indx, indx0, ns;
+        if (pSPARC->CyclixFlag) {
+            // Find sorted eigenvalues
+            for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                indx0 = spn_i*pSPARC->Nstates;
+                for(ns = 0; ns < pSPARC->Nstates; ns++){
+                    indx = indx0 + ns;
+                    pSPARC->lambda_sorted[indx] = pSPARC->lambda[indx];
+                }
+                qsort(pSPARC->lambda_sorted + indx0, pSPARC->Nstates, sizeof(pSPARC->lambda_sorted[0]), cmp);
+            }
+        }
+
         // ** calculate fermi energy ** //
         // find global minimum and global maximum eigenvalue
         double eigmin_g = pSPARC->lambda_sorted[0];
@@ -225,6 +240,15 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
         }
         
         pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
+
+        if (pSPARC->CyclixFlag) {
+            // Find occupations corresponding to sorted eigenvalues
+            for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                for (ns = 0; ns < pSPARC->Nstates; ns++) {
+                    pSPARC->occ_sorted[ns+spn_i*pSPARC->Nstates] = smearing_function(pSPARC->Beta, pSPARC->lambda_sorted[ns+spn_i*pSPARC->Nstates], pSPARC->Efermi, pSPARC->elec_T_type);
+                }
+            }
+        }
 
         // check occupation (if Nstates is large enough) for every SCF
         // for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
@@ -412,8 +436,8 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         // print eigenvalues
         printf("    first calculated eigval = %.15f\n"
                "    last  calculated eigval = %.15f\n",
-               pSPARC->lambda_sorted[0],
-               pSPARC->lambda_sorted[pSPARC->Nstates-1]);
+               pSPARC->lambda[0],
+               pSPARC->lambda[pSPARC->Nstates-1]);
         int neig_print = min(20,pSPARC->Nstates - pSPARC->Nelectron/2 + 10);
         neig_print = min(neig_print, pSPARC->Nstates);
         printf("The last %d eigenvalues of kpoints #%d and spin #%d are (Nelectron = %d):\n", neig_print, 1, spn_i, pSPARC->Nelectron);
@@ -421,7 +445,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
         for (i = 0; i < neig_print; i++) {
             printf("lambda[%4d] = %18.14f\n", 
                     pSPARC->Nstates - neig_print + i + 1, 
-                    pSPARC->lambda_sorted[pSPARC->Nstates - neig_print + i]);
+                    pSPARC->lambda[pSPARC->Nstates - neig_print + i]);
         }
         printf("==subpsace eigenproblem: bcast eigvals took %.3f ms\n", (t2-t3)*1e3);
         printf("Total time for solving subspace eigenvalue problem: %.3f ms\n", 
@@ -457,6 +481,16 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef DEBUG
     if(!rank) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
     #endif
+
+    if (pSPARC->CyclixFlag) {
+        // Rescale wavefunction to make L2-norm for cyclix systems
+        t1 = MPI_Wtime();
+        NormalizeEigfunc_cyclix(pSPARC, spn_i);
+        t2 = MPI_Wtime();
+#ifdef DEBUG
+        if(!rank) printf("Total time for normalizing psi: %.3f ms\n", (t2-t1)*1e3);
+#endif
+    }
 }
 
 
@@ -1537,22 +1571,40 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y,
     t1 = MPI_Wtime();
     // perform matrix multiplication using ScaLAPACK routines
     if (pSPARC->npband > 1) { 
-        #ifdef DEBUG    
-        if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
-        #endif   
-        // perform matrix multiplication using ScaLAPACK routines
-        pdsyrk_("U", "T", &pSPARC->Nstates, &Nd_blacscomm, &alpha, pSPARC->Yorb_BLCYC, &ONE, &ONE,
-            pSPARC->desc_orb_BLCYC, &beta, Mp, &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+        if (pSPARC->CyclixFlag) {
+            #ifdef DEBUG    
+            if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
+            #endif   
+            pdgemm_("T", "N", &pSPARC->Nstates, &pSPARC->Nstates, &Nd_blacscomm, &alpha, 
+                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC,
+                pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &beta, Mp, 
+                &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+        } else {
+            #ifdef DEBUG    
+            if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
+            #endif   
+            // perform matrix multiplication using ScaLAPACK routines
+            pdsyrk_("U", "T", &pSPARC->Nstates, &Nd_blacscomm, &alpha, pSPARC->Yorb_BLCYC, &ONE, &ONE,
+                pSPARC->desc_orb_BLCYC, &beta, Mp, &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
+        }
     } else {
-        #ifdef DEBUG    
-        if (!rank && spn_i == 0) printf("rank = %d, STARTING DGEMM ...\n",rank);
-        #endif   
-        cblas_dgemm(
-            CblasColMajor, CblasTrans, CblasNoTrans,
-            pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
-            1.0, pSPARC->Yorb_BLCYC, Nd_blacscomm, pSPARC->Yorb_BLCYC, Nd_blacscomm, 
-            0.0, Mp, pSPARC->Nstates
-        );
+        if (pSPARC->CyclixFlag) {
+            #ifdef DEBUG    
+            if (!rank && spn_i == 0) printf("rank = %d, STARTING DGEMM ...\n",rank);
+            #endif   
+            cblas_dgemm(
+                CblasColMajor, CblasTrans, CblasNoTrans,
+                pSPARC->Nstates, pSPARC->Nstates, Nd_blacscomm,
+                alpha, pSPARC->Yorb_BLCYC, Nd_blacscomm, pSPARC->Yorb_BLCYC, Nd_blacscomm, 
+                beta, Mp, pSPARC->Nstates
+            );
+        } else {
+            #ifdef DEBUG    
+            if (!rank && spn_i == 0) printf("rank = %d, STARTING DSYRK ...\n",rank);
+            #endif   
+            cblas_dsyrk(CblasColMajor, CblasUpper, CblasTrans, pSPARC->Nstates, Nd_blacscomm, alpha, 
+                pSPARC->Yorb_BLCYC, Nd_blacscomm, beta, Mp, pSPARC->Nstates);
+        }
     }
     t2 = MPI_Wtime();
     #ifdef DEBUG
@@ -1745,13 +1797,32 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
             if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
                 (pSPARC->is_domain_uniform && !rank_kptcomm)) {
 
-                if (pSPARC->StandardEigenFlag == 0)
-                    info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
-                                pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
-                                pSPARC->lambda + spn_i*pSPARC->Nstates);
-                else 
-                    info = LAPACKE_dsyevd(LAPACK_COL_MAJOR,'V','U',pSPARC->Nstates,pSPARC->Hp,
-                                pSPARC->Nstates, pSPARC->lambda + spn_i*pSPARC->Nstates);
+                if (pSPARC->CyclixFlag) {
+                    info = LAPACKE_dggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates,pSPARC->Hp,
+                            pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
+                            pSPARC->lambda_temp1, pSPARC->lambda_temp2, pSPARC->lambda_temp3,
+                            pSPARC->vl, pSPARC->Nstates, pSPARC->vr, pSPARC->Nstates);
+                    int indx0, n, indx, m;
+                    indx0 = spn_i*pSPARC->Nstates;
+                    for(n = 0; n < pSPARC->Nstates; n++){
+                        indx = indx0 + n;
+                        // Warning if lambda_temp3 is almost zero                        
+                        assert(fabs(pSPARC->lambda_temp3[n]) > 1e-15);
+                        
+                        pSPARC->lambda[indx] = pSPARC->lambda_temp1[n]/pSPARC->lambda_temp3[n];
+                        for(m = 0; m < pSPARC->Nstates; m++){
+                            pSPARC->Hp[n*pSPARC->Nstates+m] = pSPARC->vr[n*pSPARC->Nstates+m];
+                        }
+                    }
+                } else {
+                    if (pSPARC->StandardEigenFlag == 0)
+                        info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
+                                    pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
+                                    pSPARC->lambda + spn_i*pSPARC->Nstates);
+                    else 
+                        info = LAPACKE_dsyevd(LAPACK_COL_MAJOR,'V','U',pSPARC->Nstates,pSPARC->Hp,
+                                    pSPARC->Nstates, pSPARC->lambda + spn_i*pSPARC->Nstates);
+                }
             }
             t2 = MPI_Wtime();
             #ifdef DEBUG

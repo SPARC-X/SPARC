@@ -37,13 +37,14 @@
 #include "spinOrbitCoupling.h"
 #include "sqInitialization.h"
 #include "sqParallelization.h"
+#include "cyclix_tools.h"
 
 #define TEMP_TOL 1e-12
 
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 162
+#define N_MEMBR 163
 
 
 
@@ -289,6 +290,10 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         init_exx(pSPARC);
     }
 
+    if (pSPARC->CyclixFlag == 1) {
+        init_cyclix(pSPARC);
+    }
+    
 #ifdef DEBUG
     t1 = MPI_Wtime();
 #endif
@@ -657,6 +662,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->npNdx_SQ = 0;
     pSPARC_Input->npNdy_SQ = 0;
     pSPARC_Input->npNdz_SQ = 0;
+
+    /* Default parameter for cyclix */
+    pSPARC_Input->twist = 0.0;
 }
 
 
@@ -693,8 +701,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     if (rank == 0) {
         // pack the info. into temp. buffer
         tempbuff[0] = pSPARC->n_atom;
-        tempbuff[1] = pSPARC->Nspinor;
-        tempbuff[2] = pSPARC->SOC_Flag;
+        tempbuff[1] = pSPARC->SOC_Flag;
         for (i = 0; i < Ntypes; i++) {
             lmaxv[i] = pSPARC->psd[i].lmax;
             sizev[i] = pSPARC->psd[i].size;
@@ -702,15 +709,15 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
             is_r_uniformv[i] = pSPARC->psd[i].is_r_uniform;
             pspsocv[i] = pSPARC->psd[i].pspsoc;
             //pplv[i] = pSPARC->psd[i].ppl;
-            tempbuff[i+3] = lmaxv[i];
-            tempbuff[i+Ntypes+3] = sizev[i];
-            tempbuff[i+2*Ntypes+3] = pspxcv[i];
-            tempbuff[i+3*Ntypes+3] = is_r_uniformv[i];
-            tempbuff[i+4*Ntypes+3] = pspsocv[i];
+            tempbuff[i+2] = lmaxv[i];
+            tempbuff[i+Ntypes+2] = sizev[i];
+            tempbuff[i+2*Ntypes+2] = pspxcv[i];
+            tempbuff[i+3*Ntypes+2] = is_r_uniformv[i];
+            tempbuff[i+4*Ntypes+2] = pspsocv[i];
 
             //tempbuff[i+2*Ntypes+1] = pplv[i];
         }
-        MPI_Bcast( tempbuff, 5*Ntypes+3, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast( tempbuff, 5*Ntypes+2, MPI_INT, 0, MPI_COMM_WORLD);
 
         // pack psd[i].ppl[l] and bcast
         ppl_sdispl[0] = 0;
@@ -731,7 +738,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 #ifdef DEBUG
         t1 = MPI_Wtime();
 #endif
-        MPI_Bcast( tempbuff, 5*Ntypes+3, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast( tempbuff, 5*Ntypes+2, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -739,14 +746,13 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
 #endif
         // unpack info.
         pSPARC->n_atom = tempbuff[0];
-        pSPARC->Nspinor = tempbuff[1];
-        pSPARC->SOC_Flag = tempbuff[2];
+        pSPARC->SOC_Flag = tempbuff[1];
         for (i = 0; i < Ntypes; i++) {
-            lmaxv[i] = tempbuff[i+3];
-            sizev[i] = tempbuff[i+Ntypes+3];
-            pspxcv[i] = tempbuff[i+2*Ntypes+3];
-            is_r_uniformv[i] = tempbuff[i+3*Ntypes+3];
-            pspsocv[i] = tempbuff[i+4*Ntypes+3];
+            lmaxv[i] = tempbuff[i+2];
+            sizev[i] = tempbuff[i+Ntypes+2];
+            pspxcv[i] = tempbuff[i+2*Ntypes+2];
+            is_r_uniformv[i] = tempbuff[i+3*Ntypes+2];
+            pspsocv[i] = tempbuff[i+4*Ntypes+2];
             //pplv[i] = tempbuff[i+2*Ntypes+1];
             pSPARC->psd[i].lmax = lmaxv[i];
             pSPARC->psd[i].size = sizev[i];
@@ -1192,6 +1198,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->exx_frac = pSPARC_Input->exx_frac;
     pSPARC->SQ_rcut = pSPARC_Input->SQ_rcut;
     pSPARC->SQ_tol_occ = pSPARC_Input->SQ_tol_occ;
+    pSPARC->twist = pSPARC_Input->twist;
 
     // char type values
     strncpy(pSPARC->MDMeth , pSPARC_Input->MDMeth,sizeof(pSPARC->MDMeth));
@@ -1328,6 +1335,44 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Eband = 0.0;
     pSPARC->Entropy = 0.0;
     pSPARC->Etot = 0.0;
+
+    // 3 different spin options
+    if(pSPARC->spin_typ == 0) {
+    // spin-unpolarized calculation
+        pSPARC->Nspin = 1;
+        pSPARC->Nspden = 1;
+        if (pSPARC->SOC_Flag == 1) {
+            pSPARC->Nspinor = 2;
+        } else {
+            pSPARC->Nspinor = 1;
+        }
+    } else if (pSPARC->spin_typ == 1) {
+    // collinear spin calculation
+        if (pSPARC->SOC_Flag == 1) {
+            if (!rank) printf("ERROR: Collinear spin could not be used with SOC, please use non-collinear spin (SPIN_TYP: 2)!\n");
+            exit(EXIT_FAILURE);
+        }
+        pSPARC->Nspinor = 1;
+        pSPARC->Nspin = 2;
+        pSPARC->Nspden = 2;
+    } else if (pSPARC->spin_typ == 2) {
+    // non-collinear spin calculation
+        pSPARC->Nspin = 1;
+        pSPARC->Nspinor = 2;
+        pSPARC->Nspden = 4;
+        if (!rank) printf("ERROR: non-collinear spin hasn't been implemented yet!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        if (!rank) printf("ERROR: Please use 0 (spin-unpolarized) or 1 (collinear spin) for SPIN_TYP option.\n");
+        exit(EXIT_FAILURE);
+    }
+    pSPARC->occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+
+#ifdef DEBUG
+    if (!rank) 
+        printf("spin_typ: %d, SOC_flag: %d, Nspin: %d, Nspinor: %d, Nspden: %d, occfac %.2f\n", 
+            pSPARC->spin_typ, pSPARC->SOC_Flag, pSPARC->Nspin, pSPARC->Nspinor, pSPARC->Nspden, pSPARC->occfac);
+#endif
 
     // estimate Nstates if not provided
     if (pSPARC->Nstates == -1) {
@@ -1472,52 +1517,59 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->elec_T = 1./(pSPARC->kB * pSPARC->Beta);
     }
 
-    // Check the cell typ
-    double mult;
-    int j;
-    pSPARC->cell_typ = 0; // orthogonal cell by default
-    for(i = 0; i < 2; i++){
-        for(j = i+1; j < 3; j++){
-            mult = fabs(pSPARC->LatVec[3*i] * pSPARC->LatVec[3*j] + pSPARC->LatVec[3*i+1] * pSPARC->LatVec[3*j+1] + pSPARC->LatVec[3*i+2] * pSPARC->LatVec[3*j+2]);
-            if(mult > TEMP_TOL){
-                pSPARC->cell_typ = 1;
-                i = j = 3;
-            }
-        }
-    }
-
     // determine boundary conditions in each direction
     // BCx = 0 -> periodic, BCx = 1 -> dirichlet
-    if (pSPARC->BC > 0) {
-	    if (pSPARC->BC == 1) {
-	        // dirichlet boundary
-	        pSPARC->BCx = 1; pSPARC->BCy = 1; pSPARC->BCz = 1;
-	    } else if (pSPARC->BC == 2 || pSPARC->BC == 0) {
-	        // periodic in all three directions
-	        pSPARC->BCx = 0; pSPARC->BCy = 0; pSPARC->BCz = 0;
-	    } else if (pSPARC->BC == 3) {
-	        // periodic in x and y directions
-	        pSPARC->BCx = 0; pSPARC->BCy = 0; pSPARC->BCz = 1;
-	    } else if (pSPARC->BC == 4) {
-	        // periodic in x direction
-	        pSPARC->BCx = 1; pSPARC->BCy = 1; pSPARC->BCz = 0;
-	    } else if (pSPARC->BC > 7) {
-	        exit(EXIT_FAILURE);
-	    }
-	} else if (pSPARC->BCx >= 0 && pSPARC->BCy >= 0 && pSPARC->BCz >= 0) {
-		int n_Dirichlet = pSPARC->BCx + pSPARC->BCy + pSPARC->BCz;
-		switch (n_Dirichlet) {
-			case 0: pSPARC->BC = 2; break;
-			case 1: pSPARC->BC = 3; break;
-			case 2: pSPARC->BC = 4; break;
-			case 3: pSPARC->BC = 1; break;
-			default: printf("Error in BC values\n"); break;
-		}
-	} else {
-		// if user does not provide any BC, set default to periodic in all directions
-		pSPARC->BC = 2;
-		pSPARC->BCx = pSPARC->BCy = pSPARC->BCz = 0;
-	}
+    pSPARC->CyclixFlag = (pSPARC->BC >= 5 && pSPARC->BC <=7);
+#ifdef DEBUG
+    if (pSPARC->CyclixFlag && !rank) printf("Starts cyclix code.\n");
+#endif
+    if (pSPARC->CyclixFlag) {
+        CellTyp_cyclix(pSPARC); // TODO: USE BC input option later
+    } else {
+        // Check the cell typ
+        double mult;
+        int j;
+        pSPARC->cell_typ = 0; // orthogonal cell by default
+        for(i = 0; i < 2; i++){
+            for(j = i+1; j < 3; j++){
+                mult = fabs(pSPARC->LatVec[3*i] * pSPARC->LatVec[3*j] + pSPARC->LatVec[3*i+1] * pSPARC->LatVec[3*j+1] + pSPARC->LatVec[3*i+2] * pSPARC->LatVec[3*j+2]);
+                if(mult > TEMP_TOL){
+                    pSPARC->cell_typ = 1;
+                    i = j = 3;
+                }
+            }
+        }
+        if (pSPARC->BC > 0) {
+            if (pSPARC->BC == 1) {
+                // dirichlet boundary
+                pSPARC->BCx = 1; pSPARC->BCy = 1; pSPARC->BCz = 1;
+            } else if (pSPARC->BC == 2 || pSPARC->BC == 0) {
+                // periodic in all three directions
+                pSPARC->BCx = 0; pSPARC->BCy = 0; pSPARC->BCz = 0;
+            } else if (pSPARC->BC == 3) {
+                // periodic in x and y directions
+                pSPARC->BCx = 0; pSPARC->BCy = 0; pSPARC->BCz = 1;
+            } else if (pSPARC->BC == 4) {
+                // periodic in x direction
+                pSPARC->BCx = 1; pSPARC->BCy = 1; pSPARC->BCz = 0;
+            } else if (pSPARC->BC > 7) {
+                exit(EXIT_FAILURE);
+            }
+        } else if (pSPARC->BCx >= 0 && pSPARC->BCy >= 0 && pSPARC->BCz >= 0) {
+            int n_Dirichlet = pSPARC->BCx + pSPARC->BCy + pSPARC->BCz;
+            switch (n_Dirichlet) {
+                case 0: pSPARC->BC = 2; break;
+                case 1: pSPARC->BC = 3; break;
+                case 2: pSPARC->BC = 4; break;
+                case 3: pSPARC->BC = 1; break;
+                default: printf("ERROR in BC values\n"); break;
+            }
+        } else {
+            // if user does not provide any BC, set default to periodic in all directions
+            pSPARC->BC = 2;
+            pSPARC->BCx = pSPARC->BCy = pSPARC->BCz = 0;
+        }
+    }
 
     FDn = pSPARC->order / 2;    // half the FD order
     // calculate number of finite-difference intervals in case it's provided indirectly
@@ -1567,6 +1619,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     pSPARC->xin = 0.0; // starting coordinate (global) of the cell in the x-direction
+    if (pSPARC->CyclixFlag) {
+        CellParm_cyclix(pSPARC); 
+    }
 
     // Provide number of spin
     if(pSPARC->spin_typ == 0)
@@ -2356,6 +2411,14 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
 
+    if (pSPARC->CyclixFlag == 1) {
+        if (pSPARC->usefock || pSPARC->SQFlag || pSPARC->mGGAflag) {
+            if (rank == 0) 
+                printf(RED "ERROR: Hybrid functional, SQ, SCAN are not supported in this version of Cyclix implementation.\n" RESET);
+            exit(EXIT_FAILURE);
+        }
+    }
+
     // constraints on SQ
     if (pSPARC->SQFlag == 1) {
         if (pSPARC->BCx || pSPARC->BCy || pSPARC->BCz) {
@@ -2713,12 +2776,19 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
             for (nk3 = nk3_s; nk3 < nk3_e; nk3++) {
                 double k1_red, k2_red, k3_red;
                 // calculate Monkhorst-Pack k points (reduced) using Monkhorst pack grid
-                k1_red = nk1 * 1.0/pSPARC->Kx;
-                k2_red = nk2 * 1.0/pSPARC->Ky;
-                k3_red = nk3 * 1.0/pSPARC->Kz;
-                k1_red = fmod(k1_red + pSPARC->kptshift[0] / pSPARC->Kx + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
-                k2_red = fmod(k2_red + pSPARC->kptshift[1] / pSPARC->Ky + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
-                k3_red = fmod(k3_red + pSPARC->kptshift[2] / pSPARC->Kz + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
+                if (pSPARC->CyclixFlag) {
+                    k1_red = nk1 * 1.0/pSPARC->Kx;
+                    k2_red = nk2 * 1.0/pSPARC->Ky; //* (1- (pSPARC->twist*Lz*pSPARC->Ky/(2*M_PI) ) ));
+                    k3_red = nk3 * 1.0/pSPARC->Kz;
+                    k3_red = fmod(k3_red + pSPARC->kptshift[2] / pSPARC->Kz + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
+                } else {
+                    k1_red = nk1 * 1.0/pSPARC->Kx;
+                    k2_red = nk2 * 1.0/pSPARC->Ky;
+                    k3_red = nk3 * 1.0/pSPARC->Kz;
+                    k1_red = fmod(k1_red + pSPARC->kptshift[0] / pSPARC->Kx + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
+                    k2_red = fmod(k2_red + pSPARC->kptshift[1] / pSPARC->Ky + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
+                    k3_red = fmod(k3_red + pSPARC->kptshift[2] / pSPARC->Kz + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
+                }
 #ifdef DEBUG
                 if (!rank) printf(BLU "[k1_red,k2_red,k3_red] = %8.4f %8.4f %8.4f\n" RESET, k1_red, k2_red, k3_red);
 #endif
@@ -3090,22 +3160,30 @@ void Cart2nonCart_transformMat(SPARC_OBJ *pSPARC) {
  * @ brief: function to convert non cartesian to cartesian coordinates
  */
 void nonCart2Cart_coord(const SPARC_OBJ *pSPARC, double *x, double *y, double *z) {
-    double x1, x2, x3;
-    x1 = pSPARC->LatUVec[0] * (*x) + pSPARC->LatUVec[3] * (*y) + pSPARC->LatUVec[6] * (*z);
-    x2 = pSPARC->LatUVec[1] * (*x) + pSPARC->LatUVec[4] * (*y) + pSPARC->LatUVec[7] * (*z);
-    x3 = pSPARC->LatUVec[2] * (*x) + pSPARC->LatUVec[5] * (*y) + pSPARC->LatUVec[8] * (*z);
-    *x = x1; *y = x2; *z = x3;
+    if (pSPARC->CyclixFlag) {
+        nonCart2Cart_coord_cyclix(pSPARC, x, y, z);
+    } else {
+        double x1, x2, x3;
+        x1 = pSPARC->LatUVec[0] * (*x) + pSPARC->LatUVec[3] * (*y) + pSPARC->LatUVec[6] * (*z);
+        x2 = pSPARC->LatUVec[1] * (*x) + pSPARC->LatUVec[4] * (*y) + pSPARC->LatUVec[7] * (*z);
+        x3 = pSPARC->LatUVec[2] * (*x) + pSPARC->LatUVec[5] * (*y) + pSPARC->LatUVec[8] * (*z);
+        *x = x1; *y = x2; *z = x3;
+    }
 }
 
 /**
  * @brief: function to convert cartesian to non cartesian coordinates
  */
 void Cart2nonCart_coord(const SPARC_OBJ *pSPARC, double *x, double *y, double *z) {
-    double x1, x2, x3;
-    x1 = pSPARC->gradT[0] * (*x) + pSPARC->gradT[1] * (*y) + pSPARC->gradT[2] * (*z);
-    x2 = pSPARC->gradT[3] * (*x) + pSPARC->gradT[4] * (*y) + pSPARC->gradT[5] * (*z);
-    x3 = pSPARC->gradT[6] * (*x) + pSPARC->gradT[7] * (*y) + pSPARC->gradT[8] * (*z);
-    *x = x1; *y = x2; *z = x3;
+    if (pSPARC->CyclixFlag) {
+        Cart2nonCart_coord_cyclix(pSPARC, x, y, z);
+    } else {
+        double x1, x2, x3;
+        x1 = pSPARC->gradT[0] * (*x) + pSPARC->gradT[1] * (*y) + pSPARC->gradT[2] * (*z);
+        x2 = pSPARC->gradT[3] * (*x) + pSPARC->gradT[4] * (*y) + pSPARC->gradT[5] * (*z);
+        x3 = pSPARC->gradT[6] * (*x) + pSPARC->gradT[7] * (*y) + pSPARC->gradT[8] * (*z);
+        *x = x1; *y = x2; *z = x3;
+    }
 }
 
 
@@ -3125,12 +3203,16 @@ void nonCart2Cart_grad(SPARC_OBJ *pSPARC, double *x, double *y, double *z) {
  * @brief: function to calculate the distance btween two points
  */
 void CalculateDistance(SPARC_OBJ *pSPARC, double x, double y, double z, double xref, double yref, double zref, double *d) {
-    if(pSPARC->cell_typ == 0) {
-        *d = sqrt(pow((x-xref),2.0) + pow((y-yref),2.0) + pow((z-zref),2.0));
-    } else if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
-        double xx = x - xref; double yy = y - yref; double zz = z - zref;
-        *d = sqrt(pSPARC->metricT[0] * (xx*xx) + pSPARC->metricT[1] * (xx*yy) + pSPARC->metricT[2] * (xx*zz)
-                + pSPARC->metricT[4] * (yy*yy) + pSPARC->metricT[5] * (yy*zz) + pSPARC->metricT[8] * (zz*zz) );
+    if (pSPARC->CyclixFlag) {
+        CalculateDistance_cyclix(pSPARC, x, y, z, xref, yref, zref, d);
+    } else {
+        if(pSPARC->cell_typ == 0) {
+            *d = sqrt(pow((x-xref),2.0) + pow((y-yref),2.0) + pow((z-zref),2.0));
+        } else if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
+            double xx = x - xref; double yy = y - yref; double zz = z - zref;
+            *d = sqrt(pSPARC->metricT[0] * (xx*xx) + pSPARC->metricT[1] * (xx*yy) + pSPARC->metricT[2] * (xx*zz)
+                    + pSPARC->metricT[4] * (yy*yy) + pSPARC->metricT[5] * (yy*zz) + pSPARC->metricT[8] * (zz*zz) );
+        }
     }
 }
 
@@ -3158,7 +3240,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version May 11, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version June 23, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3170,16 +3252,26 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     } else {
         fprintf(output_fp,"LATVEC_SCALE: %.15g %.15g %.15g \n",pSPARC->latvec_scale_x,pSPARC->latvec_scale_y,pSPARC->latvec_scale_z);
     }
-    fprintf(output_fp,"LATVEC:\n");
-    fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
-    fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
-    fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
+    if (pSPARC->cell_typ <= 20) {
+        fprintf(output_fp,"LATVEC:\n");
+        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
+        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
+        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
+    } else {
+        fprintf(output_fp,"TWIST_ANGLE: %f \n",pSPARC->twist);
+    }
     fprintf(output_fp,"FD_GRID: %d %d %d\n",pSPARC->numIntervals_x,pSPARC->numIntervals_y,pSPARC->numIntervals_z);
     fprintf(output_fp,"FD_ORDER: %d\n",pSPARC->order);
     fprintf(output_fp,"BC:");
-    fprintf(output_fp," %s", pSPARC->BCx == 0 ? "P" : "D");
-    fprintf(output_fp," %s", pSPARC->BCy == 0 ? "P" : "D");
-    fprintf(output_fp," %s", pSPARC->BCz == 0 ? "P" : "D");
+    if (pSPARC->CyclixFlag) {
+        fprintf(output_fp," %s", "D");
+        fprintf(output_fp," %s", pSPARC->cell_typ == 22 ? "D" : "C");
+        fprintf(output_fp," %s", pSPARC->cell_typ == 21 ? "P" : "H");
+    } else {
+        fprintf(output_fp," %s", pSPARC->BCx == 0 ? "P" : "D");
+        fprintf(output_fp," %s", pSPARC->BCy == 0 ? "P" : "D");
+        fprintf(output_fp," %s", pSPARC->BCz == 0 ? "P" : "D");
+    }
     fprintf(output_fp,"\n");
     if (pSPARC->BC>1 && !pSPARC->SQFlag) {
         fprintf(output_fp,"KPOINT_GRID: %d %d %d\n",pSPARC->Kx,pSPARC->Ky,pSPARC->Kz);
@@ -3472,13 +3564,17 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                                Cell                                       \n");
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"Lattice vectors (Bohr):\n");
-    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0]*pSPARC->range_x,pSPARC->LatUVec[1]*pSPARC->range_x,pSPARC->LatUVec[2]*pSPARC->range_x);
-    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
-    fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
-    fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
-    fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet), 
-                                                pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet) * CONST_AMU_BOHR3_GCC);
+    if (pSPARC->cell_typ <= 20) {
+        fprintf(output_fp,"Lattice vectors (Bohr):\n");
+        fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0]*pSPARC->range_x,pSPARC->LatUVec[1]*pSPARC->range_x,pSPARC->LatUVec[2]*pSPARC->range_x);
+        fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
+        fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
+        fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
+        fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet), 
+                                                    pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet) * CONST_AMU_BOHR3_GCC);
+    } else {
+        fprintf(output_fp,"Volume :%18.10E (Bohr^3)\n", pSPARC->range_x * ((pSPARC->xin + pSPARC->xout)/2.0) * pSPARC->range_y * pSPARC->range_z);
+    }
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");
     fprintf(output_fp,"***************************************************************************\n");
@@ -3643,7 +3739,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                                         MPI_DOUBLE, MPI_DOUBLE, 
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
@@ -3678,7 +3774,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
-                          1, 1, /* double */
+                          1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING};
 
@@ -3846,6 +3942,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.exx_frac, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_rcut, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_tol_occ, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.twist, addr + i++);
     // char type
     MPI_Get_address(&sparc_input_tmp.MDMeth, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxMeth, addr + i++);
