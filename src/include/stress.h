@@ -22,8 +22,10 @@
 
 /* Calculate ionic stress*/
 void Calculate_ionic_stress(SPARC_OBJ *pSPARC);
+void Calculate_ionic_stress_linear(SPARC_OBJ *pSPARC);
 
 void Calculate_electronic_stress(SPARC_OBJ *pSPARC);
+void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC);
 
 /*
 * @brief: find stress contributions from exchange-correlation

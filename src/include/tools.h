@@ -255,6 +255,11 @@ void VectorDotProduct_complex(const double _Complex *Vec1, const double _Complex
  */
 void VectorSum(const double *Vec, const int len, double *vec_sum, MPI_Comm comm);
 
+/**
+ * @brief   Calculate global weighted sum of a vector among the given communicator. 
+ */
+void VectorSum_wt(const double *Vec, const double *weight, const int len, double *vec_sum, MPI_Comm comm);
+
 
 /**
  * @brief   Calculate shift of a vector, x = x + c.

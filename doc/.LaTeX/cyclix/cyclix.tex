@@ -1,0 +1,324 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks,c]{} \label{Cyclix}
+%
+%\begin{center}
+%\Huge \textbf{Cyclix}
+%\end{center}
+%
+%\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TWIST\_ANGLE}} \label{TWIST_ANGLE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+rad/Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{TWIST\_ANGLE}: 0.0045
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+External twist per unit length applied on the nanotube.
+\end{block}
+
+\begin{block}{Remark}
+If using helical symmetry (D C H), we also have to add the intrinsic twist.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{BC}}} \label{BC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Character
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No Unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{BC}: D C P
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+A set of three whitespace delimited characters specifying the boundary conditions in the lattice vector directions, respectively. P represents periodic boundary conditions, D represents Dirichlet boundary conditions, C represents cyclic boundary conditions and H represents helical boundary conditions.
+\end{block}
+
+\begin{block}{Remark}
+\texttt{BC}: D C P and \texttt{BC}: D C H are the cyclix cases where the former uses only cyclic boundary condition and latter uses both cyclic and helical boundary conditions.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{CELL}}} \label{CELL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{CELL}: 30.3498 0.2991 3.1359
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+A set of three whitespace delimited values specifying the cell lengths in the radial, angular and periodic/helical directions, respectively.
+\end{block}
+
+\begin{block}{Remark}
+Angular direction length is equal to $ 2\pi / \Gamma$, where $ \Gamma $ is the group order in the cyclic direction.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{COORD}}} \label{COORD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{COORD}: \\
+0 0 0 \\
+2.5 2.5 2.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The Cartesian coordinates of atoms of a \texttt{ATOM\_TYPE} specified before this variable. If the coordinates are outside the fundamental domain (see \hyperlink{CELL}{\texttt{CELL}}) in the periodic and cyclic/helical directions (see \hyperlink{BC}{\texttt{BC}}), it will be automatically mapped back to the domain.
+\end{block}
+
+\begin{block}{Remark}
+For a system with different types of atoms, one has to specify the coordinates for every \texttt{ATOM\_TYPE}. One can also specify the coordinates of the atoms using \hyperlink{COORD_FRAC}{\texttt{COORD\_FRAC}}.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{COORD\_FRAC}}} \label{COORD_FRAC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+None
+\end{block}
+
+\begin{block}{Example}
+\texttt{COORD\_FRAC}: \\
+0 0 0 \\
+2.1 0.5 0.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The fractional coordinates of atoms of a \texttt{ATOM\_TYPE} specified before this variable. $\texttt{{COORD\_FRAC}}(i , j) \times \hyperlink{CELL}{\texttt{CELL}}(j), (j = 1, 2, 3)$ gives the coordinate of the $i^{th}$ atom along the $j^{th}$ direction. $j = 1$ is along radial, $j = 2$ is along angular and $j = 3$ is along periodic/helical direction.
+\end{block}
+
+\begin{block}{Remark}
+For a system with different types of atoms, one has to specify the coordinates for every \texttt{ATOM\_TYPE}. One can also specify the coordinates of the atoms using \hyperlink{COORD}{\texttt{COORD}}.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{EXCHANGE\_CORRELATION}}} \label{EXCHANGE_CORRELATION}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+No Default
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{EXCHANGE\_CORRELATION: LDA\_PW}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA) and \texttt{GGA\_PBE} (PBE GGA)
+\end{block}
+
+\begin{block}{Remark}
+For spin-polarized calculation (\texttt{{SPIN\_TYP}} = 1),  \texttt{LDA\_PW} (Perdew-Wang LDA) and \texttt{GGA\_PBE} (PBE GGA) are available.
+\end{block}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{frame}[allowframebreaks]{\texttt{KPOINT\_GRID}} \label{KPOINT_GRID}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer array
+\end{block}
+
+\begin{block}{Default}
+ 1 1 1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{KPOINT\_GRID}: 1 5 10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of k-points in each direction of the Monkhorst-Pack grid for Brillouin zone integration. In SPARC-cyclix, we don't have any k-points along the radial direction as it is vaccuum. The angular k-point is reffered as $\nu$ point and the periodic/helical k-point is called $\eta$ point.
+\end{block}
+
+\begin{block}{Remark}
+$\nu$ point should be an integer factor of the group order $\Gamma$.
+\end{block}
+
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks]{\texttt{{SPIN\_TYP}}} \label{SPIN_TYP}
+%\vspace*{-12pt}
+%\begin{columns}
+%\column{0.4\linewidth}
+%\begin{block}{Type}
+%Integer
+%\end{block}
+%
+%\begin{block}{Default}
+%0
+%\end{block}
+%
+%\column{0.4\linewidth}
+%\begin{block}{Unit}
+%No unit
+%\end{block}
+%
+%\begin{block}{Example}
+%\texttt{SPIN\_TYP}: 1
+%\end{block}
+%\end{columns}
+%
+%\begin{block}{Description}
+%\texttt{{SPIN\_TYP}}: 0 performs spin unpolarized calculation. \\
+%\texttt{{SPIN\_TYP}}: 1 performs unconstrained collinear spin-polarized calculation.
+%\end{block}
+%
+%\begin{block}{Remark}
+%\texttt{{SPIN\_TYP}} can only take values 0 and 1.
+%\end{block}
+%
+%
+%\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{frame}[allowframebreaks]{\texttt{{SPIN}}} \label{SPIN}
+%\vspace*{-12pt}
+%\begin{columns}
+%\column{0.4\linewidth}
+%\begin{block}{Type}
+%Double
+%\end{block}
+%
+%\begin{block}{Default}
+%0.0
+%\end{block}
+%
+%\column{0.4\linewidth}
+%\begin{block}{Unit}
+%No unit
+%\end{block}
+%
+%\begin{block}{Example}
+%\texttt{SPIN}: \\
+%1.0 \\
+%-1.0
+%\end{block}
+%\end{columns}
+%
+%\begin{block}{Description}
+%Specifies the net initial spin on each atom for a spin-polarized calculation.
+%\end{block}
+
+%\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+

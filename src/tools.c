@@ -803,6 +803,22 @@ void VectorSum(const double *Vec, const int len, double *vec_sum, MPI_Comm comm)
     }
 }
 
+/**
+ * @brief   Calculate global weighted sum of a vector among the given communicator. 
+ */
+void VectorSum_wt(const double *Vec, const double *weight, const int len, double *vec_sum, MPI_Comm comm)
+{
+    if (comm == MPI_COMM_NULL) return;
+    int k;
+    double sum = 0.0;
+    for (k = 0; k < len; k++)
+        sum += Vec[k] * weight[k];
+    if (comm != MPI_COMM_SELF) {
+        MPI_Allreduce(&sum, vec_sum, 1, MPI_DOUBLE, MPI_SUM, comm);
+    } else {
+        *vec_sum = sum;
+    }
+}
 
 
 /**

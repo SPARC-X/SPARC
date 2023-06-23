@@ -49,7 +49,7 @@
 #include "isddft.h"
 #include "parallelization.h"
 #include "linearAlgebra.h"
-
+#include "cyclix_tools.h"
 
 #ifdef SPARCX_ACCEL
 #include "accel_kpt.h"
@@ -132,6 +132,23 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
         }
         t1 = MPI_Wtime();
         
+        int indx, indx0, ns;
+        int Nk = pSPARC->Nkpts_kptcomm;
+        int Ns = pSPARC->Nstates;
+        if (pSPARC->CyclixFlag) {
+            // Find sorted eigenvalues
+            for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                for(kpt = 0; kpt < Nk; kpt++){
+                    indx0 = spn_i*Nk*Ns + kpt*Ns;
+                    for(ns = 0; ns < Ns; ns++){
+                        indx = indx0 + ns;
+                        pSPARC->lambda_sorted[indx] = pSPARC->lambda[indx];
+                    }
+                    qsort(pSPARC->lambda_sorted + indx0, pSPARC->Nstates, sizeof(pSPARC->lambda_sorted[0]), cmp);
+                }     
+            }
+        }
+
         // ** calculate fermi energy ** //
         //if(pSPARC->kptcomm_index < 0) return;
                
@@ -161,6 +178,16 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
         
         pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g - 1, eigmax_g + 1, 1e-12, 100); 
         
+        if (pSPARC->CyclixFlag) {
+            // Find occupations corresponding to sorted eigenvalues
+            for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                for(kpt = 0; kpt < Nk; kpt++){
+                    for (ns = 0; ns < Ns; ns++) {
+                        pSPARC->occ_sorted[ns+spn_i*Nk*Ns+kpt*Ns] = smearing_function(pSPARC->Beta, pSPARC->lambda_sorted[ns+spn_i*Nk*Ns+kpt*Ns], pSPARC->Efermi, pSPARC->elec_T_type);
+                    }
+                }
+            }
+        }
         // check occupation (if Nstates is large enough) for every SCF
         // for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
         //     spn_disp = spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates;
@@ -361,6 +388,15 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, in
     #ifdef DEBUG
     if(!rank && kpt == 0) printf("Total time for subspace rotation: %.3f ms\n", (t2-t1)*1e3);
     #endif
+    
+    if (pSPARC->CyclixFlag) {
+        t1 = MPI_Wtime();
+        NormalizeEigfunc_kpt_cyclix(pSPARC, spn_i, kpt);
+        t2 = MPI_Wtime();
+    #ifdef DEBUG
+        if(!rank && kpt == 0) printf("Total time for normalizing psi: %.3f ms\n", (t2-t1)*1e3);
+    #endif
+    }
 }
 
 
@@ -1254,9 +1290,30 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         t1 = MPI_Wtime();
         if ((!pSPARC->is_domain_uniform && !pSPARC->bandcomm_index) ||
             (pSPARC->is_domain_uniform && !rank_kptcomm)) {
-            info = LAPACKE_zhegvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
-                        pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
-                        pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates);
+            if (pSPARC->CyclixFlag) {
+                info = LAPACKE_zggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates,pSPARC->Hp_kpt,
+                            pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
+                            pSPARC->lambda_temp1_kpt, pSPARC->lambda_temp2_kpt,
+                            pSPARC->vl_kpt, pSPARC->Nstates, pSPARC->vr_kpt, pSPARC->Nstates);
+                int indx0, n, indx, m;
+                indx0 = spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates + kpt*pSPARC->Nstates;
+                for(n = 0; n < pSPARC->Nstates; n++){
+                    indx = indx0 + n;
+                    // Warning if lambda_temp2_kpt is almost zero
+                    assert(fabs(creal(pSPARC->lambda_temp2_kpt[n])) > 1e-15);
+                    
+                    pSPARC->lambda[indx] = creal(pSPARC->lambda_temp1_kpt[n])/creal(pSPARC->lambda_temp2_kpt[n]);
+                    //if(pSPARC->bandcomm_index == 0)
+                    //    printf("eigenvalues %.15f\n",pSPARC->lambda[indx]);
+                    for(m = 0; m < pSPARC->Nstates; m++){
+                        pSPARC->Hp_kpt[n*pSPARC->Nstates+m] = pSPARC->vr_kpt[n*pSPARC->Nstates+m];
+                    }
+                }
+            } else {
+                info = LAPACKE_zhegvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
+                            pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
+                            pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates);
+            }
         }
         t2 = MPI_Wtime();
         #ifdef DEBUG

@@ -124,18 +124,20 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
     t1 = MPI_Wtime();
 #endif
 
-    double vscal = 1.0 / pSPARC->dV;
-    // scale electron density by 1/dV
-    // TODO: this can be done in phi-domain over more processes!
-    //       Perhaps right after transfer to phi-domain is complete.
-    for (i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
-        rho[i] *= vscal; 
+    if (!pSPARC->CyclixFlag) {
+        double vscal = 1.0 / pSPARC->dV;
+        // scale electron density by 1/dV
+        // TODO: this can be done in phi-domain over more processes!
+        //       Perhaps right after transfer to phi-domain is complete.
+        for (i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
+            rho[i] *= vscal; 
+        }
+        
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+    #endif
     }
-    
-#ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
-#endif
 }
 
 
@@ -206,19 +208,21 @@ void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho)
     t1 = MPI_Wtime();
 #endif
 
-    double vscal = 1.0 / pSPARC->dV;
-    // scale electron density by 1/dV
-    // TODO: this can be done in phi-domain over more processes!
-    //       Perhaps right after transfer to phi-domain is complete.
-    for (i = 0; i < 2*Nd; i++) {
-        rho[Nd+i] *= vscal;
-    }    
-    
-#ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
-    t1 = MPI_Wtime();
-#endif
+    if (!pSPARC->CyclixFlag) {
+        double vscal = 1.0 / pSPARC->dV;
+        // scale electron density by 1/dV
+        // TODO: this can be done in phi-domain over more processes!
+        //       Perhaps right after transfer to phi-domain is complete.
+        for (i = 0; i < 2*Nd; i++) {
+            rho[Nd+i] *= vscal;
+        }    
+        
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+        t1 = MPI_Wtime();
+    #endif
+    }
 
     for (i = 0; i < Nd; i++) {
         rho[i] = rho[Nd+i] + rho[2*Nd+i]; 
@@ -295,18 +299,20 @@ void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho)
     t1 = MPI_Wtime();
 #endif
 
-    double vscal = 1.0 / pSPARC->dV;
-    // scale electron density by 1/dV
-    // TODO: this can be done in phi-domain over more processes!
-    //       Perhaps right after transfer to phi-domain is complete.
-    for (i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
-        rho[i] *= vscal;
+    if (!pSPARC->CyclixFlag) {
+        double vscal = 1.0 / pSPARC->dV;
+        // scale electron density by 1/dV
+        // TODO: this can be done in phi-domain over more processes!
+        //       Perhaps right after transfer to phi-domain is complete.
+        for (i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
+            rho[i] *= vscal;
+        }
+        
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+    #endif
     }
-    
-#ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
-#endif
 }
 
 
@@ -385,19 +391,21 @@ void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho)
     t1 = MPI_Wtime();
 #endif
 
-    double vscal = 1.0 / pSPARC->dV;
-    // scale electron density by 1/dV
-    // TODO: this can be done in phi-domain over more processes!
-    //       Perhaps right after transfer to phi-domain is complete.
-    for (i = 0; i < 2*Nd; i++) {
-        rho[Nd+i] *= vscal; 
+    if (!pSPARC->CyclixFlag) {
+        double vscal = 1.0 / pSPARC->dV;
+        // scale electron density by 1/dV
+        // TODO: this can be done in phi-domain over more processes!
+        //       Perhaps right after transfer to phi-domain is complete.
+        for (i = 0; i < 2*Nd; i++) {
+            rho[Nd+i] *= vscal; 
+        }
+        
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
+        t1 = MPI_Wtime();
+    #endif
     }
-    
-#ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (!rank) printf("rank = %d, --- Scale rho: scale by 1/dV took %.3f ms\n", rank, (t2-t1)*1e3);
-    t1 = MPI_Wtime();
-#endif
 
     for (i = 0; i < Nd; i++) {
         rho[i] = rho[Nd+i] + rho[2*Nd+i]; 

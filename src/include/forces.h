@@ -48,4 +48,11 @@ void Calculate_nonlocal_forces_kpt_linear(SPARC_OBJ *pSPARC);
 void Symmetrize_forces(SPARC_OBJ *pSPARC);
 
 
+/**
+ * @brief    Calculate xc force components for nonlinear core 
+ *           correction (NLCC).
+ */ 
+void Calculate_forces_xc(SPARC_OBJ *pSPARC, double *forces_xc);
+void Calculate_forces_xc_linear(SPARC_OBJ *pSPARC, double *forces_xc);
+
 #endif // FORCES_H 

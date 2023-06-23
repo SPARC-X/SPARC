@@ -1,0 +1,164 @@
+***************************************************************************
+*                       SPARC (version Jun 19, 2023)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Thu Jun 22 21:36:12 2023                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 29.9138161344 0.628318530717959 1.19631069102724 
+TWIST_ANGLE: 0.055786 
+FD_GRID: 127 223 37
+FD_ORDER: 12
+BC: D C H
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001
+EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 40
+CHEB_DEGREE: 80
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 200
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 2.36E-08
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 1
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Volume: 9.3925335922E+02 (Bohr^3)
+Density: 7.1195897338E+00 (amu/Bohr^3), 7.9781218816E+01 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 8
+NP_DOMAIN_PARAL: 3 4 1
+NP_DOMAIN_PHI_PARAL: 6 8 2
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  96
+Mesh spacing in x-direction        :  0.235542 (Bohr)
+Mesh spacing in y-direction        :  0.00281757 (Bohr)
+Mesh spacing in z-direction        :  0.0323327 (Bohr)
+Output printed to                  :  MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC.out
+Total number of atom types         :  2
+Total number of atoms              :  3
+Total number of electrons          :  26
+Atom type 1  (valence electrons)   :  Mo 14
+Pseudopotential                    :  MoS2_cyclix_SOC/Mo_fr.psp8
+Atomic mass                        :  95.95
+Pseudocharge radii of atom type 1  :  7.30 0.37 7.37 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  S 6
+Pseudopotential                    :  MoS2_cyclix_SOC/S_fr.psp8
+Atomic mass                        :  32.0675
+Pseudocharge radii of atom type 2  :  7.54 0.37 7.34 (x, y, z dir)
+Number of atoms of type 2          :  2
+Estimated total memory usage       :  4.74 GB
+Estimated memory per processor     :  50.60 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.5666789890E+01        6.286E-01        44.284
+2            -2.6226693543E+01        1.555E-01        13.376
+3            -2.7926770069E+01        1.469E-01        13.444
+4            -2.8745433643E+01        1.754E-01        13.433
+5            -2.9312553490E+01        2.144E-01        13.391
+6            -3.0026615208E+01        1.856E-01        13.388
+7            -3.0594580607E+01        2.027E-01        13.399
+8            -3.0961114717E+01        2.040E-01        13.375
+9            -3.1075149942E+01        2.026E-01        13.342
+10           -3.1174409992E+01        2.077E-01        13.389
+11           -3.1372124839E+01        2.453E-01        13.360
+12           -3.0923157729E+01        8.529E-02        13.401
+13           -3.0939904551E+01        9.027E-02        13.365
+14           -3.0953975064E+01        1.044E-01        13.298
+15           -3.0969351846E+01        1.202E-01        13.399
+16           -3.0952851973E+01        1.044E-01        13.348
+17           -3.0921501321E+01        5.460E-02        13.325
+18           -3.0912861397E+01        3.160E-02        13.512
+19           -3.0908812062E+01        1.806E-02        14.539
+20           -3.0907003023E+01        7.596E-03        13.347
+21           -3.0906395479E+01        6.085E-03        13.404
+22           -3.0905286921E+01        3.840E-03        13.545
+23           -3.0904794444E+01        3.255E-03        13.419
+24           -3.0904205352E+01        2.105E-03        14.030
+25           -3.0903953943E+01        1.508E-03        13.405
+26           -3.0903874238E+01        9.591E-04        13.389
+27           -3.0903873255E+01        6.791E-04        13.399
+28           -3.0903887354E+01        3.736E-04        13.491
+29           -3.0903904336E+01        2.450E-04        13.477
+30           -3.0903916428E+01        1.226E-04        13.428
+31           -3.0903918177E+01        8.623E-05        13.608
+32           -3.0903921860E+01        4.706E-05        13.503
+33           -3.0903923864E+01        3.294E-05        13.468
+34           -3.0903924510E+01        2.465E-05        13.440
+35           -3.0903925613E+01        1.565E-05        13.373
+36           -3.0903925911E+01        8.834E-06        13.274
+37           -3.0903925984E+01        5.117E-06        13.217
+38           -3.0903925956E+01        3.553E-06        12.467
+39           -3.0903925910E+01        2.747E-06        13.249
+40           -3.0903925979E+01        1.646E-06        12.343
+41           -3.0903926008E+01        1.103E-06        12.425
+42           -3.0903925990E+01        6.420E-07        11.041
+Total number of SCF: 42    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.0903925990E+01 (Ha/atom)
+Total free energy                  : -9.2711777970E+01 (Ha)
+Band structure energy              : -2.3356376528E+01 (Ha)
+Exchange correlation energy        : -1.7653264717E+01 (Ha)
+Self and correction energy         : -1.6423276535E+02 (Ha)
+-Entropy*kb*T                      : -4.9476973146E-11 (Ha)
+Fermi level                        : -2.2630596478E-01 (Ha)
+RMS force                          :  1.3464600085E-01 (Ha/Bohr)
+Maximum force                      :  1.7281583529E-01 (Ha/Bohr)
+Time for force calculation         :  1.256 (sec)
+Maximum stress                     :  8.2451973047E+00 (Ha/Bohr**2)
+Maximum stress equiv. to periodic  :  8.1093658606E+03 (GPa)
+Time for stress calculation        :  1.348 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  600.369 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           

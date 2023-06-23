@@ -478,7 +478,7 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
     double dz = pSPARC->delta_z;
     double dV = pSPARC->dV;
 
-    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
     int size_k = DMnd * pSPARC->Nband_bandcomm;
     int size_s = size_k * pSPARC->Nkpts_kptcomm;
 
@@ -506,6 +506,7 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
         fwrite(&dy, sizeof(double), 1, output_fp);          // dy
         fwrite(&dz, sizeof(double), 1, output_fp);          // dz
         fwrite(&dV, sizeof(double), 1, output_fp);          // dV
+        fwrite(&pSPARC->Nspinor, sizeof(int), 1, output_fp);          // Nspinor
         fwrite(&pSPARC->isGammaPoint, sizeof(int), 1, output_fp);     // isGamma
         // number of spin, kpt and band
         int nspin = spin_end - spin_start + 1;
@@ -535,10 +536,10 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
                                          pSPARC->k3_loc[kpt_shift]*pSPARC->range_z/(2.0*M_PI) };
                     if (pSPARC->isGammaPoint) {
                         print_orbital_real(pSPARC->Xorb + band_shift*DMnd + kpt_shift*size_k + spin_shift*size_s, gridsizes, 
-                            pSPARC->DMVertices_dmcomm, pSPARC->dV, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
+                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
                     } else {
                         print_orbital_complex(pSPARC->Xorb_kpt + band_shift*DMnd + kpt_shift*size_k + spin_shift*size_s, gridsizes, 
-                            pSPARC->DMVertices_dmcomm, pSPARC->dV, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
+                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
                     }
                 }
                 MPI_Barrier(alldmcomm);
@@ -552,11 +553,12 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
  * @brief   Print real Kohn-Sham orbitals
  */
 void print_orbital_real(
-    double *x, int *gridsizes, int *DMVertices, double dV,
+    double *x, int *gridsizes, int *DMVertices, double dV, int Nspinor, 
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 ) 
 {
     if (comm == MPI_COMM_NULL) return;
+    assert(Nspinor == 1 || Nspinor == 2);
     int nproc_comm, rank_comm;
     MPI_Comm_size(comm, &nproc_comm);
     MPI_Comm_rank(comm, &rank_comm);
@@ -568,8 +570,14 @@ void print_orbital_real(
     int Nd = Nx * Ny * Nz;
     double *x_global = NULL;
     if (rank_comm == 0) {
-        x_global = (double*)malloc(Nd * sizeof(double));
+        x_global = (double*)malloc(Nd * Nspinor * sizeof(double));
     }
+
+    int DMnx = DMVertices[1] - DMVertices[0] + 1;
+    int DMny = DMVertices[3] - DMVertices[2] + 1;
+    int DMnz = DMVertices[5] - DMVertices[4] + 1;
+    int DMndbyNspinor = DMnx * DMny * DMnz;
+    int DMnd = DMndbyNspinor * Nspinor;
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
         int sdims[3], periods[3], my_coords[3];
@@ -600,20 +608,22 @@ void print_orbital_real(
         );
         
         // collect vector to one process   
-        D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x, rDMVert, 
-            x_global, comm, sdims, recv_comm, rdims, comm);
+        for (int spinor = 0; spinor < Nspinor; spinor ++) {
+            D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMndbyNspinor*spinor, rDMVert, 
+                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm);
+        }
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, comm, recv_comm);
 
         if (!rank_comm) MPI_Comm_free(&recv_comm);
     } else {
-        memcpy(x_global, x, sizeof(double)*Nd);
+        memcpy(x_global, x, sizeof(double)*Nd*Nspinor);
     }
 
     if (rank_comm == 0) {
         // scale psi to make it L2-norm = 1
-        for (int i = 0; i < Nd; i++) x_global[i] /= sqrt(dV);
+        for (int i = 0; i < Nd*Nspinor; i++) x_global[i] /= sqrt(dV);
 
         FILE *output_fp = fopen(fname,"ab");
         if (output_fp == NULL) {
@@ -625,7 +635,7 @@ void print_orbital_real(
         fwrite(&kpt_index, sizeof(int), 1, output_fp);
         fwrite(kpt_vec, 3, sizeof(double) , output_fp);
         fwrite(&band_index, sizeof(int), 1, output_fp);
-        fwrite(x_global, Nd, sizeof(double) , output_fp);
+        fwrite(x_global, Nd*Nspinor, sizeof(double) , output_fp);
         fclose(output_fp);
     }
     
@@ -640,7 +650,7 @@ void print_orbital_real(
  * @brief   Print complex Kohn-Sham orbitals
  */
 void print_orbital_complex(
-    double _Complex *x, int *gridsizes, int *DMVertices, double dV,
+    double complex *x, int *gridsizes, int *DMVertices, double dV, int Nspinor, 
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 ) 
 {
@@ -654,11 +664,17 @@ void print_orbital_complex(
     int Ny = gridsizes[1];
     int Nz = gridsizes[2];
     int Nd = Nx * Ny * Nz;
-    double _Complex *x_global = NULL;
+    double complex *x_global = NULL;
 
     if (rank_comm == 0) {
-        x_global = (double _Complex *)malloc(Nd * sizeof(double _Complex));
+        x_global = (double complex *)malloc(Nd * Nspinor * sizeof(double complex));
     }
+
+    int DMnx = DMVertices[1] - DMVertices[0] + 1;
+    int DMny = DMVertices[3] - DMVertices[2] + 1;
+    int DMnz = DMVertices[5] - DMVertices[4] + 1;
+    int DMndbyNspinor = DMnx * DMny * DMnz;
+    int DMnd = DMndbyNspinor * Nspinor;
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
         int sdims[3], periods[3], my_coords[3];
@@ -689,20 +705,24 @@ void print_orbital_complex(
         );
         
         // collect vector to one process   
-        D2D_kpt(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x, rDMVert, 
-            x_global, comm, sdims, recv_comm, rdims, comm);
+        
+
+        for (int spinor = 0; spinor < Nspinor; spinor ++) {
+            D2D_kpt(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMndbyNspinor*spinor, rDMVert, 
+                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm);            
+        }
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, comm, recv_comm);
         
         if (!rank_comm) MPI_Comm_free(&recv_comm);
     } else {
-        memcpy(x_global, x, sizeof(double _Complex) * Nd);
+        memcpy(x_global, x, sizeof(double complex) * Nd * Nspinor);
     }
     
     if (rank_comm == 0) {
         // scale psi to make it L2-norm = 1
-        for (int i = 0; i < Nd; i++) x_global[i] /= sqrt(dV);
+        for (int i = 0; i < Nd*Nspinor; i++) x_global[i] /= sqrt(dV);
 
         FILE *output_fp = fopen(fname,"ab");
         if (output_fp == NULL) {
@@ -714,7 +734,7 @@ void print_orbital_complex(
         fwrite(&kpt_index, sizeof(int), 1, output_fp);
         fwrite(kpt_vec, 3, sizeof(double) , output_fp);
         fwrite(&band_index, sizeof(int), 1, output_fp);
-        fwrite( x_global, Nd, sizeof(double _Complex) , output_fp );
+        fwrite( x_global, Nd*Nspinor, sizeof(double complex) , output_fp );
         fclose(output_fp);
     }
     

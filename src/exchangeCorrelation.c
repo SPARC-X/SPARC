@@ -663,9 +663,26 @@ void Calculate_Vxc_GGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
         }
     }
 
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    if (pSPARC->CyclixFlag) {
+        double *Drho_xy;
+        Drho_xy = (double *) malloc(2*DMnd * sizeof(double));
+        for (i = 0; i < DMnd; i++){
+            Drho_xy[i] = Drho_x[i];
+            Drho_xy[DMnd+i] = Drho_y[i];
+        }
+        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
+        for (i = 0; i < DMnd; i++){
+            Drho_xy[i] = Drho_y[i];
+            Drho_xy[DMnd+i] = Drho_x[i];
+        }
+        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+        free(Drho_xy);
+    } else {
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    }
     
     for(i = 0; i < DMnd; i++){
         //if(pSPARC->electronDens[i] != 0.0)
@@ -967,9 +984,27 @@ void Calculate_Vxc_GSGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
         }
     }
 
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    if (pSPARC->CyclixFlag) {
+        double *Drho_xy;
+        Drho_xy = (double *) malloc(6*DMnd * sizeof(double));
+        for (i = 0; i < 3*DMnd; i++){
+            Drho_xy[i] = Drho_x[i];
+            Drho_xy[3*DMnd+i] = Drho_y[i];
+        }
+        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
+        for (i = 0; i < 3*DMnd; i++){
+            Drho_xy[i] = Drho_y[i];
+            Drho_xy[3*DMnd+i] = Drho_x[i];
+        }
+        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+        free(Drho_xy);
+    } else {
+
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    }
     
     for(i = 0; i < DMnd; i++){
         pSPARC->XCPotential[i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[DMnd + i] - DDrho_y[DMnd + i] - DDrho_z[DMnd + i];
@@ -1149,22 +1184,41 @@ void Calculate_Exc_LDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
     Exc = 0.0;
     ec = 0.0;
     
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        rho_cbrt = cbrt(electronDens[i]);
-        // calculate correlation energy
-        //if (electronDens[i] != 0.0) {
-        rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
-        rs_sqrt = sqrt(rs); // rs^0.5
-        rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
-        rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
-        rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
-        ec = -2.0 * A * (1 + alpha1 * rs) * log(1.0 + 1.0 / (2.0 * A * (beta1 * rs_sqrt + beta2 * rs + beta3 * rs_pow_1p5 + beta4 * rs_pow_pplus1)));
-        Exc += ec * electronDens[i];
-        //} 
-        // add exchange potential 
-        Exc -= C2 * rho_cbrt * electronDens[i]; // Ex = -C2 * integral(rho^(4/3))
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            rho_cbrt = cbrt(electronDens[i]);
+            // calculate correlation energy
+            //if (electronDens[i] != 0.0) {
+            rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
+            rs_sqrt = sqrt(rs); // rs^0.5
+            rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
+            rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
+            rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
+            ec = -2.0 * A * (1 + alpha1 * rs) * log(1.0 + 1.0 / (2.0 * A * (beta1 * rs_sqrt + beta2 * rs + beta3 * rs_pow_1p5 + beta4 * rs_pow_pplus1)));
+            Exc += ec * electronDens[i] * pSPARC->Intgwt_phi[i];
+            //} 
+            // add exchange potential 
+            Exc -= C2 * rho_cbrt * electronDens[i] * pSPARC->Intgwt_phi[i]; // Ex = -C2 * integral(rho^(4/3))
+        }
+    } else {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            rho_cbrt = cbrt(electronDens[i]);
+            // calculate correlation energy
+            //if (electronDens[i] != 0.0) {
+            rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
+            rs_sqrt = sqrt(rs); // rs^0.5
+            rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
+            rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
+            rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
+            ec = -2.0 * A * (1 + alpha1 * rs) * log(1.0 + 1.0 / (2.0 * A * (beta1 * rs_sqrt + beta2 * rs + beta3 * rs_pow_1p5 + beta4 * rs_pow_pplus1)));
+            Exc += ec * electronDens[i];
+            //} 
+            // add exchange potential 
+            Exc -= C2 * rho_cbrt * electronDens[i]; // Ex = -C2 * integral(rho^(4/3))
+            pSPARC->e_xc[i] = ec - C2 * rho_cbrt;
+        }
+        Exc *= pSPARC->dV;
     }
-    Exc *= pSPARC->dV;
     
     #ifdef DEBUG
     t2 = MPI_Wtime();
@@ -1192,11 +1246,17 @@ void Calculate_Exc_LSDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
 
     int i;
     double Exc = 0.0;
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        Exc += electronDens[i] * pSPARC->e_xc[i]; 
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+        }
+    } else {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        }
+        
+        Exc *= pSPARC->dV;
     }
-    
-    Exc *= pSPARC->dV;
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->Exc = Exc;
 }
@@ -1227,23 +1287,42 @@ void Calculate_Exc_LDA_PZ(SPARC_OBJ *pSPARC, double *electronDens)
     C2 = 0.73855876638202;
     
     ec = ex = Exc = 0.0;
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        rhoi = electronDens[i];
-        ex = -C2*pow(rhoi,1.0/3.0);
-        //if (rhoi == 0) {
-        //    Ec = 0.0;
-        //} else {
-        rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
-        if (rs<1.0) {
-            ec = A*log(rs) + B + C*rs*log(rs) + D*rs;
-        } else {
-            ec = gamma1/(1.0+beta1*pow(rs,0.5)+beta2*rs);
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            rhoi = electronDens[i];
+            ex = -C2*pow(rhoi,1.0/3.0);
+            //if (rhoi == 0) {
+            //    ec = 0.0;
+            //} else {
+            rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
+            if (rs<1.0) {
+                ec = A*log(rs) + B + C*rs*log(rs) + D*rs;
+            } else {
+                ec = gamma1/(1.0+beta1*pow(rs,0.5)+beta2*rs);
+            }
+            //}
+            Exc += (ex+ec)*rhoi * pSPARC->Intgwt_phi[i]; 
         }
-        //}
-        Exc += (ex+ec)*rhoi; 
+    } else {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            rhoi = electronDens[i];
+            ex = -C2*pow(rhoi,1.0/3.0);
+            //if (rhoi == 0) {
+            //    Ec = 0.0;
+            //} else {
+            rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
+            if (rs<1.0) {
+                ec = A*log(rs) + B + C*rs*log(rs) + D*rs;
+            } else {
+                ec = gamma1/(1.0+beta1*pow(rs,0.5)+beta2*rs);
+            }
+            //}
+            Exc += (ex+ec)*rhoi; 
+            pSPARC->e_xc[i] = ex+ec;
+        }
+        
+        Exc *= pSPARC->dV;
     }
-    
-    Exc *= pSPARC->dV;
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->Exc = Exc;
 }
@@ -1292,12 +1371,18 @@ void Calculate_Exc_GGA_PBE(SPARC_OBJ *pSPARC, double *electronDens)
 
     int i;
     double Exc = 0.0;
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        //if(electronDens[i] != 0)
-        Exc += electronDens[i] * pSPARC->e_xc[i]; 
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+        }
+    } else {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            //if(electronDens[i] != 0)
+            Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        }
+        
+        Exc *= pSPARC->dV;
     }
-    
-    Exc *= pSPARC->dV;
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->Exc = Exc;
 }
@@ -1312,12 +1397,18 @@ void Calculate_Exc_GSGA_PBE(SPARC_OBJ *pSPARC, double *electronDens)
 
     int i;
     double Exc = 0.0;
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        //if(electronDens[i] != 0)
-        Exc += electronDens[i] * pSPARC->e_xc[i]; 
+    if (pSPARC->CyclixFlag) {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+        }
+    } else {
+        for (i = 0; i < pSPARC->Nd_d; i++) {
+            //if(electronDens[i] != 0)
+            Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        }
+        
+        Exc *= pSPARC->dV;
     }
-    
-    Exc *= pSPARC->dV;
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     pSPARC->Exc = Exc;
 }

@@ -829,9 +829,9 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (n = 0; n < count-base; n++) {
             kpt_vec = pSPARC->k1[kpt_k_list[n]] - pSPARC->k1_hf[kpt_q_list[n]];
             // calculate gradients of rhs
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 0, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 0, &kpt_vec, comm);
             // calculate gradients of phi
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_1+n*DMnd, 0, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_1+n*DMnd, 0, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
@@ -852,7 +852,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (n = 0; n < count-base; n++) {
             kpt_vec = pSPARC->k2[kpt_k_list[n]] - pSPARC->k2_hf[kpt_q_list[n]];
             // calculate gradients of phi
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_1+n*DMnd, 1, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_1+n*DMnd, 1, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
@@ -873,7 +873,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (n = 0; n < count-base; n++) {
             kpt_vec = pSPARC->k3[kpt_k_list[n]] - pSPARC->k3_hf[kpt_q_list[n]];
             // calculate gradients of phi
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_2+n*DMnd, 2, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, Dphi_2+n*DMnd, 2, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
@@ -894,7 +894,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (n = 0; n < count-base; n++) {
             kpt_vec = pSPARC->k2[kpt_k_list[n]] - pSPARC->k2_hf[kpt_q_list[n]];
             // calculate gradients of rhs
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 1, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 1, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
@@ -930,7 +930,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (n = 0; n < count-base; n++) {
             kpt_vec = pSPARC->k3[kpt_k_list[n]] - pSPARC->k3_hf[kpt_q_list[n]];
             // calculate gradients of rhs
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 2, kpt_vec, comm);
+            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, Drhs+n*DMnd, 2, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {

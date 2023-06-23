@@ -19,6 +19,7 @@
 
 #include "gradVecRoutines.h"
 #include "isddft.h"
+#include "cyclix_gradVec.h"
 
 
 
@@ -41,9 +42,13 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
         MPI_Cart_get(comm, 3, dims, periods, my_coords);
     else 
         dims[0] = dims[1] = dims[2] = 1;
-  
-    for (int i = 0; i < ncol; i++)
-        Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, comm, dims);    
+    
+    if (pSPARC->CyclixFlag) {
+        Gradient_vectors_dir_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, Dx, dir, comm, dims);
+    } else {
+        for (int i = 0; i < ncol; i++)
+            Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, comm, dims);    
+    }
 }
 
 

@@ -159,12 +159,20 @@ typedef struct _NLOC_PROJ_OBJ {
     int nproj;                  // number of projectors per atom
     double **Chi;               // projector real
     double _Complex **Chi_c;     // projector complex
+    // variables for spin-orbit coupling
     int nprojso;                // number of SO projectors per atom
     double _Complex **Chiso;     // SO projector complex
     int nprojso_ext;            // number of SO projectors (columns) of Chiso matrix in SOC (after extraction)
     double _Complex **Chisowt0;  // Chi matrix withou m = 0
     double _Complex **Chisowtl;  // Chi matrix without m = l
     double _Complex **Chisowtnl; // Chi matrix without m = -l
+    // variables for cyclix code
+    double **Chi_cyclix;
+    double _Complex **Chi_c_cyclix;
+    double _Complex **Chiso_cyclix;
+    double _Complex **Chisowt0_cyclix;
+    double _Complex **Chisowtl_cyclix;
+    double _Complex **Chisowtnl_cyclix;
 } NLOC_PROJ_OBJ;
 
 
@@ -260,6 +268,7 @@ typedef struct _SPARC_OBJ{
     /* spin orbit coupling options */
     int Nspinor;        // Number of spinor in wavefunction
     int SOC_Flag;       // Flag for spin-orbit coupling (SOC) calculation
+    int Nspden;         // Number of spin density
 
     /* Options for MD & Relaxation */
     int MDFlag;
@@ -450,6 +459,7 @@ typedef struct _SPARC_OBJ{
     double xc_rhotol;             // minimum value of rho below which it is made equal to xc_rhotol
     double *occ;                  // occupations corresponding to k-points owned by local process (LOCAL)
     double *occ_sorted;           // occupations corresponding to sorted lambda
+    double occfac;                // occupation's scaling factor
     double *lambda;               // eigenvalues of the Hamiltonian
     double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion
     double *totalLambdaArray;     // all eigenvalues of the system, collected for computing lambda_f
@@ -884,6 +894,31 @@ typedef struct _SPARC_OBJ{
     NLOC_PROJ_OBJ **nlocProj_SQ;    // nonlocal projectors in psi-domain (LOCAL)
     SQ_OBJ *pSQ;                    // SQ object
 
+    /* cyclix */
+    int CyclixFlag;
+    double twist;  // Twist of the cyclinder in radian/Bohr
+    double twistpercell; // Total twist per unit cell
+    double xin; // Coordinate of the 0th node of the cell in x-direction
+    double RotM_cyclix[9]; // Rotational matrix to rotate the coordinates in cyclic-helical system
+    double xmin_at; // Minimum of all atomic radial coordinates
+    double xmax_at; // Maximum of all atomic radial coordinates
+    double xvac; //  Vacuum in the radial direction
+    double xout; // Outer radius of the disc
+    double *Intgwt_kpttopo; // To store the integration weights for nodes in kptcomm_topo communicator processors
+    double *Intgwt_psi; // To store the integration weights for nodes in psi domain communicator processors
+    double *Intgwt_phi; // To store the integration weights for nodes in phi domain communicator processors
+
+    // Variables needed for LAPACKE eigensolver for nonsymmetric matrices
+    double *lambda_temp1;
+    double *lambda_temp2;
+    double *lambda_temp3;
+    double *vl;
+    double *vr;
+    double _Complex *lambda_temp1_kpt;
+    double _Complex *lambda_temp2_kpt;
+    double _Complex *vl_kpt;
+    double _Complex *vr_kpt;
+
     // Extrapolation options
     double *delectronDens;
     double *delectronDens_0dt;
@@ -919,9 +954,6 @@ typedef struct _SPARC_OBJ{
     
     /* memory */
     double memory_usage;
-
-    double xin;  // Starting coordinate of the cell in the x-direction
-    double twist;
     
     // Domain parallelization (decomposition) data layout for calculating projected Hamiltonian, 
     // generalized eigen problem, and subspace rotation
@@ -1173,6 +1205,9 @@ typedef struct _SPARC_INPUT_OBJ{
     int npNdx_SQ;           // number of processes for paral. over domain in x-dir
     int npNdy_SQ;           // number of processes for paral. over domain in y-dir
     int npNdz_SQ;           // number of processes for paral. over domain in z-dir
+
+    /* cyclix */
+    double twist;
 
     /* EigenValue problem*/
     int StandardEigenFlag;

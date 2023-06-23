@@ -25,6 +25,7 @@
 #include "eigenSolver.h" // Mesh2ChebDegree
 #include "stress.h"
 #include "tools.h"
+#include "cyclix_tools.h"
 
 #define SIGN(a,b) ((b)>=(0)?fabs(a):-fabs(a))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -919,9 +920,15 @@ void Relax_Cell(SPARC_OBJ *pSPARC)
 #endif
 
     // relax cell in the periodic dims
-    pSPARC->cellrelax_dims[0] = 1 - pSPARC->BCx;
-    pSPARC->cellrelax_dims[1] = 1 - pSPARC->BCy;
-    pSPARC->cellrelax_dims[2] = 1 - pSPARC->BCz;
+    if (pSPARC->cell_typ <= 20) {
+        pSPARC->cellrelax_dims[0] = 1 - pSPARC->BCx;
+        pSPARC->cellrelax_dims[1] = 1 - pSPARC->BCy;
+        pSPARC->cellrelax_dims[2] = 1 - pSPARC->BCz;
+    } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {
+        pSPARC->cellrelax_dims[0] = 0;
+        pSPARC->cellrelax_dims[1] = 0;
+        pSPARC->cellrelax_dims[2] = 1;
+    }
 
     pSPARC->cellrelax_ndim = pSPARC->cellrelax_dims[0]
                            + pSPARC->cellrelax_dims[1]
@@ -932,7 +939,13 @@ void Relax_Cell(SPARC_OBJ *pSPARC)
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
-    double V  = Lx * Ly * Lz * pSPARC->Jacbdet;
+    double V;
+    if (pSPARC->cell_typ <= 20) {
+        V = Lx * Ly * Lz * pSPARC->Jacbdet;
+    } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {
+        V = Lx * ((pSPARC->xin + pSPARC->xout)/2.0) * Ly * Lz;
+        pSPARC->twistpercell = pSPARC->twist * Lz;
+    }
     double V_lwbd = V / pow(max_dilatation,pSPARC->cellrelax_ndim);
     double V_upbd = V * pow(max_dilatation,pSPARC->cellrelax_ndim);
 
@@ -1082,7 +1095,12 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
     }
 
     // store previous volume
-    double vol_old = pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet;
+    double vol_old = 0;
+    if (pSPARC->cell_typ <= 20) {
+        vol_old = pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet;
+    } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {
+        vol_old = pSPARC->range_x * ((pSPARC->xin + pSPARC->xout)/2.0) * pSPARC->range_y * pSPARC->range_z;
+    }
 
     // scaling factor
     double scal = pow(vol / vol_old, 1.0/pSPARC->cellrelax_ndim);
@@ -1097,7 +1115,12 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
     if (pSPARC->cellrelax_dims[1] == 1) pSPARC->delta_y *= scal;
     if (pSPARC->cellrelax_dims[2] == 1) pSPARC->delta_z *= scal;
 
-    pSPARC->dV = pSPARC->delta_x * pSPARC->delta_y * pSPARC->delta_z * pSPARC->Jacbdet;
+    if (pSPARC->cell_typ <= 20) {
+        pSPARC->dV = pSPARC->delta_x * pSPARC->delta_y * pSPARC->delta_z * pSPARC->Jacbdet;
+    } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {
+        pSPARC->dV = pSPARC->delta_x * pSPARC->delta_y * pSPARC->delta_z;
+        pSPARC->twist = pSPARC->twistpercell/pSPARC->range_z;
+    }
 
     // calculate atom positions
     int atm, count = 0;
@@ -1138,90 +1161,96 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
         pSPARC->D1_stencil_coeffs_z[p] = pSPARC->FDweights_D1[p] * dz_inv;
     }
 
-    // 2nd derivative weights including mesh
-    double dx2_inv, dy2_inv, dz2_inv;
-    dx2_inv = 1.0 / (pSPARC->delta_x * pSPARC->delta_x);
-    dy2_inv = 1.0 / (pSPARC->delta_y * pSPARC->delta_y);
-    dz2_inv = 1.0 / (pSPARC->delta_z * pSPARC->delta_z);
-
-    // Stencil coefficients for mixed derivatives
-    if (pSPARC->cell_typ == 0) {
-        for (p = 0; p < FDn + 1; p++) {
-            pSPARC->D2_stencil_coeffs_x[p] = pSPARC->FDweights_D2[p] * dx2_inv;
-            pSPARC->D2_stencil_coeffs_y[p] = pSPARC->FDweights_D2[p] * dy2_inv;
-            pSPARC->D2_stencil_coeffs_z[p] = pSPARC->FDweights_D2[p] * dz2_inv;
-        }
-    } else if (pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
-        for (p = 0; p < FDn + 1; p++) {
-            pSPARC->D2_stencil_coeffs_x[p] = pSPARC->lapcT[0] * pSPARC->FDweights_D2[p] * dx2_inv;
-            pSPARC->D2_stencil_coeffs_y[p] = pSPARC->lapcT[4] * pSPARC->FDweights_D2[p] * dy2_inv;
-            pSPARC->D2_stencil_coeffs_z[p] = pSPARC->lapcT[8] * pSPARC->FDweights_D2[p] * dz2_inv;
-            pSPARC->D2_stencil_coeffs_xy[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dx_inv; // 2*T_12 d/dx(df/dy)
-            pSPARC->D2_stencil_coeffs_xz[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dx_inv; // 2*T_13 d/dx(df/dz)
-            pSPARC->D2_stencil_coeffs_yz[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dy_inv; // 2*T_23 d/dy(df/dz)
-            pSPARC->D1_stencil_coeffs_xy[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dy_inv; // d/dx(2*T_12 df/dy) used in d/dx(2*T_12 df/dy + 2*T_13 df/dz)
-            pSPARC->D1_stencil_coeffs_yx[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dx_inv; // d/dy(2*T_12 df/dx) used in d/dy(2*T_12 df/dx + 2*T_23 df/dz)
-            pSPARC->D1_stencil_coeffs_xz[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dz_inv; // d/dx(2*T_13 df/dz) used in d/dx(2*T_12 df/dy + 2*T_13 df/dz)
-            pSPARC->D1_stencil_coeffs_zx[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dx_inv; // d/dz(2*T_13 df/dx) used in d/dz(2*T_13 df/dz + 2*T_23 df/dy)
-            pSPARC->D1_stencil_coeffs_yz[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dz_inv; // d/dy(2*T_23 df/dz) used in d/dy(2*T_12 df/dx + 2*T_23 df/dz)
-            pSPARC->D1_stencil_coeffs_zy[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dy_inv; // d/dz(2*T_23 df/dy) used in d/dz(2*T_12 df/dx + 2*T_23 df/dy)
-        }
-    }
-
-    // maximum eigenvalue of -0.5 * Lap (only with periodic boundary conditions)
-    if(pSPARC->cell_typ == 0) {
-#ifdef DEBUG
-        t1 = MPI_Wtime();
-#endif
-        pSPARC->MaxEigVal_mhalfLap = pSPARC->D2_stencil_coeffs_x[0]
-                                   + pSPARC->D2_stencil_coeffs_y[0]
-                                   + pSPARC->D2_stencil_coeffs_z[0];
-        double scal_x, scal_y, scal_z;
-        scal_x = (pSPARC->Nx - pSPARC->Nx % 2) / (double) pSPARC->Nx;
-        scal_y = (pSPARC->Ny - pSPARC->Ny % 2) / (double) pSPARC->Ny;
-        scal_z = (pSPARC->Nz - pSPARC->Nz % 2) / (double) pSPARC->Nz;
-        for (int p = 1; p < FDn + 1; p++) {
-            pSPARC->MaxEigVal_mhalfLap += 2.0 * (pSPARC->D2_stencil_coeffs_x[p] * cos(M_PI*p*scal_x)
-                                               + pSPARC->D2_stencil_coeffs_y[p] * cos(M_PI*p*scal_y)
-                                               + pSPARC->D2_stencil_coeffs_z[p] * cos(M_PI*p*scal_z));
-        }
-        pSPARC->MaxEigVal_mhalfLap *= -0.5;
-#ifdef DEBUG
-        t2 = MPI_Wtime();
-        if (!rank) printf("Max eigenvalue of -0.5*Lap is %.13f, time taken: %.3f ms\n",
-            pSPARC->MaxEigVal_mhalfLap, (t2-t1)*1e3);
-#endif
-    }
-
-    double h_eff = 0.0;
-    if (fabs(pSPARC->delta_x - pSPARC->delta_y) < 1E-12 &&
-        fabs(pSPARC->delta_y - pSPARC->delta_z) < 1E-12) {
-        h_eff = pSPARC->delta_x;
+    if (pSPARC->CyclixFlag) {
+        LapStencil_cyclix(pSPARC);
+        Integration_weights_cyclix(pSPARC, pSPARC->Intgwt_kpttopo, pSPARC->DMVertices_kptcomm[0], pSPARC->Nx_d_kptcomm, pSPARC->Ny_d_kptcomm, pSPARC->Nz_d_kptcomm);
+        Integration_weights_cyclix(pSPARC, pSPARC->Intgwt_psi, pSPARC->DMVertices_dmcomm[0], pSPARC->Nx_d_dmcomm, pSPARC->Ny_d_dmcomm, pSPARC->Nz_d_dmcomm);
+        Integration_weights_cyclix(pSPARC, pSPARC->Intgwt_phi, pSPARC->DMVertices[0], pSPARC->Nx_d, pSPARC->Ny_d, pSPARC->Nz_d);
     } else {
-        // find effective mesh s.t. it has same spectral width
-        h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
-    }
+        // 2nd derivative weights including mesh
+        double dx2_inv, dy2_inv, dz2_inv;
+        dx2_inv = 1.0 / (pSPARC->delta_x * pSPARC->delta_x);
+        dy2_inv = 1.0 / (pSPARC->delta_y * pSPARC->delta_y);
+        dz2_inv = 1.0 / (pSPARC->delta_z * pSPARC->delta_z);
 
-    // find Chebyshev polynomial degree based on max eigenvalue (spectral width)
-    if (pSPARC->ChebDegree < 0) {
-        pSPARC->ChebDegree = Mesh2ChebDegree(h_eff);
-#ifdef DEBUG
-        if (!rank && h_eff < 0.1) {
-            printf("#WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
+        // Stencil coefficients for mixed derivatives
+        if (pSPARC->cell_typ == 0) {
+            for (p = 0; p < FDn + 1; p++) {
+                pSPARC->D2_stencil_coeffs_x[p] = pSPARC->FDweights_D2[p] * dx2_inv;
+                pSPARC->D2_stencil_coeffs_y[p] = pSPARC->FDweights_D2[p] * dy2_inv;
+                pSPARC->D2_stencil_coeffs_z[p] = pSPARC->FDweights_D2[p] * dz2_inv;
+            }
+        } else if (pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
+            for (p = 0; p < FDn + 1; p++) {
+                pSPARC->D2_stencil_coeffs_x[p] = pSPARC->lapcT[0] * pSPARC->FDweights_D2[p] * dx2_inv;
+                pSPARC->D2_stencil_coeffs_y[p] = pSPARC->lapcT[4] * pSPARC->FDweights_D2[p] * dy2_inv;
+                pSPARC->D2_stencil_coeffs_z[p] = pSPARC->lapcT[8] * pSPARC->FDweights_D2[p] * dz2_inv;
+                pSPARC->D2_stencil_coeffs_xy[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dx_inv; // 2*T_12 d/dx(df/dy)
+                pSPARC->D2_stencil_coeffs_xz[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dx_inv; // 2*T_13 d/dx(df/dz)
+                pSPARC->D2_stencil_coeffs_yz[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dy_inv; // 2*T_23 d/dy(df/dz)
+                pSPARC->D1_stencil_coeffs_xy[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dy_inv; // d/dx(2*T_12 df/dy) used in d/dx(2*T_12 df/dy + 2*T_13 df/dz)
+                pSPARC->D1_stencil_coeffs_yx[p] = 2 * pSPARC->lapcT[1] * pSPARC->FDweights_D1[p] * dx_inv; // d/dy(2*T_12 df/dx) used in d/dy(2*T_12 df/dx + 2*T_23 df/dz)
+                pSPARC->D1_stencil_coeffs_xz[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dz_inv; // d/dx(2*T_13 df/dz) used in d/dx(2*T_12 df/dy + 2*T_13 df/dz)
+                pSPARC->D1_stencil_coeffs_zx[p] = 2 * pSPARC->lapcT[2] * pSPARC->FDweights_D1[p] * dx_inv; // d/dz(2*T_13 df/dx) used in d/dz(2*T_13 df/dz + 2*T_23 df/dy)
+                pSPARC->D1_stencil_coeffs_yz[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dz_inv; // d/dy(2*T_23 df/dz) used in d/dy(2*T_12 df/dx + 2*T_23 df/dz)
+                pSPARC->D1_stencil_coeffs_zy[p] = 2 * pSPARC->lapcT[5] * pSPARC->FDweights_D1[p] * dy_inv; // d/dz(2*T_23 df/dy) used in d/dz(2*T_12 df/dx + 2*T_23 df/dy)
+            }
         }
-        if (!rank) printf("h_eff = %.2f, npl = %d\n", h_eff,pSPARC->ChebDegree);
-#endif
-    } else {
-#ifdef DEBUG
-        if (!rank) printf("Chebyshev polynomial degree (provided by user): npl = %d\n",pSPARC->ChebDegree);
-#endif
-    }
 
-    // default Kerker tolerance
-    if (pSPARC->TOL_PRECOND < 0.0) { // kerker tol not provided by user
-        pSPARC->TOL_PRECOND = (h_eff * h_eff) * 1e-3;
-    }
+        // maximum eigenvalue of -0.5 * Lap (only with periodic boundary conditions)
+        if(pSPARC->cell_typ == 0) {
+    #ifdef DEBUG
+            t1 = MPI_Wtime();
+    #endif
+            pSPARC->MaxEigVal_mhalfLap = pSPARC->D2_stencil_coeffs_x[0]
+                                    + pSPARC->D2_stencil_coeffs_y[0]
+                                    + pSPARC->D2_stencil_coeffs_z[0];
+            double scal_x, scal_y, scal_z;
+            scal_x = (pSPARC->Nx - pSPARC->Nx % 2) / (double) pSPARC->Nx;
+            scal_y = (pSPARC->Ny - pSPARC->Ny % 2) / (double) pSPARC->Ny;
+            scal_z = (pSPARC->Nz - pSPARC->Nz % 2) / (double) pSPARC->Nz;
+            for (int p = 1; p < FDn + 1; p++) {
+                pSPARC->MaxEigVal_mhalfLap += 2.0 * (pSPARC->D2_stencil_coeffs_x[p] * cos(M_PI*p*scal_x)
+                                                + pSPARC->D2_stencil_coeffs_y[p] * cos(M_PI*p*scal_y)
+                                                + pSPARC->D2_stencil_coeffs_z[p] * cos(M_PI*p*scal_z));
+            }
+            pSPARC->MaxEigVal_mhalfLap *= -0.5;
+    #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (!rank) printf("Max eigenvalue of -0.5*Lap is %.13f, time taken: %.3f ms\n",
+                pSPARC->MaxEigVal_mhalfLap, (t2-t1)*1e3);
+    #endif
+        }
 
+        double h_eff = 0.0;
+        if (fabs(pSPARC->delta_x - pSPARC->delta_y) < 1E-12 &&
+            fabs(pSPARC->delta_y - pSPARC->delta_z) < 1E-12) {
+            h_eff = pSPARC->delta_x;
+        } else {
+            // find effective mesh s.t. it has same spectral width
+            h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
+        }
+
+        // find Chebyshev polynomial degree based on max eigenvalue (spectral width)
+        if (pSPARC->ChebDegree < 0) {
+            pSPARC->ChebDegree = Mesh2ChebDegree(h_eff);
+    #ifdef DEBUG
+            if (!rank && h_eff < 0.1) {
+                printf("#WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
+            }
+            if (!rank) printf("h_eff = %.2f, npl = %d\n", h_eff,pSPARC->ChebDegree);
+    #endif
+        } else {
+    #ifdef DEBUG
+            if (!rank) printf("Chebyshev polynomial degree (provided by user): npl = %d\n",pSPARC->ChebDegree);
+    #endif
+        }
+
+        // default Kerker tolerance
+        if (pSPARC->TOL_PRECOND < 0.0) { // kerker tol not provided by user
+            pSPARC->TOL_PRECOND = (h_eff * h_eff) * 1e-3;
+        }
+    }
 
     // re-calculate k-point grid
     Calculate_kpoints(pSPARC);
@@ -1425,6 +1454,9 @@ double BrentsFun(SPARC_OBJ *pSPARC, double x1, double x2, double tol_x, double t
 **/
 void Print_fullRelax(SPARC_OBJ *pSPARC, FILE *output_relax) {
     int atm;
+    if (pSPARC->CyclixFlag) {
+        fprintf(output_relax,":TOTAL TWIST(rad): %18.10E\n", pSPARC->twist*pSPARC->range_z);
+    }
     fprintf(output_relax,":E(Ha): %.15E\n", pSPARC->Etot);
     // Print atomic position
     fprintf(output_relax,":R(Bohr):\n");

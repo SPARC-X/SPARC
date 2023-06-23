@@ -39,7 +39,7 @@ void print_orbitals(SPARC_OBJ *pSPARC);
  * @brief   Print real Kohn-Sham orbitals
  */
 void print_orbital_real(
-    double *x, int *gridsizes, int *DMVertices, double dV,
+    double *x, int *gridsizes, int *DMVertices, double dV, int Nspinor,
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 );
 
@@ -47,7 +47,7 @@ void print_orbital_real(
  * @brief   Print complex Kohn-Sham orbitals
  */
 void print_orbital_complex(
-    double _Complex *x, int *gridsizes, int *DMVertices, double dV,
+    double _Complex *x, int *gridsizes, int *DMVertices, double dV, int Nspinor,
     char *fname, int spin_index, int kpt_index, double *kpt_vec, int band_index, MPI_Comm comm
 );
 

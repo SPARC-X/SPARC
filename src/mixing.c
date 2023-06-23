@@ -396,8 +396,16 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
 
         // scale electron density so that PosCharge + NegCharge = NetCharge 
         double int_rho = 0.0;
-        VectorSum(x_kp1, N, &int_rho, pSPARC->dmcomm_phi);
-        int_rho *= pSPARC->dV;
+        if (pSPARC->CyclixFlag) {
+            double temp_sum = 0;
+            for (i = 0; i < pSPARC->Nspin; i++) {
+                VectorSum_wt(x_kp1 + i*pSPARC->Nd_d, pSPARC->Intgwt_phi, pSPARC->Nd_d, &temp_sum, pSPARC->dmcomm_phi);
+            }
+            int_rho += temp_sum;
+        } else {
+            VectorSum(x_kp1, N, &int_rho, pSPARC->dmcomm_phi);
+            int_rho *= pSPARC->dV;
+        }
         double scal_fac = -pSPARC->NegCharge / int_rho;
         int len = pSPARC->spin_typ ? 3 * pSPARC->Nd_d : pSPARC->Nd_d;
         for (int i = 0; i < len; i++) {
