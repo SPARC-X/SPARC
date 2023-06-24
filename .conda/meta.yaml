@@ -6,7 +6,7 @@
 {% set date_list = raw_version.split(" ")  %}
 # Hard-coded 3-letter-to-2-digit month conversion, since we're limited by default jinja2
 {% set month_mapping = dict(jan="01", feb="02", mar="03", apr="04", may="05", jun="06", jul="07", aug="08", sep="09", oct="10", nov="11", dec="12") %}
-{% set month = date_list[0].lower() %}
+{% set month = date_list[0].lower()[:3] %}
 {% set version = date_list[2] ~ "." ~ month_mapping[month] ~ "." ~ date_list[1] %}
 {% set file_ext = "tar.gz" %}
 {% set readme = load_file_regex(load_file="README.md", regex_pattern=".*")[0] %}
