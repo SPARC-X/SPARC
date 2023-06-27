@@ -14,1064 +14,386 @@
 #include <string.h>
 #include <math.h>
 #include <mpi.h>
+#include <assert.h>
 
 #include "exchangeCorrelation.h"
 #include "initialization.h"
 #include "isddft.h"
 #include "gradVecRoutines.h"
 #include "tools.h"
-#include "vdWDFexchangeLinearCorre.h"
 #include "vdWDFnonlinearCorre.h"
-#include "mGGAexchangeCorrelation.h"
-
-
-
-/**
-@ brief: function to initialize the constants used in the xc functionals 
-**/
-void xc_constants_init(XCCST_OBJ *xc_cst, SPARC_OBJ *pSPARC) {
-    xc_cst->alpha_zeta2 = 1.0 - 1.0e-6; xc_cst->alpha_zeta = 1.0 - 1.0e-6; // ABINIT
-    //xc_cst->alpha_zeta2 = 1.0; xc_cst->alpha_zeta = 1.0; // LIBXC
-    if(strcmpi(pSPARC->XC,"GGA_PBEsol") == 0) {
-		xc_cst->beta = 0.046;
-		xc_cst->mu = 10.0/81.0;//0.1235
-	} else {
-		xc_cst->beta = 0.066725;
-    	//xc_cst->beta = 0.06672455060314922;
-		xc_cst->mu = 0.2195149727645171;
-	}
-    xc_cst->fsec_inv = 1.0/1.709921;
-    xc_cst->kappa_pbe = 0.804;
-    xc_cst->rsfac = 0.6203504908994000;
-    xc_cst->kappa = xc_cst->kappa_pbe;
-    xc_cst->mu_divkappa_pbe = xc_cst->mu/xc_cst->kappa_pbe;
-    xc_cst->mu_divkappa = xc_cst->mu_divkappa_pbe;
-
-    xc_cst->ec0_aa = 0.031091; xc_cst->ec1_aa = 0.015545; xc_cst->mac_aa = 0.016887; // ABINIT
-    //xc_cst->ec0_aa = 0.0310907; xc_cst->ec1_aa = 0.01554535; xc_cst->mac_aa = 0.0168869; // LIBXC
-    xc_cst->ec0_a1 = 0.21370;  xc_cst->ec1_a1 = 0.20548;  xc_cst->mac_a1 = 0.11125;
-    xc_cst->ec0_b1 = 7.5957;  xc_cst->ec1_b1 = 14.1189;  xc_cst->mac_b1 = 10.357;
-    xc_cst->ec0_b2 = 3.5876;   xc_cst->ec1_b2 = 6.1977;   xc_cst->mac_b2 = 3.6231;
-    xc_cst->ec0_b3 = 1.6382;   xc_cst->ec1_b3 = 3.3662;   xc_cst->mac_b3 = 0.88026;
-    xc_cst->ec0_b4 = 0.49294;  xc_cst->ec1_b4 = 0.62517;  xc_cst->mac_b4 = 0.49671;
-
-    // Constants
-    xc_cst->piinv = 1.0/M_PI;
-    xc_cst->third = 1.0/3.0;
-    xc_cst->twom1_3 = pow(2.0,-xc_cst->third);
-    xc_cst->sixpi2_1_3 = pow(6.0*M_PI*M_PI,xc_cst->third);
-    xc_cst->sixpi2m1_3 = 1.0/xc_cst->sixpi2_1_3;
-    xc_cst->threefourth_divpi = (3.0/4.0) * xc_cst->piinv;
-    xc_cst->gamma = (1.0 - log(2.0)) * pow(xc_cst->piinv,2.0);
-    xc_cst->gamma_inv = 1.0/xc_cst->gamma;
-    //beta_gamma = xc_cst->beta * xc_cst->gamma_inv;
-    xc_cst->factf_zeta = 1.0/(pow(2.0,(4.0/3.0)) - 2.0);
-    xc_cst->factfp_zeta = 4.0/3.0 * xc_cst->factf_zeta * xc_cst->alpha_zeta2;
-    xc_cst->coeff_tt = 1.0/(4.0 * 4.0 * xc_cst->piinv * pow(3.0*M_PI*M_PI,xc_cst->third));
-    xc_cst->sq_rsfac = sqrt(xc_cst->rsfac);
-    xc_cst->sq_rsfac_inv = 1.0/xc_cst->sq_rsfac;
-}
-
-
+#include "mGGAtauTransferTauVxc.h"
+#include "mGGAscan.h"
 
 /**
 * @brief  Calculate exchange correlation potential
 **/
 void Calculate_Vxc(SPARC_OBJ *pSPARC)
-{
-    double *rho;
-    int sz_rho, i;
-    sz_rho = pSPARC->Nd_d * (2*pSPARC->Nspin-1);
-    rho = (double *)malloc(sz_rho * sizeof(double) );
-    for (i = 0; i < sz_rho; i++){
-        rho[i] = pSPARC->electronDens[i];
-        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
-        if (pSPARC->NLCC_flag)
-            rho[i] += pSPARC->electronDens_core[i];
-        if(rho[i] < pSPARC->xc_rhotol)
-            rho[i] = pSPARC->xc_rhotol;
+{   
+    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
+    
+    int ncol = 2*pSPARC->Nspin-1; 
+    int DMnd = pSPARC->Nd_d;
+    int sz = DMnd * ncol;
+    double *rho = (double *)malloc(sz * sizeof(double) );
+    double *sigma, *Drho_x, *Drho_y, *Drho_z, *tau;
+    sigma = Drho_x = Drho_y = Drho_z = tau = NULL;
+
+    // add core electron density if needed
+    add_rho_core(pSPARC, pSPARC->electronDens, rho, ncol);
+    // calculate sigma
+    if (pSPARC->isgradient) {
+        sigma  = (double *)malloc(sz * sizeof(double) );
+        Drho_x = (double *)malloc(sz * sizeof(double) );
+        Drho_y = (double *)malloc(sz * sizeof(double) );
+        Drho_z = (double *)malloc(sz * sizeof(double) );
+        calculate_square_norm_of_gradient(pSPARC, rho, pSPARC->mag, DMnd, ncol, sigma, Drho_x, Drho_y, Drho_z);
+        if (pSPARC->ixc[3]) { // used for vdW-DF
+            memcpy(pSPARC->Drho[0], Drho_x + (pSPARC->Nspin - 1)*DMnd, DMnd*pSPARC->Nspin*sizeof(double));
+            memcpy(pSPARC->Drho[1], Drho_y + (pSPARC->Nspin - 1)*DMnd, DMnd*pSPARC->Nspin*sizeof(double));
+            memcpy(pSPARC->Drho[2], Drho_z + (pSPARC->Nspin - 1)*DMnd, DMnd*pSPARC->Nspin*sizeof(double));
+        }
     }
 
-    if (pSPARC->spin_typ != 0) {
-        for(i = 0; i < pSPARC->Nd_d; i++)
-            rho[i] = rho[pSPARC->Nd_d + i] + rho[2*pSPARC->Nd_d + i];
-    }
-
-    if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0)
-        Calculate_Vxc_LDA(pSPARC, rho);
-    else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-        || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
-        || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0)
-        Calculate_Vxc_GGA(pSPARC, rho);
-    else if(strcmpi(pSPARC->XC,"HF") == 0) {
-        if (pSPARC->usefock%2 == 1)
-            Calculate_Vxc_GGA(pSPARC, rho);
+    if (pSPARC->ixc[2]) { // metaGGA
+        if (pSPARC->countPotentialCalculate == 0) { // 1st SCF, calculate PBE
+            pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+            pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+            pSPARC->xcoption[0] = 1; pSPARC->xcoption[1] = 1;
+        } 
         else {
-            for (i = 0; i < pSPARC->Nd_d; i++) {
-                pSPARC->e_xc[i] = 0.0;
-                pSPARC->Dxcdgrho[i] = 0.0;
-                pSPARC->XCPotential[i] = 0.0;
+            tau = pSPARC->KineticTauPhiDomain;
+        }
+    }
+
+    if (pSPARC->spin_typ == 0) {
+        double *ex = (double *)malloc(DMnd * sizeof(double) );
+        double *ec = (double *)malloc(DMnd * sizeof(double) );
+        double *vx = (double *)malloc(DMnd * sizeof(double) );
+        double *vc = (double *)malloc(DMnd * sizeof(double) );
+        double *v2x, *v2c, *v3x, *v3c;
+        v2x = v2c = NULL;
+        if (pSPARC->isgradient) {
+            v2x = (double *)malloc(DMnd * sizeof(double) );
+            v2c = (double *)malloc(DMnd * sizeof(double) );
+        }
+        v3x = v3c = NULL;
+        if (pSPARC->ixc[2]) { // for metaGGA, d(n\epsilon)/d\tau
+            v3x = (double *)malloc(DMnd * sizeof(double) );
+            v3c = (double *)malloc(DMnd * sizeof(double) );
+        }
+
+        // iexch
+        switch (pSPARC->ixc[0])
+        {
+        case 1:
+            slater(DMnd, rho, ex ,vx);
+            break;
+        case 2:
+            pbex(DMnd, rho, sigma, pSPARC->xcoption[0], ex, vx, v2x);
+            break;
+        case 3:
+            rPW86x(DMnd, rho, sigma, ex, vx, v2x);
+            break;
+        case 4:
+            scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
+        default:
+            memset(ex, 0, sizeof(double) * DMnd);
+            memset(vx, 0, sizeof(double) * DMnd);
+            if (pSPARC->isgradient) {
+                memset(v2x, 0, sizeof(double) * DMnd);
             }
+            break;
         }
-    } else if(pSPARC->mGGAflag == 1) {
-        Calculate_transfer_Vxc_MGGA(pSPARC, rho);
-    } else {
-        printf("Cannot recognize the XC option provided!\n");
-        exit(EXIT_FAILURE);
-    }
-    free(rho);
-}
 
-
-
-/**
- * @brief   Calculate the XC potential using LDA.  
- *
- *          This function calls appropriate XC potential.
- */
-void Calculate_Vxc_LDA(SPARC_OBJ *pSPARC, double *rho)
-{
-    if (pSPARC->spin_typ == 0){ // spin unpolarized
-        if(strcmpi(pSPARC->XC,"LDA_PW") == 0) {
-            // Perdew-Wang exchange correlation 
-            Calculate_Vxc_LDA_PW(pSPARC, rho);
-        } else if (strcmpi(pSPARC->XC,"LDA_PZ") == 0) {
-            // Perdew-Zunger exchange correlation 
-            Calculate_Vxc_LDA_PZ(pSPARC, rho);
-        } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
+        // icorr
+        switch (pSPARC->ixc[1])
+        {
+        case 1:
+            pz(DMnd, rho, ec, vc);
+            break;
+        case 2:
+            pw(DMnd, rho, ec, vc);
+            if (pSPARC->ixc[3]) {
+                memcpy(pSPARC->vdWDFecLinear, ec, DMnd*sizeof(double));
+                memcpy(pSPARC->vdWDFVcLinear, vc, DMnd*sizeof(double));
+                memset(v2c, 0, sizeof(double) * DMnd);
+            }
+            break;
+        case 3:
+            pbec(DMnd, rho, sigma, pSPARC->xcoption[1], ec, vc, v2c);
+            break;
+        case 4:
+            scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        default:
+            memset(ec, 0, sizeof(double) * DMnd);
+            memset(vc, 0, sizeof(double) * DMnd);
+            if (pSPARC->isgradient) {
+                memset(v2c, 0, sizeof(double) * DMnd);
+            }
+            break;
         }
-    } else {
-        if(strcmpi(pSPARC->XC,"LDA_PW") == 0) {
-            // Initialize constants    
-            XCCST_OBJ xc_cst;
-            xc_constants_init(&xc_cst, pSPARC);
-            // Perdew-Wang exchange correlation 
-            Calculate_Vxc_LSDA_PW(pSPARC, &xc_cst, rho);
-        } else if (strcmpi(pSPARC->XC,"LDA_PZ") == 0) {
-            printf("Currently only LDA_PW available\n");
-            exit(EXIT_FAILURE);
-            // Perdew-Zunger exchange correlation 
-            // Calculate_Vxc_LSDA_PZ(pSPARC);
-        } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-}
-
-
-
-/**
- * @brief   Calculate the LDA Perdew-Wang XC potential.
- * 
- *          This function implements LDA Ceperley-Alder Perdew-Wang 
- *          exchange-correlation potential (PW92).
- */
-void Calculate_Vxc_LDA_PW(SPARC_OBJ *pSPARC, double *rho) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG
-    if (rank == 0) 
-        printf("Start calculating Vxc (LDA) ...\n");
-#endif 
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
-        return; 
-    }
-    
-    int i;
-    double p, A, alpha1, beta1, beta2, beta3, beta4, C3, C31; // parameters (constants)
-    double rs, G1, G2, rho_cbrt, rs_sqrt, rs_pow_1p5, rs_pow_p, rs_pow_pplus1;
-    
-    // correlation parameters
-    p = 1.0; 
-    A = 0.031091;
-    alpha1 = 0.21370;
-    beta1 = 7.5957;
-    beta2 = 3.5876;
-    beta3 = 1.6382;
-    beta4 = 0.49294;
-    
-    // exchange parameter
-    C3 = 0.9847450218426965; // (3/pi)^(1/3)
-    C31 = 0.6203504908993999; // (3/4pi)^(1/3)
-    
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        rho_cbrt = cbrt(rho[i]);
-        rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
-        rs_sqrt = sqrt(rs); // rs^0.5
-        rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
-        rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
-        rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
-        G1 = log(1.0+1.0/(2.0*A*(beta1*rs_sqrt + beta2*rs + beta3*rs_pow_1p5 + beta4*rs_pow_pplus1 )));
-        G2 = 2.0*A*(beta1*rs_sqrt + beta2*rs + beta3*rs_pow_1p5 + beta4*rs_pow_pplus1);
-        
-        pSPARC->XCPotential[i] = -2.0*A*(1.0+alpha1*rs) * G1 
-	                             -(rs/3.0)*( -2.0*A*alpha1 * G1 + (2.0*A*(1.0+alpha1*rs) * (A*(beta1/rs_sqrt + 2.0*beta2 + 3.0*beta3*rs_sqrt + 2.0*(p+1.0)*beta4*rs_pow_p))) / (G2 * (G2 + 1.0)) );
-        pSPARC->XCPotential[i] -= C3 * rho_cbrt; // add exchange potential 
-    }
-}
-
-
-/**
- * @brief   Calculate the LSDA Perdew-Wang XC potential.
- * 
- *          This function implements LSDA Ceperley-Alder Perdew-Wang 
- *          exchange-correlation potential (PW92).
- */
-void Calculate_Vxc_LSDA_PW(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG
-    if (rank == 0) 
-        printf("Start calculating Vxc (LSDA_PW) ...\n");
-#endif 
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
-        return; 
-    }
-
-    int DMnd, i, spn_i;
-    double rho_updn, rho_updnm1_3, rhom1_3, rhotot_inv, zeta, zetp, zetm, zetpm1_3, zetmm1_3, rhotmo6, rhoto6;
-    double exc, rhomot, ex_lsd, rs, sqr_rs, rsm1_2;
-    double ec0_q0, ec0_q1, ec0_q1p, ec0_den, ec0_log, ecrs0, decrs0_drs, mac_q0, mac_q1, mac_q1p, mac_den, mac_log, macrs, dmacrs_drs;
-    double ec1_q0, ec1_q1, ec1_q1p, ec1_den, ec1_log, ecrs1, decrs1_drs, zetp_1_3, zetm_1_3, f_zeta, fp_zeta, zeta4;
-    double gcrs, ecrs, dgcrs_drs, decrs_drs, dfzeta4_dzeta, decrs_dzeta, vxcadd;
-    
-    DMnd = pSPARC->Nd_d;
-    for(i = 0; i < DMnd; i++) {
-        //pSPARC->electronDens[i] += 1e-50;
-        //pSPARC->electronDens[DMnd+i] += 1e-50;
-        //pSPARC->electronDens[2*DMnd+i] += 1e-50;
-        rhom1_3 = pow(rho[i],-xc_cst->third);
-        rhotot_inv = pow(rhom1_3,3.0);
-        zeta = (rho[DMnd+i] - rho[2*DMnd+i]) * rhotot_inv;
-        zetp = 1.0 + zeta * xc_cst->alpha_zeta;
-        zetm = 1.0 - zeta * xc_cst->alpha_zeta;
-        zetpm1_3 = pow(zetp,-xc_cst->third);
-        zetmm1_3 = pow(zetm,-xc_cst->third);
-        rhotmo6 = sqrt(rhom1_3);
-        rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
-
-        // -----------------------------------------------------------------------
-        // First take care of the exchange part of the functional
-        exc = 0.0;
-        for(spn_i = 0; spn_i < 2; spn_i++){
-            rho_updn = rho[DMnd + spn_i*DMnd + i]; 
-            rho_updnm1_3 = pow(rho_updn, -xc_cst->third);
-            rhomot = rho_updnm1_3;
-            ex_lsd = -xc_cst->threefourth_divpi * xc_cst->sixpi2_1_3 * (rhomot * rhomot * rho_updn);
-            pSPARC->XCPotential[spn_i*DMnd + i] = (4.0/3.0) * ex_lsd;
-            exc += ex_lsd * rho_updn;
-        }
-        pSPARC->e_xc[i] = exc * rhotot_inv;
-
-        // -----------------------------------------------------------------------------
-        // Then takes care of the LSD correlation part of the functional
-
-        rs = xc_cst->rsfac * rhom1_3;
-        sqr_rs = xc_cst->sq_rsfac * rhotmo6;
-        rsm1_2 = xc_cst->sq_rsfac_inv * rhoto6;
-
-        // Formulas A6-A8 of PW92LSD
-
-        ec0_q0 = -2.0 * xc_cst->ec0_aa * (1.0 + xc_cst->ec0_a1 * rs);
-        ec0_q1 = 2.0 * xc_cst->ec0_aa *(xc_cst->ec0_b1 * sqr_rs + xc_cst->ec0_b2 * rs + xc_cst->ec0_b3 * rs * sqr_rs + xc_cst->ec0_b4 * rs * rs);
-        ec0_q1p = xc_cst->ec0_aa * (xc_cst->ec0_b1 * rsm1_2 + 2.0 * xc_cst->ec0_b2 + 3.0 * xc_cst->ec0_b3 * sqr_rs + 4.0 * xc_cst->ec0_b4 * rs);
-        ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
-        ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
-        ecrs0 = ec0_q0 * ec0_log;
-        decrs0_drs = -2.0 * xc_cst->ec0_aa * xc_cst->ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
-
-        mac_q0 = -2.0 * xc_cst->mac_aa * (1.0 + xc_cst->mac_a1 * rs);
-        mac_q1 = 2.0 * xc_cst->mac_aa * (xc_cst->mac_b1 * sqr_rs + xc_cst->mac_b2 * rs + xc_cst->mac_b3 * rs * sqr_rs + xc_cst->mac_b4 * rs * rs);
-        mac_q1p = xc_cst->mac_aa * (xc_cst->mac_b1 * rsm1_2 + 2.0 * xc_cst->mac_b2 + 3.0 * xc_cst->mac_b3 * sqr_rs + 4.0 * xc_cst->mac_b4 * rs);
-        mac_den = 1.0/(mac_q1 * mac_q1 + mac_q1);
-        mac_log = -log( mac_q1 * mac_q1 * mac_den );
-        macrs = mac_q0 * mac_log;
-        dmacrs_drs = -2.0 * xc_cst->mac_aa * xc_cst->mac_a1 * mac_log - mac_q0 * mac_q1p * mac_den;
-
-        ec1_q0 = -2.0 * xc_cst->ec1_aa * (1.0 + xc_cst->ec1_a1 * rs);
-        ec1_q1 = 2.0 * xc_cst->ec1_aa * (xc_cst->ec1_b1 * sqr_rs + xc_cst->ec1_b2 * rs + xc_cst->ec1_b3 * rs * sqr_rs + xc_cst->ec1_b4 * rs * rs);
-        ec1_q1p = xc_cst->ec1_aa * (xc_cst->ec1_b1 * rsm1_2 + 2.0 * xc_cst->ec1_b2 + 3.0 * xc_cst->ec1_b3 * sqr_rs + 4.0 * xc_cst->ec1_b4 * rs);
-        ec1_den = 1.0/(ec1_q1 * ec1_q1 + ec1_q1);
-        ec1_log = -log( ec1_q1 * ec1_q1 * ec1_den );
-        ecrs1 = ec1_q0 * ec1_log;
-        decrs1_drs = -2.0 * xc_cst->ec1_aa * xc_cst->ec1_a1 * ec1_log - ec1_q0 * ec1_q1p * ec1_den;
-        
-        // xc_cst->alpha_zeta is introduced in order to remove singularities for fully polarized systems.
-        zetp_1_3 = (1.0 + zeta * xc_cst->alpha_zeta) * pow(zetpm1_3,2.0);
-        zetm_1_3 = (1.0 - zeta * xc_cst->alpha_zeta) * pow(zetmm1_3,2.0);
-
-        f_zeta = ( (1.0 + zeta * xc_cst->alpha_zeta2) * zetp_1_3 + (1.0 - zeta * xc_cst->alpha_zeta2) * zetm_1_3 - 2.0 ) * xc_cst->factf_zeta;
-        fp_zeta = ( zetp_1_3 - zetm_1_3 ) * xc_cst->factfp_zeta;
-        zeta4 = pow(zeta, 4.0);
-
-        gcrs = ecrs1 - ecrs0 + macrs * xc_cst->fsec_inv;
-        ecrs = ecrs0 + f_zeta * (zeta4 * gcrs - macrs * xc_cst->fsec_inv);
-        dgcrs_drs = decrs1_drs - decrs0_drs + dmacrs_drs * xc_cst->fsec_inv;
-        decrs_drs = decrs0_drs + f_zeta * (zeta4 * dgcrs_drs - dmacrs_drs * xc_cst->fsec_inv);
-        dfzeta4_dzeta = 4.0 * pow(zeta,3.0) * f_zeta + fp_zeta * zeta4;
-        decrs_dzeta = dfzeta4_dzeta * gcrs - fp_zeta * macrs * xc_cst->fsec_inv;
-
-        pSPARC->e_xc[i] += ecrs;
-        vxcadd = ecrs - rs * xc_cst->third * decrs_drs - zeta * decrs_dzeta;
-        pSPARC->XCPotential[i] += vxcadd + decrs_dzeta;
-        pSPARC->XCPotential[DMnd+i] += vxcadd - decrs_dzeta;
-    }
-}
-
-
-
-/**
- * @brief   Calculate the LDA Perdew-Zunger XC potential.
- *
- *          This function implements LDA Ceperley-Alder Perdew-Zunger 
- *          exchange-correlation potential.
- */
-void Calculate_Vxc_LDA_PZ(SPARC_OBJ *pSPARC, double *rho) {
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
-
-    int  i;
-    double C3, rhoi, rs;
-    double A,B,C,D,gamma1,beta1,beta2,Vxci;
-
-    A = 0.0311;
-    B = -0.048 ;
-    C = 0.002 ;
-    D = -0.0116 ;
-    gamma1 = -0.1423 ;
-    beta1 = 1.0529 ;
-    beta2 = 0.3334 ; 
-
-    C3 = 0.9847450218427;
-
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        rhoi = rho[i];
-        //if (rhoi == 0.0) {
-        //    Vxci = 0.0 ;     
-        //} else {	     
-        rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
-        if (rs<1.0) {
-            Vxci = log(rs)*(A+(2.0/3.0)*C*rs) + (B-(1.0/3.0)*A) + (1.0/3.0)*(2.0*D-C)*rs; 
-        } else {
-            Vxci = (gamma1 + (7.0/6.0)*gamma1*beta1*pow(rs,0.5) + (4.0/3.0)*gamma1*beta2*rs)/pow(1+beta1*pow(rs,0.5)+beta2*rs,2.0) ;		  
-        }
-        //} 	
-        Vxci = Vxci - C3*pow(rhoi,1.0/3.0) ;     
-        pSPARC->XCPotential[i] = Vxci;        
-    }
-}
-
-
-
-/**
- * @brief   Calculate the XC potential using GGA.  
- *
- *          This function calls appropriate XC potential.
- */
-void Calculate_Vxc_GGA(SPARC_OBJ *pSPARC, double *rho)
-{
-    // Initialize constants    
-    XCCST_OBJ xc_cst;
-    xc_constants_init(&xc_cst, pSPARC);
-
-    if (pSPARC->spin_typ == 0) { // spin unpolarized
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) 
-            // Perdew-Burke Ernzerhof exchange-correlation 
-            Calculate_Vxc_GGA_PBE(pSPARC, &xc_cst, rho);
-        else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) { // it can also be replaced by pSPARC->vdWDFFlag != 0
-            Calculate_Vxc_vdWExchangeLinearCorre(pSPARC, &xc_cst, rho); // compute energy and potential of Zhang-Yang revised PBE exchange + LDA PW91 correlation
-            Calculate_nonLinearCorr_E_V_vdWDF(pSPARC, rho); // the function is in /vdW/vdWDF/vdWDF.c
-        }
-        else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }    
-    } else {
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0)
-            // Perdew-Burke Ernzerhof exchange-correlation 
-            Calculate_Vxc_GSGA_PBE(pSPARC, &xc_cst, rho);
-        else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) {
-            Calculate_Vxc_vdWExchangeLinearCorre(pSPARC, &xc_cst, rho); // compute energy and potential of Zhang-Yang revised PBE exchange + LDA PW91 correlation
-            Calculate_nonLinearCorr_E_V_SvdWDF(pSPARC, rho); // the function is in /vdW/vdWDF/vdWDF.c
-        }
-        else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-}
-
-
-/**
- * @brief   Calculate the XC potential using GGA_PBE.  
- *
- *          This function calls appropriate XC potential.
- */
-void Calculate_Vxc_GGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG
-    if (rank == 0) 
-        printf("Start calculating Vxc (GGA_PBE) ...\n");
-#endif 
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
-        return; 
-    }
-    
-    //double beta, kappa_pbe, mu, rsfac, kappa, mu_divkappa_pbe, mu_divkappa;
-    //double ec0_aa, ec0_a1, ec0_b1, ec0_b2, ec0_b3, ec0_b4;
-    //double pi, piinv, third, twom1_3, sixpi2_1_3, sixpi2m1_3, threefourth_divpi, gamma, gamma_inv, coeff_tt, sq_rsfac, sq_rsfac_inv;
-    double rho_updn, rho_updnm1_3, rhom1_3, rhotot_inv, rhotmo6, rhoto6, rhomot, ex_lsd, rho_inv, coeffss, ss;
-    double divss, dfxdss, fx, ex_gga, dssdn, dfxdn, dssdg, dfxdg, exc, rs, sqr_rs, rsm1_2;
-    double ec0_q0, ec0_q1, ec0_q1p, ec0_den, ec0_log, ecrs0, decrs0_drs, ecrs, decrs_drs;
-    double phi_zeta_inv, phi3_zeta, gamphi3inv, bb, dbb_drs, exp_pbe, cc, dcc_dbb, dcc_drs, coeff_aa, aa, daa_drs;
-    double grrho2, dtt_dg, tt, xx, dxx_drs, dxx_dtt, pade_den, pade, dpade_dxx, dpade_drs, dpade_dtt, coeff_qq, qq, dqq_drs, dqq_dtt;
-    double arg_rr, div_rr, rr, drr_dqq, drr_drs, drr_dtt, hh, dhh_dtt, dhh_drs, drhohh_drho; 
-
-    double temp1, temp2, temp3;
-    int DMnd, i;
-    DMnd = pSPARC->Nd_d;
-    
-    double *Drho_x, *Drho_y, *Drho_z, *DDrho_x, *DDrho_y, *DDrho_z, *sigma, *lapcT;
-    Drho_x = (double *) malloc(DMnd * sizeof(double));
-    Drho_y = (double *) malloc(DMnd * sizeof(double));
-    Drho_z = (double *) malloc(DMnd * sizeof(double));
-    DDrho_x = (double *) malloc(DMnd * sizeof(double));
-    DDrho_y = (double *) malloc(DMnd * sizeof(double));
-    DDrho_z = (double *) malloc(DMnd * sizeof(double));
-    sigma = (double *) malloc(DMnd * sizeof(double));
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
-    
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        lapcT = (double *) malloc(6 * sizeof(double));
-        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-        for(i = 0; i < DMnd; i++){
-            sigma[i] = Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
-                       Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i]); 
-        }
-        free(lapcT);
-    } else {
-        for(i = 0; i < DMnd; i++){
-            sigma[i] = Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i];
-        }
-    }
-
-    // Compute exchange and correlation
-    //phi_zeta = 1.0;
-    //phip_zeta = 0.0;
-    phi_zeta_inv = 1.0;
-    //phi_logder = 0.0;
-    phi3_zeta = 1.0;
-    gamphi3inv = xc_cst->gamma_inv;
-    //phipp_zeta = (-2.0/9.0) * alpha_zeta * alpha_zeta;
-
-    for(i = 0; i < DMnd; i++){
-        rho_updn = rho[i]/2.0;
-        rho_updnm1_3 = pow(rho_updn, -xc_cst->third);
-        rhom1_3 = xc_cst->twom1_3 * rho_updnm1_3;
-
-        rhotot_inv = rhom1_3 * rhom1_3 * rhom1_3;
-        rhotmo6 = sqrt(rhom1_3);
-        rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
-
-        // First take care of the exchange part of the functional
-        rhomot = rho_updnm1_3;
-        ex_lsd = -xc_cst->threefourth_divpi * xc_cst->sixpi2_1_3 * (rhomot * rhomot * rho_updn);
-
-        // Perdew-Burke-Ernzerhof GGA, exchange part
-        rho_inv = rhomot * rhomot * rhomot;
-        coeffss = (1.0/4.0) * xc_cst->sixpi2m1_3 * xc_cst->sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
-        ss = (sigma[i]/4.0) * coeffss; // s^2
-
-        if (strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0) { 
-            divss = 1.0/(1.0 + xc_cst->mu_divkappa * ss);
-            dfxdss = xc_cst->mu * (divss * divss);
-            //d2fxdss2 = -xc_cst->mu * 2.0 * xc_cst->mu_divkappa * (divss * divss * divss);
-        } else if (strcmpi(pSPARC->XC,"GGA_RPBE") == 0) {
-            divss = exp(-xc_cst->mu_divkappa * ss);
-            dfxdss = xc_cst->mu * divss;
-            //d2fxdss2 = -xc_cst->mu * xc_cst->mu_divkappa * divss;
-        } else {
-            printf("Unrecognized GGA functional: %s\n",pSPARC->XC);
-            exit(EXIT_FAILURE);
-        }
-        
-        fx = 1.0 + xc_cst->kappa * (1.0 - divss);
-            
-        ex_gga = ex_lsd * fx;
-        dssdn = (-8.0/3.0) * (ss * rho_inv);
-        dfxdn = dfxdss * dssdn;
-        pSPARC->XCPotential[i] = ex_lsd * ((4.0/3.0) * fx + rho_updn * dfxdn);
-
-        dssdg = 2.0 * coeffss;
-        dfxdg = dfxdss * dssdg;
-        pSPARC->Dxcdgrho[i] = 0.5 * ex_lsd * rho_updn * dfxdg;
-        exc = ex_gga * rho_updn;
-
-        // If non spin-polarized, treat spin down contribution now, similar to spin up
-        exc = exc * 2.0;
-        pSPARC->e_xc[i] = exc * rhotot_inv;
 
         if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"PBE0") == 0) {
-            pSPARC->e_xc[i] *=  (1.0 - pSPARC->exx_frac);
-            pSPARC->Dxcdgrho[i] *= (1.0 - pSPARC->exx_frac);
-            pSPARC->XCPotential[i] *= (1.0 - pSPARC->exx_frac);
+            for (int i = 0; i < DMnd; i++) {
+                ex[i] *= (1-pSPARC->exx_frac);
+                vx[i] *= (1-pSPARC->exx_frac);
+                v2x[i] *= (1-pSPARC->exx_frac);
+            }
         }
 
         if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"HSE") == 0) {
-            double e_xc_sr, Dxcdgrho_sr, XCPotential_sr;
-            // Use the same strategy as \rho for \grho here. 
-            // Without this threshold, numerical issue will make simulation fail. 
-            if (sigma[i] < 1E-14) sigma[i] = 1E-14;
-            pbexsr(rho[i], sigma[i], pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
-            pSPARC->e_xc[i] -=  pSPARC->exx_frac * e_xc_sr / rho[i];
-            pSPARC->XCPotential[i] -= pSPARC->exx_frac * XCPotential_sr;
-            pSPARC->Dxcdgrho[i] -= pSPARC->exx_frac * Dxcdgrho_sr;
-        }
-        // WARNING: Dxcdgrho = 0.5 * dvxcdgrho1 here in M-SPARC!! But the same in the end. 
-
-        // Then takes care of the LSD correlation part of the functional
-        rs = xc_cst->rsfac * rhom1_3;
-        sqr_rs = xc_cst->sq_rsfac * rhotmo6;
-        rsm1_2 = xc_cst->sq_rsfac_inv * rhoto6;
-
-        // Formulas A6-A8 of PW92LSD
-        ec0_q0 = -2.0 * xc_cst->ec0_aa * (1.0 + xc_cst->ec0_a1 * rs);
-        ec0_q1 = 2.0 * xc_cst->ec0_aa * (xc_cst->ec0_b1 * sqr_rs + xc_cst->ec0_b2 * rs + xc_cst->ec0_b3 * rs * sqr_rs + xc_cst->ec0_b4 * rs * rs);
-        ec0_q1p = xc_cst->ec0_aa * (xc_cst->ec0_b1 * rsm1_2 + 2.0 * xc_cst->ec0_b2 + 3.0 * xc_cst->ec0_b3 * sqr_rs + 4.0 * xc_cst->ec0_b4 * rs);
-        ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
-        ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
-        ecrs0 = ec0_q0 * ec0_log;
-        decrs0_drs = -2.0 * xc_cst->ec0_aa * xc_cst->ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
-
-        ecrs = ecrs0;
-        decrs_drs = decrs0_drs;
-        //decrs_dzeta = 0.0;
-        //zeta = 0.0;
-
-        // Add LSD correlation functional to GGA exchange functional
-        pSPARC->e_xc[i] += ecrs;
-        pSPARC->XCPotential[i] += ecrs - (rs/3.0) * decrs_drs;
-
-        // Eventually add the GGA correlation part of the PBE functional
-        // Note : the computation of the potential in the spin-unpolarized
-        // case could be optimized much further. Other optimizations are left to do.
-
-        // From ec to bb
-        bb = ecrs * gamphi3inv;
-        dbb_drs = decrs_drs * gamphi3inv;
-        // dbb_dzeta = gamphi3inv * (decrs_dzeta - 3.0 * ecrs * phi_logder);
-
-        // From bb to cc
-        exp_pbe = exp(-bb);
-        cc = 1.0/(exp_pbe - 1.0);
-        dcc_dbb = cc * cc * exp_pbe;
-        dcc_drs = dcc_dbb * dbb_drs;
-        // dcc_dzeta = dcc_dbb * dbb_dzeta;
-
-        // From cc to aa
-        coeff_aa = xc_cst->beta * xc_cst->gamma_inv * phi_zeta_inv * phi_zeta_inv;
-        aa = coeff_aa * cc;
-        daa_drs = coeff_aa * dcc_drs;
-        //daa_dzeta = -2.0 * aa * phi_logder + coeff_aa * dcc_dzeta;
-
-        // Introduce tt : do not assume that the spin-dependent gradients are collinear
-        grrho2 = sigma[i];
-        dtt_dg = 2.0 * rhotot_inv * rhotot_inv * rhom1_3 * xc_cst->coeff_tt;
-        // Note that tt is (the t variable of PBE divided by phi) squared
-        tt = 0.5 * grrho2 * dtt_dg;
-
-        // Get xx from aa and tt
-        xx = aa * tt;
-        dxx_drs = daa_drs * tt;
-        //dxx_dzeta = daa_dzeta * tt;
-        dxx_dtt = aa;
-
-        // From xx to pade
-        pade_den = 1.0/(1.0 + xx * (1.0 + xx));
-        pade = (1.0 + xx) * pade_den;
-        dpade_dxx = -xx * (2.0 + xx) * pow(pade_den,2);
-        dpade_drs = dpade_dxx * dxx_drs;
-        dpade_dtt = dpade_dxx * dxx_dtt;
-        //dpade_dzeta = dpade_dxx * dxx_dzeta;
-
-        // From pade to qq
-        coeff_qq = tt * phi_zeta_inv * phi_zeta_inv;
-        qq = coeff_qq * pade;
-        dqq_drs = coeff_qq * dpade_drs;
-        dqq_dtt = pade * phi_zeta_inv * phi_zeta_inv + coeff_qq * dpade_dtt;
-        //dqq_dzeta = coeff_qq * (dpade_dzeta - 2.0 * pade * phi_logder);
-
-        // From qq to rr
-        arg_rr = 1.0 + xc_cst->beta * xc_cst->gamma_inv * qq;
-        div_rr = 1.0/arg_rr;
-        rr = xc_cst->gamma * log(arg_rr);
-        drr_dqq = xc_cst->beta * div_rr;
-        drr_drs = drr_dqq * dqq_drs;
-        drr_dtt = drr_dqq * dqq_dtt;
-        //drr_dzeta = drr_dqq * dqq_dzeta;
-
-        // From rr to hh
-        hh = phi3_zeta * rr;
-        dhh_drs = phi3_zeta * drr_drs;
-        dhh_dtt = phi3_zeta * drr_dtt;
-        //dhh_dzeta = phi3_zeta * (drr_dzeta + 3.0 * rr * phi_logder);
-
-        // The GGA correlation energy is added
-        pSPARC->e_xc[i] += hh;
-
-        // From hh to the derivative of the energy wrt the density
-        drhohh_drho = hh - xc_cst->third * rs * dhh_drs - (7.0/3.0) * tt * dhh_dtt; //- zeta * dhh_dzeta 
-        pSPARC->XCPotential[i] += drhohh_drho;
-
-        // From hh to the derivative of the energy wrt to the gradient of the
-        // density, divided by the gradient of the density
-        // (The v3.3 definition includes the division by the norm of the gradient)
-        pSPARC->Dxcdgrho[i] += (rho[i] * dtt_dg * dhh_dtt);    
-    }
-    
-    // for(i = 0; i < DMnd; i++){
-    //     if(pSPARC->electronDens[i] == 0.0){
-    //         pSPARC->XCPotential[i] = 0.0;
-    //         pSPARC->e_xc[i] = 0.0;
-    //         pSPARC->Dxcdgrho[i] = 0.0;
-    //     }
-    // }
-
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        for(i = 0; i < DMnd; i++){
-            temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * pSPARC->Dxcdgrho[i];
-            temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * pSPARC->Dxcdgrho[i];
-            temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * pSPARC->Dxcdgrho[i];
-            Drho_x[i] = temp1;
-            Drho_y[i] = temp2;
-            Drho_z[i] = temp3;
-        }
-    } else {
-        for(i = 0; i < DMnd; i++){
-            Drho_x[i] *= pSPARC->Dxcdgrho[i];
-            Drho_y[i] *= pSPARC->Dxcdgrho[i];
-            Drho_z[i] *= pSPARC->Dxcdgrho[i];
-        }
-    }
-
-    if (pSPARC->CyclixFlag) {
-        double *Drho_xy;
-        Drho_xy = (double *) malloc(2*DMnd * sizeof(double));
-        for (i = 0; i < DMnd; i++){
-            Drho_xy[i] = Drho_x[i];
-            Drho_xy[DMnd+i] = Drho_y[i];
-        }
-        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
-        for (i = 0; i < DMnd; i++){
-            Drho_xy[i] = Drho_y[i];
-            Drho_xy[DMnd+i] = Drho_x[i];
-        }
-        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-        free(Drho_xy);
-    } else {
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-    }
-    
-    for(i = 0; i < DMnd; i++){
-        //if(pSPARC->electronDens[i] != 0.0)
-        pSPARC->XCPotential[i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i];
-    }
-
-    // Deallocate memory
-    free(Drho_x); free(Drho_y); free(Drho_z);
-    free(DDrho_x); free(DDrho_y); free(DDrho_z);
-    free(sigma);
-}
-
-
-
-/**
- * @brief   Calculate the XC potential using GSGA_PBE.  
- *
- *          This function calls appropriate XC potential.
- */
-void Calculate_Vxc_GSGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG
-    if (rank == 0) 
-        printf("Start calculating Vxc (GSGA_PBE) ...\n");
-#endif 
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
-        return;
-    }
-    
-    double rhom1_3, rhotot_inv, zeta, zetp, zetm, zetpm1_3, zetmm1_3;
-    double rho_updn, rho_updnm1_3, rhotmo6, rhoto6, rhomot, ex_lsd, rho_inv, coeffss, ss;
-    double divss, dfxdss, fx, ex_gga, dssdn, dfxdn, dssdg, dfxdg, exc, rs, sqr_rs, rsm1_2;
-    double ec0_q0, ec0_q1, ec0_q1p, ec0_den, ec0_log, ecrs0, decrs0_drs, mac_q0, mac_q1, mac_q1p, mac_den, mac_log, macrs, dmacrs_drs;
-    double ec1_q0, ec1_q1, ec1_q1p, ec1_den, ec1_log, ecrs1, decrs1_drs, zetp_1_3, zetm_1_3, f_zeta, fp_zeta, zeta4;
-    double gcrs, ecrs, dgcrs_drs, decrs_drs, dfzeta4_dzeta, decrs_dzeta, vxcadd;
-    double phi_zeta, phip_zeta, phi_zeta_inv, phi_logder, phi3_zeta, gamphi3inv;
-    double bb, dbb_drs, dbb_dzeta, exp_pbe, cc, dcc_dbb, dcc_drs, dcc_dzeta, coeff_aa, aa, daa_drs, daa_dzeta;
-    double grrho2, dtt_dg, tt, xx, dxx_drs, dxx_dzeta, dxx_dtt, pade_den, pade, dpade_dxx, dpade_drs, dpade_dtt, dpade_dzeta;
-    double coeff_qq, qq, dqq_drs, dqq_dtt, dqq_dzeta, arg_rr, div_rr, rr, drr_dqq, drr_drs, drr_dtt, drr_dzeta;
-    double hh, dhh_dtt, dhh_drs, dhh_dzeta, drhohh_drho;
-
-    double temp1, temp2, temp3;
-    int DMnd, i, spn_i;
-    DMnd = pSPARC->Nd_d;
-    
-    double *Drho_x, *Drho_y, *Drho_z, *DDrho_x, *DDrho_y, *DDrho_z, *sigma, *lapcT;
-
-    Drho_x = (double *) malloc(3*DMnd * sizeof(double));
-    Drho_y = (double *) malloc(3*DMnd * sizeof(double));
-    Drho_z = (double *) malloc(3*DMnd * sizeof(double));
-    DDrho_x = (double *) malloc(3*DMnd * sizeof(double));
-    DDrho_y = (double *) malloc(3*DMnd * sizeof(double));
-    DDrho_z = (double *) malloc(3*DMnd * sizeof(double));
-    sigma = (double *) malloc(3*DMnd * sizeof(double));
-    
-    // Gradient of total electron density
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
-    
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        lapcT = (double *) malloc(6 * sizeof(double));
-        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-        for(i = 0; i < 3*DMnd; i++){
-            sigma[i] = Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
-                       Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i]);
-        }
-        free(lapcT);
-    } else {
-        for(i = 0; i < 3*DMnd; i++){
-            sigma[i] = Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i];
-        }
-    }
-    
-    for(i = 0; i < DMnd; i++) {
-        // pSPARC->electronDens[i] += 1e-50;
-        // pSPARC->electronDens[DMnd + i] += 1e-50;
-        // pSPARC->electronDens[2*DMnd + i] += 1e-50;
-        rhom1_3 = pow(rho[i],-xc_cst->third);
-        rhotot_inv = pow(rhom1_3,3.0);
-        zeta = (rho[DMnd + i] - rho[2*DMnd + i]) * rhotot_inv;
-        zetp = 1.0 + zeta * xc_cst->alpha_zeta;
-        zetm = 1.0 - zeta * xc_cst->alpha_zeta;
-        zetpm1_3 = pow(zetp,-xc_cst->third);
-        zetmm1_3 = pow(zetm,-xc_cst->third);
-        rhotmo6 = sqrt(rhom1_3);
-        rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
-
-        // First take care of the exchange part of the functional
-        exc = 0.0;
-        for(spn_i = 0; spn_i < 2; spn_i++){
-            rho_updn = rho[DMnd + spn_i*DMnd + i];
-            rho_updnm1_3 = pow(rho_updn, -xc_cst->third);
-            rhomot = rho_updnm1_3;
-            ex_lsd = -xc_cst->threefourth_divpi * xc_cst->sixpi2_1_3 * (rhomot * rhomot * rho_updn);
-            rho_inv = rhomot * rhomot * rhomot;
-            coeffss = (1.0/4.0) * xc_cst->sixpi2m1_3 * xc_cst->sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
-            ss = sigma[DMnd + spn_i*DMnd + i] * coeffss;
-            
-			if (strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-                || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0) {
-            	divss = 1.0/(1.0 + xc_cst->mu_divkappa * ss);
-            	dfxdss = xc_cst->mu * (divss * divss);
-            	//d2fxdss2 = -xc_cst->mu * 2.0 * xc_cst->mu_divkappa * (divss * divss * divss);
-        	} else if (strcmpi(pSPARC->XC,"GGA_RPBE") == 0) {
-            	divss = exp(-xc_cst->mu_divkappa * ss);
-            	dfxdss = xc_cst->mu * divss;
-            	//d2fxdss2 = -xc_cst->mu * xc_cst->mu_divkappa * divss;
-        	} else {
-                printf("Unrecognized XC functional: %s\n", pSPARC->XC);
-                exit(EXIT_FAILURE);
-            }
-			//divss = 1.0/(1.0 + xc_cst->mu_divkappa * ss);
-            //dfxdss = xc_cst->mu * (divss * divss);
-            
-			fx = 1.0 + xc_cst->kappa * (1.0 - divss);
-            ex_gga = ex_lsd * fx;
-            dssdn = (-8.0/3.0) * (ss * rho_inv);
-            dfxdn = dfxdss * dssdn;
-            pSPARC->XCPotential[spn_i*DMnd + i] = ex_lsd * ((4.0/3.0) * fx + rho_updn * dfxdn);
-
-            dssdg = 2.0 * coeffss;
-            dfxdg = dfxdss * dssdg;
-            pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] = ex_lsd * rho_updn * dfxdg;
-            exc += ex_gga * rho_updn;
-
-            // Hybrid functional 
-            if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"PBE0") == 0) {
-                exc -= pSPARC->exx_frac * ex_gga * rho_updn;
-                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] *= (1.0 - pSPARC->exx_frac);
-                pSPARC->XCPotential[spn_i*DMnd + i] *= (1.0 - pSPARC->exx_frac);
-            }
-
-            if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"HSE") == 0) {
+            for (int i = 0; i < DMnd; i++) {
                 double e_xc_sr, Dxcdgrho_sr, XCPotential_sr;
                 // Use the same strategy as \rho for \grho here. 
                 // Without this threshold, numerical issue will make simulation fail. 
-                if (sigma[DMnd + spn_i*DMnd + i] < 1E-14) sigma[DMnd + spn_i*DMnd + i] = 1E-14;
-                pbexsr(rho[DMnd + spn_i*DMnd + i] * 2.0, sigma[DMnd + spn_i*DMnd + i] * 4.0, pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
-                exc -=  pSPARC->exx_frac * e_xc_sr / 2.0;
-                pSPARC->XCPotential[spn_i*DMnd + i] -= pSPARC->exx_frac * XCPotential_sr;
-                pSPARC->Dxcdgrho[DMnd + spn_i*DMnd + i] -= pSPARC->exx_frac * Dxcdgrho_sr * 2.0;
+                if (sigma[i] < 1E-14) sigma[i] = 1E-14;
+                pbexsr(rho[i], sigma[i], pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
+                ex[i] -=  pSPARC->exx_frac * e_xc_sr / rho[i];
+                vx[i] -= pSPARC->exx_frac * XCPotential_sr;
+                v2x[i] -= pSPARC->exx_frac * Dxcdgrho_sr;
             }
         }
-        pSPARC->e_xc[i] = exc * rhotot_inv;
-
-        // Then takes care of the LSD correlation part of the functional
-        rs = xc_cst->rsfac * rhom1_3;
-        sqr_rs = xc_cst->sq_rsfac * rhotmo6;
-        rsm1_2 = xc_cst->sq_rsfac_inv * rhoto6;
-
-        // Formulas A6-A8 of PW92LSD
-        ec0_q0 = -2.0 * xc_cst->ec0_aa * (1.0 + xc_cst->ec0_a1 * rs);
-        ec0_q1 = 2.0 * xc_cst->ec0_aa *(xc_cst->ec0_b1 * sqr_rs + xc_cst->ec0_b2 * rs + xc_cst->ec0_b3 * rs * sqr_rs + xc_cst->ec0_b4 * rs * rs);
-        ec0_q1p = xc_cst->ec0_aa * (xc_cst->ec0_b1 * rsm1_2 + 2.0 * xc_cst->ec0_b2 + 3.0 * xc_cst->ec0_b3 * sqr_rs + 4.0 * xc_cst->ec0_b4 * rs);
-        ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
-        ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
-        ecrs0 = ec0_q0 * ec0_log;
-        decrs0_drs = -2.0 * xc_cst->ec0_aa * xc_cst->ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
-
-        mac_q0 = -2.0 * xc_cst->mac_aa * (1.0 + xc_cst->mac_a1 * rs);
-        mac_q1 = 2.0 * xc_cst->mac_aa * (xc_cst->mac_b1 * sqr_rs + xc_cst->mac_b2 * rs + xc_cst->mac_b3 * rs * sqr_rs + xc_cst->mac_b4 * rs * rs);
-        mac_q1p = xc_cst->mac_aa * (xc_cst->mac_b1 * rsm1_2 + 2.0 * xc_cst->mac_b2 + 3.0 * xc_cst->mac_b3 * sqr_rs + 4.0 * xc_cst->mac_b4 * rs);
-        mac_den = 1.0/(mac_q1 * mac_q1 + mac_q1);
-        mac_log = -log( mac_q1 * mac_q1 * mac_den );
-        macrs = mac_q0 * mac_log;
-        dmacrs_drs = -2.0 * xc_cst->mac_aa * xc_cst->mac_a1 * mac_log - mac_q0 * mac_q1p * mac_den;
-
-        //zeta = (rho(:,2) - rho(:,3)) .* rhotot_inv;
-        ec1_q0 = -2.0 * xc_cst->ec1_aa * (1.0 + xc_cst->ec1_a1 * rs);
-        ec1_q1 = 2.0 * xc_cst->ec1_aa * (xc_cst->ec1_b1 * sqr_rs + xc_cst->ec1_b2 * rs + xc_cst->ec1_b3 * rs * sqr_rs + xc_cst->ec1_b4 * rs * rs);
-        ec1_q1p = xc_cst->ec1_aa * (xc_cst->ec1_b1 * rsm1_2 + 2.0 * xc_cst->ec1_b2 + 3.0 * xc_cst->ec1_b3 * sqr_rs + 4.0 * xc_cst->ec1_b4 * rs);
-        ec1_den = 1.0/(ec1_q1 * ec1_q1 + ec1_q1);
-        ec1_log = -log( ec1_q1 * ec1_q1 * ec1_den );
-        ecrs1 = ec1_q0 * ec1_log;
-        decrs1_drs = -2.0 * xc_cst->ec1_aa * xc_cst->ec1_a1 * ec1_log - ec1_q0 * ec1_q1p * ec1_den;
         
-        // xc_cst->alpha_zeta is introduced in order to remove singularities for fully polarized systems.
-        zetp_1_3 = (1.0 + zeta * xc_cst->alpha_zeta) * pow(zetpm1_3,2.0);
-        zetm_1_3 = (1.0 - zeta * xc_cst->alpha_zeta) * pow(zetmm1_3,2.0);
+        for (int i = 0; i < DMnd; i++) {
+            pSPARC->e_xc[i] = ex[i] + ec[i];
+            pSPARC->XCPotential[i] = vx[i] + vc[i];
+            if (pSPARC->isgradient) {
+                pSPARC->Dxcdgrho[i] = v2x[i] + v2c[i];
+            }
+            if (pSPARC->ixc[2] && (pSPARC->countPotentialCalculate)) {
+                pSPARC->vxcMGGA3[i] = v3x[i] + v3c[i];
+            }
+        }
 
-        f_zeta = ( (1.0 + zeta * xc_cst->alpha_zeta2) * zetp_1_3 + (1.0 - zeta * xc_cst->alpha_zeta2) * zetm_1_3 - 2.0 ) * xc_cst->factf_zeta;
-        fp_zeta = ( zetp_1_3 - zetm_1_3 ) * xc_cst->factfp_zeta;
-        zeta4 = pow(zeta, 4.0);
+        if (pSPARC->ixc[3])
+            Calculate_nonLinearCorr_E_V_vdWDF(pSPARC, rho);
 
-        gcrs = ecrs1 - ecrs0 + macrs * xc_cst->fsec_inv;
-        ecrs = ecrs0 + f_zeta * (zeta4 * gcrs - macrs * xc_cst->fsec_inv);
-        dgcrs_drs = decrs1_drs - decrs0_drs + dmacrs_drs * xc_cst->fsec_inv;
-        decrs_drs = decrs0_drs + f_zeta * (zeta4 * dgcrs_drs - dmacrs_drs * xc_cst->fsec_inv);
-        dfzeta4_dzeta = 4.0 * pow(zeta,3.0) * f_zeta + fp_zeta * zeta4;
-        decrs_dzeta = dfzeta4_dzeta * gcrs - fp_zeta * macrs * xc_cst->fsec_inv;
+        if (pSPARC->isgradient) {
+            double *DDrho_x = (double *) malloc(DMnd * sizeof(double));
+            double *DDrho_y = (double *) malloc(DMnd * sizeof(double));
+            double *DDrho_z = (double *) malloc(DMnd * sizeof(double));
 
-        pSPARC->e_xc[i] += ecrs;
-        vxcadd = ecrs - rs * xc_cst->third * decrs_drs - zeta * decrs_dzeta;
-        pSPARC->XCPotential[i] += vxcadd + decrs_dzeta;
-        pSPARC->XCPotential[DMnd+i] += vxcadd - decrs_dzeta;
+            Drho_times_v2xc(pSPARC, DMnd, 1, Drho_x, Drho_y, Drho_z, pSPARC->Dxcdgrho);
+            if (pSPARC->CyclixFlag) {
+                double *Drho_xy = (double *) malloc(2*DMnd * sizeof(double));
+                for (int i = 0; i < DMnd; i++){
+                    Drho_xy[i] = Drho_x[i];
+                    Drho_xy[DMnd+i] = Drho_y[i];
+                }
+                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
+                for (int i = 0; i < DMnd; i++){
+                    Drho_xy[i] = Drho_y[i];
+                    Drho_xy[DMnd+i] = Drho_x[i];
+                }
+                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+                free(Drho_xy);
+            } else {
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+            }
 
-        // Eventually add the GGA correlation part of the PBE functional
-        // The definition of phi has been slightly changed, because
-        // the original PBE one gives divergent behaviour for fully polarized points
-        
-        phi_zeta = ( zetpm1_3 * (1.0 + zeta * xc_cst->alpha_zeta) + zetmm1_3 * (1.0 - zeta * xc_cst->alpha_zeta)) * 0.5;
-        phip_zeta = (zetpm1_3 - zetmm1_3) * xc_cst->third * xc_cst->alpha_zeta;
-        phi_zeta_inv = 1.0/phi_zeta;
-        phi_logder = phip_zeta * phi_zeta_inv;
-        phi3_zeta = phi_zeta * phi_zeta * phi_zeta;
-        gamphi3inv = xc_cst->gamma_inv * phi_zeta_inv * phi_zeta_inv * phi_zeta_inv;        
-        
-        // From ec to bb
-        bb = ecrs * gamphi3inv;
-        dbb_drs = decrs_drs * gamphi3inv;
-        dbb_dzeta = gamphi3inv * (decrs_dzeta - 3.0 * ecrs * phi_logder);
+            for(int i = 0; i < DMnd; i++){
+                pSPARC->XCPotential[i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i];
+            }
+            free(DDrho_x);
+            free(DDrho_y);
+            free(DDrho_z);
+        }
 
-        // From bb to cc
-        exp_pbe = exp(-bb);
-        cc = 1.0/(exp_pbe - 1.0);
-        dcc_dbb = cc * cc * exp_pbe;
-        dcc_drs = dcc_dbb * dbb_drs;
-        dcc_dzeta = dcc_dbb * dbb_dzeta;
-
-        // From cc to aa
-        coeff_aa = xc_cst->beta * xc_cst->gamma_inv * phi_zeta_inv * phi_zeta_inv;
-        aa = coeff_aa * cc;
-        daa_drs = coeff_aa * dcc_drs;
-        daa_dzeta = -2.0 * aa * phi_logder + coeff_aa * dcc_dzeta;
-
-        // Introduce tt : do not assume that the spin-dependent gradients are collinear
-        grrho2 = sigma[i];
-        dtt_dg = 2.0 * rhotot_inv * rhotot_inv * rhom1_3 * xc_cst->coeff_tt;
-        // Note that tt is (the t variable of PBE divided by phi) squared
-        tt = 0.5 * grrho2 * dtt_dg;
-
-        // Get xx from aa and tt
-        xx = aa * tt;
-        dxx_drs = daa_drs * tt;
-        dxx_dzeta = daa_dzeta * tt;
-        dxx_dtt = aa;
-
-        // From xx to pade
-        pade_den = 1.0/(1.0 + xx * (1.0 + xx));
-        pade = (1.0 + xx) * pade_den;
-        dpade_dxx = -xx * (2.0 + xx) * pow(pade_den,2.0);
-        dpade_drs = dpade_dxx * dxx_drs;
-        dpade_dtt = dpade_dxx * dxx_dtt;
-        dpade_dzeta = dpade_dxx * dxx_dzeta;
-
-        // From pade to qq
-        coeff_qq = tt * phi_zeta_inv * phi_zeta_inv;
-        qq = coeff_qq * pade;
-        dqq_drs = coeff_qq * dpade_drs;
-        dqq_dtt = pade * phi_zeta_inv * phi_zeta_inv + coeff_qq * dpade_dtt;
-        dqq_dzeta = coeff_qq * (dpade_dzeta - 2.0 * pade * phi_logder);
-
-        // From qq to rr
-        arg_rr = 1.0 + xc_cst->beta * xc_cst->gamma_inv * qq;
-        div_rr = 1.0/arg_rr;
-        rr = xc_cst->gamma * log(arg_rr);
-        drr_dqq = xc_cst->beta * div_rr;
-        drr_drs = drr_dqq * dqq_drs;
-        drr_dtt = drr_dqq * dqq_dtt;
-        drr_dzeta = drr_dqq * dqq_dzeta;
-
-        // From rr to hh
-        hh = phi3_zeta * rr;
-        dhh_drs = phi3_zeta * drr_drs;
-        dhh_dtt = phi3_zeta * drr_dtt;
-        dhh_dzeta = phi3_zeta * (drr_dzeta + 3.0 * rr * phi_logder);
-
-        // The GGA correlation energy is added
-        pSPARC->e_xc[i] += hh;
-
-        // From hh to the derivative of the energy wrt the density
-        drhohh_drho = hh - xc_cst->third * rs * dhh_drs - zeta * dhh_dzeta - (7.0/3.0) * tt * dhh_dtt; 
-        pSPARC->XCPotential[i] += drhohh_drho + dhh_dzeta;
-        pSPARC->XCPotential[DMnd + i] += drhohh_drho - dhh_dzeta;
-
-        // From hh to the derivative of the energy wrt to the gradient of the
-        // density, divided by the gradient of the density
-        // (The v3.3 definition includes the division by the norm of the gradient)
-        pSPARC->Dxcdgrho[i] = (rho[i] * dtt_dg * dhh_dtt);
-    }
-
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        for(i = 0; i < 3*DMnd; i++){
-            temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * pSPARC->Dxcdgrho[i];
-            temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * pSPARC->Dxcdgrho[i];
-            temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * pSPARC->Dxcdgrho[i];
-            Drho_x[i] = temp1;
-            Drho_y[i] = temp2;
-            Drho_z[i] = temp3;
+        free(ex);
+        free(ec);
+        free(vx);
+        free(vc);
+        if (pSPARC->isgradient) {
+            free(v2x);
+            free(v2c);
+        }
+        if (pSPARC->ixc[2]) {
+            free(v3x);
+            free(v3c);
         }
     } else {
-       for(i = 0; i < 3*DMnd; i++){
-            Drho_x[i] *= pSPARC->Dxcdgrho[i];
-            Drho_y[i] *= pSPARC->Dxcdgrho[i];
-            Drho_z[i] *= pSPARC->Dxcdgrho[i];
+        double *ex = (double *)malloc(DMnd * sizeof(double) );
+        double *ec = (double *)malloc(DMnd * sizeof(double) );
+        double *vx = (double *)malloc(DMnd*2 * sizeof(double) );
+        double *vc = (double *)malloc(DMnd*2 * sizeof(double) );
+        double *v2x, *v2c, *v3x, *v3c;
+        v2x = v2c = v3x = v3c = NULL;
+        if (pSPARC->isgradient) {
+            v2x = (double *)malloc(DMnd*2 * sizeof(double) );
+            v2c = (double *)malloc(DMnd * sizeof(double) );
+        }
+        if (pSPARC->ixc[2]) { // for metaGGA, d(n\epsilon)/d\tau
+            v3x = (double *)malloc(DMnd*2 * sizeof(double) );
+            v3c = (double *)malloc(DMnd * sizeof(double) );
+        }
+
+        // iexch
+        switch (pSPARC->ixc[0])
+        {
+        case 1:
+            slater_spin(DMnd, rho, ex ,vx);
+            break;
+        case 2:
+            pbex_spin(DMnd, rho, sigma, pSPARC->xcoption[0], ex, vx, v2x);
+            break;
+        case 3:
+            rPW86x_spin(DMnd, rho, sigma + DMnd, ex, vx, v2x);
+            break;
+        case 4:
+            scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
+        default:
+            memset(ex, 0, sizeof(double) * DMnd);
+            memset(vx, 0, sizeof(double) * DMnd*2);
+            if (pSPARC->isgradient) {
+                memset(v2x, 0, sizeof(double) * DMnd*2);
+            }
+            break;
+        }
+
+        // icorr
+        switch (pSPARC->ixc[1])
+        {
+        case 1:
+            pz_spin(DMnd, rho, ec, vc);
+            break;
+        case 2:
+            pw_spin(DMnd, rho, ec, vc);
+            if (pSPARC->ixc[3]) {
+                memcpy(pSPARC->vdWDFecLinear, ec, DMnd*sizeof(double));
+                memcpy(pSPARC->vdWDFVcLinear, vc, DMnd*2*sizeof(double));
+                memset(v2c, 0, sizeof(double) * DMnd);
+            }
+            break;
+        case 3:
+            pbec_spin(DMnd, rho, sigma, pSPARC->xcoption[1], ec, vc, v2c);
+            break;
+        case 4:
+            scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        default:
+            memset(ec, 0, sizeof(double) * DMnd);
+            memset(vc, 0, sizeof(double) * DMnd*2);
+            if (pSPARC->isgradient) {
+                memset(v2c, 0, sizeof(double) * DMnd);
+            }
+            break;
+        }
+
+        if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"PBE0") == 0) {
+            for (int i = 0; i < DMnd; i++) {
+                ex[i] *= (1-pSPARC->exx_frac);
+                for(int spn_i = 0; spn_i < 2; spn_i++) {
+                    vx[i + spn_i*DMnd] *= (1-pSPARC->exx_frac);
+                    v2x[i + spn_i*DMnd] *= (1-pSPARC->exx_frac);
+                }
+            }
+        }
+
+        if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) && strcmpi(pSPARC->XC,"HSE") == 0) {
+            for (int i = 0; i < DMnd; i++) {
+                for(int spn_i = 0; spn_i < 2; spn_i++) {
+                    double e_xc_sr, Dxcdgrho_sr, XCPotential_sr;
+                    // Use the same strategy as \rho for \grho here. 
+                    // Without this threshold, numerical issue will make simulation fail. 
+                    if (sigma[DMnd + spn_i*DMnd + i] < 1E-14) sigma[DMnd + spn_i*DMnd + i] = 1E-14;
+                    pbexsr(rho[DMnd + spn_i*DMnd + i] * 2.0, sigma[DMnd + spn_i*DMnd + i] * 4.0, pSPARC->hyb_range_pbe, &e_xc_sr, &XCPotential_sr, &Dxcdgrho_sr);
+                    ex[i] -= pSPARC->exx_frac * e_xc_sr / 2.0 / rho[i];
+                    vx[i+spn_i*DMnd] -= pSPARC->exx_frac * XCPotential_sr;
+                    v2x[i+spn_i*DMnd] -= pSPARC->exx_frac * Dxcdgrho_sr * 2.0;
+                }
+            }
+        }        
+
+        for (int i = 0; i < DMnd; i++) {
+            pSPARC->e_xc[i] = ex[i] + ec[i];
+            pSPARC->XCPotential[i] = vx[i] + vc[i];
+            pSPARC->XCPotential[i+DMnd] = vx[i+DMnd] + vc[i+DMnd];
+            if (pSPARC->isgradient) {
+                pSPARC->Dxcdgrho[i] = v2c[i];
+                pSPARC->Dxcdgrho[i+DMnd] = v2x[i];
+                pSPARC->Dxcdgrho[i+2*DMnd] = v2x[i+DMnd];
+            }
+            if ((pSPARC->ixc[2]) && (pSPARC->countPotentialCalculate)) {
+                pSPARC->vxcMGGA3[i] = v3x[i] + v3c[i];
+                pSPARC->vxcMGGA3[i+DMnd] = v3x[i+DMnd] + v3c[i];
+            }
+        }
+
+        if (pSPARC->ixc[3])
+            Calculate_nonLinearCorr_E_V_SvdWDF(pSPARC, rho);
+
+        if (pSPARC->isgradient) {
+            double *DDrho_x = (double *) malloc(3*DMnd * sizeof(double));
+            double *DDrho_y = (double *) malloc(3*DMnd * sizeof(double));
+            double *DDrho_z = (double *) malloc(3*DMnd * sizeof(double));
+
+            Drho_times_v2xc(pSPARC, DMnd, 3, Drho_x, Drho_y, Drho_z, pSPARC->Dxcdgrho);
+            if (pSPARC->CyclixFlag) {
+                double *Drho_xy = (double *) malloc(6*DMnd * sizeof(double));
+                for (int i = 0; i < 3*DMnd; i++){
+                    Drho_xy[i] = Drho_x[i];
+                    Drho_xy[3*DMnd+i] = Drho_y[i];
+                }
+                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
+                for (int i = 0; i < 3*DMnd; i++){
+                    Drho_xy[i] = Drho_y[i];
+                    Drho_xy[3*DMnd+i] = Drho_x[i];
+                }
+                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+                free(Drho_xy);
+            } else {
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+            }
+
+            for(int i = 0; i < DMnd; i++){
+                pSPARC->XCPotential[i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[DMnd + i] - DDrho_y[DMnd + i] - DDrho_z[DMnd + i];
+                pSPARC->XCPotential[DMnd + i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[2*DMnd + i] - DDrho_y[2*DMnd + i] - DDrho_z[2*DMnd + i];
+            }
+            free(DDrho_x);
+            free(DDrho_y);
+            free(DDrho_z);
+        }
+
+        free(ex);
+        free(ec);
+        free(vx);
+        free(vc);
+        if (pSPARC->isgradient) {
+            free(v2x);
+            free(v2c);
+        }
+        if (pSPARC->ixc[2]) {
+            free(v3x);
+            free(v3c);
         }
     }
 
-    if (pSPARC->CyclixFlag) {
-        double *Drho_xy;
-        Drho_xy = (double *) malloc(6*DMnd * sizeof(double));
-        for (i = 0; i < 3*DMnd; i++){
-            Drho_xy[i] = Drho_x[i];
-            Drho_xy[3*DMnd+i] = Drho_y[i];
-        }
-        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
-        for (i = 0; i < 3*DMnd; i++){
-            Drho_xy[i] = Drho_y[i];
-            Drho_xy[3*DMnd+i] = Drho_x[i];
-        }
-        Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-        free(Drho_xy);
-    } else {
-
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+    if (pSPARC->ixc[2]) {
+        if (pSPARC->countPotentialCalculate == 0) { // restore metaGGA labels after 1st SCF
+            pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
+            pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+            pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
+        } 
     }
-    
-    for(i = 0; i < DMnd; i++){
-        pSPARC->XCPotential[i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[DMnd + i] - DDrho_y[DMnd + i] - DDrho_z[DMnd + i];
-        pSPARC->XCPotential[DMnd + i] += -DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[2*DMnd + i] - DDrho_y[2*DMnd + i] - DDrho_z[2*DMnd + i];
-    }  
 
-    // Deallocate memory
-    free(Drho_x); free(Drho_y); free(Drho_z);
-    free(DDrho_x); free(DDrho_y); free(DDrho_z);
-    free(sigma);
+    free(rho);
+    if (pSPARC->isgradient) {
+        free(sigma);
+        free(Drho_x);
+        free(Drho_y);
+        free(Drho_z);
+    }
 }
-
-
-
-
-//// old implementation
-//void Calculate_Vxc_LDA(SPARC_OBJ *pSPARC) {
-//    int rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-//    if (rank == 0) {
-//        printf("Start calculating Vxc (LDA) ...\n");
-//    }    
-//    if (pSPARC->dmcomm_phi == MPI_COMM_NULL)        return; 
-//  int  i,j,k;
-//  double C3,rhoi;
-//  double A,alpha1,beta1,beta2,beta3,beta4,Vxci;
-//  int xcor,ycor,zcor,lxdim,lydim,lzdim;
-//  double p;
-//  p = 1.0; A = 0.031091; alpha1 = 0.21370;
-//  beta1 = 7.5957; beta2 = 3.5876; beta3 = 1.6382;  beta4 = 0.49294;
-//  C3 = 0.9847450218427; // (3/pi)^(1/3) = 0.9847450218426965
-
-//    xcor = 0;
-//    ycor = 0;
-//    zcor = 0;
-//    lxdim = pSPARC->Nx_d;
-//    lydim = pSPARC->Ny_d;
-//    lzdim = pSPARC->Nz_d;
-//    int count = 0;
-//    for(k=zcor; k<zcor+lzdim; k++)
-//        for(j=ycor; j<ycor+lydim; j++)
-//            for(i=xcor; i<xcor+lxdim; i++)
-//                {
-//                    rhoi = pSPARC->electronDens[count];
-//                    if (rhoi==0) {
-//                        Vxci = 0.0;
-//                    } else {	
-//                        Vxci = pow((0.75/(M_PI*rhoi)),(1.0/3.0)) ; // rs
-//                        Vxci = (-2.0*A*(1.0+alpha1*Vxci))*log(1.0+1.0/(2.0*A*(beta1*pow(Vxci,0.5) + beta2*Vxci + beta3*pow(Vxci,1.5) + beta4*pow(Vxci,(p+1.0))))) 
-//                        - (Vxci/3.0)*(-2.0*A*alpha1*log(1.0+1.0/(2.0*A*(beta1*pow(Vxci,0.5) + beta2*Vxci + beta3*pow(Vxci,1.5) + beta4*pow(Vxci,(p+1.0))))) 
-//                        - ( (-2.0*A*(1.0+alpha1*Vxci))*(A*( beta1*pow(Vxci,-0.5)+ 2.0*beta2 + 3.0*beta3*pow(Vxci,0.5) + 2.0*(p+1.0)*beta4*pow(Vxci,p) ))) 
-//                         /( (2.0*A*( beta1*pow(Vxci,0.5) + beta2*Vxci + beta3*pow(Vxci,1.5) + beta4*pow(Vxci,(p+1.0)) ) )*
-//                            (2.0*A*( beta1*pow(Vxci,0.5) + beta2*Vxci + beta3*pow(Vxci,1.5) + beta4*pow(Vxci,(p+1.0)) ) )+
-//                            (2.0*A*( beta1*pow(Vxci,0.5) + beta2*Vxci + beta3*pow(Vxci,1.5) + beta4*pow(Vxci,(p+1.0)) ) )
-//                          ) 
-//                        
-//                        ) ;
-//                    } 	
-//                    Vxci = Vxci - C3*pow(rhoi,1.0/3.0) ; // add exchange potential     
-//                    pSPARC->XCPotential[count] = Vxci;  
-//                    count++;
-//                }
-
-//    if (rank == 0) {
-//        printf("rank = %d, cbrt(0.325649642516) = %f, pow(0.325649642516,1.0/3.0) = %f\n", rank, cbrt(0.325649642516), pow(0.325649642516,1.0/3.0));     
-//    }
-//}
 
 
 /**
@@ -1079,338 +401,865 @@ void Calculate_Vxc_GSGA_PBE(SPARC_OBJ *pSPARC, XCCST_OBJ *xc_cst, double *rho) {
  **/
 void Calculate_Exc(SPARC_OBJ *pSPARC, double *electronDens)
 {
-    double *rho;
-    int sz_rho, i;
-    sz_rho = pSPARC->Nd_d * (2*pSPARC->Nspin-1);
-    rho = (double *)malloc(sz_rho * sizeof(double) );
-    for (i = 0; i < sz_rho; i++){
-        rho[i] = electronDens[i];
-        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
-        if (pSPARC->NLCC_flag)
-            rho[i] += pSPARC->electronDens_core[i];
-        if(rho[i] < pSPARC->xc_rhotol)
-            rho[i] = pSPARC->xc_rhotol;
+    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
+    int DMnd = pSPARC->Nd_d;
+    double *rho = (double *)malloc(DMnd * sizeof(double) );
+
+    // add core electron density if needed
+    add_rho_core(pSPARC, electronDens, rho, 1);
+
+    double Exc = 0.0;
+    if (pSPARC->CyclixFlag) {
+        for (int i = 0; i < DMnd; i++) {
+            Exc += rho[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+        }
+    } else {
+        for (int i = 0; i < DMnd; i++) {
+            Exc += rho[i] * pSPARC->e_xc[i]; 
+        }
+        Exc *= pSPARC->dV;
     }
 
-    if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0)
-        Calculate_Exc_LDA(pSPARC, rho);
-    else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-        || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
-        || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0)
-        Calculate_Exc_GGA(pSPARC, rho);
-    else if(pSPARC->mGGAflag == 1) {
-        Calculate_Exc_MGGA(pSPARC, rho);
-    }
-    else {
-        printf("Cannot recognize the XC option provided!\n");
-        exit(EXIT_FAILURE);
-    }
-
+    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+    pSPARC->Exc = Exc;
+    if (pSPARC->ixc[3]) Add_Exc_vdWDF(pSPARC); // the function is in /vdW/vdWDF/vdWDF.c
     free(rho);
 }
 
+/**
+ * @brief   slater exchange
+ */
+void slater(int DMnd, double *rho, double *ex, double *vx) {
+    // exchange parameter
+    double C2 = 0.738558766382022;  // 3/4 * (3/pi)^(1/3)
+    double C3 = 0.9847450218426965; // (3/pi)^(1/3)
+    
+    for (int i = 0; i < DMnd; i++) {
+        double rho_cbrt = cbrt(rho[i]);
+        ex[i] = - C2 * rho_cbrt;
+        vx[i] = - C3 * rho_cbrt;
+    }
+}
 
 /**
- * @brief   Calculate the LDA XC energy.  
- *
- *          This function calls appropriate LDA exchange-correlation energy.
+ * @brief   pw correaltion
+ *          J.P. Perdew and Y. Wang, PRB 45, 13244 (1992)
  */
-void Calculate_Exc_LDA(SPARC_OBJ *pSPARC, double *electronDens)
-{
-    if(pSPARC->spin_typ == 0) { // spin unpolarized
-        if(strcmpi(pSPARC->XC,"LDA_PW") == 0) {
-            // Perdew-Wang exchange correlation 
-            Calculate_Exc_LDA_PW(pSPARC, electronDens);
-        } else if (strcmpi(pSPARC->XC,"LDA_PZ") == 0) {
-            // Perdew-Zunger exchange correlation 
-            Calculate_Exc_LDA_PZ(pSPARC, electronDens);
+void pw(int DMnd, double *rho, double *ec, double *vc) {
+    // correlation parameters
+    double p = 1.0; 
+    double A = 0.031091;
+    double alpha1 = 0.21370;
+    double beta1 = 7.5957;
+    double beta2 = 3.5876;
+    double beta3 = 1.6382;
+    double beta4 = 0.49294;
+    double C31 = 0.6203504908993999; // (3/4pi)^(1/3)    
+    
+    for (int i = 0; i < DMnd; i++) {
+        double rho_cbrt = cbrt(rho[i]);
+        double rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
+        double rs_sqrt = sqrt(rs); // rs^0.5
+        double rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
+        double rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
+        double rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
+        double G1 = log(1.0+1.0/(2.0*A*(beta1*rs_sqrt + beta2*rs + beta3*rs_pow_1p5 + beta4*rs_pow_pplus1 )));
+        double G2 = 2.0*A*(beta1*rs_sqrt + beta2*rs + beta3*rs_pow_1p5 + beta4*rs_pow_pplus1);
+        
+        ec[i] = -2.0*A*(1.0+alpha1*rs) * G1;
+        vc[i] = ec[i] - (rs/3.0) * ( -2.0*A*alpha1 * G1 + (2.0*A*(1.0+alpha1*rs) * (A*(beta1/rs_sqrt + 2.0*beta2 + 3.0*beta3*rs_sqrt + 2.0*(p+1.0)*beta4*rs_pow_p))) / (G2 * (G2 + 1.0)) );
+    }
+}
+
+/**
+ * @brief   pz correaltion
+ *          J.P. Perdew and A. Zunger, PRB 23, 5048 (1981).
+ */
+void pz(int DMnd, double *rho, double *ec, double *vc) {
+    // parameters
+    double A = 0.0311;
+    double B = -0.048 ;
+    double C = 0.002 ;
+    double D = -0.0116 ;
+    double gamma1 = -0.1423 ;
+    double beta1 = 1.0529 ;
+    double beta2 = 0.3334 ; 
+    double C31 = 0.6203504908993999; // (3/4pi)^(1/3)    
+    
+    for (int i = 0; i < DMnd; i++) {
+        double rho_cbrt = cbrt(rho[i]);
+        double rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
+        if (rs<1.0) {
+            ec[i] = A*log(rs) + B + C*rs*log(rs) + D*rs;
+            vc[i] = log(rs)*(A+(2.0/3.0)*C*rs) + (B-(1.0/3.0)*A) + (1.0/3.0)*(2.0*D-C)*rs; 
         } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
+            double sqrtrs = sqrt(rs);
+            ec[i] = gamma1/(1.0+beta1*sqrt(rs)+beta2*rs);
+            vc[i] = (gamma1 + (7.0/6.0)*gamma1*beta1*sqrtrs 
+                    + (4.0/3.0)*gamma1*beta2*rs)/pow(1+beta1*sqrtrs+beta2*rs,2.0) ;		  
         }
-    } else {
-        if(strcmpi(pSPARC->XC,"LDA_PW") == 0) {
-            // Perdew-Wang exchange correlation 
-            Calculate_Exc_LSDA_PW(pSPARC, electronDens);
-        } else if (strcmpi(pSPARC->XC,"LDA_PZ") == 0) {
-            printf("Under development! Currently only LDA_PW available\n");
-            exit(EXIT_FAILURE);
-            // Perdew-Zunger exchange correlation 
-            //Calculate_Exc_LDA_PZ(pSPARC, electronDens);
-        } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }
-    }    
+    }
 }
 
 
+/**
+ * @brief   pbe exchange
+ *
+ * @param   iflag=1  J.P.Perdew, K.Burke, M.Ernzerhof, PRL 77, 3865 (1996)
+ * @param   iflag=2  PBEsol: J.P.Perdew et al., PRL 100, 136406 (2008)
+ * @param   iflag=3  RPBE: B. Hammer, et al., Phys. Rev. B 59, 7413 (1999)
+ * @param   iflag=4  Zhang-Yang Revised PBE: Y. Zhang and W. Yang., Phys. Rev. Lett. 80, 890 (1998)
+ */
+void pbex(int DMnd, double *rho, double *sigma, int iflag, double *ex, double *vx, double *v2x) {
+    assert(iflag == 1 || iflag == 2 || iflag == 3 || iflag == 4);
+    double mu_[4] = {0.2195149727645171, 10.0/81.0, 0.2195149727645171, 0.2195149727645171};
+    double kappa_[4] = {0.804, 0.804, 0.804, 1.245};
+    
+    // parameters 
+    double kappa = kappa_[iflag-1];
+    double mu = mu_[iflag-1];
+    double mu_divkappa = mu / kappa;
+    double threefourth_divpi = (3.0/4.0) / M_PI;
+    double third = 1.0/3.0;
+    double sixpi2_1_3 = pow(6.0*M_PI*M_PI, third);
+    double sixpi2m1_3 = 1.0/sixpi2_1_3;
+    
+    for(int i = 0; i < DMnd; i++){
+        double rho_updn = rho[i]/2.0;
+        double rho_updnm1_3 = pow(rho_updn, -third);
+
+        // First take care of the exchange part of the functional
+        double rhomot = rho_updnm1_3;
+        double ex_lsd = -threefourth_divpi * sixpi2_1_3 * (rhomot * rhomot * rho_updn);
+
+        // Perdew-Burke-Ernzerhof GGA, exchange part
+        double rho_inv = rhomot * rhomot * rhomot;
+        double coeffss = (1.0/4.0) * sixpi2m1_3 * sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
+        double ss = (sigma[i]/4.0) * coeffss; // s^2
+
+        double divss, dfxdss;
+        if (iflag == 1 || iflag == 2 || iflag == 4) {
+            divss = 1.0/(1.0 + mu_divkappa * ss);
+            dfxdss = mu * (divss * divss);
+        } else if (iflag == 3) {
+            divss = exp(-mu_divkappa * ss);
+            dfxdss = mu * divss;
+        }
+        
+        double fx = 1.0 + kappa * (1.0 - divss);
+        double dssdn = (-8.0/3.0) * (ss * rho_inv);
+        double dfxdn = dfxdss * dssdn;
+        double dssdg = 2.0 * coeffss;
+        double dfxdg = dfxdss * dssdg;
+
+        ex[i] = ex_lsd * fx;
+        vx[i] = ex_lsd * ((4.0/3.0) * fx + rho_updn * dfxdn);
+        v2x[i] = 0.5 * ex_lsd * rho_updn * dfxdg;
+    }
+}
 
 /**
- * @brief   Calculate the XC energy using LDA.  
+* @brief the function to compute the potential and energy density of PW86 GGA exchange
+*/
+void rPW86x(int DMnd, double *rho, double *sigma, double *vdWDFex, double *vdWDFVx1, double *vdWDFVx2) {
+    double s, s_2, s_3, s_4, s_5, s_6, fs, grad_rho, df_ds;
+    double a = 1.851;
+    double b = 17.33;
+    double c = 0.163;
+    double s_prefactor = 6.18733545256027; // 2*(3\pi^2)^(1/3)
+    double Ax = -0.738558766382022; // -3/4 * (3/pi)^(1/3)
+    double four_thirds = 4.0/3.0;
+    
+    for (int i = 0; i < DMnd; i++) {
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
+        grad_rho = sqrt(sigma[i]);
+        s = grad_rho / (s_prefactor*pow(rho[i], four_thirds));
+        s_2 = s*s;
+        s_3 = s_2*s;
+        s_4 = s_3*s;
+        s_5 = s_3*s_2;
+        s_6 = s_5*s;
+
+        fs = pow(1.0 + a*s_2 + b*s_4 + c*s_6, 1.0/15.0);
+        vdWDFex[i] = Ax * pow(rho[i], 1.0/3.0) * fs; // \epsilon_x, not n\epsilon_x
+        df_ds = (1.0/(15.0*pow(fs, 14.0))) * (2.0*a*s + 4.0*b*s_3 + 6.0*c*s_5);
+        vdWDFVx1[i] = Ax*four_thirds * (pow(rho[i], 1.0/3.0)*fs - grad_rho/(s_prefactor*rho[i])*df_ds);
+        vdWDFVx2[i] = Ax * df_ds/(s_prefactor*grad_rho);
+    }
+}
+
+
+/**
+ * @brief   pbe correlation
  *
- *          This function implements LDA Ceperley-Alder Perdew-Wang 
- *          exchange-correlation potential (PW92).
+ * @param   iflag=1  J.P.Perdew, K.Burke, M.Ernzerhof, PRL 77, 3865 (1996)
+ * @param   iflag=2  PBEsol: J.P.Perdew et al., PRL 100, 136406 (2008)
+ * @param   iflag=3  RPBE: B. Hammer, et al., Phys. Rev. B 59, 7413 (1999)
  */
-void Calculate_Exc_LDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
-{
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
+void pbec(int DMnd, double *rho, double *sigma, int iflag, double *ec, double *vc, double *v2c) {
+    assert(iflag == 1 || iflag == 2 || iflag == 3);
+    double beta_[3] = {0.066725, 0.046, 0.066725};
+    
+    // parameters 
+    double beta = beta_[iflag-1];
+    double gamma = (1.0 - log(2.0)) / (M_PI*M_PI);
+    double gamma_inv = 1.0/gamma;
+    double phi_zeta_inv = 1.0;
+    double phi3_zeta = 1.0;
+    double gamphi3inv = gamma_inv;
+    double third = 1.0/3.0;
+    double twom1_3 = pow(2.0,-third);
+    double rsfac = 0.6203504908994000;
+    double sq_rsfac = sqrt(rsfac);
+    double sq_rsfac_inv = 1.0/sq_rsfac;
+    double coeff_tt = 1.0/(16.0 / M_PI * pow(3.0*M_PI*M_PI,third));
+    double ec0_aa = 0.031091; 
+    double ec0_a1 = 0.21370;  
+    double ec0_b1 = 7.5957;
+    double ec0_b2 = 3.5876;   
+    double ec0_b3 = 1.6382;   
+    double ec0_b4 = 0.49294;  
 
-    #ifdef DEBUG
-    double t1, t2, t3;
-    t1 = MPI_Wtime();
-    #endif
+    for(int i = 0; i < DMnd; i++){
+        double rho_updn = rho[i]/2.0;
+        double rho_updnm1_3 = pow(rho_updn, -third);
+        double rhom1_3 = twom1_3 * rho_updnm1_3;
+        double rhotot_inv = rhom1_3 * rhom1_3 * rhom1_3;
+        double rhotmo6 = sqrt(rhom1_3);
+        double rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
 
+        // Then takes care of the LSD correlation part of the functional
+        double rs = rsfac * rhom1_3;
+        double sqr_rs = sq_rsfac * rhotmo6;
+        double rsm1_2 = sq_rsfac_inv * rhoto6;
+
+        // Formulas A6-A8 of PW92LSD
+        double ec0_q0 = -2.0 * ec0_aa * (1.0 + ec0_a1 * rs);
+        double ec0_q1 = 2.0 * ec0_aa * (ec0_b1 * sqr_rs + ec0_b2 * rs + ec0_b3 * rs * sqr_rs + ec0_b4 * rs * rs);
+        double ec0_q1p = ec0_aa * (ec0_b1 * rsm1_2 + 2.0 * ec0_b2 + 3.0 * ec0_b3 * sqr_rs + 4.0 * ec0_b4 * rs);
+        double ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
+        double ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
+        double ecrs0 = ec0_q0 * ec0_log;
+        double decrs0_drs = -2.0 * ec0_aa * ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
+
+        double ecrs = ecrs0;
+        double decrs_drs = decrs0_drs;
+
+        // Add LSD correlation functional to GGA exchange functional
+        ec[i] = ecrs;
+        vc[i] = ecrs - (rs/3.0) * decrs_drs;
+
+        // Eventually add the GGA correlation part of the PBE functional
+        // Note : the computation of the potential in the spin-unpolarized
+        // case could be optimized much further. Other optimizations are left to do.
+
+        // From ec to bb
+        double bb = ecrs * gamphi3inv;
+        double dbb_drs = decrs_drs * gamphi3inv;
+        // dbb_dzeta = gamphi3inv * (decrs_dzeta - 3.0 * ecrs * phi_logder);
+
+        // From bb to cc
+        double exp_pbe = exp(-bb);
+        double cc = 1.0/(exp_pbe - 1.0);
+        double dcc_dbb = cc * cc * exp_pbe;
+        double dcc_drs = dcc_dbb * dbb_drs;
+        // dcc_dzeta = dcc_dbb * dbb_dzeta;
+
+        // From cc to aa
+        double coeff_aa = beta * gamma_inv * phi_zeta_inv * phi_zeta_inv;
+        double aa = coeff_aa * cc;
+        double daa_drs = coeff_aa * dcc_drs;
+        //daa_dzeta = -2.0 * aa * phi_logder + coeff_aa * dcc_dzeta;
+
+        // Introduce tt : do not assume that the spin-dependent gradients are collinear
+        double grrho2 = sigma[i];
+        double dtt_dg = 2.0 * rhotot_inv * rhotot_inv * rhom1_3 * coeff_tt;
+        // Note that tt is (the t variable of PBE divided by phi) squared
+        double tt = 0.5 * grrho2 * dtt_dg;
+
+        // Get xx from aa and tt
+        double xx = aa * tt;
+        double dxx_drs = daa_drs * tt;
+        double dxx_dtt = aa;
+
+        // From xx to pade
+        double pade_den = 1.0/(1.0 + xx * (1.0 + xx));
+        double pade = (1.0 + xx) * pade_den;
+        double dpade_dxx = -xx * (2.0 + xx) * pow(pade_den,2);
+        double dpade_drs = dpade_dxx * dxx_drs;
+        double dpade_dtt = dpade_dxx * dxx_dtt;
+        //dpade_dzeta = dpade_dxx * dxx_dzeta;
+
+        // From pade to qq
+        double coeff_qq = tt * phi_zeta_inv * phi_zeta_inv;
+        double qq = coeff_qq * pade;
+        double dqq_drs = coeff_qq * dpade_drs;
+        double dqq_dtt = pade * phi_zeta_inv * phi_zeta_inv + coeff_qq * dpade_dtt;
+        //dqq_dzeta = coeff_qq * (dpade_dzeta - 2.0 * pade * phi_logder);
+
+        // From qq to rr
+        double arg_rr = 1.0 + beta * gamma_inv * qq;
+        double div_rr = 1.0/arg_rr;
+        double rr = gamma * log(arg_rr);
+        double drr_dqq = beta * div_rr;
+        double drr_drs = drr_dqq * dqq_drs;
+        double drr_dtt = drr_dqq * dqq_dtt;
+        //drr_dzeta = drr_dqq * dqq_dzeta;
+
+        // From rr to hh
+        double hh = phi3_zeta * rr;
+        double dhh_drs = phi3_zeta * drr_drs;
+        double dhh_dtt = phi3_zeta * drr_dtt;
+        //dhh_dzeta = phi3_zeta * (drr_dzeta + 3.0 * rr * phi_logder);
+
+        // The GGA correlation energy is added
+        ec[i] += hh;
+
+        // From hh to the derivative of the energy wrt the density
+        double drhohh_drho = hh - third * rs * dhh_drs - (7.0/3.0) * tt * dhh_dtt; //- zeta * dhh_dzeta 
+        vc[i] += drhohh_drho;
+
+        // From hh to the derivative of the energy wrt to the gradient of the
+        // density, divided by the gradient of the density
+        // (The v3.3 definition includes the division by the norm of the gradient)
+        v2c[i] = (rho[i] * dtt_dg * dhh_dtt);    
+    }
+}
+
+/**
+ * @brief   slater exchange - spin polarized 
+ */
+void slater_spin(int DMnd, double *rho, double *ex, double *vx) {
+    // parameter 
+    double third = 1.0/3.0;
+    double threefourth_divpi = (3.0/4.0) / M_PI;
+    double sixpi2_1_3 = pow(6.0*M_PI*M_PI, third);
+
+    for(int i = 0; i < DMnd; i++) {
+        double rhom1_3 = pow(rho[i],-third);
+        double rhotot_inv = pow(rhom1_3,3.0);  
+
+        // First take care of the exchange part of the functional
+        double extot = 0.0;
+        for(int spn_i = 0; spn_i < 2; spn_i++){
+            double rho_updn = rho[DMnd + spn_i*DMnd + i]; 
+            double rho_updnm1_3 = pow(rho_updn, -third);
+            double rhomot = rho_updnm1_3;
+            double ex_lsd = -threefourth_divpi * sixpi2_1_3 * (rhomot * rhomot * rho_updn);
+            vx[spn_i*DMnd + i] = (4.0/3.0) * ex_lsd;
+            extot += ex_lsd * rho_updn;
+        }
+        ex[i] = extot * rhotot_inv;
+    }
+}
+
+/**
+ * @brief   pw correaltion - spin polarized 
+ *          J.P. Perdew and Y. Wang, PRB 45, 13244 (1992)
+ */
+void pw_spin(int DMnd, double *rho, double *ec, double *vc) {
+    // correlation parameters
+    double third = 1.0/3.0;
+    double alpha_zeta2 = 1.0 - 1.0e-6; 
+    double alpha_zeta = 1.0 - 1.0e-6;
+    double rsfac = 0.6203504908994000;
+    double sq_rsfac = sqrt(rsfac);
+    double sq_rsfac_inv = 1.0/sq_rsfac;
+    double fsec_inv = 1.0/1.709921;
+    double factf_zeta = 1.0/(pow(2.0,(4.0/3.0)) - 2.0);
+    double factfp_zeta = 4.0/3.0 * factf_zeta * alpha_zeta2;
+    double ec0_aa = 0.031091; double ec1_aa = 0.015545; double mac_aa = 0.016887;
+    double ec0_a1 = 0.21370;  double ec1_a1 = 0.20548;  double mac_a1 = 0.11125;
+    double ec0_b1 = 7.5957;   double ec1_b1 = 14.1189;  double mac_b1 = 10.357;
+    double ec0_b2 = 3.5876;   double ec1_b2 = 6.1977;   double mac_b2 = 3.6231;
+    double ec0_b3 = 1.6382;   double ec1_b3 = 3.3662;   double mac_b3 = 0.88026;
+    double ec0_b4 = 0.49294;  double ec1_b4 = 0.62517;  double mac_b4 = 0.49671;
+
+    for(int i = 0; i < DMnd; i++) {
+        double rhom1_3 = pow(rho[i],-third);
+        double rhotot_inv = pow(rhom1_3,3.0);
+        double zeta = (rho[DMnd+i] - rho[2*DMnd+i]) * rhotot_inv;
+        double zetp = 1.0 + zeta * alpha_zeta;
+        double zetm = 1.0 - zeta * alpha_zeta;
+        double zetpm1_3 = pow(zetp,-third);
+        double zetmm1_3 = pow(zetm,-third);
+        double rhotmo6 = sqrt(rhom1_3);
+        double rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
+
+        // Then takes care of the LSD correlation part of the functional
+        double rs = rsfac * rhom1_3;
+        double sqr_rs = sq_rsfac * rhotmo6;
+        double rsm1_2 = sq_rsfac_inv * rhoto6;
+
+        // Formulas A6-A8 of PW92LSD
+        double ec0_q0 = -2.0 * ec0_aa * (1.0 + ec0_a1 * rs);
+        double ec0_q1 = 2.0 * ec0_aa *(ec0_b1 * sqr_rs + ec0_b2 * rs + ec0_b3 * rs * sqr_rs + ec0_b4 * rs * rs);
+        double ec0_q1p = ec0_aa * (ec0_b1 * rsm1_2 + 2.0 * ec0_b2 + 3.0 * ec0_b3 * sqr_rs + 4.0 * ec0_b4 * rs);
+        double ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
+        double ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
+        double ecrs0 = ec0_q0 * ec0_log;
+        double decrs0_drs = -2.0 * ec0_aa * ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
+
+        double mac_q0 = -2.0 * mac_aa * (1.0 + mac_a1 * rs);
+        double mac_q1 = 2.0 * mac_aa * (mac_b1 * sqr_rs + mac_b2 * rs + mac_b3 * rs * sqr_rs + mac_b4 * rs * rs);
+        double mac_q1p = mac_aa * (mac_b1 * rsm1_2 + 2.0 * mac_b2 + 3.0 * mac_b3 * sqr_rs + 4.0 * mac_b4 * rs);
+        double mac_den = 1.0/(mac_q1 * mac_q1 + mac_q1);
+        double mac_log = -log( mac_q1 * mac_q1 * mac_den );
+        double macrs = mac_q0 * mac_log;
+        double dmacrs_drs = -2.0 * mac_aa * mac_a1 * mac_log - mac_q0 * mac_q1p * mac_den;
+
+        double ec1_q0 = -2.0 * ec1_aa * (1.0 + ec1_a1 * rs);
+        double ec1_q1 = 2.0 * ec1_aa * (ec1_b1 * sqr_rs + ec1_b2 * rs + ec1_b3 * rs * sqr_rs + ec1_b4 * rs * rs);
+        double ec1_q1p = ec1_aa * (ec1_b1 * rsm1_2 + 2.0 * ec1_b2 + 3.0 * ec1_b3 * sqr_rs + 4.0 * ec1_b4 * rs);
+        double ec1_den = 1.0/(ec1_q1 * ec1_q1 + ec1_q1);
+        double ec1_log = -log( ec1_q1 * ec1_q1 * ec1_den );
+        double ecrs1 = ec1_q0 * ec1_log;
+        double decrs1_drs = -2.0 * ec1_aa * ec1_a1 * ec1_log - ec1_q0 * ec1_q1p * ec1_den;
+        
+        // alpha_zeta is introduced in order to remove singularities for fully polarized systems.
+        double zetp_1_3 = (1.0 + zeta * alpha_zeta) * pow(zetpm1_3,2.0);
+        double zetm_1_3 = (1.0 - zeta * alpha_zeta) * pow(zetmm1_3,2.0);
+
+        double f_zeta = ( (1.0 + zeta * alpha_zeta2) * zetp_1_3 + (1.0 - zeta * alpha_zeta2) * zetm_1_3 - 2.0 ) * factf_zeta;
+        double fp_zeta = ( zetp_1_3 - zetm_1_3 ) * factfp_zeta;
+        double zeta4 = pow(zeta, 4.0);
+
+        double gcrs = ecrs1 - ecrs0 + macrs * fsec_inv;
+        double ecrs = ecrs0 + f_zeta * (zeta4 * gcrs - macrs * fsec_inv);
+        double dgcrs_drs = decrs1_drs - decrs0_drs + dmacrs_drs * fsec_inv;
+        double decrs_drs = decrs0_drs + f_zeta * (zeta4 * dgcrs_drs - dmacrs_drs * fsec_inv);
+        double dfzeta4_dzeta = 4.0 * pow(zeta,3.0) * f_zeta + fp_zeta * zeta4;
+        double decrs_dzeta = dfzeta4_dzeta * gcrs - fp_zeta * macrs * fsec_inv;
+        double vxcadd = ecrs - rs * third * decrs_drs - zeta * decrs_dzeta;
+
+        ec[i] = ecrs;
+        vc[i] = vxcadd + decrs_dzeta;
+        vc[DMnd+i] = vxcadd - decrs_dzeta;
+    }
+}
+
+/**
+ * @brief   pz correaltion - spin polarized 
+ *          J.P. Perdew and A. Zunger, PRB 23, 5048 (1981).
+ */
+void pz_spin(int DMnd, double *rho, double *ec, double *vc) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    int i;
-    double A, alpha1, beta1, beta2, beta3, beta4, C2, C31;
-    double rs, rho_cbrt, rs_sqrt, rs_pow_1p5, rs_pow_p, rs_pow_pplus1, ec, Exc;
-    
-    // correlation parameters
-    // p = 1.0; 
-    A = 0.031091;
-    alpha1 = 0.21370;
-    beta1 = 7.5957;
-    beta2 = 3.5876;
-    beta3 = 1.6382;
-    beta4 = 0.49294;
-    
-    // exchange parameters
-    C2 = 0.738558766382022; // 3/4 * (3/pi)^(1/3)
-    C31 = 0.6203504908993999; // (3/4pi)^(1/3)
-    
-    Exc = 0.0;
-    ec = 0.0;
-    
-    if (pSPARC->CyclixFlag) {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            rho_cbrt = cbrt(electronDens[i]);
-            // calculate correlation energy
-            //if (electronDens[i] != 0.0) {
-            rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
-            rs_sqrt = sqrt(rs); // rs^0.5
-            rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
-            rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
-            rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
-            ec = -2.0 * A * (1 + alpha1 * rs) * log(1.0 + 1.0 / (2.0 * A * (beta1 * rs_sqrt + beta2 * rs + beta3 * rs_pow_1p5 + beta4 * rs_pow_pplus1)));
-            Exc += ec * electronDens[i] * pSPARC->Intgwt_phi[i];
-            //} 
-            // add exchange potential 
-            Exc -= C2 * rho_cbrt * electronDens[i] * pSPARC->Intgwt_phi[i]; // Ex = -C2 * integral(rho^(4/3))
-        }
-    } else {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            rho_cbrt = cbrt(electronDens[i]);
-            // calculate correlation energy
-            //if (electronDens[i] != 0.0) {
-            rs = C31 / rho_cbrt; // rs = (3/(4*pi*rho))^(1/3)
-            rs_sqrt = sqrt(rs); // rs^0.5
-            rs_pow_1p5 = rs * rs_sqrt; // rs^1.5
-            rs_pow_p = rs; // rs^p, where p = 1, pow function is slow (~100x slower than add/sub)
-            rs_pow_pplus1 = rs_pow_p * rs; // rs^(p+1)
-            ec = -2.0 * A * (1 + alpha1 * rs) * log(1.0 + 1.0 / (2.0 * A * (beta1 * rs_sqrt + beta2 * rs + beta3 * rs_pow_1p5 + beta4 * rs_pow_pplus1)));
-            Exc += ec * electronDens[i];
-            //} 
-            // add exchange potential 
-            Exc -= C2 * rho_cbrt * electronDens[i]; // Ex = -C2 * integral(rho^(4/3))
-            pSPARC->e_xc[i] = ec - C2 * rho_cbrt;
-        }
-        Exc *= pSPARC->dV;
-    }
-    
-    #ifdef DEBUG
-    t2 = MPI_Wtime();
-    #endif
-
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
-
-#ifdef DEBUG
-    t3 = MPI_Wtime();
-    if (!rank) printf("rank = %d, Exc = %18.14f , local calculation time: %.3f ms, Allreduce time: %.3f ms, Total time: %.3f ms\n", rank, Exc,(t2-t1)*1e3, (t3-t2)*1e3, (t3-t1)*1e3);
-#endif
+    if (!rank) printf("ERROR: LDA_PZ for spin polarized case is not implemented!\n");
+    exit(EXIT_FAILURE);
 }
 
-
 /**
- * @brief   Calculate the XC energy using LSDA.  
+ * @brief   pbe exchange - spin polarized
  *
- *          This function implements LSDA Ceperley-Alder Perdew-Wang 
- *          exchange-correlation potential (PW92).
+ * @param   iflag=1  J.P.Perdew, K.Burke, M.Ernzerhof, PRL 77, 3865 (1996)
+ * @param   iflag=2  PBEsol: J.P.Perdew et al., PRL 100, 136406 (2008)
+ * @param   iflag=3  RPBE: B. Hammer, et al., Phys. Rev. B 59, 7413 (1999)
+ * @param   iflag=4  Zhang-Yang Revised PBE: Y. Zhang and W. Yang., Phys. Rev. Lett. 80, 890 (1998)
  */
-void Calculate_Exc_LSDA_PW(SPARC_OBJ *pSPARC, double *electronDens)
-{
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
-
-    int i;
-    double Exc = 0.0;
-    if (pSPARC->CyclixFlag) {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
-        }
-    } else {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            Exc += electronDens[i] * pSPARC->e_xc[i]; 
-        }
-        
-        Exc *= pSPARC->dV;
-    }
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
-}
-
-
-
-
-/**
- * @brief   Calculate the LDA Perdew-Zunger XC energy.  
- *
- *          This function implements LDA Ceperley-Alder Perdew-Zunger
- *          exchange-correlation potential.
- */
-void Calculate_Exc_LDA_PZ(SPARC_OBJ *pSPARC, double *electronDens)
-{
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
-
-    int i;
-    double A,B,C,D,gamma1,beta1,beta2,C2,Exc,rhoi,ex,ec,rs;
-
-    A = 0.0311;
-    B = -0.048 ;
-    C = 0.002 ;
-    D = -0.0116 ;
-    gamma1 = -0.1423 ;
-    beta1 = 1.0529 ;
-    beta2 = 0.3334 ; 
-    C2 = 0.73855876638202;
+void pbex_spin(int DMnd, double *rho, double *sigma, int iflag, double *ex, double *vx, double *v2x) {
+    assert(iflag == 1 || iflag == 2 || iflag == 3 || iflag == 4);
+    double mu_[4] = {0.2195149727645171, 10.0/81.0, 0.2195149727645171, 0.2195149727645171};
+    double kappa_[4] = {0.804, 0.804, 0.804, 1.245};
     
-    ec = ex = Exc = 0.0;
-    if (pSPARC->CyclixFlag) {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            rhoi = electronDens[i];
-            ex = -C2*pow(rhoi,1.0/3.0);
-            //if (rhoi == 0) {
-            //    ec = 0.0;
-            //} else {
-            rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
-            if (rs<1.0) {
-                ec = A*log(rs) + B + C*rs*log(rs) + D*rs;
-            } else {
-                ec = gamma1/(1.0+beta1*pow(rs,0.5)+beta2*rs);
+    // parameters 
+    double kappa = kappa_[iflag-1];
+    double mu = mu_[iflag-1];
+    double mu_divkappa = mu / kappa;
+    double threefourth_divpi = (3.0/4.0) / M_PI;
+    double third = 1.0/3.0;
+    double sixpi2_1_3 = pow(6.0*M_PI*M_PI, third);
+    double sixpi2m1_3 = 1.0/sixpi2_1_3;
+
+    for(int i = 0; i < DMnd; i++) {
+        double rhom1_3 = pow(rho[i],-third);
+        double rhotot_inv = pow(rhom1_3,3.0);
+
+        // First take care of the exchange part of the functional
+        double extot = 0.0;
+        for(int spn_i = 0; spn_i < 2; spn_i++){
+            double rho_updn = rho[DMnd + spn_i*DMnd + i];
+            double rho_updnm1_3 = pow(rho_updn, -third);
+            double rhomot = rho_updnm1_3;
+            double ex_lsd = -threefourth_divpi * sixpi2_1_3 * (rhomot * rhomot * rho_updn);
+            double rho_inv = rhomot * rhomot * rhomot;
+            double coeffss = (1.0/4.0) * sixpi2m1_3 * sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
+            double ss = sigma[DMnd + spn_i*DMnd + i] * coeffss;
+            
+            double divss, dfxdss;
+            if (iflag == 1 || iflag == 2 || iflag == 4) {
+                divss = 1.0/(1.0 + mu_divkappa * ss);
+                dfxdss = mu * (divss * divss);
+            } else if (iflag == 3) {
+                divss = exp(-mu_divkappa * ss);
+                dfxdss = mu * divss;
             }
-            //}
-            Exc += (ex+ec)*rhoi * pSPARC->Intgwt_phi[i]; 
+
+			double fx = 1.0 + kappa * (1.0 - divss);
+            double ex_gga = ex_lsd * fx;
+            double dssdn = (-8.0/3.0) * (ss * rho_inv);
+            double dfxdn = dfxdss * dssdn;
+            vx[spn_i*DMnd + i] = ex_lsd * ((4.0/3.0) * fx + rho_updn * dfxdn);
+
+            double dssdg = 2.0 * coeffss;
+            double dfxdg = dfxdss * dssdg;
+            v2x[spn_i*DMnd + i] = ex_lsd * rho_updn * dfxdg; // changed to assuming 2 columns 
+            extot += ex_gga * rho_updn;
         }
-    } else {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            rhoi = electronDens[i];
-            ex = -C2*pow(rhoi,1.0/3.0);
-            //if (rhoi == 0) {
-            //    Ec = 0.0;
-            //} else {
-            rs = pow(0.75/(M_PI*rhoi),(1.0/3.0));
-            if (rs<1.0) {
-                ec = A*log(rs) + B + C*rs*log(rs) + D*rs;
-            } else {
-                ec = gamma1/(1.0+beta1*pow(rs,0.5)+beta2*rs);
-            }
-            //}
-            Exc += (ex+ec)*rhoi; 
-            pSPARC->e_xc[i] = ex+ec;
-        }
-        
-        Exc *= pSPARC->dV;
+        ex[i] = extot * rhotot_inv;
     }
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
 }
 
 
 /**
- * @brief   Calculate the GGA XC energy.  
+* @brief the function to compute the potential and energy density of PW86 GGA exchange, spin-polarized case
+*/
+void rPW86x_spin(int DMnd, double *rho, double *sigma, double *vdWDFex, double *vdWDFVx1, double *vdWDFVx2) {
+    double s, s_2, s_3, s_4, s_5, s_6, fs, grad_rho, df_ds;
+    double *exUpDn = (double*)malloc(sizeof(double)*DMnd*2); // row 1: rho_up*epsilon(2*rho_up); row 2: rho_dn*epsilon(2*rho_dn);
+    double a = 1.851;
+    double b = 17.33;
+    double c = 0.163;
+    double s_prefactor = 6.18733545256027; // 2*(3\pi^2)^(1/3)
+    double Ax = -0.738558766382022; // -3/4 * (3/pi)^(1/3)
+    double four_thirds = 4.0/3.0;
+    int i;
+    double two_pow13 = pow(2.0, 1.0/3.0);
+    
+    for (i = 0; i < 2*DMnd; i++) {
+        if (sigma[i] < 1E-14) sigma[i] = 1E-14;
+        grad_rho = sqrt(sigma[i]);
+        s = grad_rho / (two_pow13 * s_prefactor*pow(rho[DMnd + i], four_thirds));
+        s_2 = s*s;
+        s_3 = s_2*s;
+        s_4 = s_3*s;
+        s_5 = s_3*s_2;
+        s_6 = s_5*s;
+
+        fs = pow(1.0 + a*s_2 + b*s_4 + c*s_6, 1.0/15.0);
+        exUpDn[i] = Ax * two_pow13 * pow(rho[DMnd + i], 1.0/3.0 + 1.0) * fs; // \epsilon_x, not n\epsilon_x
+        df_ds = (1.0/(15.0*pow(fs, 14.0))) * (2.0*a*s + 4.0*b*s_3 + 6.0*c*s_5);
+        vdWDFVx1[i] = Ax*four_thirds * (two_pow13 * pow(rho[DMnd + i], 1.0/3.0)*fs - grad_rho/(s_prefactor*rho[DMnd + i])*df_ds);
+        vdWDFVx2[i] = Ax * df_ds/(s_prefactor*grad_rho);
+    }
+    for (i = 0; i < DMnd; i++) {
+        vdWDFex[i] = (exUpDn[i] + exUpDn[DMnd + i]) / rho[i];
+    }
+    free(exUpDn);
+}
+
+/**
+ * @brief   pbe correlation - spin polarized
  *
- *          This function calls appropriate LDA exchange-correlation energy.
+ * @param   iflag=1  J.P.Perdew, K.Burke, M.Ernzerhof, PRL 77, 3865 (1996)
+ * @param   iflag=2  PBEsol: J.P.Perdew et al., PRL 100, 136406 (2008)
+ * @param   iflag=3  RPBE: B. Hammer, et al., Phys. Rev. B 59, 7413 (1999)
  */
-void Calculate_Exc_GGA(SPARC_OBJ *pSPARC, double *electronDens)
-{
-    if(pSPARC->spin_typ == 0) { // spin unpolarized
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) {
-            // Perdew-Burke-Ernzerhof exchange correlation 
-            Calculate_Exc_GGA_PBE(pSPARC, electronDens);
-        } else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) {
-            Calculate_Exc_GGA_vdWDF_ExchangeLinearCorre(pSPARC, electronDens); // actually the function has no difference from Calculate_Exc_GGA_PBE. Maybe thery can be unified.
-            Add_Exc_vdWDF(pSPARC); // the function is in /vdW/vdWDF/vdWDF.c
-        } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0) {
-            // Perdew-Burke-Ernzerhof exchange correlation 
-            Calculate_Exc_GSGA_PBE(pSPARC, electronDens);
-        } else if (strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0) {
-            Calculate_Exc_GSGA_vdWDF_ExchangeLinearCorre(pSPARC, electronDens); // actually the function has no difference from Calculate_Exc_GSGA_PBE. Maybe thery can be unified.
-            Add_Exc_vdWDF(pSPARC); // the function is in /vdW/vdWDF/vdWDF.c
-        } else {
-            printf("Cannot recognize the XC option provided!\n");
-            exit(EXIT_FAILURE);
-        }
-    }    
+void pbec_spin(int DMnd, double *rho, double *sigma, int iflag, double *ec, double *vc, double *v2c) {
+    assert(iflag == 1 || iflag == 2 || iflag == 3);
+    double beta_[3] = {0.066725, 0.046, 0.066725};
+    
+    // parameters 
+    double beta = beta_[iflag-1];
+    double gamma = (1.0 - log(2.0)) / (M_PI*M_PI);
+    double gamma_inv = 1.0/gamma;    
+    double third = 1.0/3.0;
+    double alpha_zeta2 = 1.0 - 1.0e-6; 
+    double alpha_zeta = 1.0 - 1.0e-6;
+    double rsfac = 0.6203504908994000;
+    double sq_rsfac = sqrt(rsfac);
+    double sq_rsfac_inv = 1.0/sq_rsfac;
+    double fsec_inv = 1.0/1.709921;
+    double factf_zeta = 1.0/(pow(2.0,(4.0/3.0)) - 2.0);
+    double factfp_zeta = 4.0/3.0 * factf_zeta * alpha_zeta2;
+    double coeff_tt = 1.0/(16.0 / M_PI * pow(3.0*M_PI*M_PI,third));
+
+    double ec0_aa = 0.031091; double ec1_aa = 0.015545; double mac_aa = 0.016887;
+    double ec0_a1 = 0.21370;  double ec1_a1 = 0.20548;  double mac_a1 = 0.11125;
+    double ec0_b1 = 7.5957;   double ec1_b1 = 14.1189;  double mac_b1 = 10.357;
+    double ec0_b2 = 3.5876;   double ec1_b2 = 6.1977;   double mac_b2 = 3.6231;
+    double ec0_b3 = 1.6382;   double ec1_b3 = 3.3662;   double mac_b3 = 0.88026;
+    double ec0_b4 = 0.49294;  double ec1_b4 = 0.62517;  double mac_b4 = 0.49671;
+    
+    for(int i = 0; i < DMnd; i++) {
+        double rhom1_3 = pow(rho[i],-third);
+        double rhotot_inv = pow(rhom1_3,3.0);
+        double zeta = (rho[DMnd + i] - rho[2*DMnd + i]) * rhotot_inv;
+        double zetp = 1.0 + zeta * alpha_zeta;
+        double zetm = 1.0 - zeta * alpha_zeta;
+        double zetpm1_3 = pow(zetp,-third);
+        double zetmm1_3 = pow(zetm,-third);
+        double rhotmo6 = sqrt(rhom1_3);
+        double rhoto6 = rho[i] * rhom1_3 * rhom1_3 * rhotmo6;
+
+        // Then takes care of the LSD correlation part of the functional
+        double rs = rsfac * rhom1_3;
+        double sqr_rs = sq_rsfac * rhotmo6;
+        double rsm1_2 = sq_rsfac_inv * rhoto6;
+
+        // Formulas A6-A8 of PW92LSD
+        double ec0_q0 = -2.0 * ec0_aa * (1.0 + ec0_a1 * rs);
+        double ec0_q1 = 2.0 * ec0_aa *(ec0_b1 * sqr_rs + ec0_b2 * rs + ec0_b3 * rs * sqr_rs + ec0_b4 * rs * rs);
+        double ec0_q1p = ec0_aa * (ec0_b1 * rsm1_2 + 2.0 * ec0_b2 + 3.0 * ec0_b3 * sqr_rs + 4.0 * ec0_b4 * rs);
+        double ec0_den = 1.0/(ec0_q1 * ec0_q1 + ec0_q1);
+        double ec0_log = -log(ec0_q1 * ec0_q1 * ec0_den);
+        double ecrs0 = ec0_q0 * ec0_log;
+        double decrs0_drs = -2.0 * ec0_aa * ec0_a1 * ec0_log - ec0_q0 * ec0_q1p * ec0_den;
+
+        double mac_q0 = -2.0 * mac_aa * (1.0 + mac_a1 * rs);
+        double mac_q1 = 2.0 * mac_aa * (mac_b1 * sqr_rs + mac_b2 * rs + mac_b3 * rs * sqr_rs + mac_b4 * rs * rs);
+        double mac_q1p = mac_aa * (mac_b1 * rsm1_2 + 2.0 * mac_b2 + 3.0 * mac_b3 * sqr_rs + 4.0 * mac_b4 * rs);
+        double mac_den = 1.0/(mac_q1 * mac_q1 + mac_q1);
+        double mac_log = -log( mac_q1 * mac_q1 * mac_den );
+        double macrs = mac_q0 * mac_log;
+        double dmacrs_drs = -2.0 * mac_aa * mac_a1 * mac_log - mac_q0 * mac_q1p * mac_den;
+
+        double ec1_q0 = -2.0 * ec1_aa * (1.0 + ec1_a1 * rs);
+        double ec1_q1 = 2.0 * ec1_aa * (ec1_b1 * sqr_rs + ec1_b2 * rs + ec1_b3 * rs * sqr_rs + ec1_b4 * rs * rs);
+        double ec1_q1p = ec1_aa * (ec1_b1 * rsm1_2 + 2.0 * ec1_b2 + 3.0 * ec1_b3 * sqr_rs + 4.0 * ec1_b4 * rs);
+        double ec1_den = 1.0/(ec1_q1 * ec1_q1 + ec1_q1);
+        double ec1_log = -log( ec1_q1 * ec1_q1 * ec1_den );
+        double ecrs1 = ec1_q0 * ec1_log;
+        double decrs1_drs = -2.0 * ec1_aa * ec1_a1 * ec1_log - ec1_q0 * ec1_q1p * ec1_den;
+        
+        // alpha_zeta is introduced in order to remove singularities for fully polarized systems.
+        double zetp_1_3 = (1.0 + zeta * alpha_zeta) * pow(zetpm1_3,2.0);
+        double zetm_1_3 = (1.0 - zeta * alpha_zeta) * pow(zetmm1_3,2.0);
+
+        double f_zeta = ( (1.0 + zeta * alpha_zeta2) * zetp_1_3 + (1.0 - zeta * alpha_zeta2) * zetm_1_3 - 2.0 ) * factf_zeta;
+        double fp_zeta = ( zetp_1_3 - zetm_1_3 ) * factfp_zeta;
+        double zeta4 = pow(zeta, 4.0);
+
+        double gcrs = ecrs1 - ecrs0 + macrs * fsec_inv;
+        double ecrs = ecrs0 + f_zeta * (zeta4 * gcrs - macrs * fsec_inv);
+        double dgcrs_drs = decrs1_drs - decrs0_drs + dmacrs_drs * fsec_inv;
+        double decrs_drs = decrs0_drs + f_zeta * (zeta4 * dgcrs_drs - dmacrs_drs * fsec_inv);
+        double dfzeta4_dzeta = 4.0 * pow(zeta,3.0) * f_zeta + fp_zeta * zeta4;
+        double decrs_dzeta = dfzeta4_dzeta * gcrs - fp_zeta * macrs * fsec_inv;
+
+        ec[i] = ecrs;
+        double vxcadd = ecrs - rs * third * decrs_drs - zeta * decrs_dzeta;
+        vc[i] = vxcadd + decrs_dzeta;
+        vc[DMnd+i] = vxcadd - decrs_dzeta;
+
+        // Eventually add the GGA correlation part of the PBE functional
+        // The definition of phi has been slightly changed, because
+        // the original PBE one gives divergent behaviour for fully polarized points
+        
+        double phi_zeta = ( zetpm1_3 * (1.0 + zeta * alpha_zeta) + zetmm1_3 * (1.0 - zeta * alpha_zeta)) * 0.5;
+        double phip_zeta = (zetpm1_3 - zetmm1_3) * third * alpha_zeta;
+        double phi_zeta_inv = 1.0/phi_zeta;
+        double phi_logder = phip_zeta * phi_zeta_inv;
+        double phi3_zeta = phi_zeta * phi_zeta * phi_zeta;
+        double gamphi3inv = gamma_inv * phi_zeta_inv * phi_zeta_inv * phi_zeta_inv;        
+        
+        // From ec to bb
+        double bb = ecrs * gamphi3inv;
+        double dbb_drs = decrs_drs * gamphi3inv;
+        double dbb_dzeta = gamphi3inv * (decrs_dzeta - 3.0 * ecrs * phi_logder);
+
+        // From bb to cc
+        double exp_pbe = exp(-bb);
+        double cc = 1.0/(exp_pbe - 1.0);
+        double dcc_dbb = cc * cc * exp_pbe;
+        double dcc_drs = dcc_dbb * dbb_drs;
+        double dcc_dzeta = dcc_dbb * dbb_dzeta;
+
+        // From cc to aa
+        double coeff_aa = beta * gamma_inv * phi_zeta_inv * phi_zeta_inv;
+        double aa = coeff_aa * cc;
+        double daa_drs = coeff_aa * dcc_drs;
+        double daa_dzeta = -2.0 * aa * phi_logder + coeff_aa * dcc_dzeta;
+
+        // Introduce tt : do not assume that the spin-dependent gradients are collinear
+        double grrho2 = sigma[i];
+        double dtt_dg = 2.0 * rhotot_inv * rhotot_inv * rhom1_3 * coeff_tt;
+        // Note that tt is (the t variable of PBE divided by phi) squared
+        double tt = 0.5 * grrho2 * dtt_dg;
+
+        // Get xx from aa and tt
+        double xx = aa * tt;
+        double dxx_drs = daa_drs * tt;
+        double dxx_dzeta = daa_dzeta * tt;
+        double dxx_dtt = aa;
+
+        // From xx to pade
+        double pade_den = 1.0/(1.0 + xx * (1.0 + xx));
+        double pade = (1.0 + xx) * pade_den;
+        double dpade_dxx = -xx * (2.0 + xx) * pow(pade_den,2.0);
+        double dpade_drs = dpade_dxx * dxx_drs;
+        double dpade_dtt = dpade_dxx * dxx_dtt;
+        double dpade_dzeta = dpade_dxx * dxx_dzeta;
+
+        // From pade to qq
+        double coeff_qq = tt * phi_zeta_inv * phi_zeta_inv;
+        double qq = coeff_qq * pade;
+        double dqq_drs = coeff_qq * dpade_drs;
+        double dqq_dtt = pade * phi_zeta_inv * phi_zeta_inv + coeff_qq * dpade_dtt;
+        double dqq_dzeta = coeff_qq * (dpade_dzeta - 2.0 * pade * phi_logder);
+
+        // From qq to rr
+        double arg_rr = 1.0 + beta * gamma_inv * qq;
+        double div_rr = 1.0/arg_rr;
+        double rr = gamma * log(arg_rr);
+        double drr_dqq = beta * div_rr;
+        double drr_drs = drr_dqq * dqq_drs;
+        double drr_dtt = drr_dqq * dqq_dtt;
+        double drr_dzeta = drr_dqq * dqq_dzeta;
+
+        // From rr to hh
+        double hh = phi3_zeta * rr;
+        double dhh_drs = phi3_zeta * drr_drs;
+        double dhh_dtt = phi3_zeta * drr_dtt;
+        double dhh_dzeta = phi3_zeta * (drr_dzeta + 3.0 * rr * phi_logder);
+
+        // The GGA correlation energy is added
+        ec[i] += hh;
+
+        // From hh to the derivative of the energy wrt the density
+        double drhohh_drho = hh - third * rs * dhh_drs - zeta * dhh_dzeta - (7.0/3.0) * tt * dhh_dtt; 
+        vc[i] += drhohh_drho + dhh_dzeta;
+        vc[DMnd + i] += drhohh_drho - dhh_dzeta;
+
+        // From hh to the derivative of the energy wrt to the gradient of the
+        // density, divided by the gradient of the density
+        // (The v3.3 definition includes the division by the norm of the gradient)
+        v2c[i] = rho[i] * dtt_dg * dhh_dtt;
+    }
 }
 
+
 /**
- * @brief   Calculate the GGA Perdew-Burje-Ernzerhof XC energy.
+ * @brief   calculate square norm of gradient
  */
-void Calculate_Exc_GGA_PBE(SPARC_OBJ *pSPARC, double *electronDens)
+void calculate_square_norm_of_gradient(SPARC_OBJ *pSPARC, 
+        double *rho, double *mag, int DMnd, int ncol, 
+        double *sigma, double *Drho_x, double *Drho_y, double *Drho_z)
 {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
 
-    int i;
-    double Exc = 0.0;
-    if (pSPARC->CyclixFlag) {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+    if (pSPARC->spin_typ != 2) {
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+        compute_norm_square(pSPARC, sigma, ncol*DMnd, Drho_x, Drho_y, Drho_z);
+    } else {
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+        
+        double *Dmag_x = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_x Dmagy_x Dmagz_x]
+        double *Dmag_y = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_y Dmagy_y Dmagz_y]
+        double *Dmag_z = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_z Dmagy_z Dmagz_z]
+        
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_x, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_y, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_z, 2, pSPARC->dmcomm_phi);
+
+        double *Dmnorm_x = (double *) malloc(DMnd * sizeof(double));
+        double *Dmnorm_y = (double *) malloc(DMnd * sizeof(double));
+        double *Dmnorm_z = (double *) malloc(DMnd * sizeof(double));
+
+        // compute gradient of norm of magnetization |mag|
+        for (int i = 0; i < DMnd; i++) {
+            double magnorm = mag[3*DMnd+i];
+            if (magnorm > pSPARC->xc_magtol) {
+                Dmnorm_x[i] = Dmnorm_y[i] = Dmnorm_z[i] = 0;
+                continue;
+            }
+            Dmnorm_x[i] = (mag[i] * Dmag_x[i] + mag[i+DMnd] * Dmag_x[i+DMnd] + mag[i+2*DMnd] * Dmag_x[i+2*DMnd]) / magnorm;
+            Dmnorm_y[i] = (mag[i] * Dmag_y[i] + mag[i+DMnd] * Dmag_y[i+DMnd] + mag[i+2*DMnd] * Dmag_y[i+2*DMnd]) / magnorm;
+            Dmnorm_z[i] = (mag[i] * Dmag_z[i] + mag[i+DMnd] * Dmag_z[i+DMnd] + mag[i+2*DMnd] * Dmag_z[i+2*DMnd]) / magnorm;
+        }
+
+        // compute gradient of effective up and down density
+        for (int i = 0; i < DMnd; i++) {
+            Drho_x[i+DMnd]   = 0.5 * (Drho_x[i] + Dmnorm_x[i]); // Drhoup_x
+            Drho_x[i+2*DMnd] = 0.5 * (Drho_x[i] - Dmnorm_x[i]); // Drhodn_x
+            Drho_y[i+DMnd]   = 0.5 * (Drho_y[i] + Dmnorm_y[i]); // Drhoup_y
+            Drho_y[i+2*DMnd] = 0.5 * (Drho_y[i] - Dmnorm_y[i]); // Drhodn_y
+            Drho_z[i+DMnd]   = 0.5 * (Drho_z[i] + Dmnorm_z[i]); // Drhoup_z
+            Drho_z[i+2*DMnd] = 0.5 * (Drho_z[i] - Dmnorm_z[i]); // Drhodn_z
+        }
+
+        compute_norm_square(pSPARC, sigma, 3*DMnd, Drho_x, Drho_y, Drho_z);
+
+        free(Dmag_x);
+        free(Dmag_y);
+        free(Dmag_z);
+        free(Dmnorm_x);
+        free(Dmnorm_y);
+        free(Dmnorm_z);
+    }
+}
+
+
+
+/**
+ * @brief   calculate square norm of a set of vector
+ */ 
+void compute_norm_square(SPARC_OBJ *pSPARC, double *norm2, int DMnd, double *v1, double *v2, double *v3)
+{
+    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
+        double lapcT[6];
+        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
+        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
+        for(int i = 0; i < DMnd; i++){
+            norm2[i] = v1[i] * (lapcT[0] * v1[i] + lapcT[1] * v2[i]) 
+                    + v2[i] * (lapcT[3] * v2[i] + lapcT[4] * v3[i]) 
+                    + v3[i] * (lapcT[5] * v3[i] + lapcT[2] * v1[i]); 
         }
     } else {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            //if(electronDens[i] != 0)
-            Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        for(int i = 0; i < DMnd; i++){
+            norm2[i] = v1[i] * v1[i] + v2[i] * v2[i] + v3[i] * v3[i];
         }
-        
-        Exc *= pSPARC->dV;
     }
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
 }
 
 
 /**
- * @brief   Calculate the GSGA Perdew-Burje-Ernzerhof XC energy.
+ * @brief   add core electron density if needed
  */
-void Calculate_Exc_GSGA_PBE(SPARC_OBJ *pSPARC, double *electronDens)
+void add_rho_core(SPARC_OBJ *pSPARC, double *rho_in, double *rho_out, int ncol)
 {
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
+    int sz_rho = pSPARC->Nd_d * ncol;
+    for (int i = 0; i < sz_rho; i++){
+        rho_out[i] = rho_in[i];
+        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+        if (pSPARC->NLCC_flag)
+            rho_out[i] += pSPARC->electronDens_core[i];
+        if(rho_out[i] < pSPARC->xc_rhotol)
+            rho_out[i] = pSPARC->xc_rhotol;
+    }
 
-    int i;
-    double Exc = 0.0;
-    if (pSPARC->CyclixFlag) {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            Exc += electronDens[i] * pSPARC->e_xc[i] * pSPARC->Intgwt_phi[i]; 
+    if (pSPARC->spin_typ != 0 && ncol == 3) {
+        for(int i = 0; i < pSPARC->Nd_d; i++)
+            rho_out[i] = rho_out[pSPARC->Nd_d + i] + rho_out[2*pSPARC->Nd_d + i];
+    }
+}
+
+
+/**
+ * @brief   compute Drho times v2xc
+ */
+void Drho_times_v2xc(SPARC_OBJ *pSPARC, int DMnd, int ncol, double *Drho_x, double *Drho_y, double *Drho_z, double *v2xc)
+{
+    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
+        for(int i = 0; i < DMnd*ncol; i++){
+            double temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * v2xc[i];
+            double temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * v2xc[i];
+            double temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * v2xc[i];
+            Drho_x[i] = temp1;
+            Drho_y[i] = temp2;
+            Drho_z[i] = temp3;
         }
     } else {
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            //if(electronDens[i] != 0)
-            Exc += electronDens[i] * pSPARC->e_xc[i]; 
+        for(int i = 0; i < DMnd*ncol; i++){
+            Drho_x[i] *= v2xc[i];
+            Drho_y[i] *= v2xc[i];
+            Drho_z[i] *= v2xc[i];
         }
-        
-        Exc *= pSPARC->dV;
     }
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
 }
 
 
@@ -1852,31 +1701,24 @@ void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_
 void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho)
 {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
-
-    double *rho;
-    int sz_rho, i, rank;
+    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    sz_rho = pSPARC->Nd_d;
-    rho = (double *)malloc(sz_rho * sizeof(double) );
-    for (i = 0; i < sz_rho; i++){
-        rho[i] = pSPARC->electronDens[i];
-        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
-        if (pSPARC->NLCC_flag)
-            rho[i] += pSPARC->electronDens_core[i];
-        if(rho[i] < pSPARC->xc_rhotol)
-            rho[i] = pSPARC->xc_rhotol;
-    }
+    int DMnd = pSPARC->Nd_d;
+    double *rho = (double *)malloc(DMnd * sizeof(double) );
+
+    // add core electron density if needed
+    add_rho_core(pSPARC, pSPARC->electronDens, rho, 1);
 
     // TODO: Add ExcRho for spin-up and down
-    for (i = 0; i < pSPARC->Nd_d; i++) {
+    for (int i = 0; i < DMnd; i++) {
         ExcRho[i] = pSPARC->e_xc[i] * rho[i];
     }
 
     free(rho);
 #ifdef DEBUG
     double Exc = 0;
-    for (i = 0; i < pSPARC->Nd_d; i++)
+    for (int i = 0; i < pSPARC->Nd_d; i++)
         Exc += ExcRho[i];
     MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
     Exc *= pSPARC->dV;

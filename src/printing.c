@@ -26,7 +26,7 @@
 #include "parallelization.h"
 #include "exchangeCorrelation.h"
 #include "exactExchangeEnergyDensity.h"
-#include "mGGAexchangeCorrelation.h"
+#include "mGGAtauTransferTauVxc.h"
 #include "initialization.h"
 
 

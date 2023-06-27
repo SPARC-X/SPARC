@@ -1155,3 +1155,37 @@ void Add_Exc_vdWDF(SPARC_OBJ *pSPARC)
 { // add vdW_DF energy into the total xc energy
     pSPARC->Exc += pSPARC->vdWDFenergy;
 }
+
+void find_folder_route(SPARC_OBJ *pSPARC, char *folderRoute) { // used for returning the folder route of the input files
+    strncpy(folderRoute, pSPARC->filename, L_STRING);
+    int indexEndFolderRoute = 0;
+    while (folderRoute[indexEndFolderRoute] != '\0') {
+        indexEndFolderRoute++;
+    } // get the length of the char filename
+    while ((indexEndFolderRoute > -1) && (folderRoute[indexEndFolderRoute] != '/')) {
+        indexEndFolderRoute--;
+    } // find the last '/'. If there is no '/', indexEndFolderRoute should be at the beginning
+    folderRoute[indexEndFolderRoute + 1] = '\0'; // cut the string. Now it contains only the folder position
+}
+
+void print_variables(double *variable, char *outputFileName, int Nx, int Ny, int Nz) {
+    printf("begin printing variable\n");
+    FILE *outputFile = NULL;
+    outputFile = fopen(outputFileName,"w");
+    int xIndex, yIndex, zIndex;
+    int globalIndex = 0;
+    fprintf(outputFile, "%d %d %d\n", Nx, Ny, Nz);
+    for (zIndex = 0; zIndex < Nz; zIndex++) {
+        for (yIndex = 0; yIndex < Ny; yIndex++) {
+            fprintf(outputFile, "%d %d\n", yIndex, zIndex);
+            for (xIndex = 0; xIndex < Nx; xIndex++) {
+                if ((xIndex + 1) % 4 == 0 || (xIndex == Nx - 1)) // new line every 4 values
+                    fprintf(outputFile, "%12.9f\n", variable[globalIndex]);
+                else
+                    fprintf(outputFile, "%12.9f ", variable[globalIndex]);
+                globalIndex++;
+            }
+        }
+    }
+    fclose(outputFile);
+}
