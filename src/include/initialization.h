@@ -174,6 +174,31 @@ double compute_nearest_neighbor_dist(SPARC_OBJ *pSPARC, char CorN);
  *          processors for eigenvalue solver. 
  */
 int parallel_eigensolver_max_processor(int N, char RorC, char SorG);
+
+/* ****************************************************************
+Exchange Correlation
+   Exchange:     "nox"    none                           iexch=0
+                 "slater" Slater (alpha=2/3)             iexch=1
+                 "pbex"   Perdew-Burke-Ernzenhof exch    iexch=2
+                       options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE 4 --Zhang-Yang RPBE
+                 "rPW86x"  Refitted Perdew & Wang 86     iexch=3
+                 "scanx"  SCAN exchange                  iexch=4
+   
+   Correlation:  "noc"    none                           icorr=0
+                 "pz"     Perdew-Zunger                  icorr=1 
+                 "pw"     Perdew-Wang                    icorr=2
+                 "pbec"   Perdew-Burke-Ernzenhof corr    icorr=3
+                       options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE
+                 "scanc"  SCAN correlation               icorr=4
+
+   Meta-GGA:     "nom"    none                           imeta=0
+                 "scan"   SCAN-Meta-GGA                  imeta=1
+
+   van der Waals "nov"    none                           ivdw=0
+                 "vdw1"   vdW-DF1                        ivdw=1
+                 "vdw2"   vdW-DF2                        ivdw=2
+**************************************************************** */
+void xc_decomposition(SPARC_OBJ *pSPARC);
 #endif // INITIALIZATION_H 
 
 

@@ -1,6 +1,7 @@
 /**
  * @file    MGGAexchangeCorrelation.c
- * @brief   This file contains the functions used by metaGGA functionals.
+ * @brief   This file contains the functions computing kinetic density tau and 
+ * transferring tau and Vxc from phi domain to psi domain.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
@@ -14,7 +15,7 @@
 #include <assert.h>
 
 #include "mGGAscan.h"
-#include "mGGAexchangeCorrelation.h"
+#include "mGGAtauTransferTauVxc.h"
 
 #include "isddft.h"
 #include "tools.h"
@@ -247,152 +248,6 @@ void compute_Kinetic_Density_Tau_Transfer_phi(SPARC_OBJ *pSPARC) {
     free(Krho);
 }
 
-/**
- * @brief   the main function in the file, compute needed xc energy density and its potentials, then transfer them to needed communicators
- *          
- * @param rho               electron density vector
- */
-void Calculate_transfer_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (pSPARC->countPotentialCalculate != 0) {
-        compute_Kinetic_Density_Tau_Transfer_phi(pSPARC);
-    }
-    Calculate_Vxc_MGGA(pSPARC, rho);
-    // printf("rank %d, Nspin %d, spincomm_index %d, reached the beginning of transfer_Vxc\n", rank, pSPARC->Nspin, pSPARC->spincomm_index);
-    if (pSPARC->countPotentialCalculate != 0) { // not the first SCF step
-        Transfer_vxcMGGA3_phi_psi(pSPARC, pSPARC->vxcMGGA3, pSPARC->vxcMGGA3_loc_dmcomm); // only transfer the potential they are going to use
-        // if (!(pSPARC->spin_typ == 0 && pSPARC->is_phi_eq_kpt_topo)) { // the conditional judge whether this computation is necessary to do that. 
-        // This function is moved to file eigenSolver.c and eigenSolverKpt.c
-    }
-    // printf("rank %d reached the end of transfer_Vxc\n", rank);
-    pSPARC->countPotentialCalculate++;
-}
-
-/**
- * @brief   compute epsilon and XCPotential; vxcMGGA3 of metaGGA functional
- *          
- * @param rho               electron density vector
- */
-void Calculate_Vxc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
-        return; 
-    }
-    if (pSPARC->countPotentialCalculate == 0) {
-        // Initialize constants    
-        XCCST_OBJ xc_cst;
-        xc_constants_init(&xc_cst, pSPARC);
-        if (pSPARC->Nspin == 1)
-            Calculate_Vxc_GGA_PBE(pSPARC, &xc_cst, rho);
-        else
-            Calculate_Vxc_GSGA_PBE(pSPARC, &xc_cst, rho);
-        // printf("finished first SCF PBE!\n");
-        return;
-    }
-
-    int rank, nproc;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-
-#ifdef DEBUG
-    double t1, t2;
-    t1 = MPI_Wtime();
-#endif
-
-    int DMnd;
-    DMnd = pSPARC->Nd_d;
-
-    int i;
-    double *Drho_x, *Drho_y, *Drho_z, *normDrho, *lapcT;
-    Drho_x = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(Drho_x != NULL);
-    Drho_y = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(Drho_y != NULL);
-    Drho_z = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(Drho_z != NULL);
-    normDrho = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(normDrho != NULL);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        lapcT = (double *) malloc(6 * sizeof(double));
-        lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-        for(i = 0; i < DMnd * (2*pSPARC->Nspin-1); i++){
-            normDrho[i] = sqrt(Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
-                       Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i])); 
-        }
-        free(lapcT);
-    } else {
-        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
-            normDrho[i] = sqrt(Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i]);
-        }
-    }
-
-    if (strcmpi(pSPARC->XC, "SCAN") == 0) {
-        if (pSPARC->Nspin == 1)
-            SCAN_EnergyDens_Potential(pSPARC, rho, normDrho, pSPARC->KineticTauPhiDomain, pSPARC->e_xc, pSPARC->vxcMGGA1, pSPARC->vxcMGGA2, pSPARC->vxcMGGA3);
-        else
-            SSCAN_EnergyDens_Potential(pSPARC, rho, normDrho, pSPARC->KineticTauPhiDomain, pSPARC->e_xc, pSPARC->vxcMGGA1, pSPARC->vxcMGGA2, pSPARC->vxcMGGA3);
-    }
-
-    for (i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++) {
-        pSPARC->Dxcdgrho[i] = pSPARC->vxcMGGA2[i] / normDrho[i]; // to unify with the variable in GGA
-    } 
-
-    double *DDrho_x, *DDrho_y, *DDrho_z;
-    DDrho_x = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(DDrho_x != NULL);
-    DDrho_y = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(DDrho_y != NULL);
-    DDrho_z = (double *) malloc((2*pSPARC->Nspin-1) * DMnd * sizeof(double));
-    assert(DDrho_z != NULL);
-    double temp1, temp2, temp3;
-    if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){
-        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
-            temp1 = (Drho_x[i] * pSPARC->lapcT[0] + Drho_y[i] * pSPARC->lapcT[1] + Drho_z[i] * pSPARC->lapcT[2]) * pSPARC->Dxcdgrho[i];
-            temp2 = (Drho_x[i] * pSPARC->lapcT[3] + Drho_y[i] * pSPARC->lapcT[4] + Drho_z[i] * pSPARC->lapcT[5]) * pSPARC->Dxcdgrho[i];
-            temp3 = (Drho_x[i] * pSPARC->lapcT[6] + Drho_y[i] * pSPARC->lapcT[7] + Drho_z[i] * pSPARC->lapcT[8]) * pSPARC->Dxcdgrho[i];
-            Drho_x[i] = temp1;
-            Drho_y[i] = temp2;
-            Drho_z[i] = temp3;
-        }
-    } else {
-        for(i = 0; i < (2*pSPARC->Nspin-1) * DMnd; i++){
-            Drho_x[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dx / |grad n|
-            Drho_y[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dy / |grad n|
-            Drho_z[i] *= pSPARC->Dxcdgrho[i]; // Now the vector is (d(n\epsilon)/d(|grad n|)) * dn/dz / |grad n|
-        }
-    }
-
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2*pSPARC->Nspin-1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-
-    if (pSPARC->Nspin == 1) {
-        for (i = 0; i < DMnd; i++) {
-            // epsilon has been computed in function SCAN_EnergyDens_Potential
-            pSPARC->XCPotential[i] = pSPARC->vxcMGGA1[i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i];
-            // pSPARC->vxcMGGA3[i] has been computed in function SCAN_EnergyDens_Potential
-        }
-    }
-    else {
-        for (i = 0; i < DMnd; i++) {
-            pSPARC->XCPotential[i] = pSPARC->vxcMGGA1[i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[DMnd + i] - DDrho_y[DMnd + i] - DDrho_z[DMnd + i];
-            pSPARC->XCPotential[DMnd + i] = pSPARC->vxcMGGA1[DMnd + i] - DDrho_x[i] - DDrho_y[i] - DDrho_z[i] - DDrho_x[2*DMnd + i] - DDrho_y[2*DMnd + i] - DDrho_z[2*DMnd + i];
-        }
-    }
-    
-    free(Drho_x); free(Drho_y); free(Drho_z); free(normDrho);
-    free(DDrho_x); free(DDrho_y); free(DDrho_z);
-
-    #ifdef DEBUG
-    t2 = MPI_Wtime();
-        if (rank == 0) printf("end of Calculating Vxc_MGGA, took %.3f ms\n", (t2 - t1)*1000);
-    #endif
-}
-
 
 /**
  * @brief   Transfer vxcMGGA3 (d(n epsilon)/d(tau)) from phi-domain to psi-domain.   
@@ -468,30 +323,3 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
     #endif
 }
 
-/**
- * @brief   the function to compute the exchange-correlation energy of metaGGA functional
- */
-void Calculate_Exc_MGGA(SPARC_OBJ *pSPARC,  double *rho) {
-    if (pSPARC->countPotentialCalculate == 1) {
-        if (pSPARC->Nspin == 1) {
-            Calculate_Exc_GGA_PBE(pSPARC, rho);
-            return;
-        }
-        else {
-            Calculate_Exc_GSGA_PBE(pSPARC, rho);
-            return;
-        }
-    }
-    if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
-
-    int i;
-    double Exc = 0.0;
-    for (i = 0; i < pSPARC->Nd_d; i++) {
-        //if(electronDens[i] != 0)
-        Exc += rho[i] * pSPARC->e_xc[i]; 
-    }
-    
-    Exc *= pSPARC->dV;
-    MPI_Allreduce(MPI_IN_PLACE, &Exc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    pSPARC->Exc = Exc;
-}

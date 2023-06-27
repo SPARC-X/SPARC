@@ -21,11 +21,9 @@
 #include "isddft.h"
 
 
-void SCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho, double *tau, double *e_xc, double *vxcMGGA1, double *vxcMGGA2, double *vxcMGGA3) { 
-    // the main function in scan.c, compute \epsilon and potentials of SCAN functional
-    int DMnd = pSPARC->Nd_d;
-    
+void scanx(int DMnd, double *rho, double *sigma, double *tau, double *ex, double *vx, double *v2x, double *v3x) {
     double **s_dsdn_dsddn = (double**)malloc(sizeof(double*)*3); // variable s, and ds/dn, ds/d|\nabla n|
+    double *normDrho = (double*)malloc(DMnd * sizeof(double));
     int i;
     for (i = 0; i < 3; i++) {
         s_dsdn_dsddn[i] = (double*)malloc(sizeof(double)*DMnd);
@@ -37,42 +35,27 @@ void SCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho,
         assert(alpha_dadn_daddn_dadtau[i] != NULL);
     }
 
+    for (i = 0; i < DMnd; i++) {
+        normDrho[i] = sqrt(sigma[i]);
+    }
+
     basic_MGGA_variables(DMnd, rho, normDrho, tau, s_dsdn_dsddn, alpha_dadn_daddn_dadtau);
 
-    double *epsilonx, *vx1, *vx2, *vx3;
-    epsilonx = (double *) malloc(DMnd * sizeof(double));
-    vx1 = (double *) malloc(DMnd * sizeof(double));
-    vx2 = (double *) malloc(DMnd * sizeof(double));
-    vx3 = (double *) malloc(DMnd * sizeof(double));
-
-    scanx(DMnd, rho, s_dsdn_dsddn, alpha_dadn_daddn_dadtau, epsilonx, vx1, vx2, vx3);
-
-    double *epsilonc, *vc1, *vc2, *vc3;
-    epsilonc = (double *) malloc(DMnd * sizeof(double));
-    vc1 = (double *) malloc(DMnd * sizeof(double));
-    vc2 = (double *) malloc(DMnd * sizeof(double));
-    vc3 = (double *) malloc(DMnd * sizeof(double));
-
-    scanc(DMnd, rho, s_dsdn_dsddn, alpha_dadn_daddn_dadtau, epsilonc, vc1, vc2, vc3);
+    Calculate_scanx(DMnd, rho, s_dsdn_dsddn, alpha_dadn_daddn_dadtau, ex, vx, v2x, v3x);
 
     for (i = 0; i < DMnd; i++) {
-        e_xc[i] = epsilonx[i] + epsilonc[i];
-        vxcMGGA1[i] = vx1[i] + vc1[i];
-        vxcMGGA2[i] = vx2[i] + vc2[i];
-        vxcMGGA3[i] = vx3[i] + vc3[i];
+        v2x[i] = v2x[i] / normDrho[i];
     }
 
     for (i = 0; i < 3; i++) {
         free(s_dsdn_dsddn[i]);
     }
     free(s_dsdn_dsddn);
+    free(normDrho);
     for (i = 0; i < 4; i++) {
         free(alpha_dadn_daddn_dadtau[i]);
     }
     free(alpha_dadn_daddn_dadtau);
-
-    free(epsilonx); free(vx1); free(vx2); free(vx3);
-    free(epsilonc); free(vc1); free(vc2); free(vc3);
 }
 
 void basic_MGGA_variables(int length, double *rho, double *normDrho, double *tau, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau) {
@@ -101,7 +84,7 @@ void basic_MGGA_variables(int length, double *rho, double *normDrho, double *tau
     // }
 }
 
-void scanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonx, double *vx1, double *vx2, double *vx3) {
+void Calculate_scanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonx, double *vx1, double *vx2, double *vx3) {
     // constants for h_x^1
     double k1 = 0.065;
     double mu_ak = 10.0/81.0;
@@ -183,7 +166,44 @@ void scanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_d
     // }
 }
 
-void scanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonc, double *vc1, double *vc2, double *vc3) {
+void scanc(int DMnd, double *rho, double *sigma, double *tau, double *ec, double *vc, double *v2c, double *v3c) {
+    double **s_dsdn_dsddn = (double**)malloc(sizeof(double*)*3); // variable s, and ds/dn, ds/d|\nabla n|
+    double *normDrho = (double*)malloc(DMnd * sizeof(double));
+    int i;
+    for (i = 0; i < 3; i++) {
+        s_dsdn_dsddn[i] = (double*)malloc(sizeof(double)*DMnd);
+        assert(s_dsdn_dsddn[i] != NULL);
+    }
+    double **alpha_dadn_daddn_dadtau = (double**)malloc(sizeof(double*)*4); // variable \alpha, and d\alpha/dn, d\alpha/d|\nabla n|, d\alpha/d\tau
+    for (i = 0; i < 4; i++) {
+        alpha_dadn_daddn_dadtau[i] = (double*)malloc(sizeof(double)*DMnd);
+        assert(alpha_dadn_daddn_dadtau[i] != NULL);
+    }
+
+    for (i = 0; i < DMnd; i++) {
+        normDrho[i] = sqrt(sigma[i]);
+    }
+
+    basic_MGGA_variables(DMnd, rho, normDrho, tau, s_dsdn_dsddn, alpha_dadn_daddn_dadtau);
+
+    Calculate_scanc(DMnd, rho, s_dsdn_dsddn, alpha_dadn_daddn_dadtau, ec, vc, v2c, v3c);
+
+    for (i = 0; i < DMnd; i++) {
+        v2c[i] = v2c[i] / normDrho[i];
+    }
+
+    for (i = 0; i < 3; i++) {
+        free(s_dsdn_dsddn[i]);
+    }
+    free(s_dsdn_dsddn);
+    free(normDrho);
+    for (i = 0; i < 4; i++) {
+        free(alpha_dadn_daddn_dadtau[i]);
+    }
+    free(alpha_dadn_daddn_dadtau);
+}
+
+void Calculate_scanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonc, double *vc1, double *vc2, double *vc3) {
     // constants for epsilon_c^0
     double b1c = 0.0285764;
     double b2c = 0.0889;
@@ -308,11 +328,11 @@ void scanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_d
 }
 
 
-void SSCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho, double *tau, double *e_xc, double *vxcMGGA1, double *vxcMGGA2, double *vxcMGGA3) { 
+void scanx_spin(int DMnd, double *rho, double *sigma, double *tau, double *ex, double *vx, double *v2x, double *v3x) { 
     // the main function in scan.c, compute \epsilon and potentials of SCAN functional
-    int DMnd = pSPARC->Nd_d;
-    
     double **s_dsdn_dsddn_exchange = (double**)malloc(sizeof(double*)*3); // variable s, and ds/dn, ds/d|\nabla n|. This array saves s variable for both up and down
+    double *normDrho = (double*)malloc(3*DMnd * sizeof(double));
+
     int i;
     for (i = 0; i < 3; i++) {
         s_dsdn_dsddn_exchange[i] = (double*)malloc(sizeof(double)*DMnd*2);
@@ -324,80 +344,27 @@ void SSCAN_EnergyDens_Potential(SPARC_OBJ *pSPARC, double *rho, double *normDrho
         assert(alpha_dadn_daddn_dadtau_exchange[i] != NULL);
     }
 
+    for (i = 0; i < 3*DMnd; i++) {
+        normDrho[i] = sqrt(sigma[i]);
+    }
+
     basic_MGSGA_variables_exchange(DMnd, rho + DMnd, normDrho + DMnd, tau + DMnd, s_dsdn_dsddn_exchange, alpha_dadn_daddn_dadtau_exchange);
 
-    double *epsilonx, *vx1, *vx2, *vx3; // the four arrays save exchange energy density and potentials of both up and down
-    epsilonx = (double *) malloc(2*DMnd * sizeof(double));
-    vx1 = (double *) malloc(2*DMnd * sizeof(double));
-    vx2 = (double *) malloc(2*DMnd * sizeof(double));
-    vx3 = (double *) malloc(2*DMnd * sizeof(double));
+    Calculate_scanx_spin(DMnd, rho, s_dsdn_dsddn_exchange, alpha_dadn_daddn_dadtau_exchange, ex, vx, v2x, v3x);
 
-    sscanx(DMnd, rho + DMnd, s_dsdn_dsddn_exchange, alpha_dadn_daddn_dadtau_exchange, epsilonx, vx1, vx2, vx3);
-    // for (i = 0; i < DMnd; i++) {
-    //     printf("point %d, epsilonx %10.8f %10.8f, vx1 %10.8f %10.8f, vx2 %10.8f %10.8f, vx3 %10.8f %10.8f\n", i, epsilonx[i], epsilonx[i+DMnd], vx1[i], vx1[i+DMnd], vx2[i], vx2[i+DMnd], vx3[i], vx3[i+DMnd]);
-    // } 
-    double **s_dsdn_dsddn_correlation = (double**)malloc(sizeof(double*)*3); // variable s, and ds/dn, ds/d|\nabla n|. n = n_up + n_dn
-    for (i = 0; i < 3; i++) {
-        s_dsdn_dsddn_correlation[i] = (double*)malloc(sizeof(double)*DMnd);
-        assert(s_dsdn_dsddn_correlation[i] != NULL);
-    }
-    double **alpha_dadnup_dadndn_daddn_dadtau_correlation = (double**)malloc(sizeof(double*)*5); // variable \alpha, and d\alpha/dn_up, d\alpha/dn_dn, d\alpha/d|\nabla n|, d\alpha/d\tau. n = n_up + n_dn, tau = tau_up + tau_dn
-    for (i = 0; i < 5; i++) {
-        alpha_dadnup_dadndn_daddn_dadtau_correlation[i] = (double*)malloc(sizeof(double)*DMnd);
-        assert(alpha_dadnup_dadndn_daddn_dadtau_correlation[i] != NULL);
-    }
-    double **zeta_dzetadnup_dzetadndn = (double**)malloc(sizeof(double*)*3);
-    for (i = 0; i < 3; i++) {
-        zeta_dzetadnup_dzetadndn[i] = (double*)malloc(sizeof(double*)*DMnd);
-        assert(zeta_dzetadnup_dzetadndn[i] != NULL);
-    }
-
-    basic_MGSGA_variables_correlation(DMnd, rho, normDrho, tau, s_dsdn_dsddn_correlation, alpha_dadnup_dadndn_daddn_dadtau_correlation, zeta_dzetadnup_dzetadndn);
-
-    double *epsilonc, *vc1, *vc2, *vc3;
-    epsilonc = (double *) malloc(DMnd * sizeof(double));
-    vc1 = (double *) malloc(2*DMnd * sizeof(double));
-    vc2 = (double *) malloc(DMnd * sizeof(double));
-    vc3 = (double *) malloc(DMnd * sizeof(double));
-
-    sscanc(DMnd, rho, s_dsdn_dsddn_correlation, alpha_dadnup_dadndn_daddn_dadtau_correlation, zeta_dzetadnup_dzetadndn, epsilonc, vc1, vc2, vc3);
-    // for (i = 0; i < DMnd; i++){
-    //     printf("point %d, epsilonc %10.8f, vc1 %10.8f %10.8f, vc2 %10.8f, vc3 %10.8f\n", i, epsilonc[i], vc1[i], vc1[i+DMnd], vc2[i], vc3[i]);
-    // }
-    for (i = 0; i < DMnd; i++) {
-        e_xc[i] = (rho[DMnd+i]*epsilonx[i] + rho[2*DMnd+i]*epsilonx[i + DMnd])/rho[i] + epsilonc[i];
-        vxcMGGA1[i] = vx1[i] + vc1[i];
-        vxcMGGA1[DMnd+i] = vx1[DMnd+i] + vc1[DMnd+i];
-        vxcMGGA2[i] = vc2[i];
-        vxcMGGA2[DMnd+i] = vx2[i];
-        vxcMGGA2[2*DMnd+i] = vx2[DMnd+i];
-        vxcMGGA3[i] = vx3[i] + vc3[i];
-        vxcMGGA3[DMnd+i] = vx3[DMnd+i] + vc3[i];
+    for (i = 0; i < 2*DMnd; i++) {
+        v2x[i] = v2x[i] / normDrho[i + DMnd];
     }
 
     for (i = 0; i < 3; i++) {
         free(s_dsdn_dsddn_exchange[i]);
     }
     free(s_dsdn_dsddn_exchange);
+    free(normDrho);
     for (i = 0; i < 4; i++) {
         free(alpha_dadn_daddn_dadtau_exchange[i]);
     }
     free(alpha_dadn_daddn_dadtau_exchange);
-    for (i = 0; i < 3; i++) {
-        free(s_dsdn_dsddn_correlation[i]);
-    }
-    free(s_dsdn_dsddn_correlation);
-    for (i = 0; i < 5; i++) {
-        free(alpha_dadnup_dadndn_daddn_dadtau_correlation[i]);
-    }
-    free(alpha_dadnup_dadndn_daddn_dadtau_correlation);
-    for (i = 0; i < 3; i++) {
-        free(zeta_dzetadnup_dzetadndn[i]);
-    }
-    free(zeta_dzetadnup_dzetadndn);
-
-    free(epsilonx); free(vx1); free(vx2); free(vx3);
-    free(epsilonc); free(vc1); free(vc2); free(vc3);
 }
 
 void basic_MGSGA_variables_exchange(int length, double *rho, double *normDrho, double *tau, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau) { // this function serves for exchange computation
@@ -430,7 +397,7 @@ void basic_MGSGA_variables_exchange(int length, double *rho, double *normDrho, d
     // }
 }
 
-void sscanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonx, double *vx1, double *vx2, double *vx3) {
+void Calculate_scanx_spin(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_daddn_dadtau, double *epsilonx, double *vx1, double *vx2, double *vx3) {
     // constants for h_x^1
     double k1 = 0.065;
     double mu_ak = 10.0/81.0;
@@ -448,8 +415,9 @@ void sscanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_
     double a1 = 4.9479;
     int i;
     double theRho;
+    double *epsilonx_updn = (double*)malloc(2*length * sizeof(double));
     for (i = 0; i < 2*length; i++) { // compute both up and down in a for loop
-        theRho = rho[i]*2.0;
+        theRho = rho[i + length]*2.0;
         double epsilon_xUnif = -3.0/(4.0*M_PI) * pow(3.0*M_PI*M_PI * theRho, 1.0/3.0);
         // compose h_x^1
         double s = s_dsdn_dsddn[0][i];
@@ -470,7 +438,7 @@ void sscanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_
         double sqrt_s = sqrt(s);
         double gx = 1.0 - exp(-a1/sqrt_s);
         double Fx = (hx1 + fx*(hx0 - hx1))*gx;
-        epsilonx[i] = epsilon_xUnif*Fx;
+        epsilonx_updn[i] = epsilon_xUnif*Fx;
 
         double term2 = s2*(b4/mu_ak*exp(-fabs(b4)*s2/mu_ak) + b4*s2/mu_ak*exp(-fabs(b4)*s2/mu_ak)*(-fabs(b4)/mu_ak));
         double term4 = b2*(-exp(-b3*(1.0 - alpha)*(1.0 - alpha)) + (1.0 - alpha)*exp(-b3*(1.0 - alpha)*(1.0 - alpha))*(2*b3*(1.0 - alpha)));
@@ -509,9 +477,61 @@ void sscanx(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadn_
         vx2[i] = theRho*epsilon_xUnif*DFxDDn;
         vx3[i] = theRho*epsilon_xUnif*DFxDtau;
     }
+
+    for (i = 0; i < length; i++) {
+        epsilonx[i] = (rho[i + length]*epsilonx_updn[i] + rho[i + 2*length]*epsilonx_updn[i + length])/rho[i];
+    }
+
     // for (i = 0; i < length; i++) {
     //     printf("point %3d, epsilon_x %.7E, vx1 %.7E, vx2 %.7E, vx3 %.7E\n", i, epsilonx[i], vx1[i], vx2[i], vx3[i]);
     // }
+    free(epsilonx_updn);
+}
+
+void scanc_spin(int DMnd, double *rho, double *sigma, double *tau, double *ec, double *vc, double *v2c, double *v3c) { 
+    double **s_dsdn_dsddn_correlation = (double**)malloc(sizeof(double*)*3); // variable s, and ds/dn, ds/d|\nabla n|. n = n_up + n_dn
+    double *normDrho = (double*)malloc(3*DMnd * sizeof(double));
+    int i;
+    for (i = 0; i < 3; i++) {
+        s_dsdn_dsddn_correlation[i] = (double*)malloc(sizeof(double)*DMnd);
+        assert(s_dsdn_dsddn_correlation[i] != NULL);
+    }
+    double **alpha_dadnup_dadndn_daddn_dadtau_correlation = (double**)malloc(sizeof(double*)*5); // variable \alpha, and d\alpha/dn_up, d\alpha/dn_dn, d\alpha/d|\nabla n|, d\alpha/d\tau. n = n_up + n_dn, tau = tau_up + tau_dn
+    for (i = 0; i < 5; i++) {
+        alpha_dadnup_dadndn_daddn_dadtau_correlation[i] = (double*)malloc(sizeof(double)*DMnd);
+        assert(alpha_dadnup_dadndn_daddn_dadtau_correlation[i] != NULL);
+    }
+    double **zeta_dzetadnup_dzetadndn = (double**)malloc(sizeof(double*)*3);
+    for (i = 0; i < 3; i++) {
+        zeta_dzetadnup_dzetadndn[i] = (double*)malloc(sizeof(double*)*DMnd);
+        assert(zeta_dzetadnup_dzetadndn[i] != NULL);
+    }
+
+    for (i = 0; i < 3*DMnd; i++) {
+        normDrho[i] = sqrt(sigma[i]);
+    }
+
+    basic_MGSGA_variables_correlation(DMnd, rho, normDrho, tau, s_dsdn_dsddn_correlation, alpha_dadnup_dadndn_daddn_dadtau_correlation, zeta_dzetadnup_dzetadndn);
+
+    Calculate_scanc_spin(DMnd, rho, s_dsdn_dsddn_correlation, alpha_dadnup_dadndn_daddn_dadtau_correlation, zeta_dzetadnup_dzetadndn, ec, vc, v2c, v3c);
+
+    for (i = 0; i < DMnd; i++) {
+        v2c[i] = v2c[i] / normDrho[i];
+    }
+
+    for (i = 0; i < 3; i++) {
+        free(s_dsdn_dsddn_correlation[i]);
+    }
+    free(s_dsdn_dsddn_correlation);
+    free(normDrho);
+    for (i = 0; i < 5; i++) {
+        free(alpha_dadnup_dadndn_daddn_dadtau_correlation[i]);
+    }
+    free(alpha_dadnup_dadndn_daddn_dadtau_correlation);
+    for (i = 0; i < 3; i++) {
+        free(zeta_dzetadnup_dzetadndn[i]);
+    }
+    free(zeta_dzetadnup_dzetadndn);
 }
 
 void basic_MGSGA_variables_correlation(int length, double *rho, double *normDrho, double *tau, double **s_dsdn_dsddn, double **alpha_dadnup_dadndn_daddn_dadtau, double **zeta_dzetadnup_dzetadndn) { // this function serves for exchange computation
@@ -556,7 +576,7 @@ void basic_MGSGA_variables_correlation(int length, double *rho, double *normDrho
     // }
 }
 
-void sscanc(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadnup_dadndn_daddn_dadtau, double **zeta_dzetadnup_dzetadndn, double *epsilonc, double *vc1, double *vc2, double *vc3) {
+void Calculate_scanc_spin(int length, double *rho, double **s_dsdn_dsddn, double **alpha_dadnup_dadndn_daddn_dadtau, double **zeta_dzetadnup_dzetadndn, double *epsilonc, double *vc1, double *vc2, double *vc3) {
     double zeta, phi, dx, s, alpha, rs;
     double ecLDA0, cx0, Gc, w0, xiInf0, gInf0s, H0, ec0;
     // constants for epsilon_c^0

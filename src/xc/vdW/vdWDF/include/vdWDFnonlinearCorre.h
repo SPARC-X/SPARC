@@ -128,5 +128,22 @@ void Calculate_nonLinearCorr_E_V_SvdWDF(SPARC_OBJ *pSPARC, double *rho);
  */
 void Add_Exc_vdWDF(SPARC_OBJ *pSPARC);
 
+// the two functions below are used for debugging
+/**
+ * @brief find the route of the folder containing input files
+ * @param folderRoute: the char array containing the folder route
+ */
+void find_folder_route(SPARC_OBJ *pSPARC, char *folderRoute);
+
+/**
+ * @brief print the variable array in an output file
+ * @param variable: the variable array to be printed
+ * @param outputFileName: the designated name of the output file
+ * @param Nx: the number of grids on 1st dir
+ * @param Ny: the number of grids on 2nd dir
+ * @param Nz: the number of grids on 3rd dir
+ */
+void print_variables(double *variable, char *outputFileName, int Nx, int Ny, int Nz);
+
 
 #endif

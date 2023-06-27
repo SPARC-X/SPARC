@@ -452,11 +452,17 @@ typedef struct _SPARC_OBJ{
     double *electronDens;         // electron density, "rho" (LOCAL)
     double *electronDens_at;      // electron density guess by summing atomic charge densities (LOCAL)
     double *electronDens_core;    // model core electron density for Non-Linear Core Correction (NLCC)
+    double *mag;                  // magnetization
     double *elecstPotential;      // electrostatic potential, "phi" (LOCAL)
     double *XCPotential;          // exchange-correlation potential, "Vxc" (LOCAL)
     double *e_xc;                 // exchange-correlation energy per particle (LOCAL)
     double *Dxcdgrho;             // derivative of exchange-correlation enrgy per particle wrt to norm of the gradient
     double xc_rhotol;             // minimum value of rho below which it is made equal to xc_rhotol
+    double xc_magtol;             // minimum value of mag below which it is made equal to xc_magtol
+    double xc_sigmatol;           // minimum value of sgima below which it is made equal to xc_sigmatol
+    int ixc[4];                   // decomposition of xc
+    int xcoption[2];              // option flag in xc 
+    int isgradient;            // flag to determine if xc includes gradient of rho term 
     double *occ;                  // occupations corresponding to k-points owned by local process (LOCAL)
     double *occ_sorted;           // occupations corresponding to sorted lambda
     double occfac;                // occupation's scaling factor

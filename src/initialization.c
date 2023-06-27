@@ -1212,73 +1212,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     strncpy(pSPARC->filename_out , pSPARC_Input->filename_out,sizeof(pSPARC->filename_out));
     strncpy(pSPARC->SPARCROOT , pSPARC_Input->SPARCROOT,sizeof(pSPARC->SPARCROOT));
 
-    // check XC compatibility with pseudopotential
-    pSPARC->usefock = 0;                    // default: no fock operator 
-    int ixc = 0; // input XC
-    if (strcmpi(pSPARC->XC, "LDA_PZ") == 0) {
-        ixc = 2;
-    } else if (strcmpi(pSPARC->XC, "LDA_PW") == 0) {
-        ixc = 7;
-    } else if (strcmpi(pSPARC->XC, "GGA_PBE") == 0) {
-        ixc = 11;
-    } else if (strcmpi(pSPARC->XC, "GGA_RPBE") == 0) {
-        ixc = 15;
-    } else if (strcmpi(pSPARC->XC, "GGA_PBEsol") == 0) {
-        ixc = 116;
-    } else if (strcmpi(pSPARC->XC, "HF") == 0) {
-        ixc = 40;
-        pSPARC->usefock = 1;
-        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 1;
-        if (fabs(1-pSPARC->exx_frac) > TEMP_TOL) {
-            if (!rank) printf("ERROR: HF functional could be only defined with 1.0 EXX_FRAC.\n");
-        }
-    } else if (strcmpi(pSPARC->XC, "PBE0") == 0) {
-        ixc = 41;
-        pSPARC->usefock = 1;
-        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
-        if (fabs(0.25-pSPARC->exx_frac) > TEMP_TOL) {
-            if (!rank) printf("Note: You are using PBE0 with %.5g exact exchange.\n", pSPARC->exx_frac);
-        }
-    } else if (strcmpi(pSPARC->XC, "HSE") == 0) {
-        ixc = 427;
-        pSPARC->usefock = 1;
-        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
-        if (fabs(0.25-pSPARC->exx_frac) > TEMP_TOL) {
-            if (!rank) printf("Note: You are using HSE with %.5g exact exchange.\n", pSPARC->exx_frac);
-        }
-    } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
-        ixc = -263267;
-    } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
-        ixc = -102; // this is the index of Zhang-Yang revPBE exchange in Libxc
-    } else if (strcmpi(pSPARC->XC, "vdWDF2") == 0) {
-        ixc = -108; // this is the index of PW86 exchange in Libxc
-    }
-    for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->usefock && pSPARC->psd[ityp].pspxc != ixc) {
-            if (!rank) printf(YEL "\nWARNING: Pseudopotential file for atom type %s has pspxc = %d,\n"
-                    "not equal to input ixc = %d (%s). Be careful with the result.\n" RESET, 
-                    &pSPARC->atomType[ityp*L_ATMTYPE], pSPARC->psd[ityp].pspxc, ixc, pSPARC->XC);
-        }
-        if (pSPARC->usefock && pSPARC->psd[ityp].pspxc != 11) {
-            if (!rank) printf(YEL "\nWARNING: Pseudopotential file for atom type %s has pspxc = %d,\n"
-                    "while hybrid calculation needs a PBE pseudopotential. Be careful with the result.\n" RESET, 
-                    &pSPARC->atomType[ityp*L_ATMTYPE], pSPARC->psd[ityp].pspxc);
-        }
-    }    
-
-    if (strcmpi(pSPARC->XC,"HSE") == 0) {
-        // pSPARC->hyb_range_fock = 0.106;     // QE's value
-        // pSPARC->hyb_range_pbe = 0.106;      // QE's value
-        // pSPARC->hyb_range_fock = 0.106066017177982;     // ABINIT's value
-        // pSPARC->hyb_range_pbe = 0.188988157484231;      // ABINIT's value
-        if (!rank) {
-            printf("Careful: You are using HSE with range-separation parameter omega_HF = %.6f (1/Bohr) and omega_PBE = %.6f (1/Bohr)\n", pSPARC->hyb_range_fock, pSPARC->hyb_range_pbe);
-            printf("If you want to change it, please use EXX_RANGE_FOCK and EXX_RANGE_PBE input options.\n");
-        }
-    } else {
-        pSPARC->hyb_range_fock = -1;
-        pSPARC->hyb_range_pbe = -1;
-    }
+    // find exchange correltaion decomposition
+    xc_decomposition(pSPARC);
 
     // check MDMeth availability
     if ((strcmpi(pSPARC->MDMeth,"NVT_NH") && strcmpi(pSPARC->MDMeth,"NVE")
@@ -1503,8 +1438,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->Printrestart = 0;   
     }
 
-    // Value of xc_rhotol used in xc functional
+    // Value of tol used in xc functional
     pSPARC->xc_rhotol = 1e-14;
+    pSPARC->xc_magtol = 1e-8;
+    pSPARC->xc_sigmatol = 1e-24;
 
     if (pSPARC->Beta < 0) {
         if (pSPARC->elec_T_type == 1) { // gaussian
@@ -3240,7 +3177,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version June 23, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jun 26, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4024,3 +3961,141 @@ int parallel_eigensolver_max_processor(int N, char RorC, char SorG)
     return -1;
 }
 
+
+/* ****************************************************************
+Exchange Correlation
+   Exchange:     "nox"    none                           iexch=0
+                 "slater" Slater (alpha=2/3)             iexch=1
+                 "pbex"   Perdew-Burke-Ernzenhof exch    iexch=2
+                       options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE 4 --Zhang-Yang RPBE
+                 "rPW86x"  Refitted Perdew & Wang 86     iexch=3
+                 "scanx"  SCAN exchange                  iexch=4
+   
+   Correlation:  "noc"    none                           icorr=0
+                 "pz"     Perdew-Zunger                  icorr=1 
+                 "pw"     Perdew-Wang                    icorr=2
+                 "pbec"   Perdew-Burke-Ernzenhof corr    icorr=3
+                       options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE
+                 "scanc"  SCAN correlation               icorr=4
+
+   Meta-GGA:     "nom"    none                           imeta=0
+                 "scan"   SCAN-Meta-GGA                  imeta=1
+
+   van der Waals "nov"    none                           ivdw=0
+                 "vdw1"   vdW-DF1                        ivdw=1
+                 "vdw2"   vdW-DF2                        ivdw=2
+**************************************************************** */
+void xc_decomposition(SPARC_OBJ *pSPARC)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    pSPARC->usefock = 0;                    // default: no fock operator 
+    pSPARC->isgradient = 0;
+    pSPARC->xcoption[0] = pSPARC->xcoption[1] = 0;
+    int xc = 0; // input XC
+    if (strcmpi(pSPARC->XC, "LDA_PZ") == 0) {
+        xc = 2;
+        pSPARC->ixc[0] = 1; pSPARC->ixc[1] = 1; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+    } else if (strcmpi(pSPARC->XC, "LDA_PW") == 0) {
+        xc = 7;
+        pSPARC->ixc[0] = 1; pSPARC->ixc[1] = 2; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+    } else if (strcmpi(pSPARC->XC, "GGA_PBE") == 0) {
+        xc = 11;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 1; pSPARC->xcoption[1] = 1;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "GGA_PBEsol") == 0) {
+        xc = 116;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 2; pSPARC->xcoption[1] = 2;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "GGA_RPBE") == 0) {
+        xc = 15;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 3; pSPARC->xcoption[1] = 3;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "HF") == 0) {
+        xc = 40;
+        pSPARC->usefock = 1;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 1; pSPARC->xcoption[1] = 1;
+        pSPARC->isgradient = 1;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 1;
+        if (!rank) printf("Note: You are using HF with %.5g exact exchange.\n", pSPARC->exx_frac);
+    } else if (strcmpi(pSPARC->XC, "PBE0") == 0) {
+        xc = 41;
+        pSPARC->usefock = 1;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 1; pSPARC->xcoption[1] = 1;
+        pSPARC->isgradient = 1;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
+        if (!rank) printf("Note: You are using PBE0 with %.5g exact exchange.\n", pSPARC->exx_frac);
+    } else if (strcmpi(pSPARC->XC, "HSE") == 0) {
+        xc = 427;
+        pSPARC->usefock = 1;
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 3; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->xcoption[0] = 1; pSPARC->xcoption[1] = 1;
+        pSPARC->isgradient = 1;
+        if (pSPARC->exx_frac < 0) pSPARC->exx_frac = 0.25;
+        if (!rank) printf("Note: You are using HSE with %.5g exact exchange.\n", pSPARC->exx_frac);
+    } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
+        xc = -263267;
+        pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
+        pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
+        xc = -102; // this is the index of Zhang-Yang revPBE exchange in Libxc
+        pSPARC->ixc[0] = 2; pSPARC->ixc[1] = 2; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 1;
+        pSPARC->xcoption[0] = 4; pSPARC->xcoption[1] = 0;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "vdWDF2") == 0) {
+        xc = -108; // this is the index of PW86 exchange in Libxc
+        pSPARC->ixc[0] = 3; pSPARC->ixc[1] = 2; 
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 2;
+        pSPARC->isgradient = 1;
+    }
+    for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        if (!pSPARC->usefock && pSPARC->psd[ityp].pspxc != xc) {
+            if(!rank) printf(YEL "\nWARNING: Pseudopotential file for atom type %s has pspxc = %d,\n"
+                    "not equal to input xc = %d (%s). Be careful with the result.\n" RESET, 
+                    &pSPARC->atomType[ityp*L_ATMTYPE], pSPARC->psd[ityp].pspxc, xc, pSPARC->XC);
+        }
+        if (pSPARC->usefock && pSPARC->psd[ityp].pspxc != 11) {
+            if(!rank) printf(YEL "\nWARNING: Pseudopotential file for atom type %s has pspxc = %d,\n"
+                    "while hybrid calculation needs a PBE pseudopotential. Be careful with the result.\n" RESET, 
+                    &pSPARC->atomType[ityp*L_ATMTYPE], pSPARC->psd[ityp].pspxc);
+        }
+    }    
+
+    if (strcmpi(pSPARC->XC,"HSE") == 0) {
+        // pSPARC->hyb_range_fock = 0.106;     // QE's value
+        // pSPARC->hyb_range_pbe = 0.106;      // QE's value
+        // pSPARC->hyb_range_fock = 0.106066017177982;     // ABINIT's value
+        // pSPARC->hyb_range_pbe = 0.188988157484231;      // ABINIT's value
+        if(!rank) {
+            printf("Note: You are using HSE with range-separation parameter omega_HF = %.6f (1/Bohr) and omega_PBE = %.6f (1/Bohr)\n", pSPARC->hyb_range_fock, pSPARC->hyb_range_pbe);
+            printf("If you want to change it, please use EXX_RANGE_FOCK and EXX_RANGE_PBE input options.\n");
+        }
+    } else {
+        pSPARC->hyb_range_fock = -1;
+        pSPARC->hyb_range_pbe = -1;
+    }
+
+#ifdef DEBUG
+    if(!rank) printf("XC %s decomposition: \n", pSPARC->XC);
+    if(!rank) printf("ixc: %d %d %d %d, with option %d %d\n", 
+                    pSPARC->ixc[0], pSPARC->ixc[1], pSPARC->ixc[2], pSPARC->ixc[3],
+                    pSPARC->xcoption[0], pSPARC->xcoption[1]);
+    if(!rank) printf("isgradient %d, usefock: %d\n", pSPARC->isgradient, pSPARC->usefock);
+#endif
+}
