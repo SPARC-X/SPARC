@@ -234,6 +234,7 @@ double Calculate_XC_pressure_nlcc(SPARC_OBJ *pSPARC) {
         printf("Start calculating NLCC exchange-correlation components of stress ...\n");
 #endif
 
+
     int ityp, iat, i, j, k, p, ip, jp, kp, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
         DMnx, DMny, nx, ny, nz, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
         icor, jcor, kcor, *pshifty, *pshiftz, *pshifty_ex, *pshiftz_ex, *ind_interp;

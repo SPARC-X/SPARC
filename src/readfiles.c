@@ -733,6 +733,20 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d", &pSPARC_Input->npNdy_SQ);
             fscanf(input_fp,"%d", &pSPARC_Input->npNdz_SQ);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"BAND_STRUC_PLOT:") == 0) {
+	    int plot_on;
+	    fscanf(input_fp, "%d", &plot_on);
+	    printf("Band structure plot %d \n", plot_on);
+	
+	} else if (strcmpi(str,"KPT_PER_LINE:") == 0) {
+            int kpt_per_line;
+            fscanf(input_fp, "%d", &kpt_per_line);
+            printf("There are %d number of points per line\n", kpt_per_line);
+
+        } else if (strcmpi(str,"KPT_NUMLINES:") == 0) {
+            int kpt_numline;
+            fscanf(input_fp, "%d", &kpt_numline);
+            printf("There are %d number of lines\n", kpt_numline);
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
