@@ -968,6 +968,13 @@ typedef struct _SPARC_OBJ{
 
     /* EigenValue problem*/
     int StandardEigenFlag;
+    
+    /* Band structure plot*/
+    int kpt_line_num;
+    double kredx[1000],kredy[1000],kredz[1000];
+    int BandStr_Plot_Flag;
+    int kpt_per_line;
+
 }SPARC_OBJ;
 
 
@@ -1224,6 +1231,13 @@ typedef struct _SPARC_INPUT_OBJ{
     
     char SPARCROOT[L_STRING]; // SPARC root directory
 
+
+    /* Band structure plot*/
+    int kpt_line_num;
+    double kredx[1000],kredy[1000],kredz[1000];
+    int BandStr_Plot_Flag;
+    int kpt_per_line;
+    
 }SPARC_INPUT_OBJ;
 
 

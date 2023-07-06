@@ -1124,7 +1124,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->PrintPsiFlag[i] = pSPARC_Input->PrintPsiFlag[i];
     pSPARC->PrintEnergyDensFlag = pSPARC_Input->PrintEnergyDensFlag;
     pSPARC->StandardEigenFlag = pSPARC_Input->StandardEigenFlag;
-
+    pSPARC->BandStr_Plot_Flag = pSPARC_Input->BandStr_Plot_Flag;
+    pSPARC->kpt_line_num = pSPARC_Input->kpt_line_num;
+    pSPARC->kpt_per_line = pSPARC_Input->kpt_per_line;
+    for(int i=0;i<pSPARC->kpt_line_num*2;i++)
+    {
+        pSPARC->kredx[i] = pSPARC_Input->kredx[i];
+	pSPARC->kredy[i] = pSPARC_Input->kredy[i];
+	pSPARC->kredz[i] = pSPARC_Input->kredz[i];
+    }
     // double type values
     pSPARC->range_x = pSPARC_Input->range_x;
     pSPARC->range_y = pSPARC_Input->range_y;
@@ -2198,21 +2206,39 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         exit(EXIT_FAILURE);
     }
 
-    // number of k-points after symmetry reduction (currently only
-    // takes into account the time reversal symmetry)
-    // WARNING: Time-reversal symmetry only if there is no magnetic field applied
-    // this won't work with kpt shift
-    // pSPARC->Nkpts_sym = ceil(pSPARC->Kx*pSPARC->Ky*pSPARC->Kz/2.0); 
-    pSPARC->Nkpts_sym = pSPARC->Nkpts; // will be updated after actual symmetry reduction
+   
+    if (pSPARC->BandStr_Plot_Flag == 1)
+    {
+    	pSPARC->Nkpts = pSPARC->kpt_per_line * pSPARC->kpt_line_num;
+	pSPARC->Nkpts_sym = pSPARC->Nkpts;
+	pSPARC->kptWts = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+        pSPARC->k1 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+        pSPARC->k2 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+        pSPARC->k3 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+	Calculate_bandplot(pSPARC);    
+    }
+    else
+    {
+	// number of k-points after symmetry reduction (currently only
+        // takes into account the time reversal symmetry)
+        // WARNING: Time-reversal symmetry only if there is no magnetic field applied
+        // this won't work with kpt shift
+	// pSPARC->Nkpts_sym = ceil(pSPARC->Kx*pSPARC->Ky*pSPARC->Kz/2.0);
+	pSPARC->Nkpts_sym = pSPARC->Nkpts; // will be updated after actual symmetry reduction
 
-    // at this point symmetry reduction is not done yet
-    pSPARC->kptWts = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
-    pSPARC->k1 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
-    pSPARC->k2 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
-    pSPARC->k3 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
-    // calculate the k point and weights (shift in kpt may apply)
-    Calculate_kpoints(pSPARC);
-
+	// at this point symmetry reduction is not done yet
+    	pSPARC->kptWts = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+    	pSPARC->k1 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+    	pSPARC->k2 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+    	pSPARC->k3 = (double *)malloc(pSPARC->Nkpts_sym * sizeof(double));
+    
+	//pSPARC->kptWts = (double *)malloc(40 * sizeof(double));
+	//pSPARC->k1 = (double *)malloc(40 * sizeof(double));
+        //pSPARC->k2 = (double *)malloc(40 * sizeof(double));
+        //pSPARC->k3 = (double *)malloc(40 * sizeof(double));
+        // calculate the k point and weights (shift in kpt may apply)
+    	Calculate_kpoints(pSPARC);
+    }
     // flag to indicate if it is a gamma-point calculation
     pSPARC->isGammaPoint = (int)(pSPARC->Nkpts_sym == 1 
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
@@ -2631,6 +2657,7 @@ double kpointWeight(double kx,double ky,double kz) {
 /**
  * @brief   Calculate k-points and the associated weights.
  */
+
 void Calculate_kpoints(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -2715,7 +2742,7 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
                 // calculate Monkhorst-Pack k points (reduced) using Monkhorst pack grid
                 if (pSPARC->CyclixFlag) {
                     k1_red = nk1 * 1.0/pSPARC->Kx;
-                    k2_red = nk2 * 1.0/pSPARC->Ky; //* (1- (pSPARC->twist*Lz*pSPARC->Ky/(2*M_PI) ) ));
+                    k2_red = nk2 * 1.0/pSPARC->Ky; //* (1- (pSPARC->twist*Lz*pSPARC->Ky/(2*M_PI) ) )); 
                     k3_red = nk3 * 1.0/pSPARC->Kz;
                     k3_red = fmod(k3_red + pSPARC->kptshift[2] / pSPARC->Kz + 0.5 - TEMP_TOL, 1.0) - 0.5 + TEMP_TOL;
                 } else {
@@ -2883,6 +2910,67 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
         for (nk = 0; nk < pSPARC->Nkpts_hf_red; nk++) {
             if (!rank) printf("kpts_hf_red_list[%d]: %d\n", nk, pSPARC->kpts_hf_red_list[nk]);
         }
+    }
+#endif
+}
+
+void Calculate_bandplot(SPARC_OBJ *pSPARC) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int k,nk1,nk2,nk3,k_hf,k_hf_rd;
+    
+    double k1,k2,k3;
+    double Lx = pSPARC->range_x;
+    double Ly = pSPARC->range_y;
+    double Lz = pSPARC->range_z;
+    int kppl = pSPARC->kpt_per_line;  
+    
+    for (int i=0;i<pSPARC->kpt_line_num*2;i++)
+    {
+        pSPARC->k1[i] = pSPARC->kredx[i]*(2.0 * M_PI / Lx);
+        pSPARC->k2[i] = pSPARC->kredy[i]*(2.0 * M_PI / Ly);
+        pSPARC->k3[i] = pSPARC->kredz[i]*(2.0 * M_PI / Lz);
+
+    	pSPARC->kptWts[i]= 1.0;
+	
+    }
+    	 
+     
+    for (int i=0;i<pSPARC->kpt_line_num;i++)
+    {
+	int start_ind = i*kppl, end_ind = (i+1)*kppl-1;
+        pSPARC->k1[start_ind] = pSPARC->kredx[i*2]*(2.0 * M_PI / Lx);
+        pSPARC->k2[start_ind] = pSPARC->kredy[i*2]*(2.0 * M_PI / Ly);
+        pSPARC->k3[start_ind] = pSPARC->kredz[i*2]*(2.0 * M_PI / Lz);
+        pSPARC->kptWts[start_ind]= 1.0;
+
+	pSPARC->k1[end_ind] = pSPARC->kredx[i*2+1]*(2.0 * M_PI / Lx);
+        pSPARC->k2[end_ind] = pSPARC->kredy[i*2+1]*(2.0 * M_PI / Ly);
+        pSPARC->k3[end_ind] = pSPARC->kredz[i*2+1]*(2.0 * M_PI / Lz);
+        pSPARC->kptWts[end_ind]= 1.0;
+	double alpha = 1.0/(kppl-1.0);
+	double vec_x = pSPARC->kredx[i*2+1]-pSPARC->kredx[i*2];
+	double vec_y = pSPARC->kredy[i*2+1]-pSPARC->kredy[i*2];
+	double vec_z = pSPARC->kredz[i*2+1]-pSPARC->kredz[i*2];
+	for (int j=start_ind+1;j<end_ind;j++)
+	{
+		pSPARC->k1[j] = ( pSPARC->kredx[i*2] + vec_x * alpha * (j-start_ind) )*(2.0 * M_PI / Lx);
+		pSPARC->k2[j] = ( pSPARC->kredy[i*2] + vec_y * alpha * (j-start_ind) )*(2.0 * M_PI / Ly);
+		pSPARC->k3[j] = ( pSPARC->kredz[i*2] + vec_z * alpha * (j-start_ind) )*(2.0 * M_PI / Lz);
+		pSPARC->kptWts[j]= 1.0;
+	}
+
+    }
+
+#ifdef DEBUG
+    if (!rank) printf("Number of kpt = %d\n", pSPARC->Nkpts);
+ 
+    for (int nk = 0; nk < pSPARC->Nkpts; nk++) {
+        double tpiblx = 2.0 * M_PI / Lx;
+       	double tpibly = 2.0 * M_PI / Ly;
+        double tpiblz = 2.0 * M_PI / Lz;
+        if (!rank) printf("k1[%2d]: %8.4f, k2[%2d]: %8.4f, k3[%2d]: %8.4f, kptwt[%2d]: %.3f \n",
+            nk,pSPARC->k1[nk]/tpiblx,nk,pSPARC->k2[nk]/tpibly,nk,pSPARC->k3[nk]/tpiblz,nk,pSPARC->kptWts[nk]);
     }
 #endif
 }

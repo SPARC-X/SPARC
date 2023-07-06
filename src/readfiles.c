@@ -734,19 +734,36 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d", &pSPARC_Input->npNdz_SQ);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"BAND_STRUC_PLOT:") == 0) {
-	    int plot_on;
-	    fscanf(input_fp, "%d", &plot_on);
-	    printf("Band structure plot %d \n", plot_on);
+	    fscanf(input_fp, "%d", &pSPARC_Input->BandStr_Plot_Flag);
+	    printf("Band structure plot %d \n", pSPARC_Input->BandStr_Plot_Flag);
 	
 	} else if (strcmpi(str,"KPT_PER_LINE:") == 0) {
-            int kpt_per_line;
-            fscanf(input_fp, "%d", &kpt_per_line);
-            printf("There are %d number of points per line\n", kpt_per_line);
-
+            fscanf(input_fp, "%d", &pSPARC_Input->kpt_per_line);
+            printf("There are %d number of points per line\n", pSPARC_Input->kpt_per_line);
+	    
         } else if (strcmpi(str,"KPT_NUMLINES:") == 0) {
-            int kpt_numline;
-            fscanf(input_fp, "%d", &kpt_numline);
-            printf("There are %d number of lines\n", kpt_numline);
+            double kpt_x[100],kpt_y[100],kpt_z[100];
+	    fscanf(input_fp, "%d", &pSPARC_Input->kpt_line_num);
+          
+	    printf("There are %d number of lines\n", pSPARC_Input->kpt_line_num);
+	    //fscanf(input_fp, "%*[^\n]\n");
+	    for(int line=0;line<2*pSPARC_Input->kpt_line_num;line+=2)
+	    {    
+		fscanf(input_fp,"%lf %lf %lf",&kpt_x[line],&kpt_y[line],&kpt_z[line]);
+		//fscanf(input_fp, "%*[^\n]\n");
+		pSPARC_Input->kredx[line] = kpt_x[line];
+		pSPARC_Input->kredy[line] = kpt_y[line];
+		pSPARC_Input->kredz[line] = kpt_z[line];
+		fscanf(input_fp,"%lf %lf %lf",&kpt_x[line+1],&kpt_y[line+1],&kpt_z[line+1]);
+		//fscanf(input_fp, "%*[^\n]\n");
+		pSPARC_Input->kredx[line+1] = kpt_x[line+1];
+                pSPARC_Input->kredy[line+1] = kpt_y[line+1];
+                pSPARC_Input->kredz[line+1] = kpt_z[line+1];
+		fscanf(input_fp, "%*[^\n]\n");
+	    }
+	    for(int line=0;line<2*pSPARC_Input->kpt_line_num;line++)
+                printf("k-point %d coordinates: (%lf,%lf,%lf)\n",line,pSPARC_Input->kredx[line],pSPARC_Input->kredy[line],pSPARC_Input->kredz[line]);
+
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
