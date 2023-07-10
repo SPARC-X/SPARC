@@ -281,15 +281,27 @@ SYSTEMS["systemname"].append('BaTiO3_scan')
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('BaTiO3_r2scan')
+SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan','fast'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_scan')
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('Si4_kpt_r2scan')
+SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_gamma')
 SYSTEMS["Tags"].append(['bulk', 'spin', 'nonorth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_kpt')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Fe2_spin_r2scan_kpt')
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################

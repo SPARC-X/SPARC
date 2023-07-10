@@ -24,6 +24,7 @@
 #include "vdWDFnonlinearCorre.h"
 #include "mGGAtauTransferTauVxc.h"
 #include "mGGAscan.h"
+#include "mGGAr2scan.h"
 
 /**
 * @brief  Calculate exchange correlation potential
@@ -98,6 +99,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 4:
             scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 6:
+            r2scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
         default:
             memset(ex, 0, sizeof(double) * DMnd);
             memset(vx, 0, sizeof(double) * DMnd);
@@ -126,6 +130,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 4:
             scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 6:
+            r2scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
             break;
         default:
             memset(ec, 0, sizeof(double) * DMnd);
@@ -248,6 +255,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 4:
             scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 6:
+            r2scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
         default:
             memset(ex, 0, sizeof(double) * DMnd);
             memset(vx, 0, sizeof(double) * DMnd*2);
@@ -276,6 +286,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 4:
             scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 6:
+            r2scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
             break;
         default:
             memset(ec, 0, sizeof(double) * DMnd);
@@ -380,9 +393,16 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
 
     if (pSPARC->ixc[2]) {
         if (pSPARC->countPotentialCalculate == 0) { // restore metaGGA labels after 1st SCF
-            pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
-            pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
-            pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
+            if (strcmpi(pSPARC->XC, "SCAN") == 0) {
+                pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
+                pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+                pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
+            }
+            else if (strcmpi(pSPARC->XC, "R2SCAN") == 0) {
+                pSPARC->ixc[0] = 6; pSPARC->ixc[1] = 6; 
+                pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+                pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
+            }
         } 
     }
 

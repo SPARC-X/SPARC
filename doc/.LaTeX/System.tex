@@ -329,13 +329,13 @@ No unit
 Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), 
 \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids), 
 \texttt{PBE0}, \texttt{HF} (Hartree-Fock), \texttt{HSE},
-\texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al), and \texttt{SCAN} (SCAN metaGGA).
+\texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al), and \texttt{SCAN} (SCAN metaGGA), and \texttt{R2SCAN} (r2SCAN metaGGA).
 \end{block}
 
 \begin{block}{Remark}
 For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ} is not available.
 
-Before using \texttt{vdWDF1} or \texttt{vdWDF2}, please read the description and remark of \hyperlink{VDWDF_GEN_KERNEL}{\texttt{VDWDF\_GEN\_KERNEL}} to see the requirements.
+Currently SCAN and R2SCAN does not support nonlinear core correction pseudopotential.
 \end{block}
 
 \end{frame}

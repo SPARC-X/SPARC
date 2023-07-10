@@ -1247,9 +1247,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     // check if exchange-correlation functional is metaGGA
     pSPARC->mGGAflag = 0;
-    if (strcmpi(pSPARC->XC, "SCAN") == 0) { // it can be expand, such as adding r2SCAN 
+    if ((strcmpi(pSPARC->XC, "SCAN") == 0) || (strcmpi(pSPARC->XC, "R2SCAN") == 0)) { // it can be expand, such as adding r2SCAN 
         if (pSPARC->NLCC_flag) {
-            if (!rank) printf("\nERROR: currently SCAN functional does not support applying NLCC pseudopotential!\n");
+            if (!rank) printf("\nERROR: currently SCAN and R2SCAN functional does not support applying NLCC pseudopotential!\n");
             exit(EXIT_FAILURE);
         }
         pSPARC->mGGAflag = 1;
@@ -3177,7 +3177,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jun 26, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jul 10, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4050,6 +4050,11 @@ void xc_decomposition(SPARC_OBJ *pSPARC)
     } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
         xc = -263267;
         pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
+        pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "R2SCAN") == 0) {
+        xc = -497498;
+        pSPARC->ixc[0] = 6; pSPARC->ixc[1] = 6; 
         pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
         pSPARC->isgradient = 1;
     } else if (strcmpi(pSPARC->XC, "vdWDF1") == 0) {
