@@ -1,0 +1,146 @@
+***************************************************************************
+*                       SPARC (version Jun 29, 2023)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Fri Jul  7 11:35:17 2023                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 7.63 7.63 7.63 
+LATVEC:
+1.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 1.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 1.000000000000000 
+FD_GRID: 51 51 51
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: R2SCAN
+NSTATES: 29
+CHEB_DEGREE: 42
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-05
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-07
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 2.24E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: BaTiO3_r2scan
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+7.630000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 7.630000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 7.630000000000000 
+Volume: 4.4419494700E+02 (Bohr^3)
+Density: 5.2497715603E-01 (amu/Bohr^3), 5.8828273714E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 6
+NP_DOMAIN_PARAL: 2 2 2
+NP_DOMAIN_PHI_PARAL: 3 4 4
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.149608 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  BaTiO3_r2scan.out
+Total number of atom types         :  3
+Total number of atoms              :  5
+Total number of electrons          :  40
+Atom type 1  (valence electrons)   :  Ba 10
+Pseudopotential                    :  ../Ba.psp8
+Atomic mass                        :  137.327
+Pseudocharge radii of atom type 1  :  6.73 6.73 6.73 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  Ti 12
+Pseudopotential                    :  ../Ti.psp8
+Atomic mass                        :  47.867
+Pseudocharge radii of atom type 2  :  6.73 6.73 6.73 (x, y, z dir)
+Number of atoms of type 2          :  1
+Atom type 3  (valence electrons)   :  O 6
+Pseudopotential                    :  ../O.psp8
+Atomic mass                        :  15.9994
+Pseudocharge radii of atom type 3  :  6.73 6.73 6.73 (x, y, z dir)
+Number of atoms of type 3          :  3
+Estimated total memory usage       :  241.19 MB
+Estimated memory per processor     :  5.02 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.6384476973E+01        1.670E-01        0.598
+2            -2.6341004854E+01        7.562E-02        0.339
+3            -2.6344381696E+01        5.215E-02        0.340
+4            -2.6355415140E+01        3.761E-02        0.340
+5            -2.6346420408E+01        1.270E-02        0.333
+6            -2.6351123339E+01        5.597E-03        0.334
+7            -2.6350904515E+01        2.490E-03        0.332
+8            -2.6350834014E+01        1.127E-03        0.327
+9            -2.6350835302E+01        6.660E-04        0.327
+10           -2.6350939781E+01        1.421E-04        0.324
+11           -2.6350912352E+01        6.754E-05        0.348
+12           -2.6350918318E+01        1.804E-05        0.322
+13           -2.6350913260E+01        5.491E-06        0.316
+Total number of SCF: 13    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.6350913260E+01 (Ha/atom)
+Total free energy                  : -1.3175456630E+02 (Ha)
+Band structure energy              : -1.2173111826E+01 (Ha)
+Exchange correlation energy        : -2.1944195494E+01 (Ha)
+Self and correction energy         : -2.0603306044E+02 (Ha)
+-Entropy*kb*T                      : -6.2089467222E-11 (Ha)
+Fermi level                        :  2.3396310951E-01 (Ha)
+RMS force                          :  1.1819149142E-01 (Ha/Bohr)
+Maximum force                      :  2.6279344829E-01 (Ha/Bohr)
+Time for force calculation         :  0.017 (sec)
+Pressure                           :  3.6740148580E+01 (GPa)
+Maximum stress                     :  4.4796020930E+01 (GPa)
+Time for stress calculation        :  0.062 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  4.909 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*                Main Developers: Qimen Xu, Abhiraj Sharma                *
+*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
+*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+***************************************************************************
+                                                                           

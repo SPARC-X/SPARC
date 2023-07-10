@@ -14,7 +14,6 @@
 #include <math.h>
 #include <assert.h>
 
-#include "mGGAscan.h"
 #include "mGGAtauTransferTauVxc.h"
 
 #include "isddft.h"

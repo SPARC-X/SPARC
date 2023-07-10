@@ -89,7 +89,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/vdW/vdWDF/vdWDFinitialization.o xc/vdW/vdWDF/vdWDFfinalization.o                        \
         xc/vdW/vdWDF/vdWDFnonlinearCorre.o xc/vdW/vdWDF/vdWDFreadKernel.o                 \
         xc/vdW/vdWDF/vdWDFstress.o xc/vdW/vdWDF/vdWDFparallelization.o                        \
-        xc/mgga/mGGAscan.o xc/mgga/mGGAhamiltonianTerm.o xc/mgga/mGGAstress.o  \
+        xc/mgga/mGGAscan.o xc/mgga/mGGAr2scan.o xc/mgga/mGGAhamiltonianTerm.o xc/mgga/mGGAstress.o \
         xc/mgga/mGGAinitialization.o xc/mgga/mGGAfinalization.o xc/mgga/mGGAtauTransferTauVxc.o  \
         xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o xc/exx/exactExchangeInitialization.o      \
         xc/exx/exactExchangeFinalization.o xc/exx/exactExchangeStress.o                            \

@@ -142,9 +142,7 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
 
     if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
-    } else if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0 
-            || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0 || strcmpi(pSPARC->XC,"HSE") == 0
-            || strcmpi(pSPARC->XC,"vdWDF1") == 0 || strcmpi(pSPARC->XC,"vdWDF2") == 0 || strcmpi(pSPARC->XC,"SCAN") == 0){
+    } else if(pSPARC->isgradient){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
         int DMnd, i;
         DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
