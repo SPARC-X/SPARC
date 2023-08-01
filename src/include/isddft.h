@@ -764,7 +764,6 @@ typedef struct _SPARC_OBJ{
     double d3Sigma[9]; // stress of cell caused by d3
 
     // vdW-DF1 and vdW-DF2
-    int vdWDFFlag;
     int vdWDFnrpoints;
     int vdWDFnqs;
     double *vdWDFecLinear;
@@ -805,7 +804,6 @@ typedef struct _SPARC_OBJ{
     int countPotentialCalculate; // for helping output variables in 1st step, to be deleted in the future
     
     /* metaGGA functionals (SCAN) */
-    int mGGAflag;
     double *KineticTauPhiDomain;
     double *vxcMGGA1; // d(n\epsilon)/dn, in dmcomm_phi
     double *vxcMGGA2; // d(n\epsilon)/d|grad n|, in dmcomm_phi

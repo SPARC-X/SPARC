@@ -138,12 +138,12 @@ void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();
 #endif
     Calculate_XC_stress(pSPARC);
-    if (pSPARC->mGGAflag == 1) {
+    if (pSPARC->ixc[2]) {
         if (pSPARC->isGammaPoint) { // metaGGA stress psi term is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_stress
-            Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mgga.c
+            Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mGGAstress.c
         }
         else {
-            Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mgga.c
+            Calculate_XC_stress_mGGA_psi_term_kpt(pSPARC); // the function is in file mgga/mGGAstress.c
         }
     }
 #ifdef DEBUG
@@ -598,7 +598,7 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
         d3_grad_cell_stress(pSPARC); 
     }
 
-    if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2
+    if (pSPARC->ixc[3] != 0) { // either vdW_DF1 or vdW_DF2
         Calculate_XC_stress_vdWDF(pSPARC); // the function is in file vdW/vdWDF/vdWDF.c
     }
 

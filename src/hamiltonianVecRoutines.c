@@ -90,7 +90,7 @@ void Hamiltonian_vectors_mult(
     }
 
     // adding metaGGA term
-    if(pSPARC->mGGAflag == 1 && pSPARC->countPotentialCalculate > 1) {
+    if(pSPARC->ixc[2] && pSPARC->countPotentialCalculate > 1) {
         
         int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
         int sg = pSPARC->spin_start_indx + spin;
@@ -192,7 +192,7 @@ void Hamiltonian_vectors_mult_kpt(
         #endif
 
         // adding metaGGA term
-        if(pSPARC->mGGAflag == 1 && pSPARC->countPotentialCalculate > 1) {
+        if(pSPARC->ixc[2] && pSPARC->countPotentialCalculate > 1) {
             
             int Lanczos_flag = (comm == pSPARC->kptcomm_topo) ? 1 : 0;
             int sg = pSPARC->spin_start_indx + spin;

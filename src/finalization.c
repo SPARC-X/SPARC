@@ -313,10 +313,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->d3Flag == 1) {
         free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
     }
-    if (pSPARC->vdWDFFlag != 0){
+    if (pSPARC->ixc[3] != 0){
         vdWDF_free(pSPARC);
     }
-    if(pSPARC->mGGAflag == 1) {
+    if(pSPARC->ixc[2] == 1) {
         free_MGGA(pSPARC);
     }
     
