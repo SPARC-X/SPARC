@@ -1,6 +1,6 @@
 /**
  * @file    MGGAr2scan.c
- * @brief   This file contains the functions for scan functional.
+ * @brief   This file contains the functions for r2scan functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>

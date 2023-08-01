@@ -61,7 +61,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     
     // find exchange-correlation component of pressure
     Calculate_XC_pressure(pSPARC);
-    if ((pSPARC->mGGAflag == 1) && (pSPARC->countPotentialCalculate > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
+    if (pSPARC->ixc[2] && (pSPARC->countPotentialCalculate > 1)) { // metaGGA pressure is related to wavefunction psi directly; it needs to be computed outside of function Calculate_XC_pressure
         if (pSPARC->isGammaPoint) {
             Calculate_XC_stress_mGGA_psi_term(pSPARC); // the function is in file mgga/mgga.c
         }
@@ -204,7 +204,7 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
         // if (!rank) printf("XC pressure after d3 %9.6E\n", pSPARC->pres_xc);
     }
 
-    if (pSPARC->vdWDFFlag != 0) { // either vdW_DF1 or vdW_DF2, compute the contribution of nonlinear correlation of vdWDF on stress/pressure
+    if (pSPARC->ixc[3] != 0) { // either vdW_DF1 or vdW_DF2, compute the contribution of nonlinear correlation of vdWDF on stress/pressure
         Calculate_XC_stress_vdWDF(pSPARC); // the function is in file vdW/vdWDF/vdWDF.c
     }
 

@@ -24,6 +24,7 @@
 #include "vdWDFnonlinearCorre.h"
 #include "mGGAtauTransferTauVxc.h"
 #include "mGGAscan.h"
+#include "mGGArscan.h"
 #include "mGGAr2scan.h"
 
 /**
@@ -99,6 +100,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 4:
             scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 5:
+            rscanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
         case 6:
             r2scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
@@ -130,6 +134,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 4:
             scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 5:
+            rscanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
             break;
         case 6:
             r2scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
@@ -175,7 +182,7 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             }
         }
 
-        if (pSPARC->ixc[3])
+        if (pSPARC->ixc[3] != 0)
             Calculate_nonLinearCorr_E_V_vdWDF(pSPARC, rho);
 
         if (pSPARC->isgradient) {
@@ -255,6 +262,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 4:
             scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 5:
+            rscanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
+            break;
         case 6:
             r2scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
@@ -286,6 +296,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 4:
             scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 5:
+            rscanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
             break;
         case 6:
             r2scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
@@ -398,7 +411,12 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
                 pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
                 pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
             }
-            else if (strcmpi(pSPARC->XC, "R2SCAN") == 0) {
+            else if (strcmpi(pSPARC->XC, "RSCAN") == 0) {
+                pSPARC->ixc[0] = 5; pSPARC->ixc[1] = 5; 
+                pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+                pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
+            }
+            else {
                 pSPARC->ixc[0] = 6; pSPARC->ixc[1] = 6; 
                 pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
                 pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;

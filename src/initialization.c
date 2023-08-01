@@ -337,13 +337,13 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     }
 
     // initialize vdW-DF
-    if (pSPARC->vdWDFFlag != 0) {
+    if (pSPARC->ixc[3] != 0) {
         vdWDF_initial_read_kernel(pSPARC); // read kernel function and 2nd derivative of spline functions
         // printf("rank %d, d2 of kernel function vdWDFd2Phidk2[2][4]=%.9e\n", rank, pSPARC->vdWDFd2Phidk2[2][4]); // to verify it
     }
 
     // initialize metaGGA
-    if(pSPARC->mGGAflag == 1) {
+    if(pSPARC->ixc[2]) {
         initialize_MGGA(pSPARC);
     }
 
@@ -1246,21 +1246,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->NLCC_flag = NLCC_flag;
 
     // check if exchange-correlation functional is metaGGA
-    pSPARC->mGGAflag = 0;
-    if ((strcmpi(pSPARC->XC, "SCAN") == 0) || (strcmpi(pSPARC->XC, "R2SCAN") == 0)) { // it can be expand, such as adding r2SCAN 
+    if (pSPARC->ixc[2]) { // it can be expand, such as adding r2SCAN 
         if (pSPARC->NLCC_flag) {
-            if (!rank) printf("\nERROR: currently SCAN and R2SCAN functional does not support applying NLCC pseudopotential!\n");
+            if (!rank) printf("\nERROR: currently SCAN, RSCAN and R2SCAN functional does not support applying NLCC pseudopotential!\n");
             exit(EXIT_FAILURE);
         }
-        pSPARC->mGGAflag = 1;
-    }
-    // check if exchange-correlation functional is vdW-DF1 or vdW-DF2
-    pSPARC->vdWDFFlag = 0;
-    if (strcmpi(pSPARC->XC,"vdWDF1") == 0) {
-        pSPARC->vdWDFFlag = 1;
-    }
-    if (strcmpi(pSPARC->XC,"vdWDF2") == 0) {
-        pSPARC->vdWDFFlag = 2;
     }
 
     // initialize energy values
@@ -2220,7 +2210,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && fabs(pSPARC->k3[0]) < TEMP_TOL
         && pSPARC->SOC_Flag == 0);
 
-    if (pSPARC->vdWDFFlag != 0){
+    if (pSPARC->ixc[3] != 0){
         if ((pSPARC->BCx)||(pSPARC->BCy)||(pSPARC->BCz)) {
             if (rank == 0)
                 printf(RED "ERROR: vdW-DF does not support Dirichlet boundary condition!\n" RESET);
@@ -2229,7 +2219,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     #if !defined(USE_MKL) && !defined(USE_FFTW)
-    if (pSPARC->vdWDFFlag != 0){
+    if (pSPARC->ixc[3] != 0){
         if (rank == 0)
             printf(RED "ERROR: To use vdW-DF, please turn on MKL or FFTW in makefile!\n"
             "Or you can stop using vdW-DF by setting other exchange-correlation functionals.\n" RESET);
@@ -2242,7 +2232,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
     #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
 
-    if (pSPARC->mGGAflag == 1) {
+    if (pSPARC->ixc[2]) {
         // if (pSPARC->spin_typ != 0) {
         //     if (rank == 0) 
         //         printf(RED "ERROR: currently SCAN does not support spin polarization!\n" RESET);
@@ -2336,7 +2326,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     // constraints on SOC 
     if (pSPARC->SOC_Flag == 1) {
-        if (pSPARC->usefock || pSPARC->mGGAflag || pSPARC->SQFlag) {
+        if (pSPARC->usefock || pSPARC->ixc[2] || pSPARC->SQFlag) {
             if (rank == 0) 
                 printf(RED "ERROR: Hybrid functional, SCAN and SQ are not supported in this version of spin-orbit coupling implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -2349,7 +2339,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     if (pSPARC->CyclixFlag == 1) {
-        if (pSPARC->usefock || pSPARC->SQFlag || pSPARC->mGGAflag) {
+        if (pSPARC->usefock || pSPARC->SQFlag || pSPARC->ixc[2]) {
             if (rank == 0) 
                 printf(RED "ERROR: Hybrid functional, SQ, SCAN are not supported in this version of Cyclix implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -2379,7 +2369,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             exit(EXIT_FAILURE);
         }
         
-        if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->mGGAflag) {
+        if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->ixc[2]) {
             if (!rank) 
                 printf(RED "ERROR: Hybrid functional, spin-orbit coupling, and SCAN are not supported in this version of SQ implementation." RESET);
             exit(EXIT_FAILURE);
@@ -3177,7 +3167,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jul 10, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Aug 01, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3980,6 +3970,8 @@ Exchange Correlation
 
    Meta-GGA:     "nom"    none                           imeta=0
                  "scan"   SCAN-Meta-GGA                  imeta=1
+                 "rscan"   rSCAN-Meta-GGA                imeta=1
+                 "r2scan"  r2SCAN-Meta-GGA               imeta=1
 
    van der Waals "nov"    none                           ivdw=0
                  "vdw1"   vdW-DF1                        ivdw=1
@@ -4050,6 +4042,11 @@ void xc_decomposition(SPARC_OBJ *pSPARC)
     } else if (strcmpi(pSPARC->XC, "SCAN") == 0) {
         xc = -263267;
         pSPARC->ixc[0] = 4; pSPARC->ixc[1] = 4; 
+        pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
+        pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "RSCAN") == 0) {
+        xc = -493494;
+        pSPARC->ixc[0] = 5; pSPARC->ixc[1] = 5; 
         pSPARC->ixc[2] = 1; pSPARC->ixc[3] = 0;
         pSPARC->isgradient = 1;
     } else if (strcmpi(pSPARC->XC, "R2SCAN") == 0) {

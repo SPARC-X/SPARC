@@ -83,7 +83,7 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
     double vdWdk = 2.0 * M_PI / rMax; pSPARC->vdWDFdk = vdWdk;
     int nqs = 20;
     pSPARC->vdWDFnqs = nqs;
-    if (pSPARC->vdWDFFlag == 1) { // vdWDF1
+    if (pSPARC->ixc[3] == 1) { // vdWDF1
     	pSPARC->vdWDFZab = -0.8491;
     }
     else { // vdWDF2

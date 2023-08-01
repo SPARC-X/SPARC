@@ -1900,9 +1900,21 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 			fprintf(output_md," %18.10E\n",maxvel[atm]);
 	#endif
 		fprintf(output_md,":MIND:\n");
-		int Nintr = pSPARC->Ntypes * (pSPARC->Ntypes + 1) / 2;
-		for(atm = 0; atm < Nintr; atm++)
-			fprintf(output_md," %18.10E\n",mindis[atm]);
+		char elemType1[8], elemType2[8]; 
+		int typeIndex, typeIndex2, pairIndex;
+		for (typeIndex = 0; typeIndex < pSPARC->Ntypes; typeIndex++) {
+			find_element(elemType1, &pSPARC->atomType[L_ATMTYPE*typeIndex]);
+			fprintf(output_md,"%s - %s: %18.10E\n", elemType1, elemType1, mindis[typeIndex]);
+		}
+		pairIndex = 0;
+		for(typeIndex = 0; typeIndex < pSPARC->Ntypes - 1; typeIndex++) {
+			find_element(elemType1, &pSPARC->atomType[L_ATMTYPE*typeIndex]);
+			for (typeIndex2 = typeIndex + 1; typeIndex2 < pSPARC->Ntypes; typeIndex2++) {
+				find_element(elemType2, &pSPARC->atomType[L_ATMTYPE*typeIndex2]);
+				fprintf(output_md,"%s - %s: %18.10E\n", elemType1, elemType2, mindis[pairIndex + pSPARC->Ntypes]);
+				pairIndex++;
+			}
+		}
 	}
 }
 
@@ -1978,7 +1990,7 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 
 	// Average and minimum distance
 	//*avgdis  = pow((pSPARC->range_x * pSPARC->range_y * pSPARC->range_z)/pSPARC->n_atom,1/3.0);
-	int atm2, ityp2, cc2;
+	int atm2, ityp2, cc2, pairIndex;
 	cc = 0;
 	for(ityp = 0; ityp < pSPARC->Ntypes; ityp++){
 	    mindis[ityp] = 1000000000.0;
@@ -1992,17 +2004,20 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 		cc += pSPARC->nAtomv[ityp];
 	}
 	cc = 0;
+	pairIndex = pSPARC->Ntypes;
 	for(ityp = 0; ityp < pSPARC->Ntypes - 1; ityp++){
 		cc2 = pSPARC->nAtomv[ityp] + cc;
 		for(ityp2 = ityp + 1; ityp2 < pSPARC->Ntypes; ityp2++){
-			mindis[pSPARC->Ntypes - 1 + ityp * (pSPARC->Ntypes - 1) + ityp2 - ityp] = 1000000000.0;
+			// mindis[pSPARC->Ntypes - 1 + ityp*(pSPARC->Ntypes-1 + pSPARC->Ntypes-1-(ityp - 1))/2 + ityp2 - ityp] = 1000000000.0;
+			mindis[pairIndex] = 1000000000.0;
 			for(atm = 0; atm < pSPARC->nAtomv[ityp]; atm++){
 				for(atm2 = 0; atm2 < pSPARC->nAtomv[ityp2]; atm2++){
 					temp = fabs(sqrt(pow(pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc2)],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc2) + 1],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc2) + 2],2.0) ));
-					if(temp < mindis[pSPARC->Ntypes - 1 + ityp * (pSPARC->Ntypes - 1) + ityp2 - ityp])
-						mindis[pSPARC->Ntypes - 1 + ityp * (pSPARC->Ntypes - 1) + ityp2 - ityp] = temp;
+					if(temp < mindis[pairIndex])
+						mindis[pairIndex] = temp;
 				}
 			}
+			pairIndex++;
 			cc2 += pSPARC->nAtomv[ityp2];
 		}
 		cc += pSPARC->nAtomv[ityp];
