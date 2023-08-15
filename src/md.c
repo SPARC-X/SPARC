@@ -23,6 +23,7 @@
 #include "pressure.h"
 #include "relax.h"
 #include "electrostatics.h"
+#include "readfiles.h"
 #include "eigenSolver.h" // Mesh2ChebDegree
 
 #define max(a,b) ((a)>(b)?(a):(b))
