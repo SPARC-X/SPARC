@@ -2041,8 +2041,8 @@ void Calc_dist(SPARC_OBJ *pSPARC, int nxp, int nyp, int nzp, double x0_i_shift, 
  * @param comm       MPI communicator.
  */
 void print_vec(
-    double *x, int *gridsizes, int *DMVertices, 
-    char *fname, MPI_Comm comm
+    void *x, int *gridsizes, int *DMVertices, 
+    int unit_size, char *fname, MPI_Comm comm
 ) 
 {
     if (comm == MPI_COMM_NULL) return;
@@ -2056,7 +2056,7 @@ void print_vec(
     int Nz = gridsizes[2];
     int Nd = Nx * Ny * Nz;
 
-    double *x_global = NULL;
+    void *x_global = NULL;
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
         int sdims[3], periods[3], my_coords[3];
@@ -2086,12 +2086,12 @@ void print_vec(
             rDMVert, comm, sdims, recv_comm, rdims, comm
         );
         if (rank_comm == 0) {
-            x_global = (double*)malloc(Nd * sizeof(double));
+            x_global = malloc(Nd * unit_size);
         }
         
         // collect vector to one process   
         D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x, rDMVert, 
-            x_global, comm, sdims, recv_comm, rdims, comm);
+            x_global, comm, sdims, recv_comm, rdims, comm, unit_size);
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, comm, recv_comm);
@@ -2101,7 +2101,7 @@ void print_vec(
     }
     
     if (rank_comm == 0) {
-        FILE *output_fp = fopen(fname,"w");
+        FILE *output_fp = fopen(fname,"a");
         if (output_fp == NULL) {
             printf("\nCannot open file \"%s\"\n",fname);
             exit(EXIT_FAILURE);
@@ -2110,7 +2110,12 @@ void print_vec(
             for (j = 0; j < Ny; j++) {
                 for (i = 0; i < Nx; i++) {
                     index = k*Nx*Ny + j*Nx + i;
-                    fprintf(output_fp,"%22.15E\n",x_global[index]);
+                    if (unit_size == sizeof(double)) {
+                        fprintf(output_fp,"%22.15E\n",*((double *)x_global+index));
+                    } else {
+                        fprintf(output_fp,"%22.15E %22.15E\n", creal(*((double _Complex*)x_global+index)), cimag(*((double _Complex*)x_global+index)));
+                    }
+                    
                 }
             }
         }
@@ -2126,7 +2131,6 @@ void print_vec(
 }
 
 
-
 /**
  * @brief   Read a 3D-vector from file and distributed in comm.
  *
@@ -2136,11 +2140,12 @@ void print_vec(
  * @param x          Local part of the vector (output).
  * @param gridsizes  Array of length 3, total number of nodes in each direction. 
  * @param DMVertices Array of length 6, domain vertices of the local pieces of x.
+ * @param option     the format of data, 0 - a vertical vector, 1 - cube
  * @param fname      The name of the file to which the vector will be read.
  * @param comm       MPI communicator.
  */
 void read_vec(
-    double *x, int *gridsizes, int *DMVertices, 
+    double *x, int *gridsizes, int *DMVertices, int option,
     char *fname, MPI_Comm comm
 ) 
 {
@@ -2162,20 +2167,27 @@ void read_vec(
         } else {
             x_global = x;
         }
-        // read from file
-        FILE *input_fp = fopen(fname,"r");
-        if (input_fp == NULL) {
-            printf("\nCannot open file \"%s\"\n",fname);
+        if (option == 0) {
+            // read from file
+            FILE *input_fp = fopen(fname,"r");
+            if (input_fp == NULL) {
+                printf("\nCannot open file \"%s\"\n",fname);
+                exit(EXIT_FAILURE);
+            }
+            // read x_global
+            int i;
+            double vtemp;
+            for (i = 0; i < Nd; i++) {
+                fscanf(input_fp, "%lf", &vtemp);
+                x_global[i] = vtemp;
+            }
+            fclose(input_fp);
+        } else if (option == 1) {
+            read_cube(Nx, Ny, Nz, x_global, fname);
+        } else {
+            printf("Not implemented yet\n");
             exit(EXIT_FAILURE);
         }
-        // read x_global
-        int i;
-        double vtemp;
-        for (i = 0; i < Nd; i++) {
-            fscanf(input_fp, "%lf", &vtemp);
-            x_global[i] = vtemp;
-        }
-        fclose(input_fp);
     }
 
     if (nproc_comm > 1) { // if there's more than one process, need to distribute x 
@@ -2208,7 +2220,7 @@ void read_vec(
         
         // collect vector to one process   
         D2D(&d2d_sender, &d2d_recvr, gridsizes, sDMVert, x_global, 
-            DMVertices, x, send_comm, sdims, comm, rdims, comm);
+            DMVertices, x, send_comm, sdims, comm, rdims, comm, sizeof(double));
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, send_comm, comm);
@@ -2220,6 +2232,49 @@ void read_vec(
             free(x_global);
         }
     }
+}
+
+
+void read_cube(int Nx_, int Ny_, int Nz_, double *rho, char *fname) {
+#define rho(i,j,k) rho[(i)+(j)*Nx+(k)*Nx*Ny]
+    
+    FILE *fp = fopen(fname,"r");
+    if (fp == NULL) {
+        printf("\nCannot open file \"%s\"\n",fname);
+        exit(EXIT_FAILURE);
+    }    
+
+    // skip head lines
+    fscanf(fp, "%*[^\n]\n"); 
+    fscanf(fp, "%*[^\n]\n"); 
+    // skip natom
+    int n_atom;
+    fscanf(fp, "%d", &n_atom); fscanf(fp, "%*[^\n]\n"); 
+    // read in Nx Ny Nz
+    int Nx, Ny, Nz;
+    fscanf(fp, "%d", &Nx); fscanf(fp, "%*[^\n]\n"); 
+    fscanf(fp, "%d", &Ny); fscanf(fp, "%*[^\n]\n"); 
+    fscanf(fp, "%d", &Nz); fscanf(fp, "%*[^\n]\n");     
+    if (Nx_ != Nx || Ny_ != Ny || Nz_ != Nz) {
+        printf("ERROR: Vector in this file have different length from the running system.\n");
+        exit(EXIT_FAILURE);
+    }
+    // skip atoms line
+    for (int i = 0; i < n_atom; i++) fscanf(fp, "%*[^\n]\n"); 
+
+    // read data
+    for (int i = 0; i < Nx; i++) {
+        for (int j = 0; j < Ny; j++) {
+            for (int k = 0; k < Nz; k++) {
+                fscanf(fp, "%lE", &rho(i,j,k));                 
+                if (k % 6 == 5) fscanf(fp, "%*[^\n]\n");
+            }
+            fscanf(fp, "%*[^\n]\n"); 
+        }
+    }
+
+    fclose(fp);
+#undef rho
 }
 
 
@@ -2605,6 +2660,228 @@ void restrict_to_subgrid(
                 int idx_i  = offset_i + ip;
                 v_o[idx] = v_i[idx_i];
             }
+        }
+    }
+}
+
+
+
+/**
+ * @brief change a = [b c] to a = [b; c] in-place as in Matlab 
+ *        b and c have the same size nrow x ncol
+ *
+ * @param a (OUT)    : Input array
+ * @param nrow       : number of rows of b or c
+ * @param ncol       : number of columns of b or c
+ *
+ */
+void Row2Col(void *a, const int nrow, const int ncol, const size_t unit_size) {
+    int full_bit = nrow*ncol*unit_size;
+    int col_bit = unit_size * nrow;
+
+    void *a_ = malloc(col_bit*(ncol-1));
+    memcpy(a_, a+full_bit, col_bit*(ncol-1));
+
+    // move first part inplace
+    for (int i = ncol-1; i > 0; i--) {
+        memcpy(a+2*i*col_bit, a+i*col_bit, col_bit);
+    }
+
+    // copy second part
+    for (int i = 0; i < ncol-1; i++) {
+        memcpy(a+(2*i+1)*col_bit, a_+i*col_bit, col_bit);
+    }
+    
+    free(a_);
+}
+
+/**
+ * @brief change a = [b; c] to a = [b c] in-place as in Matlab 
+ *        b and c have the same size nrow x ncol
+ *
+ * @param a (OUT)    : Input array
+ * @param nrow       : number of rows of b or c
+ * @param ncol       : number of columns of b or c
+ *
+ */
+void Col2Row(void *a, const int nrow, const int ncol, const size_t unit_size) {
+    int full_bit = nrow*ncol*unit_size;
+    int col_bit = unit_size * nrow;
+
+    void *a_ = malloc(col_bit*(ncol-1));
+    memcpy(a_, a+full_bit, col_bit*(ncol-1));
+
+    // move first part inplace
+    for (int i = 1; i < ncol; i++) {
+        int quo = i/2;
+        int rem = i%2;
+        memcpy(a + quo*col_bit + rem*full_bit, a+i*col_bit, col_bit);
+    }
+
+    // copy second part
+    for (int i = 0; i < ncol-1; i++) {
+        int quo = (i+ncol)/2;
+        int rem = (i+ncol)%2;
+        memcpy(a + quo*col_bit + rem*full_bit, a_+i*col_bit, col_bit);
+    }
+    
+    free(a_);
+}
+
+/**
+ * @brief   Printing matrix
+ */
+void print_matrix(double *A, int nrow, int ncol, char ACC)
+{
+    assert(ACC == 'H' || ACC == 'L');
+    printf("\n");
+    for (int i = 0; i < nrow; i++) {
+        for (int j = 0; j < ncol; j++) {
+            if (ACC == 'H')
+                printf("%10.6f  ", A[i+j*nrow]);
+            else
+                printf("%7.3f  ", A[i+j*nrow]);
+        }
+        printf("\n");
+    }
+}
+
+/** @ brief   Copy column-major matrix block
+ *
+ *  @param unit_size  Size of data element in bytes (double == 8, double _Complex == 16)
+ *  @param src_       Pointer to the top-left element of the source matrix 
+ *  @param lds        Leading dimension of the source matrix
+ *  @param nrow       Number of rows to copy
+ *  @param ncol       Number of columns to copy
+ *  @param dst_       Pointer to the top-left element of the destination matrix
+ *  @param ldd        Leading dimension of the destination matrix
+ */
+void copy_mat_blk(
+    const size_t unit_size, const void *src_, const int lds, 
+    const int nrow, const int ncol, void *dst_, const int ldd
+)
+{
+    if (unit_size == 8)
+    {
+        size_t col_msize = sizeof(double) * nrow;
+        double *src = (double*) src_;
+        double *dst = (double*) dst_;
+        for (int icol = 0; icol < ncol; icol++)
+            memcpy(dst + icol * ldd, src + icol * lds, col_msize);
+    }
+    if (unit_size == 16)
+    {
+        size_t col_msize = sizeof(double _Complex) * nrow;
+        double _Complex *src = (double _Complex*) src_;
+        double _Complex *dst = (double _Complex*) dst_;
+        for (int icol = 0; icol < ncol; icol++)
+            memcpy(dst + icol * ldd, src + icol * lds, col_msize);
+    }
+}
+
+
+
+/**
+ * @brief    Reshape into block separation from Cartesian order of a vector in domain parallelization
+ *          
+ *          The block separation of a vector means that the vector is in the order
+ *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
+ *          Cartesian order means that the vector is in the order (x,y,z)
+ */
+void cart_to_block_dp(void *vec_cart, int ncol, int **DMVertices, int size_comm, 
+                    int Nx, int Ny, int Nd, void *vec_bdp, int unit_size) 
+{
+    assert(unit_size == 8 || unit_size == 16);
+    if (ncol == 0) return;
+    int i, j, k, l, t, p, *coord;
+    /********************************************************************/
+    p = 0;
+    for (t = 0; t < size_comm; t++){
+        coord = DMVertices[t];
+        for (l = 0; l < ncol; l++) {
+            for (k = coord[4]; k < coord[4] + coord[5]; k++)
+                for (j = coord[2]; j < coord[2] + coord[3]; j++)
+                    for (i = coord[0]; i < coord[0] + coord[1]; i++) {
+                        int indx = i + j*Nx+ k*Nx*Ny + l*Nd;
+                        if (unit_size == 8) {
+                            *((double *)vec_bdp+p++) = *((double *)vec_cart+indx);
+                        } else {
+                            *((double _Complex *)vec_bdp+p++) = *((double _Complex *)vec_cart+indx);
+                        }
+                    }
+        }
+    }
+}
+
+
+/**
+ * @brief   Reshape into Cartesian order from the block separation of a vector in domain parallelization
+ *          
+ *          The block separation of a vector means that the vector is in the order
+ *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
+ *          Cartesian order means that the vector is in the order (x,y,z)
+ */
+void block_dp_to_cart(void *vec_bdp, int ncol, int **DMVertices, int *displs, int size_comm, 
+                    int Nx, int Ny, int Nd, void *vec_cart, int unit_size) 
+{
+    if (ncol == 0) return;
+    int ii, i, j, k, l, t, p, q, *coord, start, seg;
+    /********************************************************************/
+    for (t = 0; t < size_comm; t++) {
+        coord = DMVertices[t];
+        seg = coord[1] * coord[3] * coord[5];
+        start = displs[t];
+        for (ii = start; ii < start + seg; ii++) {
+            p = ii - start;                     // relative coordinates
+            q = p % coord[1];                   // relative x
+            i = coord[0] + q;
+            p -= q; p /= coord[1];
+            q = p % coord[3];                   // relative y
+            j = coord[2] + q;
+            p -= q; p /= coord[3];              // p is relative z
+            k = coord[4] + p;
+            for (l = 0; l < ncol; l++) {
+                int indx = i + j*Nx+ k*Nx*Ny + l*Nd;
+                int indx2 = ii + l*seg;
+                if (unit_size == 8) {
+                    *((double *)vec_cart+indx) = *((double *)vec_bdp+indx2);
+                } else {
+                    *((double _Complex *)vec_cart+indx) = *((double _Complex *)vec_bdp+indx2);
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * @brief   Transfer vectors from dmcomm to kptcomm_topo 
+ */
+void Transfer_dmcomm_to_kptcomm_topo(SPARC_OBJ *pSPARC, int Nspinor, int ncols, void *vec_dmcomm, void *vec_kptcomm_topo, int unit_size) {
+    int gridsizes[3], sdims[3], rdims[3];
+
+    gridsizes[0] = pSPARC->Nx; gridsizes[1] = pSPARC->Ny; gridsizes[2] = pSPARC->Nz;
+    sdims[0] = pSPARC->npNdx;         
+    sdims[1] = pSPARC->npNdy;         
+    sdims[2] = pSPARC->npNdz; 
+    rdims[0] = pSPARC->npNdx_kptcomm; 
+    rdims[1] = pSPARC->npNdy_kptcomm; 
+    rdims[2] = pSPARC->npNdz_kptcomm;
+    /********************************************************************/
+
+    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * Nspinor;
+    int DMnd_kpt = pSPARC->Nd_d_kptcomm;
+    int DMndsp_kpt = DMnd_kpt * Nspinor;
+    // Transferring all bands of vec_dmcomm to kptcomm_topo for Lanczos
+    for (int i = 0; i < ncols; i++) {
+        for (int spinor = 0; spinor < Nspinor; spinor++) {
+            D2D(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo, gridsizes, 
+                pSPARC->DMVertices_dmcomm, vec_dmcomm + (i * DMndsp + spinor * DMnd) * unit_size,
+                pSPARC->DMVertices_kptcomm, vec_kptcomm_topo + (i * DMndsp_kpt + spinor * DMnd_kpt) * unit_size,
+                pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL, sdims, 
+                pSPARC->kptcomm_topo, rdims, 
+                pSPARC->kptcomm, unit_size);
         }
     }
 }

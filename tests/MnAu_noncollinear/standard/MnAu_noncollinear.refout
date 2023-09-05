@@ -1,0 +1,164 @@
+***************************************************************************
+*                       SPARC (version Aug 01, 2023)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Tue Sep  5 16:49:50 2023                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 4.6 4.6 4.6 
+LATVEC:
+1 0 0 
+0 1 0 
+0 0 1 
+FD_GRID: 12 12 12
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 2 2 2
+KPOINT_SHIFT: 0.5 0.5 0.5
+SPIN_TYP: 2
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.01
+EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 50
+CHEB_DEGREE: 21
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: potential
+MIXING_PRECOND: kerker
+MIXING_PRECOND_MAG: kerker
+TOL_PRECOND: 1.47E-04
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+PRECOND_KERKER_KTF_MAG: 1
+PRECOND_KERKER_THRESH_MAG: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_PARAMETER_MAG: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 8
+NUM_CHEFSI: 1
+FIX_RAND: 1
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: MnAu_noncollinear/temp_run/MnAu_noncollinear
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+4.600000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 4.600000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 4.600000000000000 
+Volume: 9.7336000000E+01 (Bohr^3)
+Density: 2.5879901886E+00 (amu/Bohr^3), 2.9000689541E+01 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 4
+NP_BAND_PARAL: 12
+NP_DOMAIN_PARAL: 1 1 1
+NP_DOMAIN_PHI_PARAL: 2 2 2
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.383333 (Bohr)
+Number of symmetry adapted k-points:  4
+Output printed to                  :  MnAu_noncollinear/temp_run/MnAu_noncollinear.out
+Total number of atom types         :  2
+Total number of atoms              :  2
+Total number of electrons          :  34
+Atom type 1  (valence electrons)   :  Mn 15
+Pseudopotential                    :  MnAu_noncollinear/Mn.psp8
+Atomic mass                        :  54.938044
+Pseudocharge radii of atom type 1  :  8.43 8.43 8.43 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  Au 19
+Pseudopotential                    :  MnAu_noncollinear/Au.psp8
+Atomic mass                        :  196.966569
+Pseudocharge radii of atom type 2  :  7.28 7.28 7.28 (x, y, z dir)
+Number of atoms of type 2          :  1
+Estimated total memory usage       :  38.17 MB
+Estimated memory per processor     :  814.38 kB
+======================================================================================================================
+                    Self Consistent Field (SCF#1)                     
+======================================================================================================================
+Iteration     Free Energy (Ha/atom)            Magnetization (tot,x,y,z)                 SCF Error        Timing (sec)
+1            -1.2763042721E+02     1.9865E+00,  1.3858E+00,  1.3828E+00, -8.3878E-04     1.758E-01        0.307
+2            -1.2848288115E+02     1.5781E+00,  1.1005E+00,  1.0758E+00, -2.7627E-02     1.228E-01        0.047
+3            -1.2764909752E+02     1.4531E+00,  1.0100E+00,  9.8310E-01, -3.3034E-02     8.596E-03        0.039
+4            -1.2785836601E+02     1.2906E+00,  8.9130E-01,  8.6406E-01, -3.4162E-02     4.879E-03        0.038
+5            -1.2797157182E+02     1.1137E+00,  7.5966E-01,  7.3582E-01, -3.1697E-02     1.220E-03        0.038
+6            -1.2796140967E+02     1.0708E+00,  7.2693E-01,  7.0466E-01, -3.0956E-02     3.816E-04        0.038
+7            -1.2796517905E+02     9.7725E-01,  6.5913E-01,  6.3810E-01, -3.3565E-02     6.486E-04        0.039
+8            -1.2796342254E+02     9.7615E-01,  6.5726E-01,  6.3752E-01, -3.3744E-02     1.303E-04        0.038
+9            -1.2796038421E+02     9.6551E-01,  6.4868E-01,  6.3043E-01, -3.4342E-02     1.076E-04        0.039
+10           -1.2796042105E+02     9.6045E-01,  6.4457E-01,  6.2697E-01, -3.4902E-02     5.508E-05        0.038
+11           -1.2796037410E+02     9.5583E-01,  6.4058E-01,  6.2403E-01, -3.5513E-02     3.193E-05        0.038
+12           -1.2796062193E+02     9.5160E-01,  6.3663E-01,  6.2160E-01, -3.6359E-02     2.862E-05        0.037
+13           -1.2796063105E+02     9.5055E-01,  6.3509E-01,  6.2149E-01, -3.7103E-02     1.299E-05        0.038
+14           -1.2796049731E+02     9.5051E-01,  6.3463E-01,  6.2186E-01, -3.7543E-02     2.426E-06        0.037
+15           -1.2796051396E+02     9.5011E-01,  6.3384E-01,  6.2203E-01, -3.8068E-02     3.211E-06        0.037
+16           -1.2796049305E+02     9.5031E-01,  6.3341E-01,  6.2274E-01, -3.8678E-02     1.869E-06        0.038
+17           -1.2796049000E+02     9.5006E-01,  6.3215E-01,  6.2359E-01, -3.9818E-02     2.581E-06        0.037
+18           -1.2796050142E+02     9.4979E-01,  6.3013E-01,  6.2513E-01, -4.1717E-02     3.391E-06        0.037
+19           -1.2796049370E+02     9.4986E-01,  6.2888E-01,  6.2643E-01, -4.3076E-02     2.173E-06        0.037
+20           -1.2796048902E+02     9.4992E-01,  6.3012E-01,  6.2534E-01, -4.1836E-02     2.279E-06        0.038
+21           -1.2796049260E+02     9.4993E-01,  6.2872E-01,  6.2669E-01, -4.3290E-02     2.610E-06        0.037
+22           -1.2796049560E+02     9.4995E-01,  6.2773E-01,  6.2764E-01, -4.4313E-02     1.584E-06        0.038
+23           -1.2796049729E+02     9.4994E-01,  6.2693E-01,  6.2839E-01, -4.5128E-02     1.243E-06        0.038
+24           -1.2796049665E+02     9.4994E-01,  6.2548E-01,  6.2976E-01, -4.6610E-02     2.331E-06        0.037
+25           -1.2796049607E+02     9.4994E-01,  6.2456E-01,  6.3061E-01, -4.7540E-02     1.415E-06        0.037
+26           -1.2796049598E+02     9.4993E-01,  6.2341E-01,  6.3169E-01, -4.8708E-02     1.805E-06        0.037
+27           -1.2796049598E+02     9.4993E-01,  6.2202E-01,  6.3297E-01, -5.0101E-02     2.151E-06        0.038
+28           -1.2796049570E+02     9.4993E-01,  6.2030E-01,  6.3455E-01, -5.1817E-02     2.653E-06        0.040
+29           -1.2796049550E+02     9.4992E-01,  6.1912E-01,  6.3562E-01, -5.2975E-02     1.765E-06        0.038
+30           -1.2796049528E+02     9.4992E-01,  6.1953E-01,  6.3523E-01, -5.2569E-02     9.044E-07        0.036
+Total number of SCF: 30    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -1.2796049528E+02 (Ha/atom)
+Total free energy                  : -2.5592099056E+02 (Ha)
+Band structure energy              : -4.0276029787E+00 (Ha)
+Exchange correlation energy        : -4.4750249114E+01 (Ha)
+Self and correction energy         : -3.3417365466E+02 (Ha)
+-Entropy*kb*T                      : -2.2390479739E-03 (Ha)
+Fermi level                        :  1.1647532895E+00 (Ha)
+RMS force                          :  1.3621209319E-01 (Ha/Bohr)
+Maximum force                      :  1.3621209319E-01 (Ha/Bohr)
+Time for force calculation         :  0.042 (sec)
+Pressure                           :  4.8473897460E+02 (GPa)
+Maximum stress                     :  4.8556018188E+02 (GPa)
+Time for stress calculation        :  0.072 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  1.644 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

@@ -13,17 +13,6 @@
 
 #include "isddft.h"
 
-/**
- * @brief    Calculate nonlocal force components for cyclix system with gamma point.
- */
-void Calculate_nonlocal_forces_cyclix(SPARC_OBJ *pSPARC);
-
-
-/**
- * @brief    Calculate nonlocal force components for cyclix system with kpts.
- */
-void Calculate_nonlocal_forces_kpt_cyclix(SPARC_OBJ *pSPARC);
-
 
 /**
  * @brief    Calculate local force components
@@ -56,23 +45,23 @@ void Rotate_vector_complex_cyclix(SPARC_OBJ *pSPARC, double _Complex *fx, double
 
 
 /**
- * @brief    Calculate nonlocal force components with kpts in case of spinor wave function.
- */
-void Calculate_nonlocal_forces_kpt_spinor_cyclix(SPARC_OBJ *pSPARC);
-
-
-/**
- * @brief   Calculate <Psi_n, Chi_Jlm> for spinor force
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = x and y
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_psi_Chi_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *beta, int spn_i, int kpt, char *option);
-
+void Compute_Integral_Chi_Dpsixy_cyclix(SPARC_OBJ *pSPARC, 
+    double *dpsix, double *dpsiy, double *beta_x, double *beta_y);
 
 void Compute_Integral_Chi_Dpsixy_kpt_cyclix(SPARC_OBJ *pSPARC, 
-    double _Complex *dpsix, double _Complex *dpsiy, double _Complex *betax, double _Complex *betay, int spn_i, int kpt, char *option);
+    double _Complex *dpsix, double _Complex *dpsiy, double _Complex *betax, double _Complex *betay, int kpt, char *option);
 
+/**
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = z
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_Dpsiz_cyclix(SPARC_OBJ *pSPARC, double *dpsi, double *beta);
 
-void Compute_Integral_Chi_Dpsiz_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int spn_i, int kpt, char *option);
+void Compute_Integral_Chi_Dpsiz_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int kpt, char *option);
 
 #endif // CYCLIX_FORCES_H

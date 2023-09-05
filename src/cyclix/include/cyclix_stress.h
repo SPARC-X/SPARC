@@ -40,21 +40,23 @@ void Calculate_local_stress_cyclix(SPARC_OBJ *pSPARC);
 
 void Dpseudopot_cyclix_z(SPARC_OBJ *pSPARC, double *VJ, int FDn, int ishift_p, int *pshifty, int *pshiftz, double *DVJ_z_val);
 
+
 /**
- * @brief    Calculate nonlocal stress components for gamma point.
+ * @brief    Calculate kinetic stress tensor
+ */
+void Compute_stress_tensor_kinetic_cyclix(SPARC_OBJ *pSPARC, double *dpsi, double *stress_k);
+void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double *stress_k);
+
+/**
+ * @brief    Calculate nonlocal stress components
  */
 void Calculate_nonlocal_kinetic_stress_cyclix(SPARC_OBJ *pSPARC);
-
-
-/**
- * @brief    Calculate nonlocal stress components for k-points.
- */
 void Calculate_nonlocal_kinetic_stress_kpt_cyclix(SPARC_OBJ *pSPARC);
 
-void Calculate_nonlocal_kinetic_stress_kpt_spinor_cyclix(SPARC_OBJ *pSPARC);
+void Compute_Integral_Chi_XmRjp_beta_Dpsi_cyclix(SPARC_OBJ *pSPARC, double *dpsi_xi, double *beta);
+void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int kpt, char *option);
 
-void Compute_stress_tensor_nloc_by_integrals_cyclix(SPARC_OBJ *pSPARC, double *stress_nl, double _Complex *alpha, char *option);
-
-void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int spn_i, int kpt, char *option);
+void Compute_stress_tensor_nloc_by_integrals_cyclix(SPARC_OBJ *pSPARC, double *stress_nl, double *alpha);
+void Compute_stress_tensor_nloc_by_integrals_kpt_cyclix(SPARC_OBJ *pSPARC, double *stress_nl, double _Complex *alpha, char *option);
 
 #endif // CYCLIX_STRESS_H 

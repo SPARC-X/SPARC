@@ -281,8 +281,8 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
                         
                         // first allocate memory for the rectangular rc-region, resize later to the spherical rc-region
                         Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc] = (int *)malloc(sizeof(int) * ndc);
+                        count = 0;
                         if(pSPARC->cell_typ == 0) {
-                            count = 0;
                             for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
                                 k_DM = k - DMVertices[4];
                                 z2 = k * pSPARC->delta_z - z0_i;
@@ -304,7 +304,6 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
                                 }
                             }
                         } else if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
-                           count = 0;
                             for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
                                 k_DM = k - DMVertices[4];
                                 z = k * pSPARC->delta_z - z0_i;
@@ -324,7 +323,6 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
                                 }
                             } 
                         } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
-                            count = 0;
                             for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
                                 k_DM = k - DMVertices[4];
                                 z = k * pSPARC->delta_z;
@@ -462,7 +460,7 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
 
     (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
     double *Intgwt = NULL;
-    double y0, z0, xi, yi, zi, xx, yy, zz;
+    double y0, z0, xi, yi, zi;
     double ty, tz;
     double xin = pSPARC->xin + DMVertices[0] * pSPARC->delta_x;
     if (pSPARC->CyclixFlag) {
@@ -841,7 +839,7 @@ void CalculateNonlocalInnerProductIndex(SPARC_OBJ *pSPARC)
  * @brief   Calculate Vnl times vectors in a matrix-free way.
  */
 void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
-                  NLOC_PROJ_OBJ *nlocProj, int ncol, double *x, double *Hx, MPI_Comm comm)
+                  NLOC_PROJ_OBJ *nlocProj, int ncol, double *x, int ldi, double *Hx, int ldo, MPI_Comm comm)
 {
     int i, n, np, count;
     /* compute nonlocal operator times vector(s) */
@@ -859,7 +857,7 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
-                    x_rc[n*ndc+i] = x[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
+                    x_rc[n*ndc+i] = x[n*ldi + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
             if (pSPARC->CyclixFlag) {
@@ -918,7 +916,7 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
                         alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj, 0.0, Vnlx, ndc); 
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
-                    Hx[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]] += Vnlx[n*ndc+i];
+                    Hx[n*ldo + Atom_Influence_nloc[ityp].grid_pos[iat][i]] += Vnlx[n*ndc+i];
                 }
             }     
             free(Vnlx);
@@ -932,7 +930,7 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
  * @brief   Calculate Vnl times vectors in a matrix-free way with Bloch factor
  */
 void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
-                      NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, double _Complex *Hx, int kpt, MPI_Comm comm)
+                      NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int kpt, MPI_Comm comm)
 {
     int i, n, np, count;
     /* compute nonlocal operator times vector(s) */
@@ -969,7 +967,7 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
             atom_index = Atom_Influence_nloc[ityp].atom_index[iat];
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
-                    x_rc[n*ndc+i] = x[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
+                    x_rc[n*ndc+i] = x[n*ldi + Atom_Influence_nloc[ityp].grid_pos[iat][i]];
                 }
             }
             if (pSPARC->CyclixFlag) {
@@ -1034,7 +1032,7 @@ void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ
                           alpha+pSPARC->IP_displ[atom_index]*ncol, nlocProj[ityp].nproj, &b, Vnlx, ndc); 
             for (n = 0; n < ncol; n++) {
                 for (i = 0; i < ndc; i++) {
-                    Hx[n*DMnd + Atom_Influence_nloc[ityp].grid_pos[iat][i]] += Vnlx[n*ndc+i];
+                    Hx[n*ldo + Atom_Influence_nloc[ityp].grid_pos[iat][i]] += Vnlx[n*ndc+i];
                 }
             }
             free(Vnlx);

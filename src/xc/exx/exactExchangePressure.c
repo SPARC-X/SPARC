@@ -22,7 +22,7 @@
 #include "exactExchangePressure.h"
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
-
+#include "tools.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -48,8 +48,8 @@ void Calculate_exact_exchange_pressure(SPARC_OBJ *pSPARC) {
 void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC) 
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int grank, rank, size, spn_i;
-    int Ns, Nband, DMnd, psi_shift, occ_outer_shift, psi_outer_shift, mflag;
+    int grank, rank, size;
+    int Ns, DMnd, mflag;
     double *psi_outer, *occ_outer, *psi, pres_exx;
     MPI_Comm comm = pSPARC->dmcomm;
 
@@ -58,8 +58,8 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
     MPI_Comm_size(comm, &size);
 
     DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Ns = pSPARC->Nstates;
-    Nband = pSPARC->Nband_bandcomm;
     mflag = pSPARC->EXXDiv_Flag;
     /********************************************************************/    
     
@@ -74,19 +74,16 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
     }
 
     pres_exx = 0;
-    for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+    for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
         if (pSPARC->ACEFlag == 0) {
-            psi_shift = DMnd * Nband * pSPARC->Nkpts_kptcomm;
-            occ_outer_shift = Ns * pSPARC->Nkpts_sym;
-            psi_outer_shift = DMnd * pSPARC->Nkpts_hf_red * Ns;
-            psi = pSPARC->Xorb + spn_i * psi_shift;
-            psi_outer = pSPARC->psi_outer + spn_i * psi_outer_shift;
-            occ_outer = pSPARC->occ_outer + spn_i * occ_outer_shift;
-            Calculate_exact_exchange_pressure_linear_nonACE(pSPARC, psi_outer, psi, occ_outer, &pres_exx);
+            psi = pSPARC->Xorb + spinor * DMnd;
+            psi_outer = pSPARC->psi_outer + spinor * DMnd;
+            occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns) : pSPARC->occ_outer;
+            Calculate_exact_exchange_pressure_linear_nonACE(pSPARC, psi_outer, DMndsp, psi, DMnd, occ_outer, &pres_exx);
         } else {
-            psi = pSPARC->Xorb + spn_i * DMnd * Nband;
-            occ_outer = pSPARC->occ + spn_i * Ns;
-            Calculate_exact_exchange_pressure_linear_ACE(pSPARC, psi, occ_outer, &pres_exx);
+            psi = pSPARC->Xorb + spinor * DMnd;
+            occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+            Calculate_exact_exchange_pressure_linear_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
         }
     }
 
@@ -121,10 +118,10 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_linear_nonACE(SPARC_OBJ *pSPARC, 
-    double *psi_outer, double *occ, double *psi, double *pres_exx) 
+    double *psi_outer, int ldpo, double *psi, int ldp, double *occ, double *pres_exx) 
 {   
     solve_allpair_poissons_equation_pressure(pSPARC, 
-        psi_outer, psi, occ, pSPARC->Nstates, 0, pres_exx);
+        psi_outer, ldpo, psi, ldp, occ, pSPARC->Nstates, 0, pres_exx);
 }
 
 
@@ -132,7 +129,7 @@ void Calculate_exact_exchange_pressure_linear_nonACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC, 
-    double *psi, double *occ, double *pres_exx) 
+    double *psi, int ldp, double *occ, double *pres_exx) 
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     
@@ -143,6 +140,7 @@ void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC,
     
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
     DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     reps = pSPARC->npband - 1;
     NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
     Ns = pSPARC->Nstates;
@@ -164,19 +162,27 @@ void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC,
         band_start_indx_source = source * NB;
         if (rep == 0) {
             if (reps > 0) {
-                transfer_orbitals_blacscomm(pSPARC, psi, psi_storage1, rep, reqs);
+                if (DMnd != DMndsp) {
+                    copy_mat_blk(sizeof(double), psi, DMndsp, DMnd, pSPARC->Nband_bandcomm, psi_storage2, DMnd);
+                    transfer_orbitals_blacscomm(pSPARC, psi_storage2, psi_storage1, rep, reqs, sizeof(double));
+                    sendbuff = psi_storage2;
+                } else {
+                    transfer_orbitals_blacscomm(pSPARC, psi, psi_storage1, rep, reqs, sizeof(double));
+                    sendbuff = psi;
+                }
+            } else {
+                sendbuff = psi;
             }
-            sendbuff = psi;
         } else {
             MPI_Waitall(2, reqs, MPI_STATUSES_IGNORE);
             // first gather the orbitals in the rotation way
             sendbuff = (rep%2==1) ? psi_storage1 : psi_storage2;
             recvbuff = (rep%2==1) ? psi_storage2 : psi_storage1;
             if (rep != reps) {
-                transfer_orbitals_blacscomm(pSPARC, sendbuff, recvbuff, rep, reqs);
+                transfer_orbitals_blacscomm(pSPARC, sendbuff, recvbuff, rep, reqs, sizeof(double));
             }
         }
-        solve_allpair_poissons_equation_pressure(pSPARC, sendbuff, psi, occ, 
+        solve_allpair_poissons_equation_pressure(pSPARC, sendbuff, DMnd, psi, DMndsp, occ, 
             Nband_source, band_start_indx_source, pres_exx);
     }
     
@@ -190,7 +196,7 @@ void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC, 
-    double *psi_storage, double *psi, double *occ, int Nband_source, 
+    double *psi_storage, int ldps, double *psi, int ldp, double *occ, int Nband_source, 
     int band_start_indx_source, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
@@ -249,7 +255,7 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
             i = rhs_list_i[count];
             j = rhs_list_j[count];
             for (k = 0; k < DMnd; k++) {
-                rhs[k + (count-base)*DMnd] = psi_storage[k + j*DMnd] * psi[k + i*DMnd];
+                rhs[k + (count-base)*DMnd] = psi_storage[k + j*ldps] * psi[k + i*ldp];
             }
         }
 
@@ -281,8 +287,8 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
 void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC) 
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int grank, rank, size, spn_i;
-    int Ns, Nband, DMnd, mflag;
+    int grank, rank, size;
+    int Ns, DMnd, mflag;
     double *occ_outer, pres_exx;
     double _Complex *psi_outer, *psi;
     MPI_Comm comm = pSPARC->dmcomm;
@@ -292,8 +298,8 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
     MPI_Comm_size(comm, &size);
 
     DMnd = pSPARC->Nd_d_dmcomm;
-    Ns = pSPARC->Nstates;
-    Nband = pSPARC->Nband_bandcomm;    
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    Ns = pSPARC->Nstates; 
     mflag = pSPARC->EXXDiv_Flag;
     /********************************************************************/
     mflag = pSPARC->EXXDiv_Flag;
@@ -308,25 +314,19 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
     }
 
     pres_exx = 0;
-    for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+    for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
         if (pSPARC->ACEFlag == 0) {
-            int psi_outer_shift = DMnd * Ns * pSPARC->Nkpts_hf_red;
-            int psi_shift = DMnd * Nband * pSPARC->Nkpts_kptcomm;
-            int occ_outer_shift = Ns * pSPARC->Nkpts_sym;
-            
-            psi_outer = pSPARC->psi_outer_kpt + spn_i * psi_outer_shift;
-            occ_outer = pSPARC->occ_outer + spn_i * occ_outer_shift;
-            psi = pSPARC->Xorb_kpt + spn_i * psi_shift;
+            psi_outer = pSPARC->psi_outer_kpt + spinor * DMnd;
+            occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns * pSPARC->Nkpts_sym) : pSPARC->occ_outer;
+            psi = pSPARC->Xorb_kpt + spinor * DMnd;
 
-            Calculate_exact_exchange_pressure_kpt_nonACE(pSPARC, psi_outer, occ_outer, psi, &pres_exx);
+            Calculate_exact_exchange_pressure_kpt_nonACE(pSPARC, psi_outer, DMndsp, psi, DMndsp, occ_outer, &pres_exx);
         } else {
-            int psi_shift = DMnd * Nband * pSPARC->Nkpts_kptcomm;
             int occ_outer_shift = Ns * pSPARC->Nkpts_sym;
+            occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * occ_outer_shift) : pSPARC->occ_outer;
+            psi = pSPARC->Xorb_kpt + spinor * DMnd;
 
-            occ_outer = pSPARC->occ_outer + spn_i * occ_outer_shift;
-            psi = pSPARC->Xorb_kpt + spn_i * psi_shift;
-
-            Calculate_exact_exchange_pressure_kpt_ACE(pSPARC, psi, occ_outer, &pres_exx);
+            Calculate_exact_exchange_pressure_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
         }
     }
     
@@ -364,15 +364,14 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC, 
-    double _Complex *psi_outer, double *occ_outer, double _Complex *psi, double *pres_exx)
+    double _Complex *psi_outer, int ldpo, double _Complex *psi, int ldp, double *occ_outer, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int k, kpt_q;
-    int Ns, DMnd, size_k_, count;
+    int Ns, size_k_, count;
 
-    DMnd = pSPARC->Nd_d_dmcomm;
     Ns = pSPARC->Nstates;
-    size_k_ = Ns * DMnd;
+    size_k_ = Ns * ldpo;
     /********************************************************************/    
     
     for (k = 0; k < pSPARC->Nkpts_hf_red; k++) {
@@ -380,8 +379,8 @@ void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC,
         for (count = 0; count < counts; count++) {
             kpt_q = pSPARC->kpthfred2kpthf[k][count+1];
             // solve poisson's equations 
-            solve_allpair_poissons_equation_pressure_kpt(pSPARC, psi_outer + k*size_k_, 
-                psi, occ_outer, Ns, 0, kpt_q, pres_exx);
+            solve_allpair_poissons_equation_pressure_kpt(pSPARC, psi_outer + k*size_k_, ldpo, 
+                psi, ldp, occ_outer, Ns, 0, kpt_q, pres_exx);
         }
     }
 }
@@ -390,10 +389,10 @@ void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC, 
-    double _Complex *psi, double *occ_outer, double *pres_exx)
+    double _Complex *psi, int ldp, double *occ_outer, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, k, grank, kpt_q;
+    int k, grank, kpt_q;
     int Ns, DMnd, Nband, NB, size_k, count, rep_kpt, rep_band;
     int source, Nband_source, band_start_indx_source;
     double _Complex *psi_storage1_kpt, *psi_storage2_kpt, *psi_storage1_band, *psi_storage2_band;
@@ -406,7 +405,8 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
     DMnd = pSPARC->Nd_d_dmcomm;
     Ns = pSPARC->Nstates;
     Nband = pSPARC->Nband_bandcomm;
-    size_k = Nband * DMnd;
+    size_k = Nband * ldp;
+    int size_k_ps = DMnd * Nband;
     NB = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
     /********************************************************************/
 
@@ -435,8 +435,7 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
     count = 0;
     for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
         if (!pSPARC->kpthf_flag_kptcomm[k]) continue;
-        for (i = 0; i < size_k; i++)  
-            psi_storage1_kpt[i + count * size_k] = psi[i + k * size_k];
+        copy_mat_blk(sizeof(double _Complex), psi + k*size_k, ldp, DMnd, Nband, psi_storage1_kpt + count*size_k_ps, DMnd);
         count ++;
     }
     if (reps_band > 0) {
@@ -452,14 +451,14 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
             sendbuff_kpt = psi_storage1_kpt;
             if (reps_kpt > 0) {
                 recvbuff_kpt = psi_storage2_kpt;
-                transfer_orbitals_kptbridgecomm_kpt(pSPARC, sendbuff_kpt, recvbuff_kpt, rep_kpt, reqs_kpt);
+                transfer_orbitals_kptbridgecomm(pSPARC, sendbuff_kpt, recvbuff_kpt, rep_kpt, reqs_kpt, sizeof(double _Complex));
             }
         } else {
             MPI_Waitall(2, reqs_kpt, MPI_STATUSES_IGNORE);
             sendbuff_kpt = (rep_kpt%2==1) ? psi_storage2_kpt : psi_storage1_kpt;
             recvbuff_kpt = (rep_kpt%2==1) ? psi_storage1_kpt : psi_storage2_kpt;
             if (rep_kpt != reps_kpt) {
-                transfer_orbitals_kptbridgecomm_kpt(pSPARC, sendbuff_kpt, recvbuff_kpt, rep_kpt, reqs_kpt);
+                transfer_orbitals_kptbridgecomm(pSPARC, sendbuff_kpt, recvbuff_kpt, rep_kpt, reqs_kpt, sizeof(double _Complex));
             }
         }
 
@@ -474,17 +473,17 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
             for (rep_band = 0; rep_band <= reps_band; rep_band++) {
                 // transfer the orbitals in the rotation way across blacscomm
                 if (rep_band == 0) {
-                    sendbuff_band = sendbuff_kpt + k*size_k;
+                    sendbuff_band = sendbuff_kpt + k*size_k_ps;
                     if (reps_band > 0) {
                         recvbuff_band = psi_storage1_band;
-                        transfer_orbitals_blacscomm_kpt(pSPARC, sendbuff_band, recvbuff_band, rep_band, reqs_band);
+                        transfer_orbitals_blacscomm(pSPARC, sendbuff_band, recvbuff_band, rep_band, reqs_band, sizeof(double _Complex));
                     }
                 } else {
                     MPI_Waitall(2, reqs_band, MPI_STATUSES_IGNORE);
                     sendbuff_band = (rep_band%2==1) ? psi_storage1_band : psi_storage2_band;
                     recvbuff_band = (rep_band%2==1) ? psi_storage2_band : psi_storage1_band;
                     if (rep_band != reps_band) {
-                        transfer_orbitals_blacscomm_kpt(pSPARC, sendbuff_band, recvbuff_band, rep_band, reqs_band);
+                        transfer_orbitals_blacscomm(pSPARC, sendbuff_band, recvbuff_band, rep_band, reqs_band, sizeof(double _Complex));
                     }
                 }
                 
@@ -495,8 +494,8 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
                 for (count = 0; count < counts; count++) {
                     kpt_q = pSPARC->kpthfred2kpthf[k_indx][count+1];
                     // solve poisson's equations 
-                    solve_allpair_poissons_equation_pressure_kpt(pSPARC, sendbuff_band, 
-                        psi, occ_outer, Nband_source, band_start_indx_source, kpt_q, pres_exx);
+                    solve_allpair_poissons_equation_pressure_kpt(pSPARC, sendbuff_band, DMnd, 
+                        psi, ldp, occ_outer, Nband_source, band_start_indx_source, kpt_q, pres_exx);
                 }
             }
         }
@@ -514,8 +513,8 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
 /**
  * @brief   Calculate Exact Exchange pressure
  */
-void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, 
-    double _Complex *psi, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx)
+void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, int ldps, 
+    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, ll, grank, rank, size, kpt_k;
@@ -529,7 +528,7 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
     int Nband = pSPARC->Nband_bandcomm;
     int Nkpts_kptcomm = pSPARC->Nkpts_kptcomm;
     ll = pSPARC->kpthf_ind[kpt_q];                  // ll w.r.t. Nkpts_sym, for occ
-    int size_k = DMnd * Nband;
+    int size_k = ldp * Nband;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);    
     MPI_Comm_rank(comm, &rank);
@@ -592,10 +591,10 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
             kpt_q_list[count-base] = kpt_q;
             if (pSPARC->kpthf_pn[kpt_q] == 1) {
                 for (k = 0; k < DMnd; k++) 
-                    rhs[k + (count-base)*DMnd] = conj(psi_storage[k + j*DMnd]) * psi[k + i*DMnd + kpt_k*size_k];
+                    rhs[k + (count-base)*DMnd] = conj(psi_storage[k + j*ldps]) * psi[k + i*ldp + kpt_k*size_k];
             } else {
                 for (k = 0; k < DMnd; k++) 
-                    rhs[k + (count-base)*DMnd] = psi_storage[k + j*DMnd] * psi[k + i*DMnd + kpt_k*size_k];
+                    rhs[k + (count-base)*DMnd] = psi_storage[k + j*ldps] * psi[k + i*ldp + kpt_k*size_k];
             }
         }
         

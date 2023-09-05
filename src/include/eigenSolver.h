@@ -90,8 +90,10 @@ void Chebyshevfilter_constants(SPARC_OBJ *pSPARC, double *x0, double *lambda_cut
 /**
  * @brief   Perform Chebyshev filtering.
  */
-void ChebyshevFiltering(SPARC_OBJ *pSPARC, int *DMVertices, double *X, double *Y, int ncol, 
-                        int m, double a, double b, double a0, int k, int spn_i, MPI_Comm comm, double *time_info);
+void ChebyshevFiltering(SPARC_OBJ *pSPARC, int *DMVertices, 
+        double *X, int ldi, double *Y, int ldo, int ncol, 
+        int m, double a, double b, double a0, int k, int spn_i, MPI_Comm comm, 
+        double *time_info);
 
 
 /* ============================================================================= 
@@ -114,6 +116,7 @@ struct DP_CheFSI_s
     int      Ns_dp;             // Number of bands this process has in the converted domain parallelization (DP),
                                 // == number of total states (bands) in SPARC == pSPARC->Nstates
     int      Nd_bp;             // Number of FD points this process has in the original band parallelization (BP), == pSPARC->Nd_d_dmcomm
+    int      Ndsp_bp;           // Leading dimension of this process
     int      Nd_dp;             // Number of FD points this process has after converted to domain parallelization (DP)
     #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int      desc_Hp_local[9];  // descriptor for Hp_local on each ictxt_blacs_topo
@@ -153,13 +156,13 @@ void init_DP_CheFSI(SPARC_OBJ *pSPARC);
  *          in each original domain parallelization part (blacscomm). Then we need 2 
  *          MPI_Reduce to get the final Hp and Mp on rank 0 of each kpt_comm.
  */
-void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, double *Hp, double *Mp, int spn_i);
+void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi, double *HY, int ldo, double *Hp, double *Mp, int spn_i);
 
 /**
  * @brief   Calculate projected Hamiltonian and overlap matrix with domain parallelization
  *          data partitioning for standard eigenvalue problem.
  */
-void DP_Project_Hamiltonian_std(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int spn_i);
+void DP_Project_Hamiltonian_std(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi, double *HY, int ldo, int spn_i);
 
 /**
  * @brief   Solve generalized eigenproblem Hp * x = lambda * Mp * x using domain parallelization
@@ -194,7 +197,9 @@ void free_DP_CheFSI(SPARC_OBJ *pSPARC);
  *          Hp = X' * H * X, 
  *          M = X' * X.
  */
-void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *X, double *Hp, double *M, int k, int spn_i, MPI_Comm comm);
+void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi, double *HY, int ldo,
+                         double *Hp, double *Mp, int k, int spn_i, MPI_Comm comm);
+                        
 
 
 /**

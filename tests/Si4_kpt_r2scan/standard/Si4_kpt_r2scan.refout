@@ -1,16 +1,16 @@
 ***************************************************************************
-*                       SPARC (version Jun 29, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Fri Jul  7 11:36:17 2023                  *
+*                   Start time: Tue Sep  5 11:57:44 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
 CELL: 7.2973419818 7.2973419818 14.5946839637 
 LATVEC:
-0.707106781186547 0.707106781186547 0.000000000000000 
-0.000000000000000 0.707106781186547 0.707106781186547 
-0.707106781186547 0.000000000000000 0.707106781186547 
+0.5 0.5 0 
+0 0.5 0.5 
+0.5 0 0.5 
 FD_GRID: 25 25 49
 FD_ORDER: 12
 BC: P P P
@@ -43,6 +43,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -50,7 +51,7 @@ PRINT_ATOMS: 0
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: Si4_kpt_r2scan
+OUTPUT_FILE: Si4_kpt_r2scan/temp_run/Si4_kpt_r2scan
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -77,12 +78,12 @@ Mesh spacing in x-direction        :  0.291894 (Bohr)
 Mesh spacing in y-direction        :  0.291894 (Bohr)
 Mesh spacing in z-direction        :  0.297851 (Bohr)
 Number of symmetry adapted k-points:  2
-Output printed to                  :  Si4_kpt_r2scan.out
+Output printed to                  :  Si4_kpt_r2scan/temp_run/Si4_kpt_r2scan.out
 Total number of atom types         :  1
 Total number of atoms              :  4
 Total number of electrons          :  16
 Atom type 1  (valence electrons)   :  Si 4
-Pseudopotential                    :  ../Si.psp8
+Pseudopotential                    :  Si4_kpt_r2scan/Si-4-2.4_LDA.psp8
 Atomic mass                        :  28.0855
 Pseudocharge radii of atom type 1  :  8.46 8.46 8.34 (x, y, z dir)
 Number of atoms of type 1          :  4
@@ -92,46 +93,47 @@ Estimated memory per processor     :  1.82 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -4.0629569470E+00        3.483E-02        0.465
-2            -3.9844284245E+00        2.420E-02        0.195
-3            -3.9836263257E+00        1.534E-02        0.198
-4            -3.9836128061E+00        3.247E-03        0.194
-5            -3.9838610937E+00        2.050E-03        0.187
-6            -3.9838721626E+00        2.813E-04        0.191
-7            -3.9839184551E+00        1.763E-04        0.182
-8            -3.9839188817E+00        4.310E-05        0.181
-9            -3.9839215094E+00        3.431E-05        0.181
-10           -3.9839217364E+00        8.162E-06        0.181
-11           -3.9839217822E+00        6.948E-06        0.173
-12           -3.9839217910E+00        1.438E-06        0.178
+1            -4.0629569470E+00        3.418E-02        0.471
+2            -3.9844284245E+00        2.221E-02        0.185
+3            -3.9836263257E+00        1.393E-02        0.188
+4            -3.9836128061E+00        3.023E-03        0.184
+5            -3.9838610937E+00        1.866E-03        0.181
+6            -3.9838721626E+00        2.972E-04        0.179
+7            -3.9839184551E+00        1.601E-04        0.173
+8            -3.9839188817E+00        4.060E-05        0.173
+9            -3.9839215094E+00        3.115E-05        0.170
+10           -3.9839217364E+00        7.408E-06        0.169
+11           -3.9839217822E+00        6.306E-06        0.164
+12           -3.9839217910E+00        1.307E-06        0.166
 Total number of SCF: 12    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
 Free energy per atom               : -3.9839217910E+00 (Ha/atom)
 Total free energy                  : -1.5935687164E+01 (Ha)
-Band structure energy              :  1.9989841088E-01 (Ha)
+Band structure energy              :  1.9989841089E-01 (Ha)
 Exchange correlation energy        : -4.8163369935E+00 (Ha)
 Self and correction energy         : -5.7574449301E+01 (Ha)
--Entropy*kb*T                      : -1.5987287637E-10 (Ha)
-Fermi level                        :  2.3166701475E-01 (Ha)
+-Entropy*kb*T                      : -1.6051319981E-10 (Ha)
+Fermi level                        :  2.3167064471E-01 (Ha)
 RMS force                          :  4.4803100117E-02 (Ha/Bohr)
-Maximum force                      :  4.8118680289E-02 (Ha/Bohr)
-Time for force calculation         :  0.014 (sec)
-Pressure                           : -3.2663657456E+00 (GPa)
-Maximum stress                     :  1.4052306735E+01 (GPa)
-Time for stress calculation        :  0.082 (sec)
+Maximum force                      :  4.8118680290E-02 (Ha/Bohr)
+Time for force calculation         :  0.011 (sec)
+Pressure                           : -3.2663657450E+00 (GPa)
+Maximum stress                     :  1.4052306734E+01 (GPa)
+Time for stress calculation        :  0.059 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  2.769 sec
+Total walltime                     :  2.595 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

@@ -35,43 +35,42 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int i, n, DMnd, Ns, Nk, nstart, nend, spn_i, sg, kpt;
-    int size_s, size_k, count, spinDMnd, Nband;
-    // double *LapX, *X, g_nk, t1, t2, *Dx, *Dy, *Dz, *Krho;
-    double *X, g_nk, *Dx, *Dy, *Dz;
-    double _Complex *X_kpt, *Dx_kpt, *Dy_kpt, *Dz_kpt;
+    int i, n, DMnd, DMndsp, Ns, Nk, nstart, nend, spinor, Nspinor, sg, kpt;
+    int size_k, count, Nband, spinDMnd;
+    double g_nk, *Dx, *Dy, *Dz;
+    double _Complex *Dx_kpt, *Dy_kpt, *Dz_kpt;
 #ifdef DEBUG
     double t1, t2;
 #endif
     
     DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor =  pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
     Nband = pSPARC->Nband_bandcomm;
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
     nstart = pSPARC->band_start_indx;
     nend = pSPARC->band_end_indx;
-    spinDMnd = (pSPARC->spin_typ == 0) ? DMnd : 2*DMnd;
+    size_k = DMndsp * Nband;
+    spinDMnd = pSPARC->Nspin * DMnd;
 
     if (pSPARC->isGammaPoint == 1) {
-        size_s = DMnd * Nband;
         Dx = (double *) calloc(DMnd * Nband, sizeof(double));
         assert(Dx != NULL);
         Dy = (double *) calloc(DMnd * Nband, sizeof(double));
         assert(Dy != NULL);
         Dz = (double *) calloc(DMnd * Nband, sizeof(double));
         assert(Dz != NULL);
-        // int lapcT[6];
-        // lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        // lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            sg  = pSPARC->spin_start_indx + spn_i;
-            X = pSPARC->Xorb + spn_i*size_s;
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X, Dx, 0, pSPARC->dmcomm);
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X, Dy, 1, pSPARC->dmcomm);
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X, Dz, 2, pSPARC->dmcomm);
+        for (spinor = 0; spinor < Nspinor; spinor++) {
+            sg  = pSPARC->spinor_start_indx + spinor;
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, pSPARC->Xorb + spinor*DMnd, DMndsp, Dx, DMnd, 0, pSPARC->dmcomm);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, pSPARC->Xorb + spinor*DMnd, DMndsp, Dy, DMnd, 1, pSPARC->dmcomm);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, pSPARC->Xorb + spinor*DMnd, DMndsp, Dz, DMnd, 2, pSPARC->dmcomm);
             count = 0;
             for (n = nstart; n <= nend; n++) {
-                g_nk = pSPARC->occ[n+spn_i*Ns];
+                double *occ = pSPARC->occ;
+                if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+                g_nk = occ[n];
                 for (i = 0; i < DMnd; i++, count++) {
                     // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                     // only total in case of non-spin-polarized calculation
@@ -92,28 +91,28 @@ void compute_Kinetic_Density_Tau(SPARC_OBJ *pSPARC, double *Krho)
         free(Dy);
         free(Dz);
     } else {
-        size_k = DMnd * Nband;
-        size_s = size_k * Nk;
         Dx_kpt = (double _Complex *) calloc(DMnd * Nband, sizeof(double _Complex));
         assert(Dx_kpt != NULL);
         Dy_kpt = (double _Complex *) calloc(DMnd * Nband, sizeof(double _Complex));
         assert(Dy_kpt != NULL);
         Dz_kpt = (double _Complex *) calloc(DMnd * Nband, sizeof(double _Complex));
         assert(Dz_kpt != NULL);
-        // int lapcT[6];
-        // lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
-        // lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            sg  = pSPARC->spin_start_indx + spn_i;
-            for (kpt = 0; kpt < Nk; kpt++) {
-                X_kpt = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dx_kpt, 0, &pSPARC->k1_loc[kpt], pSPARC->dmcomm);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dy_kpt, 1, &pSPARC->k2_loc[kpt], pSPARC->dmcomm);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, X_kpt, Dz_kpt, 2, &pSPARC->k3_loc[kpt], pSPARC->dmcomm);
+        
+        for (kpt = 0; kpt < Nk; kpt++) {
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                sg  = pSPARC->spinor_start_indx + spinor;
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, 
+                    pSPARC->Xorb_kpt + kpt*size_k + spinor*DMnd, DMndsp, Dx_kpt, DMnd, 0, &pSPARC->k1_loc[kpt], pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, 
+                    pSPARC->Xorb_kpt + kpt*size_k + spinor*DMnd, DMndsp, Dy_kpt, DMnd, 1, &pSPARC->k2_loc[kpt], pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, Nband, 0.0, 
+                    pSPARC->Xorb_kpt + kpt*size_k + spinor*DMnd, DMndsp, Dz_kpt, DMnd, 2, &pSPARC->k3_loc[kpt], pSPARC->dmcomm);
                 
                 count = 0;
                 for (n = nstart; n <= nend; n++) {
-                    g_nk = (pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts) * pSPARC->occ[spn_i*Nk*Ns+kpt*Ns+n];
+                    double *occ = pSPARC->occ + kpt*Ns;
+                    if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                    g_nk = (pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts) * occ[n];
                     for (i = 0; i < DMnd; i++, count++) {
                         // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                         // only total in case of non-spin-polarized calculation
@@ -275,7 +274,7 @@ void Transfer_vxcMGGA3_phi_psi(SPARC_OBJ *pSPARC, double *vxcMGGA3_phi_domain, d
         D2D(&pSPARC->d2d_dmcomm_phi, &pSPARC->d2d_dmcomm, gridsizes, pSPARC->DMVertices, vxcMGGA3_phi_domain + spin*pSPARC->Nd_d, 
             pSPARC->DMVertices_dmcomm, vxcMGGA3_psi_domain + spin*pSPARC->Nd_d_dmcomm, pSPARC->dmcomm_phi, sdims, 
             (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? pSPARC->dmcomm : MPI_COMM_NULL, 
-            rdims, MPI_COMM_WORLD);
+            rdims, MPI_COMM_WORLD, sizeof(double));
     }
     #ifdef DEBUG
     t2 = MPI_Wtime();

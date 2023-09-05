@@ -25,6 +25,7 @@
 #include "electrostatics.h"
 #include "readfiles.h"
 #include "eigenSolver.h" // Mesh2ChebDegree
+#include "readfiles.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 

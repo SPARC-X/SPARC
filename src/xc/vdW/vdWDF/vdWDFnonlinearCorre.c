@@ -1001,9 +1001,9 @@ void vdWDF_potential(SPARC_OBJ *pSPARC)
             Dh_1 = (double *)malloc(sizeof(double) * DMnd);
             Dh_2 = (double *)malloc(sizeof(double) * DMnd);
             Dh_3 = (double *)malloc(sizeof(double) * DMnd);
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, Dh_1, 0, pSPARC->dmcomm_phi); // nonCart direction
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, Dh_2, 1, pSPARC->dmcomm_phi);
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, Dh_3, 2, pSPARC->dmcomm_phi);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, DMnd, Dh_1, DMnd, 0, pSPARC->dmcomm_phi); // nonCart direction
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, DMnd, Dh_2, DMnd, 1, pSPARC->dmcomm_phi);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, DMnd, Dh_3, DMnd, 2, pSPARC->dmcomm_phi);
             for (igrid = 0; igrid < DMnd; igrid++)
             {
                 Dh[igrid] = pSPARC->gradT[0 + direction] * Dh_1[igrid] + pSPARC->gradT[3 + direction] * Dh_2[igrid] + pSPARC->gradT[6 + direction] * Dh_3[igrid];
@@ -1014,7 +1014,7 @@ void vdWDF_potential(SPARC_OBJ *pSPARC)
         }
         else
         {                                                                                                         // orthogonal cell
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, Dh, direction, pSPARC->dmcomm_phi); // Soler's paper (10), diffential coefficient matrix
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, h, DMnd, Dh, DMnd, direction, pSPARC->dmcomm_phi); // Soler's paper (10), diffential coefficient matrix
         }
         for (igrid = 0; igrid < DMnd; igrid++)
         {
@@ -1079,9 +1079,9 @@ void spin_vdWDF_potential(SPARC_OBJ *pSPARC)
         }
         if (pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20)
         {                                                                                                   // non-orthogonal cell
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, Dh_1, 0, pSPARC->dmcomm_phi); // nonCart direction
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, Dh_2, 1, pSPARC->dmcomm_phi);
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, Dh_3, 2, pSPARC->dmcomm_phi);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, DMnd, Dh_1, DMnd, 0, pSPARC->dmcomm_phi); // nonCart direction
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, DMnd, Dh_2, DMnd, 1, pSPARC->dmcomm_phi);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, DMnd, Dh_3, DMnd, 2, pSPARC->dmcomm_phi);
             for (i = 0; i < 2 * DMnd; i++)
             {
                 Dh[i] = pSPARC->gradT[0 + direction] * Dh_1[i] + pSPARC->gradT[3 + direction] * Dh_2[i] + pSPARC->gradT[6 + direction] * Dh_3[i];
@@ -1089,7 +1089,7 @@ void spin_vdWDF_potential(SPARC_OBJ *pSPARC)
         }
         else
         {                                                                                                         // orthogonal cell
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, Dh, direction, pSPARC->dmcomm_phi); // Soler's paper (10), diffential coefficient matrix
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 2, 0.0, h, DMnd, Dh, DMnd, direction, pSPARC->dmcomm_phi); // Soler's paper (10), diffential coefficient matrix
         }
         for (i = 0; i < 2 * DMnd; i++)
         {

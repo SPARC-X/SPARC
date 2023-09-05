@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Feb 03, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sun Feb  5 13:39:21 2023                  *
+*                   Start time: Tue Sep  5 11:55:07 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -43,6 +43,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -59,6 +60,7 @@ Lattice vectors (Bohr):
 4.935725560630818 8.548927443228957 0.000000000000000 
 0.000000000000000 0.000000000000000 26.704267028760835 
 Volume: 2.2535816238E+03 (Bohr^3)
+Density: 3.9369881731E-01 (amu/Bohr^3), 4.4117389718E+00 (g/cc)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -82,36 +84,39 @@ Total number of atoms              :  30
 Total number of electrons          :  204
 Atom type 1  (valence electrons)   :  Li 3
 Pseudopotential                    :  ../psps/03_Li_3_1.6_1.6_pbe_v1.0.psp8
+Atomic mass                        :  6.9675
 Pseudocharge radii of atom type 1  :  6.32 6.32 6.38 (x, y, z dir)
 Number of atoms of type 1          :  6
 Atom type 2  (valence electrons)   :  Nb 13
 Pseudopotential                    :  ../psps/41_Nb_13_1.5_1.7_pbe_n_v1.0.psp8
+Atomic mass                        :  92.90637
 Pseudocharge radii of atom type 2  :  8.69 8.69 8.77 (x, y, z dir)
 Number of atoms of type 2          :  6
 Atom type 3  (valence electrons)   :  O 6
 Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Atomic mass                        :  15.9994
 Pseudocharge radii of atom type 3  :  9.08 9.08 9.17 (x, y, z dir)
 Number of atoms of type 3          :  18
-Estimated total memory usage       :  1.91 GB
-Estimated memory per processor     :  40.76 MB
+Estimated total memory usage       :  2.28 GB
+Estimated memory per processor     :  48.56 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.3869799419E+01        1.412E-01        3.991
-2            -2.3823507491E+01        6.586E-02        1.007
-3            -2.3813308569E+01        3.899E-02        1.018
-4            -2.3812346770E+01        2.144E-02        1.016
-5            -2.3811648009E+01        9.821E-03        1.008
-6            -2.3811478570E+01        3.632E-03        1.012
-7            -2.3811457015E+01        8.334E-04        1.014
-8            -2.3811456017E+01        1.819E-04        1.005
-9            -2.3811456021E+01        5.713E-05        1.023
-10           -2.3811456017E+01        5.719E-05        1.011
-11           -2.3811456003E+01        1.126E-05        1.007
-12           -2.3811456001E+01        6.781E-06        1.004
-13           -2.3811456002E+01        1.468E-06        1.026
-14           -2.3811456013E+01        5.722E-07        1.008
+1            -2.3869799419E+01        1.412E-01        3.526
+2            -2.3823507491E+01        6.586E-02        0.905
+3            -2.3813308569E+01        3.899E-02        0.901
+4            -2.3812346770E+01        2.144E-02        0.919
+5            -2.3811648009E+01        9.821E-03        0.896
+6            -2.3811478570E+01        3.632E-03        0.895
+7            -2.3811457015E+01        8.334E-04        0.893
+8            -2.3811456017E+01        1.819E-04        0.930
+9            -2.3811456021E+01        5.713E-05        0.890
+10           -2.3811456017E+01        5.719E-05        0.898
+11           -2.3811456003E+01        1.126E-05        0.894
+12           -2.3811456001E+01        6.781E-06        0.891
+13           -2.3811456002E+01        1.468E-06        0.890
+14           -2.3811456013E+01        5.722E-07        0.882
 Total number of SCF: 14    
 ====================================================================
                     Energy and force calculation                    
@@ -121,18 +126,18 @@ Total free energy                  : -7.1434368038E+02 (Ha)
 Band structure energy              : -8.5210755096E+01 (Ha)
 Exchange correlation energy        : -1.6096195438E+02 (Ha)
 Self and correction energy         : -1.0436198294E+03 (Ha)
--Entropy*kb*T                      : -6.7126358350E-11 (Ha)
-Fermi level                        :  1.5483157415E-01 (Ha)
-RMS force                          :  9.7933709896E-03 (Ha/Bohr)
-Maximum force                      :  1.5192572445E-02 (Ha/Bohr)
-Time for force calculation         :  0.092 (sec)
+-Entropy*kb*T                      : -6.6532629097E-11 (Ha)
+Fermi level                        :  1.5483917172E-01 (Ha)
+RMS force                          :  9.7933709913E-03 (Ha/Bohr)
+Maximum force                      :  1.5192572447E-02 (Ha/Bohr)
+Time for force calculation         :  0.079 (sec)
 Pressure                           : -3.6749419932E+01 (GPa)
 Maximum stress                     :  3.9766608035E+01 (GPa)
-Time for stress calculation        :  0.202 (sec)
+Time for stress calculation        :  0.173 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  18.162 sec
+Total walltime                     :  15.650 sec
 ___________________________________________________________________________
 
 ***************************************************************************

@@ -90,7 +90,7 @@ double Calculate_entropy_term(
  *            Escc = integral((Veff[rho_out] - Veff[rho_in]) * rho_out).
  */
 double Calculate_Escc(
-    SPARC_OBJ *pSPARC,      const int DMnd,
+    SPARC_OBJ *pSPARC, const int DMnd, const int ncol,
     const double *Veff_out, const double *Veff_in,
     const double *rho_out,  MPI_Comm comm
 );

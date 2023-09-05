@@ -61,14 +61,9 @@ void  AndersonExtrapolation_complex(
  *          where Gamma = inv(F^T * F) * F^T * f.
  */
 void  AndersonExtrapWtdAvg(
-        const int N, const int m, const double *x_k, const double *f_k, 
+        const int N, const int m, const int Nspden, const int opt, 
+        const double *x_k, const double *f_k, 
         const double *X, const double *F, double *x_wavg, double *f_wavg, 
-        MPI_Comm comm
-);
-
-void  AndersonExtrapWtdAvg_complex(
-        const int N, const int m, const double _Complex *x_k, const double _Complex *f_k, 
-        const double _Complex *X, const double _Complex *F, double _Complex *x_wavg, double _Complex *f_wavg, 
         MPI_Comm comm
 );
 
@@ -79,15 +74,16 @@ void  AndersonExtrapWtdAvg_complex(
  *          Gamma = inv(F^T * F) * F^T * f.         
  */
 void AndersonExtrapCoeff(
-    const int N, const int m, const double *f, const double *F, 
-    double* Gamma, MPI_Comm comm
+    const int N, const int m, const int Nspden, const int opt, 
+    const double *f, const double *F, double* Gamma, MPI_Comm comm
 );
 
-void AndersonExtrapCoeff_complex(
-    const int N, const int m, const double _Complex *f, const double _Complex *F, 
-    double _Complex *Gamma, MPI_Comm comm
-);
 
+void compute_FtF(const double *F, int m, int N, int nspden, int opt, double *FtF);
+
+void compute_Ftf(const double *F, const double *f, int m, int N, int nspden, int opt, double *Ftf);
+
+double dotprod_nc(const double *vec1, const double *vec2, int N, int opt);
 
 /**
  * @brief   Perform Kerker preconditioner.

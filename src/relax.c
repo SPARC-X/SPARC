@@ -939,7 +939,7 @@ void Relax_Cell(SPARC_OBJ *pSPARC)
     double Lx = pSPARC->range_x;
     double Ly = pSPARC->range_y;
     double Lz = pSPARC->range_z;
-    double V;
+    double V = 0;
     if (pSPARC->cell_typ <= 20) {
         V = Lx * Ly * Lz * pSPARC->Jacbdet;
     } else if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {

@@ -27,8 +27,8 @@
  *          the multiplication together. TODO: think of a more efficient way!
  */
 void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                          const int ncol, const double c, const double *x, 
-                          double *Dx, const int dir, MPI_Comm comm);
+                          const int ncol, const double c, const double *x, const int ldi,
+                          double *Dx, const int ldo, const int dir, MPI_Comm comm);
 
 
 
@@ -38,8 +38,8 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
 void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                      const int ncol, const double c, const double *x,
-                      double *Dx, const int dir, MPI_Comm comm, const int* dims);
+                      const int ncol, const double c, const double *x, const int ldi,
+                      double *Dx,  const int ldo, const int dir, MPI_Comm comm, const int* dims);
 
 
 

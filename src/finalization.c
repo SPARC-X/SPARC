@@ -167,6 +167,10 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free(pSPARC->electronDens_at);
         free(pSPARC->electronDens_core);
         free(pSPARC->electronDens);
+        if (pSPARC->spin_typ > 0) {
+            free(pSPARC->mag);
+            free(pSPARC->AtomMag);
+        }
         free(pSPARC->psdChrgDens);
         free(pSPARC->psdChrgDens_ref);
         free(pSPARC->Vc);
@@ -184,16 +188,21 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free(pSPARC->mixing_hist_Xk);
         free(pSPARC->mixing_hist_Fk);
 
+        // saving potential history
+        if (pSPARC->MixingVariable == 1) {
+            free(pSPARC->Veff_loc_dmcomm_phi_in);
+        }
+
+        if (pSPARC->MixingVariable == 0 && pSPARC->spin_typ) {
+            free(pSPARC->electronDens_in);
+        }
+
         // for using QE scf error definition
         if (pSPARC->scf_err_type == 1) {
             free(pSPARC->rho_dmcomm_phi_in);
             free(pSPARC->phi_dmcomm_phi_in);
         }
-
-        // for denstiy mixing, extra memory is created to store potential history
-        if (pSPARC->MixingVariable == 0) { 
-            free(pSPARC->Veff_loc_dmcomm_phi_in);
-        }
+        
         free(pSPARC->mixing_hist_Pfk);
         
         // free MD and relax stuff
@@ -207,6 +216,13 @@ void Free_basic(SPARC_OBJ *pSPARC) {
       		free(pSPARC->atom_pos_1dt);
       		free(pSPARC->atom_pos_2dt);
     	}
+
+        if (pSPARC->spin_typ == 2) {
+            free(pSPARC->XCPotential_nc);
+            if (pSPARC->MixingVariable == 1) {
+                free(pSPARC->Veff_dia_loc_dmcomm_phi);
+            }
+        }
     }
 
     // free preconditioner coeff arrays

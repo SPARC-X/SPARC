@@ -40,535 +40,6 @@
 #define TEMP_TOL 1e-12
 
 /**
- * @brief    Calculate nonlocal force components for cyclix system with gamma point.
- */
-void Calculate_nonlocal_forces_cyclix(SPARC_OBJ *pSPARC)
-{
-    if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    int i, n, np, ldispl, ndc, ityp, iat, ncol, DMnd, atom_index, count, l, m, lmax, spn_i, nspin, size_s;
-    nspin = pSPARC->Nspin_spincomm; // number of spin in my spin communicator
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    size_s = ncol * DMnd;
-    double *force_nloc, *alpha, *beta, *x_ptr, *dx_ptr, *dx_ptr1, *x_rc, *dx_rc, *dx_rc1, *x_rc_ptr, *dx_rc_ptr, *dx_rc_ptr1;
-    double fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk, *beta_x, *beta_y,
-           *beta_z;
-    double *Y2 = (double *) malloc( size_s * sizeof(double));
-    
-    force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
-    alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 4, sizeof(double));
-    double x0_i, y0_i, z0_i, y0, z0;
-    int szp;
-    double ty, tz;
-
-#ifdef DEBUG 
-    if (!rank) printf("Start Calculating nonlocal forces\n");
-#endif
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            //lmax = pSPARC->psd[ityp].lmax;
-            if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-            for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-                x_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                
-                /* first find inner product <Psi_n, Chi_Jlm>, here we calculate <Chi_Jlm, Psi_n> instead */
-                
-                for (n = 0; n < ncol; n++) {
-                    x_ptr = pSPARC->Xorb + spn_i * size_s + n * DMnd;
-                    x_rc_ptr = x_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        // x_rc[n*ndc+i] = pSPARC->Xorb[n*DMnd+pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]];
-                        *(x_rc_ptr + i) = *(x_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                    }
-                }
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
-                            x_rc, ndc, 1.0, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                free(x_rc);
-            }
-        }
-        count++;
-    }    
-    
-    /* find inner product <Chi_Jlm, dPsi_n> */
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        // find dPsi in direction dim
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, 0, pSPARC->dmcomm);
-        beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * 1 + count);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, Y2, 1, pSPARC->dmcomm);
-        beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * 2 + count);
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            szp = pSPARC->nlocProj[ityp].nproj * ncol;
-            double *PX1 = (double *) malloc( szp * sizeof(double));
-            double *PX2 = (double *) malloc( szp * sizeof(double));
-                
-            if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-            for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                x0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    
-                ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-                dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                dx_rc1 = (double *)malloc( ndc * ncol * sizeof(double));
-                atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                for (n = 0; n < ncol; n++) {
-                    dx_ptr = pSPARC->Yorb + n * DMnd;
-                    dx_ptr1 = Y2 + n * DMnd;
-                    dx_rc_ptr = dx_rc + n * ndc;
-                    dx_rc_ptr1 = dx_rc1 + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                        *(dx_rc_ptr1 + i) = *(dx_ptr1 + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                    }
-                }
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
-                            dx_rc, ndc, 0.0, PX1, pSPARC->nlocProj[ityp].nproj); 
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
-                            dx_rc1, ndc, 0.0, PX2, pSPARC->nlocProj[ityp].nproj); 
-                
-                // Apply the rotation matrix
-                y0 = pSPARC->atom_pos[3*atom_index+1];
-                z0 = pSPARC->atom_pos[3*atom_index+2];
-                ty = (y0 - y0_i)/pSPARC->range_y;
-                tz = (z0 - z0_i)/pSPARC->range_z;
-                RotMat_cyclix(pSPARC, ty, tz);
-                for(i = 0; i < szp; i++) {
-                    Rotate_vector_cyclix(pSPARC, PX1 + i, PX2 + i);
-                    beta_x[pSPARC->IP_displ[atom_index]*ncol + i] += PX1[i];
-                    beta_y[pSPARC->IP_displ[atom_index]*ncol + i] += PX2[i];
-                }
-                free(dx_rc);
-                free(dx_rc1);
-            }
-            free(PX1);
-            free(PX2);
-        }
-        count++;
-    }
-
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        // find dPsi in direction dim
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, 2, pSPARC->dmcomm);
-        beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * 3 + count);
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-            for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {    
-                ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-                dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                for (n = 0; n < ncol; n++) {
-                    dx_ptr = pSPARC->Yorb + n * DMnd;
-                    dx_rc_ptr = dx_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                    }
-                }
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
-                            dx_rc, ndc, 1.0, beta_z + pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                free(dx_rc);
-            }
-        }
-        count++;
-    }
-
-    if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 4, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
-    }
-
-    /* calculate nonlocal force */
-    // go over all atoms and find nonlocal force components
-    beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin;
-    beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 2;
-    beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 3;
-    count = 0; atom_index = 0;
-    double spn_fac;
-
-
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        atom_index = 0;
-        spn_fac = 2.0/pSPARC->Nspin * 2.0;
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            int lloc = pSPARC->localPsd[ityp];
-            lmax = pSPARC->psd[ityp].lmax;
-            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
-                fJ_x = fJ_y = fJ_z = 0.0;
-                //alpha_J = alpha + pSPARC->IP_displ[atom_index]*ncol;
-                //beta_Jx = beta_x + pSPARC->IP_displ[atom_index]*ncol;
-                //beta_Jy = beta_y + pSPARC->IP_displ[atom_index]*ncol;
-                //beta_Jz = beta_z + pSPARC->IP_displ[atom_index]*ncol;
-                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                    g_nk = pSPARC->occ[spn_i*pSPARC->Nstates+n];
-                    val2_x = val2_y = val2_z = 0.0;
-                    ldispl = 0;
-                    for (l = 0; l <= lmax; l++) {
-                        // skip the local l
-                        if (l == lloc) {
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                            continue;
-                        }
-                        for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                            val_x = val_y = val_z = 0.0;
-                            for (m = -l; m <= l; m++) {
-                                val_x += alpha[count] * beta_x[count];
-                                val_y += alpha[count] * beta_y[count];
-                                val_z += alpha[count] * beta_z[count];
-                                count++;
-                            }
-                            val2_x += val_x * pSPARC->psd[ityp].Gamma[ldispl+np];
-                            val2_y += val_y * pSPARC->psd[ityp].Gamma[ldispl+np];
-                            val2_z += val_z * pSPARC->psd[ityp].Gamma[ldispl+np];
-                        }
-                        ldispl += pSPARC->psd[ityp].ppl[l];
-                    }
-                    fJ_x += val2_x * g_nk;
-                    fJ_y += val2_y * g_nk;
-                    fJ_z += val2_z * g_nk;
-                }
-                
-                force_nloc[atom_index*3  ] -= spn_fac * fJ_x;
-                force_nloc[atom_index*3+1] -= spn_fac * fJ_y;
-                force_nloc[atom_index*3+2] -= spn_fac * fJ_z;
-                
-                atom_index++;
-            }
-        }
-    }    
-    
-    // sum over all spin
-    if (pSPARC->npspin > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
-    }
-    
-    // sum over all bands
-    if (pSPARC->npband > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
-    }
-    
-#ifdef DEBUG    
-    if (!rank) {
-        printf("force_nloc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", force_nloc[i*3], force_nloc[i*3+1], force_nloc[i*3+2]);
-        }
-    }    
-    if (!rank) {
-        printf("force_loc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", pSPARC->forces[i*3], pSPARC->forces[i*3+1], pSPARC->forces[i*3+2]);
-        }
-    }
-#endif
-    
-    if (!rank) {
-        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
-            pSPARC->forces[i] += force_nloc[i];
-        }
-    }
-    
-    free(force_nloc);
-    free(alpha);
-    free(Y2);
-}
-
-
-
-
-/**
- * @brief    Calculate nonlocal force components for cyclix system with kpts.
- */
-void Calculate_nonlocal_forces_kpt_cyclix(SPARC_OBJ *pSPARC)
-{
-    if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, DMnd, atom_index, count, l, m, lmax, kpt, Nk, size_k, spn_i, nspin, size_s;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
-    double _Complex *alpha, *beta, *x_ptr, *dx_ptr, *dx_ptr1, *x_rc, *dx_rc, *dx_rc1, *x_rc_ptr, *dx_rc_ptr, *dx_rc_ptr1, *beta_x, *beta_y, *beta_z;
-    double *force_nloc, fJ_x, fJ_y, fJ_z, val_x, val_y, val_z, val2_x, val2_y, val2_z, g_nk;
-    double _Complex *Y2 = (double _Complex *) malloc( size_k * sizeof(double _Complex));
-    
-    force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
-    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, sizeof(double _Complex));
-    
-    //printf("max displ %d, nkpts %d \n",pSPARC->IP_displ[pSPARC->n_atom], Nk);
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, kpt_vec[3], theta, x0_i, y0_i, z0_i, y0, z0;
-    double _Complex bloch_fac, b;
-    int szp;
-    double ty, tz;
-
-#ifdef DEBUG 
-    if (!rank) printf("Start Calculating nonlocal forces\n");
-#endif
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++) {
-            k1 = pSPARC->k1_loc[kpt];
-            k2 = pSPARC->k2_loc[kpt];
-            k3 = pSPARC->k3_loc[kpt];
-            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                //lmax = pSPARC->psd[ityp].lmax;
-                if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    x0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                    y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-                    bloch_fac = cos(theta) - sin(theta) * I;
-                    b = 1.0;
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    //printf("03\n");
-                    /* first find inner product <Psi_n, Chi_Jlm>, here we calculate <Chi_Jlm, Psi_n> instead */
-                    for (n = 0; n < ncol; n++) {
-                        x_ptr = pSPARC->Xorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd;
-                        x_rc_ptr = x_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            *(x_rc_ptr + i) = conj(*(x_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]));
-                        }
-                    }
-
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c_cyclix[iat], ndc, 
-                                x_rc, ndc, &b, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);                    
-                    free(x_rc);
-                    
-                }
-            }
-            count++;
-        }
-    }    
-    
-    /* find inner product <Chi_Jlm, dPsi_n> */
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++) {
-            kpt_vec[0] = k1 = pSPARC->k1_loc[kpt];
-            kpt_vec[1] = k2 = pSPARC->k2_loc[kpt];
-            kpt_vec[2] = k3 = pSPARC->k3_loc[kpt];
-            // find dPsi in direction dim
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, 0, kpt_vec, pSPARC->dmcomm);
-            beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * 1 + count);
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, Y2, 1, kpt_vec, pSPARC->dmcomm);
-            beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * 2 + count);
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                szp = pSPARC->nlocProj[ityp].nproj * ncol;
-                double _Complex *PX1 = (double _Complex *)malloc( szp * sizeof(double _Complex));
-                double _Complex *PX2 = (double _Complex *)malloc( szp * sizeof(double _Complex));
-                //lmax = pSPARC->psd[ityp].lmax;
-                if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    x0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                    y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-                    bloch_fac = cos(theta) + sin(theta) * I;
-                    b = 0.0;
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-                    dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    dx_rc1 = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    for (n = 0; n < ncol; n++) {
-                        dx_ptr = pSPARC->Yorb_kpt + n * DMnd;
-                        dx_ptr1 = Y2 + n * DMnd;
-                        dx_rc_ptr = dx_rc + n * ndc;
-                        dx_rc_ptr1 = dx_rc1 + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                            *(dx_rc_ptr1 + i) = *(dx_ptr1 + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                        }
-                    }
-                   
-                    // Matrix -matrix multiplication
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c_cyclix[iat], ndc, 
-                                dx_rc, ndc, &b, PX1, pSPARC->nlocProj[ityp].nproj);
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c_cyclix[iat], ndc, 
-                                dx_rc1, ndc, &b, PX2, pSPARC->nlocProj[ityp].nproj); 
-                    
-                    // Apply the rotation matrix
-                    y0 = pSPARC->atom_pos[3*atom_index+1];
-                    z0 = pSPARC->atom_pos[3*atom_index+2];
-                    ty = (y0 - y0_i)/pSPARC->range_y;
-                    tz = (z0 - z0_i)/pSPARC->range_z;
-                    RotMat_cyclix(pSPARC, ty, tz);
-                    for(i = 0; i < szp; i++) {
-                        Rotate_vector_complex_cyclix(pSPARC, PX1 + i, PX2 + i);
-                        beta_x[pSPARC->IP_displ[atom_index]*ncol + i] += PX1[i];
-                        beta_y[pSPARC->IP_displ[atom_index]*ncol + i] += PX2[i];
-                    }
-                    free(dx_rc);
-                    free(dx_rc1);
-                }
-                free(PX1);
-                free(PX2);
-            }
-            count++; 
-        }
-    }
-    free(Y2);
-
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++) {
-            kpt_vec[0] = k1 = pSPARC->k1_loc[kpt];
-            kpt_vec[1] = k2 = pSPARC->k2_loc[kpt];
-            kpt_vec[2] = k3 = pSPARC->k3_loc[kpt];
-            // find dPsi in direction dim
-            Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, 2, kpt_vec, pSPARC->dmcomm);
-            beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * 3 + count);
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                //lmax = pSPARC->psd[ityp].lmax;
-                if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    x0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                    y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-                    bloch_fac = cos(theta) + sin(theta) * I;
-                    b = 1.0;
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
-                    dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    for (n = 0; n < ncol; n++) {
-                        dx_ptr = pSPARC->Yorb_kpt + n * DMnd;
-                        dx_rc_ptr = dx_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                        }
-                    }
-                   
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c_cyclix[iat], ndc, 
-                                dx_rc, ndc, &b, beta_z + pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                    free(dx_rc);
-                    
-                }
-            }
-            count++; 
-        }
-    }
-
-    if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-    }
-    
-    /* calculate nonlocal force */
-    // go over all atoms and find nonlocal force components
-    int Ns = pSPARC->Nstates;
-    double kpt_spn_fac;
-    beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin;
-    beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 2;
-    beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 3;
-    count = 0; 
-    
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for (k = 0; k < Nk; k++) {
-            kpt_spn_fac = (2.0/pSPARC->Nspin) * 2.0 * pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
-            atom_index = 0;
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                int lloc = pSPARC->localPsd[ityp];
-                lmax = pSPARC->psd[ityp].lmax;
-                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
-                    fJ_x = fJ_y = fJ_z = 0.0;
-                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns+k*Ns+n];
-                        val2_x = val2_y = val2_z = 0.0;
-                        ldispl = 0;
-                        for (l = 0; l <= lmax; l++) {
-                            // skip the local l
-                            if (l == lloc) {
-                                ldispl += pSPARC->psd[ityp].ppl[l];
-                                continue;
-                            }
-                            for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                                val_x = val_y = val_z = 0.0;
-                                for (m = -l; m <= l; m++) {
-                                    val_x += creal(alpha[count]) * creal(beta_x[count]) - cimag(alpha[count]) * cimag(beta_x[count]);
-                                    val_y += creal(alpha[count]) * creal(beta_y[count]) - cimag(alpha[count]) * cimag(beta_y[count]);
-                                    val_z += creal(alpha[count]) * creal(beta_z[count]) - cimag(alpha[count]) * cimag(beta_z[count]);
-                                    count++;
-                                }
-                                val2_x += val_x * pSPARC->psd[ityp].Gamma[ldispl+np];
-                                val2_y += val_y * pSPARC->psd[ityp].Gamma[ldispl+np];
-                                val2_z += val_z * pSPARC->psd[ityp].Gamma[ldispl+np];
-                            }
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                        }
-                        fJ_x += val2_x * g_nk;
-                        fJ_y += val2_y * g_nk;
-                        fJ_z += val2_z * g_nk;
-                    }
-                    force_nloc[atom_index*3  ] -= kpt_spn_fac * fJ_x;
-                    force_nloc[atom_index*3+1] -= kpt_spn_fac * fJ_y;
-                    force_nloc[atom_index*3+2] -= kpt_spn_fac * fJ_z;
-                    atom_index++;
-                }
-            }
-        }
-    }    
-    
-    // sum over all spin
-    if (pSPARC->npspin > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
-    }
-
-
-
-    // sum over all kpoints
-    if (pSPARC->npkpt > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-    }
-    
-    
-    // sum over all bands
-    if (pSPARC->npband > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
-    }
-    
-#ifdef DEBUG    
-    if (!rank) {
-        printf("force_nloc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", force_nloc[i*3], force_nloc[i*3+1], force_nloc[i*3+2]);
-        }
-    }    
-    if (!rank) {
-        printf("force_loc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", pSPARC->forces[i*3], pSPARC->forces[i*3+1], pSPARC->forces[i*3+2]);
-        }
-    }
-#endif
-    
-    if (!rank) {
-        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
-            pSPARC->forces[i] += force_nloc[i];
-        }
-    }
-    
-    free(force_nloc);
-    free(alpha);
-}
-
-
-/**
  * @brief    Calculate local force components
  */ 
 void Calculate_local_forces_cyclix(SPARC_OBJ *pSPARC)
@@ -576,7 +47,7 @@ void Calculate_local_forces_cyclix(SPARC_OBJ *pSPARC)
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; // consider broadcasting the force components or force residual
     
     int ityp, iat, i, j, k, p, ip, jp, kp, i_DM, j_DM, k_DM, FDn, count, count_interp,
-        Nx, Ny, Nz, DMnx, DMny, DMnz, DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, 
+        DMnx, DMny, DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, 
         icor, jcor, kcor, atom_index, *ind_interp, dK, dJ, dI;
     double x0_i, y0_i, z0_i, x, y, z, *R, 
            *VJ, *VJ_ref, *VcJ,
@@ -603,9 +74,7 @@ void Calculate_local_forces_cyclix(SPARC_OBJ *pSPARC)
     Lap_stencil = Lap_wt+5;
     Lap_stencil_coef_compact(pSPARC, FDn, Lap_stencil, -inv_4PI);
 
-
-    Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz;
-    DMnx = pSPARC->Nx_d; DMny = pSPARC->Ny_d; DMnz = pSPARC->Nz_d;
+    DMnx = pSPARC->Nx_d; DMny = pSPARC->Ny_d;
     DMnd = pSPARC->Nd_d;
     
     // initialize force components to zero
@@ -631,12 +100,12 @@ void Calculate_local_forces_cyclix(SPARC_OBJ *pSPARC)
     DVc_y = (double *)malloc( DMnd * sizeof(double));
     DVc_z = (double *)malloc( DMnd * sizeof(double));
     
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_z, 2, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DVc_z, 2, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_x, DMnd, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_y, DMnd, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_z, DMnd, 2, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DMnd, DVc_x, DMnd, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DMnd, DVc_y, DMnd, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->Vc, DMnd, DVc_z, DMnd, 2, pSPARC->dmcomm_phi);
     
     //printf("rank %d\n", rank);
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
@@ -891,7 +360,7 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
     MPI_Comm_rank(pSPARC->dmcomm_phi, &rank);
 
     int ityp, iat, i, j, k, p, ip, jp, kp, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
-        DMnx, DMny, DMnd, nx, ny, nz, nd, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
+        DMnx, DMny, nx, ny, nz, nxp, nyp, nzp, nd_ex, nx2p, ny2p, nz2p, nd_2ex, 
         icor, jcor, kcor, *pshifty_ex, *pshiftz_ex, *ind_interp;
     double x0_i, y0_i, z0_i, x, y, z, *R, *R_interp;
     double rchrg;
@@ -900,13 +369,9 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
     FDn = pSPARC->order / 2;
     
     DMnx = pSPARC->Nx_d;
-    DMny = pSPARC->Ny_d;
-    // DMnz = pSPARC->Nz_d;
-    DMnd = pSPARC->Nd_d * (2*pSPARC->Nspin - 1);
+    DMny = pSPARC->Ny_d;        
 
     // Create indices for laplacian
-    //pshifty = (int *)malloc( (FDn+1) * sizeof(int));
-    //pshiftz = (int *)malloc( (FDn+1) * sizeof(int));
     pshifty_ex = (int *)malloc( (FDn+1) * sizeof(int));
     pshiftz_ex = (int *)malloc( (FDn+1) * sizeof(int));
     
@@ -929,8 +394,7 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
             // number of finite-difference nodes in each direction of overlap rb region
             nx = pSPARC->Atom_Influence_local[ityp].xe[iat] - pSPARC->Atom_Influence_local[ityp].xs[iat] + 1;
             ny = pSPARC->Atom_Influence_local[ityp].ye[iat] - pSPARC->Atom_Influence_local[ityp].ys[iat] + 1;
-            nz = pSPARC->Atom_Influence_local[ityp].ze[iat] - pSPARC->Atom_Influence_local[ityp].zs[iat] + 1;
-            nd = nx * ny * nz;
+            nz = pSPARC->Atom_Influence_local[ityp].ze[iat] - pSPARC->Atom_Influence_local[ityp].zs[iat] + 1;            
             // number of finite-difference nodes in each direction of extended_rb (rb + order/2) region
             nxp = nx + pSPARC->order;
             nyp = ny + pSPARC->order;
@@ -949,13 +413,7 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
             // left corner of the 2FDn-extended-rb-region
             icor = pSPARC->Atom_Influence_local[ityp].xs[iat] - pSPARC->order;
             jcor = pSPARC->Atom_Influence_local[ityp].ys[iat] - pSPARC->order;
-            kcor = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->order;
-                        
-            // relative coordinate of image atoms
-            //x0_i_shift =  x0_i - pSPARC->delta_x * icor; 
-            //y0_i_shift =  y0_i - pSPARC->delta_y * jcor;
-            //z0_i_shift =  z0_i - pSPARC->delta_z * kcor;
-            
+            kcor = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->order;            
 
             count = 0; count_interp = 0;
             for (k = kcor; k < kcor+nz2p; k++) {
@@ -1005,16 +463,13 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
             free(R); R = NULL;
             
             // shift vectors initialized
-            //pshifty[0] = pshiftz[0] = 
             pshifty_ex[0] = pshiftz_ex[0] = 0;
             for (p = 1; p <= FDn; p++) {
                 //pshifty[p] = p * nxp;
                 //pshiftz[p] = pshifty[p] * nyp;
                 pshifty_ex[p] = p * nx2p;
                 pshiftz_ex[p] = pshifty_ex[p] *ny2p;
-            }
-            
-            //double xin = pSPARC->xin + pSPARC->Atom_Influence_local[ityp].xs[iat] * pSPARC->delta_x;
+            }            
 
             // calculate gradient of bJ, bJ_ref, VJ, VJ_ref in the rb-domain
             dk = pSPARC->Atom_Influence_local[ityp].zs[iat] - pSPARC->DMVertices[4];
@@ -1053,7 +508,6 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
             }
 
             // find int Vxc(x) * drhocJ(x) dx
-
             double *Vxc = pSPARC->XCPotential;
             double force_xc_x, force_xc_y, force_xc_z;
             force_xc_x = force_xc_y = force_xc_z = 0.0;
@@ -1073,7 +527,7 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
                         double drhocJ_y_val = drhocJ_y[ishift_p];
                         double drhocJ_z_val = drhocJ_z[ishift_p];
                         double Vxc_val; 
-                        if (pSPARC->Nspin == 1)
+                        if (pSPARC->spin_typ == 0)
                             Vxc_val = Vxc[ishift_DM];
                         else
                             Vxc_val = 0.5 * (Vxc[ishift_DM] + Vxc[pSPARC->Nd_d+ishift_DM]);
@@ -1102,8 +556,6 @@ void Calculate_forces_xc_cyclix(SPARC_OBJ *pSPARC, double *forces_xc) {
     // sum over all domains
     MPI_Allreduce(MPI_IN_PLACE, forces_xc, 3*pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
 
-    //free(pshifty);
-    //free(pshiftz);
     free(pshifty_ex);
     free(pshiftz_ex);
 }
@@ -1149,238 +601,135 @@ void Rotate_vector_complex_cyclix(SPARC_OBJ *pSPARC, double _Complex *fx, double
 }
 
 
-
 /**
- * @brief    Calculate nonlocal force components with kpts in case of spinor wave function.
- */
-void Calculate_nonlocal_forces_kpt_spinor_cyclix(SPARC_OBJ *pSPARC)
-{
-    if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    int i, ncol, DMnd, dim, count, kpt, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, spn_i, nspin, size_s;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    Nspinor = pSPARC->Nspinor;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
-
-    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta, *betax, *betay, *betaz;
-    double *force_nloc;
-
-    // alpha stores integral in order: Nstate ,image, type, kpt, spin
-    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
-    alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
-    alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * 4 * Nspinor, sizeof(double _Complex));
-
-    force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
-    double k1, k2, k3, kpt_vec[3];
-    
-    // Comment: all these changes are made for calculating Dpsi only for one time
-#ifdef DEBUG 
-    if (!rank) printf("Start Calculating nonlocal forces for spinor wavefunctions...\n");
-#endif
-
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++) {
-            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * count;
-            Compute_Integral_psi_Chi_kpt(pSPARC, beta, spn_i, kpt, "SC");
-            beta = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * count;
-            Compute_Integral_psi_Chi_kpt(pSPARC, beta, spn_i, kpt, "SO1");
-            beta = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * count;
-            Compute_Integral_psi_Chi_kpt(pSPARC, beta, spn_i, kpt, "SO2");
-            count++;
-        }
-    }
-    
-    double _Complex *Y2 = (double _Complex *)calloc( DMnd*ncol, sizeof(double _Complex));
-
-    /* find inner product <Chi_Jlm, dPsi_n> */
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++) {
-            kpt_vec[0] = k1 = pSPARC->k1_loc[kpt];
-            kpt_vec[1] = k2 = pSPARC->k2_loc[kpt];
-            kpt_vec[2] = k3 = pSPARC->k3_loc[kpt];
-            // first do dx and dy
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                // find dPsi in direction x
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                        pSPARC->Yorb_kpt+spinor*DMndbyNspinor, 0, kpt_vec, pSPARC->dmcomm);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                        Y2+spinor*DMndbyNspinor, 1, kpt_vec, pSPARC->dmcomm);                                        
-            }
-            betax = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin + count);
-            betay = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 2 + count);
-            Compute_Integral_Chi_Dpsixy_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, Y2, betax, betay, spn_i, kpt, "SC");
-            betax = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin + count);
-            betay = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 2 + count);
-            Compute_Integral_Chi_Dpsixy_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, Y2, betax, betay, spn_i, kpt, "SO1");
-            betax = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin + count);
-            betay = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 2 + count);
-            Compute_Integral_Chi_Dpsixy_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, Y2, betax, betay, spn_i, kpt, "SO2");
-            
-            // then do dz
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k+spinor*DMndbyNspinor, 
-                                        pSPARC->Yorb_kpt+spinor*DMndbyNspinor, 2, kpt_vec, pSPARC->dmcomm);
-            }
-            betaz = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 3 + count);
-            Compute_Integral_Chi_Dpsiz_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, betaz, spn_i, kpt, "SC");
-            betaz = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 3 + count);
-            Compute_Integral_Chi_Dpsiz_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, betaz, spn_i, kpt, "SO1");
-            betaz = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * nspin * 3 + count);
-            Compute_Integral_Chi_Dpsiz_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, betaz, spn_i, kpt, "SO2");
-            count++; 
-        }
-    }    
-    
-    free(Y2);
-
-    if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * nspin * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-    }
-
-    Compute_force_nloc_by_integrals(pSPARC, force_nloc, alpha, "SC");
-    Compute_force_nloc_by_integrals(pSPARC, force_nloc, alpha_so1, "SO1");
-    Compute_force_nloc_by_integrals(pSPARC, force_nloc, alpha_so2, "SO2");
-
-    free(alpha);
-    free(alpha_so1);
-    free(alpha_so2);
-
-    // sum over all spin
-    if (pSPARC->npspin > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
-    }
-
-    // sum over all kpoints
-    if (pSPARC->npkpt > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-    }
-
-    // sum over all bands
-    if (pSPARC->npband > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, force_nloc, 3 * pSPARC->n_atom, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
-    }
-    
-#ifdef DEBUG    
-    if (!rank) {
-        printf("force_nloc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", force_nloc[i*3], force_nloc[i*3+1], force_nloc[i*3+2]);
-        }
-    }    
-    if (!rank) {
-        printf("force_loc = \n");
-        for (i = 0; i < pSPARC->n_atom; i++) {
-            printf("%18.14f %18.14f %18.14f\n", pSPARC->forces[i*3], pSPARC->forces[i*3+1], pSPARC->forces[i*3+2]);
-        }
-    }
-#endif
-    
-    if (!rank) {
-        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
-            pSPARC->forces[i] += force_nloc[i];
-        }
-    }
-    
-    free(force_nloc);
-}
-
-
-
-/**
- * @brief   Calculate <Psi_n, Chi_Jlm> for spinor force
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = x and y
  * 
  *          Note: avail options are "SC", "SO1", "SO2"
  */
-void Compute_Integral_psi_Chi_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *beta, int spn_i, int kpt, char *option) 
-{
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index, Nk;
-    int spinor, Nspinor, DMndbyNspinor, size_k, size_s, nproj, spinorshift, *IP_displ;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    Nspinor = pSPARC->Nspinor;
-    size_k = DMnd * ncol;    
-    size_s = size_k * Nk;
-
-    double _Complex *x_ptr, *x_rc, *x_rc_ptr;
-
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double _Complex bloch_fac, b, **Chi = NULL;
-
-    k1 = pSPARC->k1_loc[kpt];
-    k2 = pSPARC->k2_loc[kpt];
-    k3 = pSPARC->k3_loc[kpt];
-
-    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        nproj = !strcmpi(option, "SC") ? pSPARC->nlocProj[ityp].nproj : pSPARC->nlocProj[ityp].nprojso_ext;
-        if (!strcmpi(option, "SC")) 
-            Chi = pSPARC->nlocProj[ityp].Chi_c_cyclix;
-        else if (!strcmpi(option, "SO1")) 
-            Chi = pSPARC->nlocProj[ityp].Chisowt0_cyclix;
-
-        if (! nproj) continue; // this is typical for hydrogen
-        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-            x0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-            y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-            z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-            bloch_fac = cos(theta) - sin(theta) * I;
-            b = 1.0;
-            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-            /* first find inner product <Psi_n, Chi_Jlm>, here we calculate <Chi_Jlm, Psi_n> instead */
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                if (!strcmpi(option, "SO2")) 
-                    Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtl_cyclix : pSPARC->nlocProj[ityp].Chisowtnl_cyclix; 
-                for (n = 0; n < ncol; n++) {
-                    x_ptr = pSPARC->Xorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd + spinor * DMndbyNspinor;
-                    x_rc_ptr = x_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(x_rc_ptr + i) = conj(*(x_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]));
-                    }
-                }
-                spinorshift = IP_displ[pSPARC->n_atom] * ncol * spinor;
-                cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Chi[iat], ndc, 
-                            x_rc, ndc, &b, beta+spinorshift+IP_displ[atom_index]*ncol, nproj); // multiply dV to get inner-product
-            }
-            free(x_rc);
-        }
-    }
-}
-
-
-void Compute_Integral_Chi_Dpsixy_kpt_cyclix(SPARC_OBJ *pSPARC, 
-    double _Complex *dpsix, double _Complex *dpsiy, double _Complex *beta_x, double _Complex *beta_y, int spn_i, int kpt, char *option) 
+void Compute_Integral_Chi_Dpsixy_cyclix(SPARC_OBJ *pSPARC, 
+    double *dpsix, double *dpsiy, double *beta_x, double *beta_y) 
 {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndbyNspinor, spinorshift, *IP_displ, nproj, ispinor;
+    int spinor, Nspinor, DMndsp, spinorshift;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;    
-    Nspinor = pSPARC->Nspinor;    
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double *dx_ptr, *dx_rc, *dx_rc_ptr, *dx_ptr1, *dx_rc1, *dx_rc_ptr1;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        int szp = pSPARC->nlocProj[ityp].nproj * ncol;
+        double *PX1 = (double *) malloc( szp * sizeof(double));
+        double *PX2 = (double *) malloc( szp * sizeof(double));
+            
+        if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {            
+            double y0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
+            double z0_i = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
+                
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
+            dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
+            dx_rc1 = (double *)malloc( ndc * ncol * sizeof(double));
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                for (n = 0; n < ncol; n++) {
+                    dx_ptr = dpsix + n * DMndsp + spinor * DMnd;
+                    dx_ptr1 = dpsiy + n * DMndsp + spinor * DMnd;
+                    dx_rc_ptr = dx_rc + n * ndc;
+                    dx_rc_ptr1 = dx_rc1 + n * ndc;
+                    for (i = 0; i < ndc; i++) {
+                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
+                        *(dx_rc_ptr1 + i) = *(dx_ptr1 + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
+                    }
+                }
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
+                            dx_rc, ndc, 0.0, PX1, pSPARC->nlocProj[ityp].nproj); 
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
+                            dx_rc1, ndc, 0.0, PX2, pSPARC->nlocProj[ityp].nproj); 
+                
+                // Apply the rotation matrix
+                double y0 = pSPARC->atom_pos[3*atom_index+1];
+                double z0 = pSPARC->atom_pos[3*atom_index+2];
+                double ty = (y0 - y0_i)/pSPARC->range_y;
+                double tz = (z0 - z0_i)/pSPARC->range_z;
+                RotMat_cyclix(pSPARC, ty, tz);
+                spinorshift = pSPARC->IP_displ[pSPARC->n_atom] * ncol * spinor;
+                for(i = 0; i < szp; i++) {
+                    Rotate_vector_cyclix(pSPARC, PX1 + i, PX2 + i);
+                    beta_x[spinorshift + pSPARC->IP_displ[atom_index]*ncol + i] += PX1[i];
+                    beta_y[spinorshift + pSPARC->IP_displ[atom_index]*ncol + i] += PX2[i];
+                }
+            }
+            free(dx_rc);
+            free(dx_rc1);
+        }
+        free(PX1);
+        free(PX2);
+    }
+}
+
+
+/**
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = z
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_Dpsiz_cyclix(SPARC_OBJ *pSPARC, double *dpsi, double *beta) 
+{
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double *dx_ptr, *dx_rc, *dx_rc_ptr;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {    
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat]; 
+            dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                for (n = 0; n < ncol; n++) {
+                    dx_ptr = dpsi + n * DMndsp + spinor * DMnd;
+                    dx_rc_ptr = dx_rc + n * ndc;
+                    for (i = 0; i < ndc; i++) {
+                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
+                    }
+                }
+                spinorshift = pSPARC->IP_displ[pSPARC->n_atom] * ncol * spinor;
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi_cyclix[iat], ndc, 
+                            dx_rc, ndc, 1.0, beta + spinorshift + pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
+            }
+            free(dx_rc);
+        }
+    }
+}
+
+
+/**
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = x and y
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_Dpsixy_kpt_cyclix(SPARC_OBJ *pSPARC, 
+    double _Complex *dpsix, double _Complex *dpsiy, double _Complex *beta_x, double _Complex *beta_y, int kpt, char *option) 
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift, *IP_displ, nproj, ispinor;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
 
     double _Complex *dx_ptr, *dx_rc, *dx_rc_ptr, *dx_ptr1, *dx_rc1, *dx_rc_ptr1;
     double Lx = pSPARC->range_x;
@@ -1422,8 +771,8 @@ void Compute_Integral_Chi_Dpsixy_kpt_cyclix(SPARC_OBJ *pSPARC,
                     Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtnl_cyclix : pSPARC->nlocProj[ityp].Chisowtl_cyclix; 
                 ispinor = !strcmpi(option, "SO2") ? (1 - spinor) : spinor;
                 for (n = 0; n < ncol; n++) {
-                    dx_ptr = dpsix + n * DMnd + ispinor * DMndbyNspinor;;
-                    dx_ptr1 = dpsiy + n * DMnd + ispinor * DMndbyNspinor;;
+                    dx_ptr = dpsix + n * DMndsp + ispinor * DMnd;
+                    dx_ptr1 = dpsiy + n * DMndsp + ispinor * DMnd;
                     dx_rc_ptr = dx_rc + n * ndc;
                     dx_rc_ptr1 = dx_rc1 + n * ndc;
                     for (i = 0; i < ndc; i++) {
@@ -1460,15 +809,19 @@ void Compute_Integral_Chi_Dpsixy_kpt_cyclix(SPARC_OBJ *pSPARC,
 }
 
 
-
-void Compute_Integral_Chi_Dpsiz_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int spn_i, int kpt, char *option) 
+/**
+ * @brief   Calculate <Chi_Jlm, DPsi_n> for spinor force, n = z
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_Dpsiz_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int kpt, char *option) 
 {
     int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndbyNspinor, spinorshift, *IP_displ, nproj, ispinor;
+    int spinor, Nspinor, DMndsp, spinorshift, *IP_displ, nproj, ispinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;    
-    Nspinor = pSPARC->Nspinor;    
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
 
     double _Complex *dx_ptr, *dx_rc, *dx_rc_ptr;
     double Lx = pSPARC->range_x;
@@ -1507,18 +860,12 @@ void Compute_Integral_Chi_Dpsiz_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *d
                 ispinor = !strcmpi(option, "SO2") ? (1 - spinor) : spinor;
 
                 for (n = 0; n < ncol; n++) {                    
-                    dx_ptr = dpsi + n * DMnd + ispinor * DMndbyNspinor;
+                    dx_ptr = dpsi + n * DMndsp + ispinor * DMnd;
                     dx_rc_ptr = dx_rc + n * ndc;
                     for (i = 0; i < ndc; i++) {
                         *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
                     }
                 }
-                
-                /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                */      
                 spinorshift = IP_displ[pSPARC->n_atom] * ncol * spinor;
                 cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Chi[iat], ndc, 
                             dx_rc, ndc, &b, beta+spinorshift+IP_displ[atom_index]*ncol, nproj);   

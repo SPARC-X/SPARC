@@ -1,16 +1,16 @@
 ***************************************************************************
-*                       SPARC (version Jun 29, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Fri Jul  7 14:23:15 2023                  *
+*                   Start time: Tue Sep  5 13:42:41 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
 CELL: 7.63 7.63 7.63 
 LATVEC:
-1.000000000000000 0.000000000000000 0.000000000000000 
-0.000000000000000 1.000000000000000 0.000000000000000 
-0.000000000000000 0.000000000000000 1.000000000000000 
+1 0 0 
+0 1 0 
+0 0 1 
 FD_GRID: 77 77 77
 FD_ORDER: 12
 BC: P P P
@@ -27,11 +27,11 @@ CALC_STRESS: 1
 MAXIT_SCF: 100
 MINIT_SCF: 2
 MAXIT_POISSON: 3000
-TOL_SCF: 1.00E-05
+TOL_SCF: 1.00E-06
 POISSON_SOLVER: AAR
-TOL_POISSON: 1.00E-07
+TOL_POISSON: 1.00E-08
 TOL_LANCZOS: 1.00E-02
-TOL_PSEUDOCHARGE: 1.00E-08
+TOL_PSEUDOCHARGE: 1.00E-09
 MIXING_VARIABLE: density
 MIXING_PRECOND: kerker
 TOL_PRECOND: 9.82E-06
@@ -43,6 +43,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -50,7 +51,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: BaTiO3_r2scan
+OUTPUT_FILE: BaTiO3_r2scan/temp_run/BaTiO3_r2scan
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -75,24 +76,24 @@ EIG_SERIAL_MAXNS: 1500
 Number of processors               :  96
 Mesh spacing                       :  0.0990909 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  BaTiO3_r2scan.out
+Output printed to                  :  BaTiO3_r2scan/temp_run/BaTiO3_r2scan.out
 Total number of atom types         :  3
 Total number of atoms              :  5
 Total number of electrons          :  40
 Atom type 1  (valence electrons)   :  Ba 10
-Pseudopotential                    :  ../Ba.psp8
+Pseudopotential                    :  BaTiO3_r2scan/Ba_LDA2.psp8
 Atomic mass                        :  137.327
-Pseudocharge radii of atom type 1  :  6.54 6.54 6.54 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  6.64 6.64 6.64 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Ti 12
-Pseudopotential                    :  ../Ti.psp8
+Pseudopotential                    :  BaTiO3_r2scan/Ti_LDA2.psp8
 Atomic mass                        :  47.867
-Pseudocharge radii of atom type 2  :  6.44 6.44 6.44 (x, y, z dir)
+Pseudocharge radii of atom type 2  :  6.64 6.64 6.64 (x, y, z dir)
 Number of atoms of type 2          :  1
 Atom type 3  (valence electrons)   :  O 6
-Pseudopotential                    :  ../O.psp8
+Pseudopotential                    :  BaTiO3_r2scan/O_LDA2.psp8
 Atomic mass                        :  15.9994
-Pseudocharge radii of atom type 3  :  6.54 6.54 6.54 (x, y, z dir)
+Pseudocharge radii of atom type 3  :  6.64 6.64 6.64 (x, y, z dir)
 Number of atoms of type 3          :  3
 Estimated total memory usage       :  829.83 MB
 Estimated memory per processor     :  8.64 MB
@@ -100,48 +101,51 @@ Estimated memory per processor     :  8.64 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.6340384420E+01        1.577E-01        1.539
-2            -2.6334799337E+01        8.360E-02        0.800
-3            -2.6342253486E+01        6.066E-02        0.863
-4            -2.6356256251E+01        3.718E-02        0.782
-5            -2.6347134307E+01        1.649E-02        0.779
-6            -2.6350515061E+01        9.242E-03        0.758
-7            -2.6350509032E+01        3.975E-03        0.763
-8            -2.6351180843E+01        1.139E-03        0.742
-9            -2.6350777736E+01        5.056E-04        0.763
-10           -2.6350886481E+01        2.417E-04        0.762
-11           -2.6350898915E+01        9.790E-05        0.739
-12           -2.6350915003E+01        2.373E-05        0.730
-13           -2.6350909940E+01        1.257E-05        0.723
-14           -2.6350911420E+01        3.011E-06        0.712
-Total number of SCF: 14    
+1            -2.6340384047E+01        1.577E-01        1.190
+2            -2.6334798974E+01        8.360E-02        0.714
+3            -2.6342253435E+01        6.066E-02        0.714
+4            -2.6356256650E+01        3.718E-02        0.711
+5            -2.6347134056E+01        1.649E-02        0.724
+6            -2.6350514901E+01        9.242E-03        0.704
+7            -2.6350508580E+01        3.975E-03        0.718
+8            -2.6351180845E+01        1.139E-03        0.689
+9            -2.6350777610E+01        5.056E-04        0.702
+10           -2.6350886599E+01        2.416E-04        0.676
+11           -2.6350899186E+01        9.795E-05        0.935
+12           -2.6350914750E+01        2.355E-05        1.117
+13           -2.6350909753E+01        1.229E-05        0.670
+14           -2.6350911108E+01        2.989E-06        0.662
+15           -2.6350910658E+01        1.837E-06        0.661
+16           -2.6350910837E+01        7.498E-07        0.659
+Total number of SCF: 16    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -2.6350911420E+01 (Ha/atom)
-Total free energy                  : -1.3175455710E+02 (Ha)
-Band structure energy              : -1.2173129400E+01 (Ha)
-Exchange correlation energy        : -2.1944190423E+01 (Ha)
+Free energy per atom               : -2.6350910837E+01 (Ha/atom)
+Total free energy                  : -1.3175455419E+02 (Ha)
+Band structure energy              : -1.2173127943E+01 (Ha)
+Exchange correlation energy        : -2.1944195472E+01 (Ha)
 Self and correction energy         : -2.0603305388E+02 (Ha)
--Entropy*kb*T                      : -9.2759897955E-12 (Ha)
-Fermi level                        :  2.3556650256E-01 (Ha)
-RMS force                          :  1.1786020835E-01 (Ha/Bohr)
-Maximum force                      :  2.6213871303E-01 (Ha/Bohr)
-Time for force calculation         :  0.028 (sec)
-Pressure                           :  3.6761873409E+01 (GPa)
-Maximum stress                     :  4.4815625907E+01 (GPa)
-Time for stress calculation        :  0.096 (sec)
+-Entropy*kb*T                      : -2.2432033802E-12 (Ha)
+Fermi level                        :  2.9896761880E-01 (Ha)
+RMS force                          :  1.1785983202E-01 (Ha/Bohr)
+Maximum force                      :  2.6213598988E-01 (Ha/Bohr)
+Time for force calculation         :  0.027 (sec)
+Pressure                           :  3.6761226441E+01 (GPa)
+Maximum stress                     :  4.4814571454E+01 (GPa)
+Time for stress calculation        :  0.077 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  11.966 sec
+Total walltime                     :  12.754 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

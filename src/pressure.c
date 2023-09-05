@@ -37,6 +37,9 @@
 #include "spinOrbitCoupling.h"
 #include "exactExchangePressure.h"
 #include "sqProperties.h"
+#include "forces.h"
+#include "stress.h"
+#include "exchangeCorrelation.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -139,38 +142,32 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
 #ifdef DEBUG
     if (!rank) printf("Start calculating exchange-correlation components of pressure ...\n");
 #endif
-
-    if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
+    
+    pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
+    if (pSPARC->isgradient){
         pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
-    } else if(pSPARC->isgradient){
-        pSPARC->pres_xc = 3 * pSPARC->Exc - pSPARC->Exc_corr;
-        int DMnd, i;
-        DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
+        int len_tot, i, DMnd;
+        DMnd = pSPARC->Nd_d;
+        len_tot = pSPARC->Nspdentd * DMnd;
         double *Drho_x, *Drho_y, *Drho_z, *lapcT;
         double pres_xc;
-        Drho_x = (double *)malloc( DMnd * sizeof(double));
-        Drho_y = (double *)malloc( DMnd * sizeof(double));
-        Drho_z = (double *)malloc( DMnd * sizeof(double));
+        Drho_x = (double *)malloc( len_tot * sizeof(double));
+        Drho_y = (double *)malloc( len_tot * sizeof(double));
+        Drho_z = (double *)malloc( len_tot * sizeof(double));
     
-        double *rho;
-        if (pSPARC->NLCC_flag) {
-            rho = (double *)malloc(DMnd * sizeof(double) );
-            for (i = 0; i < DMnd; i++)
-                rho[i] = pSPARC->electronDens[i] + pSPARC->electronDens_core[i];
-        } else {
-            rho = pSPARC->electronDens;
-        }
+        double *rho = (double *)malloc(len_tot * sizeof(double) );
+        add_rho_core(pSPARC, pSPARC->electronDens, rho, pSPARC->Nspdentd);
 
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_x, DMnd, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_y, DMnd, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_z, DMnd, 2, pSPARC->dmcomm_phi);
         
-        if (pSPARC->NLCC_flag) free(rho);
+        free(rho);
 
         pres_xc = 0.0;
         
         if(pSPARC->cell_typ == 0){
-            for(i = 0; i < DMnd; i++){
+            for(i = 0; i < len_tot; i++){
                 pres_xc += (Drho_x[i] * Drho_x[i] + Drho_y[i] * Drho_y[i] + Drho_z[i] * Drho_z[i]) * pSPARC->Dxcdgrho[i];
             }
             pres_xc *= pSPARC->dV;
@@ -181,7 +178,7 @@ void Calculate_XC_pressure(SPARC_OBJ *pSPARC) {
             lapcT = (double *) malloc(6 * sizeof(double));
             lapcT[0] = pSPARC->lapcT[0]; lapcT[1] = 2 * pSPARC->lapcT[1]; lapcT[2] = 2 * pSPARC->lapcT[2];
             lapcT[3] = pSPARC->lapcT[4]; lapcT[4] = 2 * pSPARC->lapcT[5]; lapcT[5] = pSPARC->lapcT[8]; 
-            for(i = 0; i < DMnd; i++){
+            for(i = 0; i < len_tot; i++){
                 pres_xc += (Drho_x[i] * (lapcT[0] * Drho_x[i] + lapcT[1] * Drho_y[i]) + Drho_y[i] * (lapcT[3] * Drho_y[i] + lapcT[4] * Drho_z[i]) +
                             Drho_z[i] * (lapcT[5] * Drho_z[i] + lapcT[2] * Drho_x[i])) * pSPARC->Dxcdgrho[i]; 
             }
@@ -229,7 +226,7 @@ double Calculate_XC_pressure_nlcc(SPARC_OBJ *pSPARC) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank_comm_world);
 #ifdef DEBUG
     if (!rank_comm_world) 
-        printf("Start calculating NLCC exchange-correlation components of stress ...\n");
+        printf("Start calculating NLCC exchange-correlation components of pressure ...\n");
 #endif
 
     int ityp, iat, i, j, k, p, ip, jp, kp, di, dj, dk, i_DM, j_DM, k_DM, FDn, count, count_interp,
@@ -523,9 +520,9 @@ void Calculate_local_pressure(SPARC_OBJ *pSPARC) {
     Dphi_y = (double *)malloc( DMnd * sizeof(double));
     Dphi_z = (double *)malloc( DMnd * sizeof(double));
     
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_z, 2, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_x, DMnd, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_y, DMnd, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_z, DMnd, 2, pSPARC->dmcomm_phi);
 
     if(pSPARC->cell_typ == 0){
         for(i = 0; i < DMnd; i++){
@@ -808,33 +805,27 @@ void Calculate_local_pressure(SPARC_OBJ *pSPARC) {
  * @brief    Calculate nonlocal pressure components.
  */
 void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
-    if (pSPARC->isGammaPoint) {
-        if (pSPARC->SQFlag == 1) 
-            Calculate_nonlocal_pressure_SQ(pSPARC);
-        else {
-        #ifdef SPARCX_ACCEL
-			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-			{
-				ACCEL_Calculate_nonlocal_pressure_linear(pSPARC);
-			} else
-        #endif
-			{
-				Calculate_nonlocal_pressure_linear(pSPARC);
-			}
+    if (pSPARC->SQFlag == 1) {
+        Calculate_nonlocal_pressure_SQ(pSPARC);
+    } else if (pSPARC->isGammaPoint) {
+    #ifdef SPARCX_ACCEL
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        {
+            ACCEL_Calculate_nonlocal_pressure_linear(pSPARC);
+        } else
+    #endif
+        {
+            Calculate_nonlocal_pressure_linear(pSPARC);
         }
     } else {
-        if (pSPARC->Nspinor == 1) {
-        #ifdef SPARCX_ACCEL
-			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-			{
-				ACCEL_Calculate_nonlocal_pressure_kpt_linear(pSPARC);
-			} else
-        #endif
-			{
-				Calculate_nonlocal_pressure_kpt(pSPARC);
-			}
-        } else if (pSPARC->Nspinor == 2) {
-            Calculate_nonlocal_pressure_kpt_spinor(pSPARC);
+    #ifdef SPARCX_ACCEL
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        {
+            ACCEL_Calculate_nonlocal_pressure_kpt_linear(pSPARC);
+        } else
+    #endif
+        {
+            Calculate_nonlocal_pressure_kpt(pSPARC);
         }
     }
 }
@@ -844,161 +835,66 @@ void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
  */
 void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
 {
-    if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
+    if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int i, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, i_DM, j_DM, k_DM, dim, atom_index, count, l, m, lmax, spn_i, nspin, size_s;
-    nspin = pSPARC->Nspin_spincomm; // number of spin in my spin communicator
+    int ncol, DMnd;
+    int dim, count, spinor, DMndsp, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    Ns = pSPARC->Nstates; // total number of bands
     DMnd = pSPARC->Nd_d_dmcomm;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
-    size_s = ncol * DMnd;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;    
     
-    double pressure_nloc = 0.0, *alpha, *beta, *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr, R1, R2, R3;
-    double pJ, eJ, temp_e, temp_p, temp2_e, temp2_p, g_nk, *beta_x, *beta_y,
-           *beta_z;
-    
-    alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 4, sizeof(double));
+    double *alpha, *beta;    
+    double pressure_nloc = 0.0, energy_nl;
+
+    alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 4, sizeof(double));
+    assert(alpha != NULL);
+
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal pressure\n");
 #endif
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (!pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-            for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                x_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                
-                /* first find inner product <Psi_n, Chi_Jlm>, and <Chi_Jlm, Psi_n> */
-                for (n = 0; n < ncol; n++) {
-                    x_ptr = pSPARC->Xorb + spn_i * size_s + n * DMnd;
-                    x_rc_ptr = x_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(x_rc_ptr + i) = *(x_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                    }
-                }
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, pSPARC->dV, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                            x_rc, ndc, 1.0, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); // multiply dV to get inner-product
-                free(x_rc);
-                
-            }
-        }
-        count++;
-    }    
-    
-    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    for (dim = 0; dim < 3; dim++) {
-        count = 0;
-        for(spn_i = 0; spn_i < nspin; spn_i++) {
-        // find dPsi in direction dim
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, dim, pSPARC->dmcomm);
-            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (dim+1) + count);
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
-                    R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    for (n = 0; n < ncol; n++) {
-                        dx_ptr = pSPARC->Yorb + n * DMnd;
-                        dx_rc_ptr = dx_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
-                            if (dim == 0){
-                            	i_DM = indx % DMnx;
-                            	*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1);
-                            } else if(dim == 1){
-                            	k_DM = indx / (DMnx * DMny);
-                    			j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                            	*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2);
-                            } else {
-                            	k_DM = indx / (DMnx * DMny);
-                    			*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3);
-                            }
-                            
-                        }
-                    }
 
-                
-                    /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                     *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                     *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                     *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                     */      
-                    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                                dx_rc, ndc, 1.0, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); 
-                    free(dx_rc);
-                }
-            }
-            count++;
-        }    
+    // find <chi_Jlm, psi>
+    beta = alpha;
+    Compute_Integral_psi_Chi(pSPARC, beta, pSPARC->Xorb);
+
+    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
+    count = 1;
+    for (dim = 0; dim < 3; dim++) {
+        for (spinor = 0; spinor < Nspinor; spinor++) {
+            // find dPsi in direction dim along lattice vector directions
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, 
+                                pSPARC->Yorb+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+        }
+        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * count;
+        Compute_Integral_Chi_XmRjp_beta_Dpsi(pSPARC, pSPARC->Yorb, beta, dim);
+        count ++;
     }
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 4, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 4, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
     }
 
     /* calculate nonlocal pressure */
     // go over all atoms and find nonlocal pressure
-    beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin;
-    beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 2;
-    beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 3;
-    count = 0;
-    
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            lmax = pSPARC->psd[ityp].lmax;
-            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
-            	eJ = pJ = 0.0;
-                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                    g_nk = pSPARC->occ[spn_i*Ns + n];
-                    temp2_e = temp2_p = 0.0;
-                    ldispl = 0;
-                    for (l = 0; l <= lmax; l++) {
-                        // skip the local l
-                        if (l == pSPARC->localPsd[ityp]) {
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                            continue;
-                        }
-                        for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                            temp_e = temp_p = 0.0;
-                            for (m = -l; m <= l; m++) {
-                                temp_e += alpha[count] * alpha[count];
-                                temp_p += alpha[count] * (beta_x[count] + beta_y[count] + beta_z[count]);
-                                count++;
-                            }
-                            temp2_e += temp_e * pSPARC->psd[ityp].Gamma[ldispl+np];
-                            temp2_p += temp_p * pSPARC->psd[ityp].Gamma[ldispl+np];
-                        }
-                        ldispl += pSPARC->psd[ityp].ppl[l];
-                    }
-                    eJ += temp2_e * g_nk;
-                    pJ += temp2_p * g_nk;
-                }
-                
-                pressure_nloc -= (2.0/pSPARC->Nspin) * 2.0 *  (pJ + 0.5 * eJ/pSPARC->dV);
-            }
-        }
-    }    
+    Compute_pressure_nloc_by_integrals(pSPARC, &pressure_nloc, alpha);
+    pressure_nloc *= pSPARC->occfac;
+
+    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha);
+    free(alpha);
+    energy_nl *= pSPARC->occfac/pSPARC->dV;
+    pressure_nloc -= energy_nl;
     
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
+    if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
 
-
     // sum over all bands
-    if (pSPARC->npband > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+    if (pSPARC->npband > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
     }
     
     if (!rank) {
@@ -1010,9 +906,118 @@ void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
         printf("Pressure contribution from nonlocal pseudopotential: = %.15f Ha\n", pSPARC->pres_nl);
     }    
 #endif
-    
-    
-    free(alpha);
+}
+
+
+/**
+ * @brief   Calculate <ChiSC_Jlm, (x-RJ')_beta, DPsi_n> for spinor psi
+ */
+void Compute_Integral_Chi_XmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, double *beta, int dim2)
+{
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift;
+    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMnx = pSPARC->Nx_d_dmcomm;
+    DMny = pSPARC->Ny_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+            R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
+            R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
+            R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
+            dpsi_xi_rc = (double *)malloc( ndc * ncol * sizeof(double));
+            assert(dpsi_xi_rc);
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                for (n = 0; n < ncol; n++) {
+                    dpsi_ptr = dpsi_xi + n * DMndsp + spinor * DMnd;
+                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
+
+                    for (i = 0; i < ndc; i++) {
+                        indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
+                        k_DM = indx / (DMnx * DMny);
+                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                        i_DM = indx % DMnx;
+                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
+                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
+                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
+                        XmRjp = (dim2 == 0) ? x1_R1 : ((dim2 == 1) ? x2_R2 :x3_R3);
+                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * XmRjp;
+                    }
+                }
+                spinorshift = pSPARC->IP_displ[pSPARC->n_atom] * ncol * spinor;
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
+                            dpsi_xi_rc, ndc, 1.0, beta+spinorshift+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
+            }
+            free(dpsi_xi_rc);
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute nonlocal pressure by integrals
+ */
+void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc, double *alpha)
+{
+    int n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spinor, Nspinor;
+    double g_nk, temp_p, pJ, gamma_Jl = 0;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    Ns = pSPARC->Nstates;
+    Nk = pSPARC->Nkpts_kptcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+
+    double *beta1_x1, *beta2_x2, *beta3_x3; 
+    beta1_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk;
+    beta2_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 2;
+    beta3_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 3;
+
+    count = 0;
+    for (spinor = 0; spinor < Nspinor; spinor++) {
+        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+            lmax = pSPARC->psd[ityp].lmax;
+            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                pJ = 0;
+                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                    double *occ = pSPARC->occ;
+                    if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+                    g_nk = occ[n];
+
+                    temp_p = 0.0;
+                    ldispl = 0;
+                    for (l = 0; l <= lmax; l++) {
+                        // skip the local l
+                        if (l == pSPARC->localPsd[ityp]) {
+                            ldispl += pSPARC->psd[ityp].ppl[l];
+                            continue;
+                        }
+                        for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
+                            for (m = -l; m <= l; m++) {
+                                gamma_Jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                                temp_p += gamma_Jl * alpha[count] * beta1_x1[count];
+                                temp_p += gamma_Jl * alpha[count] * beta2_x2[count];
+                                temp_p += gamma_Jl * alpha[count] * beta3_x3[count];
+                                count++;
+                            }
+                        }
+                        ldispl += pSPARC->psd[ityp].ppl[l];
+                    }
+                    pJ += temp_p * g_nk;
+                }
+                *pressure_nloc -= 2.0 * pJ;
+            }
+        }
+    }
 }
 
 
@@ -1025,193 +1030,108 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int i, k, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, i_DM, j_DM, k_DM, dim, count, l, m, lmax, atom_index, kpt, Nk, size_k, spn_i, nspin, size_s;
+    int ncol, DMnd;
+    int dim, count, kpt, Nk, size_k, spinor, DMndsp, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    Ns = pSPARC->Nstates;
     DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
     Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;
-    size_s = size_k * Nk;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
+    size_k = DMndsp * ncol;
     
-    double _Complex *alpha, *beta, *x_ptr, *dx_ptr, *x_rc, *dx_rc, *x_rc_ptr, *dx_rc_ptr, *beta_x, *beta_y, *beta_z;
-    double R1, R2, R3, pJ, eJ, temp_e, temp_p, temp2_e, temp2_p, g_nk;
-    double pressure_nloc = 0.0;
-    
-    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, sizeof(double _Complex));
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, kpt_vec;
-    double _Complex bloch_fac, a, b;
+    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta;    
+    alpha = alpha_so1 = alpha_so2 = NULL;
+    double pressure_nloc = 0.0, energy_nl = 0.0;
+
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, sizeof(double _Complex));
+    assert(alpha != NULL);
+    if (pSPARC->SOC_Flag == 1) {
+        alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, sizeof(double _Complex));
+        alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, sizeof(double _Complex));
+        assert(alpha_so1 != NULL && alpha_so2 != NULL);
+    }
+
+    double k1, k2, k3, kpt_vec;    
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal pressure\n");
 #endif
 
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++){
+    // find <chi_Jlm, psi>
+    for(kpt = 0; kpt < Nk; kpt++){
+        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * kpt;
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SC");
+        if (pSPARC->SOC_Flag == 0) continue;
+        beta = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * kpt;
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SO1");
+        beta = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * kpt;            
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SO2");
+    }   
+
+    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
+    count = 1;
+    for (dim = 0; dim < 3; dim++) {
+        for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
             k1 = pSPARC->k1_loc[kpt];
             k2 = pSPARC->k2_loc[kpt];
             k3 = pSPARC->k3_loc[kpt];
-            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (!pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                    R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
-                    bloch_fac = cos(theta) - sin(theta) * I;
-                    a = bloch_fac * pSPARC->dV;
-                    b = 1.0;
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    
-                    /* first find inner product <Psi_n, Chi_Jlm>, and <Chi_Jlm, Psi_n> */
-                    for (n = 0; n < ncol; n++) {
-                        x_ptr = pSPARC->Xorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd;
-                        x_rc_ptr = x_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            *(x_rc_ptr + i) = conj(*(x_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]));
-                        }
-                    }
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &a, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                x_rc, ndc, &b, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); // multiply dV to get inner-product
-                    free(x_rc);
-                }
+            kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                // find dPsi in direction dim along lattice vector directions
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+kpt*size_k+spinor*DMnd, DMndsp, 
+                                        pSPARC->Yorb_kpt+spinor*DMnd, DMndsp, dim, &kpt_vec, pSPARC->dmcomm);
             }
-            count++;
+            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+            Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(pSPARC, pSPARC->Yorb_kpt, beta, kpt, dim, "SC");
+            if (pSPARC->SOC_Flag == 0) continue;
+            beta = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+            Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(pSPARC, pSPARC->Yorb_kpt, beta, kpt, dim, "SO1");
+            beta = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+            Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(pSPARC, pSPARC->Yorb_kpt, beta, kpt, dim, "SO2");
         }
-    }    
-    
-    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    for (dim = 0; dim < 3; dim++) {
-        count = 0;
-        for(spn_i = 0; spn_i < nspin; spn_i++) {
-            for(kpt = 0; kpt < Nk; kpt++) {
-                k1 = pSPARC->k1_loc[kpt];
-                k2 = pSPARC->k2_loc[kpt];
-                k3 = pSPARC->k3_loc[kpt];
-                kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
-                // find dPsi in direction dim
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
-                beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin* (dim + 1) + count);
-                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                    if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                        R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
-                        R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                        R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                        theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
-                        bloch_fac = cos(theta) + sin(theta) * I;
-                        b = 1.0;
-                        ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                        dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                        atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                        for (n = 0; n < ncol; n++) {
-                            dx_ptr = pSPARC->Yorb_kpt + n * DMnd;
-                            dx_rc_ptr = dx_rc + n * ndc;
-                            for (i = 0; i < ndc; i++) {
-                                indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
-                                if (dim == 0){
-                                	i_DM = indx % DMnx;
-                                	*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1);
-                                } else if(dim == 1){
-                                	k_DM = indx / (DMnx * DMny);
-                        			j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                                	*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2);
-                                } else {
-                                	k_DM = indx / (DMnx * DMny);
-                        			*(dx_rc_ptr + i) = *(dx_ptr + indx) * ((k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3);
-                                }
-                                
-                            }
-                        }
-
-                    
-                        /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                         *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                         *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                         *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                         */      
-                        cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                    dx_rc, ndc, &b, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); 
-                        free(dx_rc);
-                    }
-                }
-                count++;
-            }
-        }      
+        count ++;
     }
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        if (pSPARC->SOC_Flag == 1) {
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        }
     }
 
     /* calculate nonlocal pressure */
     // go over all atoms and find nonlocal pressure
-    beta_x = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin;
-    beta_y = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 2;
-    beta_z = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 3;
-    count = 0;
-    
-    double alpha_r, alpha_i;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for (k = 0; k < Nk; k++) {
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                lmax = pSPARC->psd[ityp].lmax;
-                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {                
-                	eJ = pJ = 0.0;
-                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns+k*Ns+n];
-                        temp2_e = temp2_p = 0.0;
-                        ldispl = 0;
-                        for (l = 0; l <= lmax; l++) {
-                            // skip the local l
-                            if (l == pSPARC->localPsd[ityp]) {
-                                ldispl += pSPARC->psd[ityp].ppl[l];
-                                continue;
-                            }
-                            for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                                temp_e = temp_p = 0.0;
-                                for (m = -l; m <= l; m++) {
-                                    alpha_r = creal(alpha[count]); alpha_i = cimag(alpha[count]);
-                                    temp_e += pow(alpha_r, 2.0) + pow(alpha_i, 2.0);
-                                    temp_p += alpha_r * creal(beta_x[count] + beta_y[count] + beta_z[count]) - alpha_i * cimag(beta_x[count] + beta_y[count] + beta_z[count]);
-                                    count++;
-                                }
-                                temp2_e += temp_e * pSPARC->psd[ityp].Gamma[ldispl+np];
-                                temp2_p += temp_p * pSPARC->psd[ityp].Gamma[ldispl+np];
-                            }
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                        }
-                        eJ += temp2_e * g_nk;
-                        pJ += temp2_p * g_nk;
-                    }
-                    
-                    pressure_nloc -= (2.0/pSPARC->Nspin) * 2.0 * pSPARC->kptWts_loc[k] / pSPARC->Nkpts * (pJ + 0.5 * eJ/pSPARC->dV);
-                }
-            }
-        }
+    Compute_pressure_nloc_by_integrals_kpt(pSPARC, &pressure_nloc, alpha, "SC");
+    if (pSPARC->SOC_Flag == 1) {
+        Compute_pressure_nloc_by_integrals_kpt(pSPARC, &pressure_nloc, alpha_so1, "SO1");
+        Compute_pressure_nloc_by_integrals_kpt(pSPARC, &pressure_nloc, alpha_so2, "SO2");
     }
-        
+    pressure_nloc *= pSPARC->occfac;
+
+    energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha,"SC");
+    free(alpha);
+    if (pSPARC->SOC_Flag == 1) {
+        energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha_so1,"SO1");
+        energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha_so2,"SO2");
+        free(alpha_so1);
+        free(alpha_so2);
+    }
+    energy_nl *= pSPARC->occfac/pSPARC->dV;
+    pressure_nloc -= energy_nl;
+    
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
+    if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
     }
         
     // sum over all kpoints
-    if (pSPARC->npkpt > 1) {    
-        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+    if (pSPARC->npkpt > 1) {            
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);        
     }
 
     // sum over all bands
     if (pSPARC->npband > 1) {        
-        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, &pressure_nloc, 1, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
     }
     
     if (!rank) {
@@ -1223,7 +1143,161 @@ void Calculate_nonlocal_pressure_kpt(SPARC_OBJ *pSPARC)
         printf("Pressure contribution from nonlocal pseudopotential: = %.15f Ha\n", pSPARC->pres_nl);
     }    
 #endif
+}
+
+
+
+/**
+ * @brief   Calculate <ChiSC_Jlm, (x-RJ')_beta, DPsi_n> for spinor psi
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int kpt, int dim2, char *option) 
+{
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift, nproj, ispinor, *IP_displ;
+    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMnx = pSPARC->Nx_d_dmcomm;
+    DMny = pSPARC->Ny_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double _Complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double Lx = pSPARC->range_x;
+    double Ly = pSPARC->range_y;
+    double Lz = pSPARC->range_z;
+    double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
+    double _Complex bloch_fac, b, **Chi = NULL;
     
-    
-    free(alpha);
+    k1 = pSPARC->k1_loc[kpt];
+    k2 = pSPARC->k2_loc[kpt];
+    k3 = pSPARC->k3_loc[kpt];
+
+    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        nproj = !strcmpi(option, "SC") ? pSPARC->nlocProj[ityp].nproj : pSPARC->nlocProj[ityp].nprojso_ext;
+        if (!strcmpi(option, "SC")) 
+            Chi = pSPARC->nlocProj[ityp].Chi_c;
+        else if (!strcmpi(option, "SO1")) 
+            Chi = pSPARC->nlocProj[ityp].Chisowt0;
+
+        if (! nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+            R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
+            R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
+            R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
+            theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
+            bloch_fac = cos(theta) + sin(theta) * I;
+            b = 1.0;
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
+            dpsi_xi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
+            assert(dpsi_xi_rc);
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                if (!strcmpi(option, "SO2")) 
+                    Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtnl : pSPARC->nlocProj[ityp].Chisowtl; 
+                ispinor = !strcmpi(option, "SO2") ? (1 - spinor) : spinor;
+
+                for (n = 0; n < ncol; n++) {
+                    dpsi_ptr = dpsi_xi + n * DMndsp + ispinor * DMnd;
+                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
+
+                    for (i = 0; i < ndc; i++) {
+                        indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
+                        k_DM = indx / (DMnx * DMny);
+                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                        i_DM = indx % DMnx;
+                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
+                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
+                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
+                        XmRjp = (dim2 == 0) ? x1_R1 : ((dim2 == 1) ? x2_R2 :x3_R3);
+                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * XmRjp;
+                    }
+                }
+                
+                spinorshift = IP_displ[pSPARC->n_atom] * ncol * spinor;
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Chi[iat], ndc, 
+                            dpsi_xi_rc, ndc, &b, beta+spinorshift+IP_displ[atom_index]*ncol, nproj);                        
+            }
+            free(dpsi_xi_rc);
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute nonlocal pressure with spin-orbit coupling
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_pressure_nloc_by_integrals_kpt(SPARC_OBJ *pSPARC, double *pressure_nloc, double _Complex *alpha, char *option)
+{
+    int k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spinor, Nspinor;
+    int l_start, mexclude, ppl, *IP_displ;
+    double g_nk, kptwt, alpha_r, alpha_i, temp_p, pJ, scaled_gamma_Jl = 0;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    Ns = pSPARC->Nstates;
+    Nk = pSPARC->Nkpts_kptcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+
+    l_start = !strcmpi(option, "SC") ? 0 : 1;
+    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
+
+    double _Complex *beta1_x1, *beta2_x2, *beta3_x3; 
+    beta1_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk;
+    beta2_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 2;
+    beta3_x3 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 3;
+
+    count = 0;
+    for (k = 0; k < Nk; k++) {
+        for (spinor = 0; spinor < Nspinor; spinor++) {
+            double spinorfac = (spinor == 0) ? 1.0 : -1.0; 
+            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                lmax = pSPARC->psd[ityp].lmax;
+                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                    pJ = 0;
+                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                        double *occ = pSPARC->occ + k*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n];
+
+                        temp_p = 0.0;
+                        ldispl = 0;
+                        for (l = l_start; l <= lmax; l++) {
+                            mexclude = !strcmpi(option, "SC") ? (l+1) : (!strcmpi(option, "SO1") ? 0 : l);
+                            ppl = !strcmpi(option, "SC") ? pSPARC->psd[ityp].ppl[l] : pSPARC->psd[ityp].ppl_soc[l-1];
+
+                            // skip the local l
+                            if (l == pSPARC->localPsd[ityp]) {
+                                ldispl += ppl;
+                                continue;
+                            }
+                            for (np = 0; np < ppl; np++) {
+                                for (m = -l; m <= l; m++) {
+                                    if (m == mexclude) continue;
+                                    if (!strcmpi(option, "SC")) scaled_gamma_Jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                                    else if (!strcmpi(option, "SO1")) scaled_gamma_Jl = spinorfac*0.5*m*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+                                    else if (!strcmpi(option, "SO2")) scaled_gamma_Jl = 0.5*sqrt(l*(l+1)-m*(m+1))*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+
+                                    alpha_r = creal(alpha[count]); alpha_i = cimag(alpha[count]);
+                                    temp_p += scaled_gamma_Jl * (alpha_r * creal(beta1_x1[count]) - alpha_i * cimag(beta1_x1[count]));
+                                    temp_p += scaled_gamma_Jl * (alpha_r * creal(beta2_x2[count]) - alpha_i * cimag(beta2_x2[count]));
+                                    temp_p += scaled_gamma_Jl * (alpha_r * creal(beta3_x3[count]) - alpha_i * cimag(beta3_x3[count]));
+                                    count++;
+                                }
+                            }
+                            ldispl += ppl;
+                        }
+                        pJ += temp_p * g_nk;
+                    }
+                    kptwt = pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
+                    *pressure_nloc -= 2.0 * kptwt * pJ;
+                }
+            }
+        }
+    }
 }

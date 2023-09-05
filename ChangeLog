@@ -4,6 +4,21 @@
 -changes
 
 --------------
+Sep 05, 2023
+Name: Xin Jing
+Changes: (all files)
+1. integrate spin and spinor wave function cases for eigen solver, xc, force, stress, etc
+2. clean and merge duplicate code
+3. update references with 1E-5 tolerance
+4. add implementation of noncollinear spin
+5. change rhoTrigger defualt number
+6. calculate and print magnetization of each atom
+7. fix default of Nstates
+8. add testsuites for noncollinear spin
+9. update documentation
+10. change functions for printing density and orbital
+
+--------------
 Aug 15, 2023
 Name: Boqin Zhang
 Changes: (md.c)

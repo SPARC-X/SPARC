@@ -31,8 +31,8 @@
  *          the multiplication together. TODO: think of a more efficient way!
  */
 void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                          const int ncol, const double c, const double *x, 
-                          double *Dx, const int dir, MPI_Comm comm)
+                          const int ncol, const double c, const double *x, const int ldi,
+                          double *Dx, const int ldo, const int dir, MPI_Comm comm)
 {
     int nproc;
     MPI_Comm_size(comm, &nproc);
@@ -44,10 +44,10 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
         dims[0] = dims[1] = dims[2] = 1;
     
     if (pSPARC->CyclixFlag) {
-        Gradient_vectors_dir_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, Dx, dir, comm, dims);
+        Gradient_vectors_dir_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, ldi, Dx, ldo, dir, comm, dims);
     } else {
         for (int i = 0; i < ncol; i++)
-            Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, comm, dims);    
+            Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, comm, dims);    
     }
 }
 
@@ -59,8 +59,8 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
 void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                      const int ncol, const double c, const double *x,
-                      double *Dx, const int dir, MPI_Comm comm, const int* dims)
+                      const int ncol, const double c, const double *x, const int ldi,
+                      double *Dx,  const int ldo, const int dir, MPI_Comm comm, const int* dims)
 {
     int nproc = dims[0] * dims[1] * dims[2];
     int periods[3];
@@ -74,7 +74,7 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
     isDir[0] = (int)(dir == 0); isDir[1] = (int)(dir == 1); isDir[2] = (int)(dir == 2);
     exDir[0] = isDir[0] * FDn; exDir[1] = isDir[1] * FDn; exDir[2] = isDir[2] * FDn;
     
-    // The user has to make sure DMnd = DMnx * DMny * DMnz
+    // The user has to make sure DMnd = DMnx * DMny * DMnz * Nspinor_spincomm
     int DMnx = DMVertices[1] - DMVertices[0] + 1;
     int DMny = DMVertices[3] - DMVertices[2] + 1;
     int DMnz = DMVertices[5] - DMVertices[4] + 1;
@@ -132,7 +132,7 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
             // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
             nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)) * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
             for (n = 0; n < ncol; n++) {
-                nshift = n * DMnd;
+                nshift = n * ldi;
                 for (k = kstart[nbrcount]; k < kend[nbrcount]; k++) {
                     kshift = nshift + k * DMnxny;
                     for (j = jstart[nbrcount]; j < jend[nbrcount]; j++) {
@@ -188,15 +188,15 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
     int DMnz_exDir = DMnz+exDir[2];
     int DMny_exDir = DMny+exDir[1];
     int DMnx_exDir = DMnx+exDir[0];
-    count = 0;
     for (n = 0; n < ncol; n++){
         nshift = n * DMnd_ex;
+        count = 0;
         for (k = exDir[2]; k < DMnz_exDir; k++){
             kshift = nshift + k * DMnxny_ex;
             for (j = exDir[1]; j < DMny_exDir; j++){
                 jshift = kshift + j * DMnx_ex;
                 for (i = exDir[0]; i < DMnx_exDir; i++){
-                    x_ex[jshift+i] = x[count++]; // this saves index calculation time
+                    x_ex[jshift+i] = x[count++ + n*ldi]; // this saves index calculation time
                 }
             }
         }
@@ -270,15 +270,9 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
         for (nbr_i = dir * 2; nbr_i < dir * 2 + 2; nbr_i++) {
             // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
             nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)); // * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
-            //bc = periods[nbr_i / 2];
-            //for (n = 0; n < ncol; n++)
-            //    for (k = kstart[nbrcount], kp = kstart_in[nbr_i]; k < kend[nbrcount]; k++, kp++)
-            //        for (j = jstart[nbrcount], jp = jstart_in[nbr_i]; j < jend[nbrcount]; j++, jp++)
-            //            for (i = istart[nbrcount], ip = istart_in[nbr_i]; i < iend[nbrcount]; i++, ip++)
-            //                x_ex(n,ip,jp,kp) = X(n,i,j,k) * bc;
             if (periods[nbr_i / 2]) {
                 for (n = 0; n < ncol; n++){
-                    nshift = n * DMnd_ex; nshift1 = n * DMnd;
+                    nshift = n * DMnd_ex; nshift1 = n * ldi;
                     for (k = kstart[nbrcount], kp = kstart_in[nbr_i]; k < kend[nbrcount]; k++, kp++){
                         kshift = nshift + kp * DMnxny_ex; kshift1 = nshift1 + k * DMnxny;
                         for (j = jstart[nbrcount], jp = jstart_in[nbr_i]; j < jend[nbrcount]; j++, jp++){
@@ -308,7 +302,7 @@ void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVert
 
     // calculate dx
     for (n = 0; n < ncol; n++) {
-        Calc_DX(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
+        Calc_DX(x_ex+n*DMnd_ex, Dx+n*ldo, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
                 0, DMnx, 0, DMny, 0, DMnz, exDir[0], exDir[1], exDir[2], D1_stencil_coeffs_dim, w1_diag);    
     }
     

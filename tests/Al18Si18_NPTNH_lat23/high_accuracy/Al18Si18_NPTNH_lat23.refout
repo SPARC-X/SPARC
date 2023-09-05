@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Feb 03, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sun Feb  5 14:21:54 2023                  *
+*                   Start time: Tue Sep  5 13:55:38 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -56,6 +56,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -76,6 +77,7 @@ Lattice vectors (Bohr):
 0.000000000000000 15.480000000000000 15.480000000000000 
 10.320000000000000 0.000000000000000 10.320000000000000 
 Volume: 4.9459714560E+03 (Bohr^3)
+Density: 2.0040687695E-01 (amu/Bohr^3), 2.2457340241E+00 (g/cc)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -108,55 +110,54 @@ Pseudopotential                    :  ../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
 Atomic mass                        :  26.9815385
 Pseudocharge radii of atom type 2  :  8.70 8.70 8.94 (x, y, z dir)
 Number of atoms of type 2          :  18
-Estimated total memory usage       :  1012.04 MB
-Estimated memory per processor     :  10.54 MB
+Estimated total memory usage       :  1.17 GB
+Estimated memory per processor     :  12.52 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2218586983E+00        8.759E-02        2.784
-2            -3.2411300735E+00        4.274E-02        0.863
-3            -3.2448644362E+00        4.915E-02        0.828
-4            -3.2459869009E+00        3.775E-02        0.845
-5            -3.2465961931E+00        1.610E-02        0.810
-6            -3.2467122531E+00        2.572E-02        0.857
-7            -3.2468458114E+00        8.734E-03        0.875
-8            -3.2468526665E+00        9.116E-03        0.795
-9            -3.2468713044E+00        1.642E-03        0.820
-10           -3.2468728085E+00        8.498E-04        0.814
-11           -3.2468729941E+00        1.258E-03        0.798
-12           -3.2468733809E+00        1.742E-04        0.774
-13           -3.2468734125E+00        8.185E-05        0.765
-14           -3.2468734211E+00        4.756E-05        0.783
-15           -3.2468734238E+00        2.675E-05        0.739
-16           -3.2468734246E+00        1.066E-05        0.729
-17           -3.2468734249E+00        4.426E-06        0.708
-18           -3.2468734251E+00        2.560E-06        0.760
-19           -3.2468734252E+00        8.782E-07        0.723
-20           -3.2468734241E+00        5.876E-07        0.746
-21           -3.2468734233E+00        2.636E-07        0.734
-Total number of SCF: 21    
+1            -3.2218586983E+00        7.146E-02        2.118
+2            -3.2411300735E+00        3.430E-02        0.691
+3            -3.2448644362E+00        3.946E-02        0.664
+4            -3.2459869009E+00        3.031E-02        0.679
+5            -3.2465961931E+00        1.294E-02        0.620
+6            -3.2467122531E+00        2.068E-02        0.641
+7            -3.2468458114E+00        7.018E-03        0.717
+8            -3.2468526665E+00        7.323E-03        0.677
+9            -3.2468713044E+00        1.320E-03        0.679
+10           -3.2468728085E+00        6.838E-04        0.656
+11           -3.2468729941E+00        1.011E-03        0.657
+12           -3.2468733809E+00        1.405E-04        0.651
+13           -3.2468734125E+00        6.576E-05        0.630
+14           -3.2468734211E+00        3.822E-05        0.592
+15           -3.2468734238E+00        2.150E-05        0.625
+16           -3.2468734246E+00        8.566E-06        0.605
+17           -3.2468734249E+00        3.560E-06        0.587
+18           -3.2468734251E+00        2.057E-06        0.588
+19           -3.2468734252E+00        7.085E-07        0.600
+20           -3.2468734241E+00        4.722E-07        0.555
+Total number of SCF: 20    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2468734233E+00 (Ha/atom)
-Total free energy                  : -1.1688744324E+02 (Ha)
-Band structure energy              : -4.0126489503E+00 (Ha)
-Exchange correlation energy        : -4.7115259995E+01 (Ha)
+Free energy per atom               : -3.2468734241E+00 (Ha/atom)
+Total free energy                  : -1.1688744327E+02 (Ha)
+Band structure energy              : -4.0126458888E+00 (Ha)
+Exchange correlation energy        : -4.7115258674E+01 (Ha)
 Self and correction energy         : -1.8563761237E+02 (Ha)
--Entropy*kb*T                      : -3.2492202246E-02 (Ha)
-Fermi level                        :  1.2923878857E-01 (Ha)
-RMS force                          :  1.7434784057E-02 (Ha/Bohr)
-Maximum force                      :  1.9658244298E-02 (Ha/Bohr)
-Time for force calculation         :  0.085 (sec)
-Pressure                           :  1.3263964930E+01 (GPa)
-Maximum stress                     :  1.5695387966E+01 (GPa)
-Time for stress calculation        :  0.208 (sec)
-MD step time                       :  19.239 (sec)
+-Entropy*kb*T                      : -3.2492185469E-02 (Ha)
+Fermi level                        :  1.2923881918E-01 (Ha)
+RMS force                          :  1.7434732139E-02 (Ha/Bohr)
+Maximum force                      :  1.9658385390E-02 (Ha/Bohr)
+Time for force calculation         :  0.074 (sec)
+Pressure                           :  1.3263939851E+01 (GPa)
+Maximum stress                     :  1.5695363189E+01 (GPa)
+Time for stress calculation        :  0.160 (sec)
+MD step time                       :  14.726 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 30.9764363852065 20.6509575901377 
+LATVEC_SCALE: 30.96 30.9764360637934 20.6509573758623 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -168,42 +169,42 @@ Mesh spacing in z direction        :  0.298009 (Bohr)
                     Self Consistent Field (SCF#2)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2466067463E+00        4.105E-02        0.909
-2            -3.2468953064E+00        1.215E-02        0.872
-3            -3.2469214179E+00        6.021E-03        0.851
-4            -3.2469304191E+00        1.526E-03        0.845
-5            -3.2469311775E+00        4.719E-04        0.841
-6            -3.2469312712E+00        2.884E-04        0.781
-7            -3.2469312925E+00        1.153E-04        0.811
-8            -3.2469312973E+00        4.797E-05        0.758
-9            -3.2469312984E+00        1.948E-05        0.784
-10           -3.2469312981E+00        1.019E-05        0.786
-11           -3.2469312985E+00        3.981E-06        0.742
-12           -3.2469312980E+00        1.699E-06        0.739
-13           -3.2469312984E+00        1.096E-06        0.722
-14           -3.2469312989E+00        4.137E-07        0.757
+1            -3.2466068128E+00        3.298E-02        0.722
+2            -3.2468953003E+00        9.762E-03        0.686
+3            -3.2469214157E+00        4.837E-03        0.683
+4            -3.2469304175E+00        1.226E-03        0.676
+5            -3.2469311762E+00        3.791E-04        0.621
+6            -3.2469312699E+00        2.318E-04        0.646
+7            -3.2469312912E+00        9.264E-05        0.556
+8            -3.2469312960E+00        3.853E-05        0.635
+9            -3.2469312971E+00        1.565E-05        0.639
+10           -3.2469312968E+00        8.188E-06        0.622
+11           -3.2469312972E+00        3.197E-06        0.556
+12           -3.2469312967E+00        1.365E-06        0.561
+13           -3.2469312972E+00        8.804E-07        0.592
+14           -3.2469312976E+00        3.323E-07        0.554
 Total number of SCF: 14    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2469312989E+00 (Ha/atom)
-Total free energy                  : -1.1688952676E+02 (Ha)
-Band structure energy              : -4.0371747929E+00 (Ha)
-Exchange correlation energy        : -4.7106286864E+01 (Ha)
+Free energy per atom               : -3.2469312976E+00 (Ha/atom)
+Total free energy                  : -1.1688952671E+02 (Ha)
+Band structure energy              : -4.0371743137E+00 (Ha)
+Exchange correlation energy        : -4.7106287043E+01 (Ha)
 Self and correction energy         : -1.8563761888E+02 (Ha)
--Entropy*kb*T                      : -3.2450132157E-02 (Ha)
-Fermi level                        :  1.2893356970E-01 (Ha)
-RMS force                          :  1.7426832796E-02 (Ha/Bohr)
-Maximum force                      :  2.1480818336E-02 (Ha/Bohr)
-Time for force calculation         :  0.084 (sec)
-Pressure                           :  1.3153509308E+01 (GPa)
-Maximum stress                     :  1.5554762196E+01 (GPa)
-Time for stress calculation        :  0.205 (sec)
-MD step time                       :  11.889 (sec)
+-Entropy*kb*T                      : -3.2450132296E-02 (Ha)
+Fermi level                        :  1.2893357569E-01 (Ha)
+RMS force                          :  1.7426834302E-02 (Ha/Bohr)
+Maximum force                      :  2.1480819110E-02 (Ha/Bohr)
+Time for force calculation         :  0.072 (sec)
+Pressure                           :  1.3153511541E+01 (GPa)
+Maximum stress                     :  1.5554765055E+01 (GPa)
+Time for stress calculation        :  0.157 (sec)
+MD step time                       :  9.181 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.0229987011544 20.6819991341029 
+LATVEC_SCALE: 30.96 31.0229981140658 20.6819987427105 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -215,42 +216,42 @@ Mesh spacing in z direction        :  0.298457 (Bohr)
                     Self Consistent Field (SCF#3)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2467795033E+00        4.091E-02        0.835
-2            -3.2470664477E+00        1.223E-02        0.807
-3            -3.2470930066E+00        5.998E-03        0.832
-4            -3.2471020166E+00        1.539E-03        0.796
-5            -3.2471027925E+00        4.783E-04        0.838
-6            -3.2471028889E+00        2.910E-04        0.821
-7            -3.2471029108E+00        1.141E-04        0.817
-8            -3.2471029153E+00        4.801E-05        0.757
-9            -3.2471029169E+00        1.989E-05        0.803
-10           -3.2471029163E+00        1.004E-05        0.793
-11           -3.2471029170E+00        4.133E-06        0.754
-12           -3.2471029160E+00        1.799E-06        0.745
-13           -3.2471029170E+00        1.156E-06        0.787
-14           -3.2471029177E+00        4.297E-07        0.708
+1            -3.2467795076E+00        3.288E-02        0.654
+2            -3.2470664447E+00        9.831E-03        0.672
+3            -3.2470930039E+00        4.820E-03        0.661
+4            -3.2471020142E+00        1.237E-03        0.678
+5            -3.2471027902E+00        3.844E-04        0.662
+6            -3.2471028866E+00        2.339E-04        0.574
+7            -3.2471029085E+00        9.170E-05        0.602
+8            -3.2471029130E+00        3.863E-05        0.634
+9            -3.2471029146E+00        1.599E-05        0.560
+10           -3.2471029141E+00        8.069E-06        0.553
+11           -3.2471029147E+00        3.321E-06        0.574
+12           -3.2471029137E+00        1.446E-06        0.552
+13           -3.2471029147E+00        9.287E-07        0.520
+14           -3.2471029154E+00        3.459E-07        0.548
 Total number of SCF: 14    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2471029177E+00 (Ha/atom)
-Total free energy                  : -1.1689570504E+02 (Ha)
-Band structure energy              : -4.1065527915E+00 (Ha)
-Exchange correlation energy        : -4.7080636228E+01 (Ha)
+Free energy per atom               : -3.2471029154E+00 (Ha/atom)
+Total free energy                  : -1.1689570495E+02 (Ha)
+Band structure energy              : -4.1065519184E+00 (Ha)
+Exchange correlation energy        : -4.7080636554E+01 (Ha)
 Self and correction energy         : -1.8563763876E+02 (Ha)
--Entropy*kb*T                      : -3.2385501092E-02 (Ha)
-Fermi level                        :  1.2807318860E-01 (Ha)
-RMS force                          :  1.7306288139E-02 (Ha/Bohr)
-Maximum force                      :  2.3754041246E-02 (Ha/Bohr)
-Time for force calculation         :  0.082 (sec)
-Pressure                           :  1.2837475707E+01 (GPa)
-Maximum stress                     :  1.5149523998E+01 (GPa)
-Time for stress calculation        :  0.202 (sec)
-MD step time                       :  11.635 (sec)
+-Entropy*kb*T                      : -3.2385501617E-02 (Ha)
+Fermi level                        :  1.2807319945E-01 (Ha)
+RMS force                          :  1.7306290553E-02 (Ha/Bohr)
+Maximum force                      :  2.3754042946E-02 (Ha/Bohr)
+Time for force calculation         :  0.071 (sec)
+Pressure                           :  1.2837479738E+01 (GPa)
+Maximum stress                     :  1.5149529149E+01 (GPa)
+Time for stress calculation        :  0.155 (sec)
+MD step time                       :  8.867 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.0917649758394 20.7278433172263 
+LATVEC_SCALE: 30.96 31.0917642249027 20.7278428166018 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -262,39 +263,39 @@ Mesh spacing in z direction        :  0.299118 (Bohr)
                     Self Consistent Field (SCF#4)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2473491937E+00        5.291E-03        0.881
-2            -3.2473498217E+00        3.763E-03        0.803
-3            -3.2473498959E+00        3.810E-04        0.823
-4            -3.2473499202E+00        1.016E-04        0.745
-5            -3.2473499226E+00        4.760E-05        0.763
-6            -3.2473499231E+00        2.948E-05        0.756
-7            -3.2473499236E+00        6.665E-06        0.781
-8            -3.2473499238E+00        4.122E-06        0.744
-9            -3.2473499236E+00        1.491E-06        0.720
-10           -3.2473499222E+00        8.591E-07        0.735
-11           -3.2473499234E+00        3.853E-07        0.693
+1            -3.2473491909E+00        4.253E-03        0.662
+2            -3.2473498188E+00        3.025E-03        0.645
+3            -3.2473498930E+00        3.064E-04        0.645
+4            -3.2473499173E+00        8.170E-05        0.597
+5            -3.2473499198E+00        3.827E-05        0.583
+6            -3.2473499203E+00        2.370E-05        0.555
+7            -3.2473499207E+00        5.364E-06        0.617
+8            -3.2473499210E+00        3.317E-06        0.602
+9            -3.2473499208E+00        1.201E-06        0.521
+10           -3.2473499194E+00        6.927E-07        0.525
+11           -3.2473499206E+00        3.103E-07        0.509
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2473499234E+00 (Ha/atom)
-Total free energy                  : -1.1690459724E+02 (Ha)
-Band structure energy              : -4.2086746255E+00 (Ha)
-Exchange correlation energy        : -4.7042810773E+01 (Ha)
+Free energy per atom               : -3.2473499206E+00 (Ha/atom)
+Total free energy                  : -1.1690459714E+02 (Ha)
+Band structure energy              : -4.2086735130E+00 (Ha)
+Exchange correlation energy        : -4.7042811188E+01 (Ha)
 Self and correction energy         : -1.8563766814E+02 (Ha)
--Entropy*kb*T                      : -3.2273295068E-02 (Ha)
-Fermi level                        :  1.2681736322E-01 (Ha)
-RMS force                          :  1.7163368538E-02 (Ha/Bohr)
-Maximum force                      :  2.5994580022E-02 (Ha/Bohr)
-Time for force calculation         :  0.081 (sec)
-Pressure                           :  1.2375982454E+01 (GPa)
-Maximum stress                     :  1.4669279995E+01 (GPa)
-Time for stress calculation        :  0.201 (sec)
-MD step time                       :  8.965 (sec)
+-Entropy*kb*T                      : -3.2273296175E-02 (Ha)
+Fermi level                        :  1.2681737691E-01 (Ha)
+RMS force                          :  1.7163370841E-02 (Ha/Bohr)
+Maximum force                      :  2.5994582041E-02 (Ha/Bohr)
+Time for force calculation         :  0.072 (sec)
+Pressure                           :  1.2375987526E+01 (GPa)
+Maximum stress                     :  1.4669284185E+01 (GPa)
+Time for stress calculation        :  0.155 (sec)
+MD step time                       :  6.869 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.1709982109118 20.7806654739412 
+LATVEC_SCALE: 30.96 31.1709974264701 20.7806649509801 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -306,39 +307,39 @@ Mesh spacing in z direction        :  0.299881 (Bohr)
                     Self Consistent Field (SCF#5)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2476198639E+00        9.918E-03        0.841
-2            -3.2476207471E+00        7.049E-03        0.802
-3            -3.2476209502E+00        4.159E-04        0.787
-4            -3.2476209796E+00        1.214E-04        0.746
-5            -3.2476209812E+00        6.897E-05        1.081
-6            -3.2476209826E+00        2.676E-05        0.790
-7            -3.2476209826E+00        8.456E-06        0.759
-8            -3.2476209826E+00        5.626E-06        0.758
-9            -3.2476209824E+00        1.819E-06        0.715
-10           -3.2476209816E+00        1.005E-06        0.751
-11           -3.2476209825E+00        4.075E-07        0.718
+1            -3.2476198609E+00        7.976E-03        0.621
+2            -3.2476207443E+00        5.668E-03        0.581
+3            -3.2476209474E+00        3.346E-04        0.575
+4            -3.2476209768E+00        9.759E-05        0.640
+5            -3.2476209784E+00        5.545E-05        0.550
+6            -3.2476209798E+00        2.157E-05        0.569
+7            -3.2476209798E+00        6.833E-06        0.585
+8            -3.2476209798E+00        4.532E-06        0.600
+9            -3.2476209796E+00        1.478E-06        0.534
+10           -3.2476209788E+00        8.118E-07        0.537
+11           -3.2476209797E+00        3.284E-07        0.579
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2476209825E+00 (Ha/atom)
-Total free energy                  : -1.1691435537E+02 (Ha)
-Band structure energy              : -4.3258225566E+00 (Ha)
-Exchange correlation energy        : -4.6999401183E+01 (Ha)
+Free energy per atom               : -3.2476209797E+00 (Ha/atom)
+Total free energy                  : -1.1691435527E+02 (Ha)
+Band structure energy              : -4.3258213998E+00 (Ha)
+Exchange correlation energy        : -4.6999401615E+01 (Ha)
 Self and correction energy         : -1.8563770132E+02 (Ha)
--Entropy*kb*T                      : -3.2108613832E-02 (Ha)
-Fermi level                        :  1.2539308456E-01 (Ha)
-RMS force                          :  1.7089660022E-02 (Ha/Bohr)
-Maximum force                      :  2.8229108608E-02 (Ha/Bohr)
-Time for force calculation         :  0.083 (sec)
-Pressure                           :  1.1853888623E+01 (GPa)
-Maximum stress                     :  1.4240655535E+01 (GPa)
-Time for stress calculation        :  0.204 (sec)
-MD step time                       :  9.276 (sec)
+-Entropy*kb*T                      : -3.2108615396E-02 (Ha)
+Fermi level                        :  1.2539309864E-01 (Ha)
+RMS force                          :  1.7089661516E-02 (Ha/Bohr)
+Maximum force                      :  2.8229110704E-02 (Ha/Bohr)
+Time for force calculation         :  0.072 (sec)
+Pressure                           :  1.1853893828E+01 (GPa)
+Maximum stress                     :  1.4240659905E+01 (GPa)
+Time for stress calculation        :  0.156 (sec)
+MD step time                       :  6.779 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.2471691845629 20.8314461230419 
+LATVEC_SCALE: 30.96 31.2471685031338 20.8314456687558 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -350,39 +351,39 @@ Mesh spacing in z direction        :  0.300613 (Bohr)
                     Self Consistent Field (SCF#6)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2478640689E+00        1.055E-02        0.791
-2            -3.2478648779E+00        7.514E-03        0.771
-3            -3.2478651093E+00        3.914E-04        0.777
-4            -3.2478651392E+00        1.611E-04        0.770
-5            -3.2478651425E+00        7.960E-05        0.733
-6            -3.2478651437E+00        4.154E-05        0.740
-7            -3.2478651448E+00        1.511E-05        0.782
-8            -3.2478651438E+00        6.866E-06        0.729
-9            -3.2478651442E+00        3.286E-06        0.708
-10           -3.2478651443E+00        1.260E-06        0.759
-11           -3.2478651431E+00        4.156E-07        0.685
+1            -3.2478640664E+00        8.485E-03        0.609
+2            -3.2478648753E+00        6.045E-03        0.647
+3            -3.2478651069E+00        3.148E-04        0.648
+4            -3.2478651369E+00        1.296E-04        0.630
+5            -3.2478651401E+00        6.411E-05        0.639
+6            -3.2478651414E+00        3.349E-05        0.583
+7            -3.2478651425E+00        1.218E-05        0.612
+8            -3.2478651415E+00        5.536E-06        0.589
+9            -3.2478651418E+00        2.662E-06        0.537
+10           -3.2478651420E+00        1.015E-06        0.553
+11           -3.2478651407E+00        3.368E-07        0.589
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2478651431E+00 (Ha/atom)
-Total free energy                  : -1.1692314515E+02 (Ha)
-Band structure energy              : -4.4379087331E+00 (Ha)
-Exchange correlation energy        : -4.6957889552E+01 (Ha)
+Free energy per atom               : -3.2478651407E+00 (Ha/atom)
+Total free energy                  : -1.1692314507E+02 (Ha)
+Band structure energy              : -4.4379077451E+00 (Ha)
+Exchange correlation energy        : -4.6957889925E+01 (Ha)
 Self and correction energy         : -1.8563773250E+02 (Ha)
--Entropy*kb*T                      : -3.1921022209E-02 (Ha)
-Fermi level                        :  1.2404766744E-01 (Ha)
-RMS force                          :  1.7128962711E-02 (Ha/Bohr)
-Maximum force                      :  3.0476845841E-02 (Ha/Bohr)
-Time for force calculation         :  0.083 (sec)
-Pressure                           :  1.1362848330E+01 (GPa)
-Maximum stress                     :  1.3830799264E+01 (GPa)
-Time for stress calculation        :  0.205 (sec)
-MD step time                       :  8.777 (sec)
+-Entropy*kb*T                      : -3.1921023791E-02 (Ha)
+Fermi level                        :  1.2404767940E-01 (Ha)
+RMS force                          :  1.7128963351E-02 (Ha/Bohr)
+Maximum force                      :  3.0476847815E-02 (Ha/Bohr)
+Time for force calculation         :  0.072 (sec)
+Pressure                           :  1.1362852757E+01 (GPa)
+Maximum stress                     :  1.3830803036E+01 (GPa)
+Time for stress calculation        :  0.186 (sec)
+MD step time                       :  7.078 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.3072959364484 20.8715306242989 
+LATVEC_SCALE: 30.96 31.3072954765215 20.871530317681 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -394,39 +395,39 @@ Mesh spacing in z direction        :  0.301192 (Bohr)
                     Self Consistent Field (SCF#7)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2480407049E+00        1.040E-02        0.820
-2            -3.2480414202E+00        7.412E-03        0.819
-3            -3.2480416367E+00        3.815E-04        0.774
-4            -3.2480416650E+00        1.504E-04        0.746
-5            -3.2480416675E+00        7.623E-05        0.825
-6            -3.2480416681E+00        4.847E-05        0.749
-7            -3.2480416698E+00        1.231E-05        0.743
-8            -3.2480416694E+00        6.713E-06        0.765
-9            -3.2480416697E+00        2.843E-06        0.765
-10           -3.2480416689E+00        1.224E-06        0.761
-11           -3.2480416680E+00        4.630E-07        0.687
+1            -3.2480407029E+00        8.369E-03        0.619
+2            -3.2480414186E+00        5.965E-03        0.649
+3            -3.2480416352E+00        3.070E-04        0.646
+4            -3.2480416635E+00        1.210E-04        0.634
+5            -3.2480416660E+00        6.133E-05        0.611
+6            -3.2480416666E+00        3.909E-05        0.580
+7            -3.2480416683E+00        9.933E-06        0.618
+8            -3.2480416679E+00        5.417E-06        0.578
+9            -3.2480416681E+00        2.312E-06        0.555
+10           -3.2480416673E+00        9.915E-07        0.599
+11           -3.2480416664E+00        3.740E-07        0.518
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2480416680E+00 (Ha/atom)
-Total free energy                  : -1.1692950005E+02 (Ha)
-Band structure energy              : -4.5260255793E+00 (Ha)
-Exchange correlation energy        : -4.6925334987E+01 (Ha)
+Free energy per atom               : -3.2480416664E+00 (Ha/atom)
+Total free energy                  : -1.1692949999E+02 (Ha)
+Band structure energy              : -4.5260248929E+00 (Ha)
+Exchange correlation energy        : -4.6925335241E+01 (Ha)
 Self and correction energy         : -1.8563775635E+02 (Ha)
--Entropy*kb*T                      : -3.1759625551E-02 (Ha)
-Fermi level                        :  1.2300433697E-01 (Ha)
-RMS force                          :  1.7265395371E-02 (Ha/Bohr)
-Maximum force                      :  3.2754214667E-02 (Ha/Bohr)
-Time for force calculation         :  0.080 (sec)
-Pressure                           :  1.0984635041E+01 (GPa)
-Maximum stress                     :  1.3511445496E+01 (GPa)
-Time for stress calculation        :  0.201 (sec)
-MD step time                       :  8.971 (sec)
+-Entropy*kb*T                      : -3.1759626631E-02 (Ha)
+Fermi level                        :  1.2300434508E-01 (Ha)
+RMS force                          :  1.7265395356E-02 (Ha/Bohr)
+Maximum force                      :  3.2754214967E-02 (Ha/Bohr)
+Time for force calculation         :  0.070 (sec)
+Pressure                           :  1.0984638029E+01 (GPa)
+Maximum stress                     :  1.3511448066E+01 (GPa)
+Time for stress calculation        :  0.154 (sec)
+MD step time                       :  7.012 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.3411860256483 20.8941240170988 
+LATVEC_SCALE: 30.96 31.3411858687121 20.8941239124747 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -438,39 +439,39 @@ Mesh spacing in z direction        :  0.301518 (Bohr)
                     Self Consistent Field (SCF#8)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2481230839E+00        9.482E-03        0.790
-2            -3.2481237529E+00        6.741E-03        0.824
-3            -3.2481239386E+00        3.641E-04        0.815
-4            -3.2481239623E+00        1.118E-04        0.745
-5            -3.2481239633E+00        6.963E-05        0.784
-6            -3.2481239648E+00        2.493E-05        0.805
-7            -3.2481239648E+00        8.502E-06        0.775
-8            -3.2481239649E+00        5.285E-06        0.766
-9            -3.2481239644E+00        1.835E-06        0.696
-10           -3.2481239637E+00        1.233E-06        0.747
-11           -3.2481239641E+00        3.399E-07        0.754
+1            -3.2481230836E+00        7.631E-03        0.622
+2            -3.2481237363E+00        5.431E-03        0.659
+3            -3.2481239330E+00        3.107E-04        0.611
+4            -3.2481239602E+00        1.248E-04        0.566
+5            -3.2481239627E+00        5.563E-05        0.610
+6            -3.2481239640E+00        3.085E-05        0.606
+7            -3.2481239649E+00        1.024E-05        0.551
+8            -3.2481239632E+00        4.762E-06        0.574
+9            -3.2481239644E+00        2.475E-06        0.568
+10           -3.2481239635E+00        7.434E-07        0.521
+11           -3.2481239642E+00        3.474E-07        0.524
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2481239641E+00 (Ha/atom)
+Free energy per atom               : -3.2481239642E+00 (Ha/atom)
 Total free energy                  : -1.1693246271E+02 (Ha)
-Band structure energy              : -4.5755834511E+00 (Ha)
-Exchange correlation energy        : -4.6907194233E+01 (Ha)
+Band structure energy              : -4.5755821608E+00 (Ha)
+Exchange correlation energy        : -4.6907194182E+01 (Ha)
 Self and correction energy         : -1.8563776891E+02 (Ha)
--Entropy*kb*T                      : -3.1666857607E-02 (Ha)
-Fermi level                        :  1.2242931531E-01 (Ha)
-RMS force                          :  1.7451771665E-02 (Ha/Bohr)
-Maximum force                      :  3.5085199276E-02 (Ha/Bohr)
-Time for force calculation         :  0.080 (sec)
-Pressure                           :  1.0779253224E+01 (GPa)
-Maximum stress                     :  1.3339376864E+01 (GPa)
-Time for stress calculation        :  0.197 (sec)
-MD step time                       :  9.020 (sec)
+-Entropy*kb*T                      : -3.1666850137E-02 (Ha)
+Fermi level                        :  1.2242932675E-01 (Ha)
+RMS force                          :  1.7451761424E-02 (Ha/Bohr)
+Maximum force                      :  3.5085105062E-02 (Ha/Bohr)
+Time for force calculation         :  0.071 (sec)
+Pressure                           :  1.0779251301E+01 (GPa)
+Maximum stress                     :  1.3339372633E+01 (GPa)
+Time for stress calculation        :  0.153 (sec)
+MD step time                       :  6.818 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.3431892218933 20.8954594812622 
+LATVEC_SCALE: 30.96 31.3431893184188 20.8954595456126 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -482,39 +483,39 @@ Mesh spacing in z direction        :  0.301537 (Bohr)
                     Self Consistent Field (SCF#9)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2480984816E+00        7.877E-03        0.777
-2            -3.2480989897E+00        5.609E-03        0.796
-3            -3.2480991051E+00        3.651E-04        0.813
-4            -3.2480991294E+00        1.357E-04        0.742
-5            -3.2480991309E+00        5.850E-05        0.821
-6            -3.2480991322E+00        3.574E-05        0.792
-7            -3.2480991333E+00        9.627E-06        0.745
-8            -3.2480991329E+00        5.251E-06        0.775
-9            -3.2480991321E+00        2.220E-06        0.689
-10           -3.2480991317E+00        1.136E-06        0.702
-11           -3.2480991310E+00        4.007E-07        0.747
+1            -3.2480984822E+00        6.340E-03        0.654
+2            -3.2480989900E+00        4.515E-03        0.647
+3            -3.2480991054E+00        2.938E-04        0.644
+4            -3.2480991297E+00        1.091E-04        0.558
+5            -3.2480991312E+00        4.709E-05        0.565
+6            -3.2480991325E+00        2.877E-05        0.562
+7            -3.2480991336E+00        7.750E-06        0.611
+8            -3.2480991332E+00        4.221E-06        0.673
+9            -3.2480991324E+00        1.791E-06        0.577
+10           -3.2480991320E+00        9.133E-07        0.703
+11           -3.2480991313E+00        3.244E-07        0.582
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2480991310E+00 (Ha/atom)
-Total free energy                  : -1.1693156872E+02 (Ha)
-Band structure energy              : -4.5786114856E+00 (Ha)
-Exchange correlation energy        : -4.6906462544E+01 (Ha)
+Free energy per atom               : -3.2480991313E+00 (Ha/atom)
+Total free energy                  : -1.1693156873E+02 (Ha)
+Band structure energy              : -4.5786116167E+00 (Ha)
+Exchange correlation energy        : -4.6906462489E+01 (Ha)
 Self and correction energy         : -1.8563776804E+02 (Ha)
--Entropy*kb*T                      : -3.1664694141E-02 (Ha)
-Fermi level                        :  1.2241145472E-01 (Ha)
-RMS force                          :  1.7650368450E-02 (Ha/Bohr)
-Maximum force                      :  3.7507644247E-02 (Ha/Bohr)
-Time for force calculation         :  0.080 (sec)
-Pressure                           :  1.0778459117E+01 (GPa)
-Maximum stress                     :  1.3346476648E+01 (GPa)
-Time for stress calculation        :  0.199 (sec)
-MD step time                       :  8.988 (sec)
+-Entropy*kb*T                      : -3.1664693793E-02 (Ha)
+Fermi level                        :  1.2241145315E-01 (Ha)
+RMS force                          :  1.7650368869E-02 (Ha/Bohr)
+Maximum force                      :  3.7507644679E-02 (Ha/Bohr)
+Time for force calculation         :  0.070 (sec)
+Pressure                           :  1.0778458470E+01 (GPa)
+Maximum stress                     :  1.3346476038E+01 (GPa)
+Time for stress calculation        :  0.153 (sec)
+MD step time                       :  7.183 (sec)
 ***************************************************************************
                          Reinitialized parameters                          
 ***************************************************************************
-LATVEC_SCALE: 30.96 31.3131705986085 20.875447065739 
+LATVEC_SCALE: 30.96 31.3131709317717 20.8754472878478 
 CHEB_DEGREE: 31
 ***************************************************************************
                              Reinitialization                              
@@ -526,39 +527,39 @@ Mesh spacing in z direction        :  0.301248 (Bohr)
                     Self Consistent Field (SCF#10)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.2479657658E+00        6.756E-03        0.776
-2            -3.2479662726E+00        4.813E-03        0.774
-3            -3.2479663685E+00        3.608E-04        0.794
-4            -3.2479663928E+00        1.260E-04        0.731
-5            -3.2479663945E+00        5.303E-05        0.745
-6            -3.2479663953E+00        3.697E-05        0.791
-7            -3.2479663961E+00        8.359E-06        0.757
-8            -3.2479663966E+00        4.485E-06        0.721
-9            -3.2479663957E+00        2.449E-06        0.710
-10           -3.2479663958E+00        1.163E-06        0.725
-11           -3.2479663944E+00        3.898E-07        0.682
+1            -3.2479657663E+00        5.437E-03        0.586
+2            -3.2479662735E+00        3.873E-03        0.594
+3            -3.2479663695E+00        2.905E-04        0.647
+4            -3.2479663938E+00        1.015E-04        0.636
+5            -3.2479663955E+00        4.269E-05        0.549
+6            -3.2479663963E+00        2.977E-05        0.557
+7            -3.2479663972E+00        6.731E-06        0.617
+8            -3.2479663977E+00        3.619E-06        0.598
+9            -3.2479663968E+00        1.987E-06        0.599
+10           -3.2479663969E+00        9.462E-07        0.568
+11           -3.2479663954E+00        3.156E-07        0.556
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -3.2479663944E+00 (Ha/atom)
-Total free energy                  : -1.1692679020E+02 (Ha)
-Band structure energy              : -4.5349412793E+00 (Ha)
-Exchange correlation energy        : -4.6923215458E+01 (Ha)
+Free energy per atom               : -3.2479663954E+00 (Ha/atom)
+Total free energy                  : -1.1692679024E+02 (Ha)
+Band structure energy              : -4.5349417411E+00 (Ha)
+Exchange correlation energy        : -4.6923215279E+01 (Ha)
 Self and correction energy         : -1.8563775368E+02 (Ha)
--Entropy*kb*T                      : -3.1753393910E-02 (Ha)
-Fermi level                        :  1.2295275239E-01 (Ha)
-RMS force                          :  1.7860025865E-02 (Ha/Bohr)
-Maximum force                      :  4.0068812418E-02 (Ha/Bohr)
-Time for force calculation         :  0.081 (sec)
-Pressure                           :  1.0983159699E+01 (GPa)
-Maximum stress                     :  1.3534004844E+01 (GPa)
-Time for stress calculation        :  0.199 (sec)
-MD step time                       :  8.727 (sec)
+-Entropy*kb*T                      : -3.1753392844E-02 (Ha)
+Fermi level                        :  1.2295274674E-01 (Ha)
+RMS force                          :  1.7860026118E-02 (Ha/Bohr)
+Maximum force                      :  4.0068810884E-02 (Ha/Bohr)
+Time for force calculation         :  0.069 (sec)
+Pressure                           :  1.0983157606E+01 (GPa)
+Maximum stress                     :  1.3534002965E+01 (GPa)
+Time for stress calculation        :  0.153 (sec)
+MD step time                       :  6.911 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  105.622 sec
+Total walltime                     :  81.543 sec
 ___________________________________________________________________________
 
 ***************************************************************************

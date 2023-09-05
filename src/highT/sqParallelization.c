@@ -271,8 +271,8 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         DMnz = pSPARC->DMVertices[5] - pSPARC->DMVertices[4] + 1;
         DMnd = DMnx * DMny * DMnz;
         // allocate memory for electron density (sum of atom potential) and charge density
-        pSPARC->electronDens_at = (double *)malloc( DMnd * (2*pSPARC->Nspin-1) * sizeof(double) );
-        pSPARC->electronDens_core = (double *)calloc( DMnd * (2*pSPARC->Nspin-1), sizeof(double) );
+        pSPARC->electronDens_at = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
+        pSPARC->electronDens_core = (double *)calloc( DMnd, sizeof(double) );
         pSPARC->psdChrgDens = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->psdChrgDens_ref = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->Vc = (double *)malloc( DMnd * sizeof(double) );
@@ -280,7 +280,7 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         assert(pSPARC->electronDens_at != NULL && pSPARC->psdChrgDens != NULL &&
                pSPARC->psdChrgDens_ref != NULL && pSPARC->Vc != NULL);
         // allocate memory for electron density
-        pSPARC->electronDens = (double *)malloc( DMnd * (2*pSPARC->Nspin-1) * sizeof(double) );
+        pSPARC->electronDens = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
         assert(pSPARC->electronDens != NULL);
         // allocate memory for charge extrapolation arrays
         if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){
@@ -306,7 +306,7 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         assert(pSPARC->elecstPotential != NULL);
 
         // allocate memory for XC potential
-        pSPARC->XCPotential = (double *)malloc( DMnd * pSPARC->Nspin * sizeof(double) );
+        pSPARC->XCPotential = (double *)malloc( DMnd * pSPARC->Nspdend * sizeof(double) );
         assert(pSPARC->XCPotential != NULL);
 
         // allocate memory for exchange-correlation energy density
@@ -314,28 +314,26 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
         assert(pSPARC->e_xc != NULL);
 
         // if GGA then allocate for xc energy per particle for each grid point and der. wrt. grho
-        if(strcmpi(pSPARC->XC,"GGA_PBE") == 0 || strcmpi(pSPARC->XC,"GGA_RPBE") == 0 || strcmpi(pSPARC->XC,"GGA_PBEsol") == 0
-         || strcmpi(pSPARC->XC,"PBE0") == 0 || strcmpi(pSPARC->XC,"HF") == 0){
-            pSPARC->Dxcdgrho = (double *)malloc( DMnd * (2*pSPARC->Nspin - 1) * sizeof(double) );
+        if(pSPARC->isgradient) {
+            pSPARC->Dxcdgrho = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
             assert(pSPARC->Dxcdgrho != NULL);
         }
 
-        pSPARC->Veff_loc_dmcomm_phi = (double *)malloc(DMnd * pSPARC->Nspin * sizeof(double));
-        pSPARC->mixing_hist_xk      = (double *)malloc(DMnd * pSPARC->Nspin * sizeof(double));
-        pSPARC->mixing_hist_fk      = (double *)calloc(DMnd * pSPARC->Nspin , sizeof(double));
-        pSPARC->mixing_hist_fkm1    = (double *)calloc(DMnd * pSPARC->Nspin , sizeof(double));
-        pSPARC->mixing_hist_xkm1    = (double *)malloc(DMnd * pSPARC->Nspin * sizeof(double));
-        pSPARC->mixing_hist_Xk      = (double *)malloc(DMnd * pSPARC->Nspin * pSPARC->MixingHistory * sizeof(double));
-        pSPARC->mixing_hist_Fk      = (double *)malloc(DMnd * pSPARC->Nspin * pSPARC->MixingHistory * sizeof(double));
+        pSPARC->Veff_loc_dmcomm_phi = (double *)malloc(DMnd * pSPARC->Nspden * sizeof(double));        
+        pSPARC->mixing_hist_xk      = (double *)malloc(DMnd * pSPARC->Nspden * sizeof(double));
+        pSPARC->mixing_hist_fk      = (double *)calloc(DMnd * pSPARC->Nspden , sizeof(double));
+        pSPARC->mixing_hist_fkm1    = (double *)calloc(DMnd * pSPARC->Nspden , sizeof(double));
+        pSPARC->mixing_hist_xkm1    = (double *)malloc(DMnd * pSPARC->Nspden * sizeof(double));
+        pSPARC->mixing_hist_Xk      = (double *)malloc(DMnd * pSPARC->Nspden * pSPARC->MixingHistory * sizeof(double));
+        pSPARC->mixing_hist_Fk      = (double *)malloc(DMnd * pSPARC->Nspden * pSPARC->MixingHistory * sizeof(double));
+        pSPARC->mixing_hist_Pfk     = (double *)calloc(DMnd * pSPARC->Nspden, sizeof(double));
         assert(pSPARC->Veff_loc_dmcomm_phi != NULL && pSPARC->mixing_hist_xk   != NULL &&
                pSPARC->mixing_hist_fk      != NULL && pSPARC->mixing_hist_fkm1 != NULL &&
                pSPARC->mixing_hist_xkm1    != NULL && pSPARC->mixing_hist_Xk   != NULL &&
-               pSPARC->mixing_hist_Fk      != NULL);
+               pSPARC->mixing_hist_Fk      != NULL && pSPARC->mixing_hist_Pfk  != NULL);
 
         if (pSPARC->MixingVariable == 1) { // for potential mixing, the history is stored already
-            pSPARC->Veff_loc_dmcomm_phi_in = pSPARC->mixing_hist_xk;
-        } else {                           // for denstiy mixing, need extra memory to store potential history
-            pSPARC->Veff_loc_dmcomm_phi_in = (double *)malloc(DMnd * pSPARC->Nspin * sizeof(double));
+            pSPARC->Veff_loc_dmcomm_phi_in = (double *)malloc(DMnd * pSPARC->Nspdend * sizeof(double));
             assert(pSPARC->Veff_loc_dmcomm_phi_in != NULL);
         }
 
@@ -345,11 +343,6 @@ void Setup_Comms_SQ(SPARC_OBJ *pSPARC) {
             assert(pSPARC->rho_dmcomm_phi_in != NULL);
             pSPARC->phi_dmcomm_phi_in = (double *)malloc(DMnd * sizeof(double));
             assert(pSPARC->phi_dmcomm_phi_in != NULL);
-        }
-
-        if (pSPARC->MixingPrecond != 0) {
-            pSPARC->mixing_hist_Pfk = (double *)calloc(DMnd * pSPARC->Nspin, sizeof(double));
-            assert(pSPARC->mixing_hist_Pfk != NULL);
         }
 
         // initialize electrostatic potential as random guess vector
@@ -753,7 +746,7 @@ void TransferDensity_sq2phi(SPARC_OBJ *pSPARC, double *rho_send, double *rho_rec
 #endif
 
     D2D(&pSPARC->d2d_s2p_sq, &pSPARC->d2d_s2p_phi, gridsizes, pSQ->DMVertices_SQ, rho_send, 
-        pSPARC->DMVertices, rho_recv, pSQ->dmcomm_SQ, sdims, pSPARC->dmcomm_phi, rdims, MPI_COMM_WORLD);
+        pSPARC->DMVertices, rho_recv, pSQ->dmcomm_SQ, sdims, pSPARC->dmcomm_phi, rdims, MPI_COMM_WORLD, sizeof(double));
         
 #ifdef DEBUG
     t2 = MPI_Wtime();
@@ -780,7 +773,7 @@ void TransferVeff_phi2sq(SPARC_OBJ *pSPARC, double *Veff_send, double *Veff_recv
 #endif
 
     D2D(&pSPARC->d2d_s2p_phi, &pSPARC->d2d_s2p_sq, gridsizes, pSPARC->DMVertices, Veff_send, 
-        pSQ->DMVertices_SQ, Veff_recv, pSPARC->dmcomm_phi, sdims, pSQ->dmcomm_SQ, rdims, MPI_COMM_WORLD);
+        pSQ->DMVertices_SQ, Veff_recv, pSPARC->dmcomm_phi, sdims, pSQ->dmcomm_SQ, rdims, MPI_COMM_WORLD, sizeof(double));
         
 #ifdef DEBUG
     t2 = MPI_Wtime();

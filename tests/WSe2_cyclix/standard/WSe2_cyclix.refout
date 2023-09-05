@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Jun 19, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Jun 21 23:24:19 2023                  *
+*                   Start time: Tue Sep  5 12:03:33 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -37,6 +37,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -48,8 +49,7 @@ OUTPUT_FILE: WSe2_cyclix/temp_run/WSe2_cyclix
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
-Volume: 1.0336846642E+03 (Bohr^3)
-Density: 1.2002404759E+01 (amu/Bohr^3), 1.3449742417E+02 (g/cc)
+Volume :  1.0336846642E+03 (Bohr^3)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -73,12 +73,12 @@ Total number of electrons          :  46
 Atom type 1  (valence electrons)   :  W 14
 Pseudopotential                    :  ../psps/74_W_14_2.3_2.5_pbe_n_v1.0.psp8
 Atomic mass                        :  183.84
-Pseudocharge radii of atom type 1  :  7.33 0.36 7.28 (x, y, z dir)
+Pseudocharge radii of atom type 1  :  7.33 0.52 7.15 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  Se 16
 Pseudopotential                    :  ../psps/34_Se_16_1.9_2.1_pbe_n_v1.0.psp8
 Atomic mass                        :  78.971
-Pseudocharge radii of atom type 2  :  7.33 0.36 7.15 (x, y, z dir)
+Pseudocharge radii of atom type 2  :  7.33 0.53 7.15 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  3.06 GB
 Estimated memory per processor     :  65.31 MB
@@ -86,46 +86,47 @@ Estimated memory per processor     :  65.31 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.0183254500E+02        7.639E-02        26.376
-2            -1.0183429881E+02        5.109E-02        7.124
-3            -1.0183502101E+02        3.743E-02        7.095
-4            -1.0183546549E+02        1.249E-02        6.990
-5            -1.0183544285E+02        1.356E-02        7.167
-6            -1.0183551626E+02        2.420E-03        7.178
-7            -1.0183552075E+02        3.921E-04        7.008
-8            -1.0183552092E+02        8.851E-05        6.684
-9            -1.0183552092E+02        2.840E-05        6.652
-10           -1.0183552094E+02        9.031E-06        6.560
-11           -1.0183552092E+02        7.436E-06        6.480
-12           -1.0183552094E+02        6.347E-07        6.469
+1            -1.0183254549E+02        7.613E-02        27.229
+2            -1.0183429867E+02        5.101E-02        7.144
+3            -1.0183502413E+02        3.712E-02        7.149
+4            -1.0183546552E+02        1.235E-02        7.108
+5            -1.0183544523E+02        1.337E-02        9.091
+6            -1.0183551633E+02        2.416E-03        10.378
+7            -1.0183552075E+02        3.882E-04        7.066
+8            -1.0183552093E+02        8.927E-05        6.673
+9            -1.0183552093E+02        2.839E-05        6.699
+10           -1.0183552094E+02        8.981E-06        7.334
+11           -1.0183552092E+02        7.418E-06        7.366
+12           -1.0183552094E+02        6.178E-07        7.352
 Total number of SCF: 12    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
 Free energy per atom               : -1.0183552094E+02 (Ha/atom)
-Total free energy                  : -3.0550656281E+02 (Ha)
-Band structure energy              : -6.1063552282E+01 (Ha)
-Exchange correlation energy        : -5.8895903220E+01 (Ha)
+Total free energy                  : -3.0550656283E+02 (Ha)
+Band structure energy              : -6.1063578525E+01 (Ha)
+Exchange correlation energy        : -5.8895903012E+01 (Ha)
 Self and correction energy         : -2.9306005079E+02 (Ha)
--Entropy*kb*T                      : -3.1387016568E-11 (Ha)
-Fermi level                        : -1.7844658961E-01 (Ha)
-RMS force                          :  6.4467626623E-03 (Ha/Bohr)
-Maximum force                      :  1.5323149809E-02 (Ha/Bohr)
-Time for force calculation         :  0.337 (sec)
-Maximum stress                     :  5.9634208818E-01 (Ha/Bohr**2)
-Maximum stress equiv. to periodic  :  5.7809060038E+02 (GPa)
-Time for stress calculation        :  0.346 (sec)
+-Entropy*kb*T                      : -1.0332736669E-12 (Ha)
+Fermi level                        : -1.7486456952E-01 (Ha)
+RMS force                          :  6.4467289927E-03 (Ha/Bohr)
+Maximum force                      :  1.5322782852E-02 (Ha/Bohr)
+Time for force calculation         :  0.415 (sec)
+Maximum stress                     :  5.9636521405E-01 (Ha/Bohr**2)
+Maximum stress equiv. to periodic  :  5.7811301847E+02 (GPa)
+Time for stress calculation        :  0.443 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  103.782 sec
+Total walltime                     :  115.440 sec
 ___________________________________________________________________________
 
 ***************************************************************************
 *             Material Physics & Mechanics Group, Georgia Tech            *
 *                       PI: Phanish Suryanarayana                         *
-*                Main Developers: Qimen Xu, Abhiraj Sharma                *
-*     Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT)    *
-*  Acknowledgements: U.S. DOE (DE-SC0019410); U.S. NSF (1333500,1553212)  *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
 ***************************************************************************
                                                                            

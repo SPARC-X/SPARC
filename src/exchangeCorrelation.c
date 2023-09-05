@@ -26,6 +26,9 @@
 #include "mGGAscan.h"
 #include "mGGArscan.h"
 #include "mGGAr2scan.h"
+#include "cyclix_gradVec.h"
+
+#define max(x,y) ((x)>(y)?(x):(y))
 
 /**
 * @brief  Calculate exchange correlation potential
@@ -34,7 +37,7 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
 {   
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
     
-    int ncol = 2*pSPARC->Nspin-1; 
+    int ncol = pSPARC->Nspdentd; 
     int DMnd = pSPARC->Nd_d;
     int sz = DMnd * ncol;
     double *rho = (double *)malloc(sz * sizeof(double) );
@@ -50,6 +53,7 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         Drho_y = (double *)malloc(sz * sizeof(double) );
         Drho_z = (double *)malloc(sz * sizeof(double) );
         calculate_square_norm_of_gradient(pSPARC, rho, pSPARC->mag, DMnd, ncol, sigma, Drho_x, Drho_y, Drho_z);
+
         if (pSPARC->ixc[3]) { // used for vdW-DF
             memcpy(pSPARC->Drho[0], Drho_x + (pSPARC->Nspin - 1)*DMnd, DMnd*pSPARC->Nspin*sizeof(double));
             memcpy(pSPARC->Drho[1], Drho_y + (pSPARC->Nspin - 1)*DMnd, DMnd*pSPARC->Nspin*sizeof(double));
@@ -192,23 +196,13 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
 
             Drho_times_v2xc(pSPARC, DMnd, 1, Drho_x, Drho_y, Drho_z, pSPARC->Dxcdgrho);
             if (pSPARC->CyclixFlag) {
-                double *Drho_xy = (double *) malloc(2*DMnd * sizeof(double));
-                for (int i = 0; i < DMnd; i++){
-                    Drho_xy[i] = Drho_x[i];
-                    Drho_xy[DMnd+i] = Drho_y[i];
-                }
-                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
-                for (int i = 0; i < DMnd; i++){
-                    Drho_xy[i] = Drho_y[i];
-                    Drho_xy[DMnd+i] = Drho_x[i];
-                }
-                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 1, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-                free(Drho_xy);
+                Gradient_vectors_dir_with_rotfac(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, Drho_y, DMnd, DDrho_x, DMnd, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir_with_rotfac(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, Drho_x, DMnd, DDrho_y, DMnd, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DMnd, DDrho_z, DMnd, 2, pSPARC->dmcomm_phi);
             } else {
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_x, DMnd, DDrho_x, DMnd, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_y, DMnd, DDrho_y, DMnd, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, Drho_z, DMnd, DDrho_z, DMnd, 2, pSPARC->dmcomm_phi);
             }
 
             for(int i = 0; i < DMnd; i++){
@@ -362,23 +356,13 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
 
             Drho_times_v2xc(pSPARC, DMnd, 3, Drho_x, Drho_y, Drho_z, pSPARC->Dxcdgrho);
             if (pSPARC->CyclixFlag) {
-                double *Drho_xy = (double *) malloc(6*DMnd * sizeof(double));
-                for (int i = 0; i < 3*DMnd; i++){
-                    Drho_xy[i] = Drho_x[i];
-                    Drho_xy[3*DMnd+i] = Drho_y[i];
-                }
-                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_x, 0, pSPARC->dmcomm_phi);
-                for (int i = 0; i < 3*DMnd; i++){
-                    Drho_xy[i] = Drho_y[i];
-                    Drho_xy[3*DMnd+i] = Drho_x[i];
-                }
-                Gradient_vectors_dir(pSPARC, 2*DMnd, pSPARC->DMVertices, 3, 0.0, Drho_xy, DDrho_y, 1, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
-                free(Drho_xy);
+                Gradient_vectors_dir_with_rotfac(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, Drho_y, DMnd, DDrho_x, DMnd, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir_with_rotfac(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, Drho_x, DMnd, DDrho_y, DMnd, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DMnd, DDrho_z, DMnd, 2, pSPARC->dmcomm_phi);
             } else {
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DDrho_x, 0, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DDrho_y, 1, pSPARC->dmcomm_phi);
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DDrho_z, 2, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_x, DMnd, DDrho_x, DMnd, 0, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_y, DMnd, DDrho_y, DMnd, 1, pSPARC->dmcomm_phi);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, Drho_z, DMnd, DDrho_z, DMnd, 2, pSPARC->dmcomm_phi);
             }
 
             for(int i = 0; i < DMnd; i++){
@@ -402,6 +386,11 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             free(v3x);
             free(v3c);
         }
+    }
+
+    // calculate noncollinear xc potentail 
+    if (pSPARC->spin_typ == 2) {
+        Calculate_Xcpotential_Noncollinear(pSPARC, DMnd, pSPARC->XCPotential, pSPARC->mag, pSPARC->XCPotential_nc);
     }
 
     if (pSPARC->ixc[2]) {
@@ -1176,23 +1165,18 @@ void calculate_square_norm_of_gradient(SPARC_OBJ *pSPARC,
 {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return; 
 
-    if (pSPARC->spin_typ != 2) {
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
-        compute_norm_square(pSPARC, sigma, ncol*DMnd, Drho_x, Drho_y, Drho_z);
-    } else {
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+    if (pSPARC->spin_typ == 2) {        
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, DMnd, Drho_x, DMnd, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, DMnd, Drho_y, DMnd, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, rho, DMnd, Drho_z, DMnd, 2, pSPARC->dmcomm_phi);
         
         double *Dmag_x = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_x Dmagy_x Dmagz_x]
         double *Dmag_y = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_y Dmagy_y Dmagz_y]
         double *Dmag_z = (double *) malloc(3 * DMnd * sizeof(double)); // [Dmagx_z Dmagy_z Dmagz_z]
         
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag, Dmag_z, 2, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag+DMnd, DMnd, Dmag_x, DMnd, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag+DMnd, DMnd, Dmag_y, DMnd, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 3, 0.0, mag+DMnd, DMnd, Dmag_z, DMnd, 2, pSPARC->dmcomm_phi);
 
         double *Dmnorm_x = (double *) malloc(DMnd * sizeof(double));
         double *Dmnorm_y = (double *) malloc(DMnd * sizeof(double));
@@ -1200,14 +1184,14 @@ void calculate_square_norm_of_gradient(SPARC_OBJ *pSPARC,
 
         // compute gradient of norm of magnetization |mag|
         for (int i = 0; i < DMnd; i++) {
-            double magnorm = mag[3*DMnd+i];
+            double magnorm = mag[i];
             if (magnorm > pSPARC->xc_magtol) {
+                Dmnorm_x[i] = (mag[i+DMnd] * Dmag_x[i] + mag[i+2*DMnd] * Dmag_x[i+DMnd] + mag[i+3*DMnd] * Dmag_x[i+2*DMnd]) / magnorm;
+                Dmnorm_y[i] = (mag[i+DMnd] * Dmag_y[i] + mag[i+2*DMnd] * Dmag_y[i+DMnd] + mag[i+3*DMnd] * Dmag_y[i+2*DMnd]) / magnorm;
+                Dmnorm_z[i] = (mag[i+DMnd] * Dmag_z[i] + mag[i+2*DMnd] * Dmag_z[i+DMnd] + mag[i+3*DMnd] * Dmag_z[i+2*DMnd]) / magnorm;
+            } else {
                 Dmnorm_x[i] = Dmnorm_y[i] = Dmnorm_z[i] = 0;
-                continue;
             }
-            Dmnorm_x[i] = (mag[i] * Dmag_x[i] + mag[i+DMnd] * Dmag_x[i+DMnd] + mag[i+2*DMnd] * Dmag_x[i+2*DMnd]) / magnorm;
-            Dmnorm_y[i] = (mag[i] * Dmag_y[i] + mag[i+DMnd] * Dmag_y[i+DMnd] + mag[i+2*DMnd] * Dmag_y[i+2*DMnd]) / magnorm;
-            Dmnorm_z[i] = (mag[i] * Dmag_z[i] + mag[i+DMnd] * Dmag_z[i+DMnd] + mag[i+2*DMnd] * Dmag_z[i+2*DMnd]) / magnorm;
         }
 
         // compute gradient of effective up and down density
@@ -1228,7 +1212,16 @@ void calculate_square_norm_of_gradient(SPARC_OBJ *pSPARC,
         free(Dmnorm_x);
         free(Dmnorm_y);
         free(Dmnorm_z);
+
+    } else {
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, DMnd, Drho_x, DMnd, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, DMnd, Drho_y, DMnd, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, ncol, 0.0, rho, DMnd, Drho_z, DMnd, 2, pSPARC->dmcomm_phi);
+        compute_norm_square(pSPARC, sigma, ncol*DMnd, Drho_x, Drho_y, Drho_z);
     }
+
+    // put min threshold on sigma, otherwise numerical issues happen
+    for (int i = 0; i < ncol*DMnd; i++) sigma[i] = max(sigma[i], pSPARC->xc_sigmatol);
 }
 
 
@@ -1260,19 +1253,27 @@ void compute_norm_square(SPARC_OBJ *pSPARC, double *norm2, int DMnd, double *v1,
  */
 void add_rho_core(SPARC_OBJ *pSPARC, double *rho_in, double *rho_out, int ncol)
 {
-    int sz_rho = pSPARC->Nd_d * ncol;
-    for (int i = 0; i < sz_rho; i++){
-        rho_out[i] = rho_in[i];
-        // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
-        if (pSPARC->NLCC_flag)
-            rho_out[i] += pSPARC->electronDens_core[i];
-        if(rho_out[i] < pSPARC->xc_rhotol)
-            rho_out[i] = pSPARC->xc_rhotol;
+    assert(ncol == 1 || ncol == 3);
+    int DMnd = pSPARC->Nd_d;
+    for (int n = 0; n < ncol; n++) {
+        for(int i = 0; i < DMnd; i++){
+            rho_out[i + n*DMnd] = rho_in[i + n*DMnd];
+            // for non-linear core correction, use rho+rho_core to evaluate Vxc[rho+rho_core]
+            if (pSPARC->NLCC_flag) {
+                if (n == 0)
+                    rho_out[i + n*DMnd] += pSPARC->electronDens_core[i];
+                else
+                    rho_out[i + n*DMnd] += 0.5 * pSPARC->electronDens_core[i];
+            }
+            if(rho_out[i + n*DMnd] < pSPARC->xc_rhotol)
+                rho_out[i + n*DMnd] = pSPARC->xc_rhotol;
+        }
     }
 
-    if (pSPARC->spin_typ != 0 && ncol == 3) {
-        for(int i = 0; i < pSPARC->Nd_d; i++)
-            rho_out[i] = rho_out[pSPARC->Nd_d + i] + rho_out[2*pSPARC->Nd_d + i];
+    if (ncol == 3) {
+        for(int i = 0; i < DMnd; i++) {
+            rho_out[i] = rho_out[DMnd + i] + rho_out[2*DMnd + i];
+        }
     }
 }
 
@@ -1764,3 +1765,39 @@ void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho)
 #endif
 }
 
+
+/**
+ * @brief  Calculate noncollinear xc potential 
+ *
+ * @param DMnd      number of local grid points
+ * @param Vxc       exchange correlation of diagonal term (DMnd x 2)
+ * @param mag       magnetization (DMnd x 4)
+ * @param Vxc_nc    noncollinear xc potential (DMnd x 4)
+ **/
+void Calculate_Xcpotential_Noncollinear(SPARC_OBJ *pSPARC, int DMnd, double *Vxc, double *mag, double *Vxc_nc)
+{
+    double *magx = mag+DMnd, *magy = mag+2*DMnd, *magz = mag+3*DMnd, *magn = mag;
+    double *Vxcup = Vxc, *Vxcdw = Vxc+DMnd;
+    for (int i = 0; i < DMnd; i++) {
+        double V11pV22 = Vxcup[i] + Vxcdw[i];
+        double V11mV22 = Vxcup[i] - Vxcdw[i];
+        double magnorm = magn[i];
+        // V11
+        Vxc_nc[i] = 0.5 * V11pV22;
+        // V22
+        Vxc_nc[i+DMnd] = 0.5 * V11pV22;
+        // V12
+        Vxc_nc[i+2*DMnd] = Vxc_nc[i+3*DMnd] = 0;
+
+        if (magnorm > pSPARC->xc_magtol) {
+            // V11
+            Vxc_nc[i] += 0.5 * V11mV22 * magz[i] / magnorm;
+            // V22
+            Vxc_nc[i+DMnd] -= 0.5 * V11mV22 * magz[i] / magnorm;
+            // real(V12)
+            Vxc_nc[i+2*DMnd] = 0.5 * V11mV22 * magx[i] / magnorm;
+            // imag(V12)
+            Vxc_nc[i+3*DMnd] = -0.5 * V11mV22 * magy[i] / magnorm;
+        }
+    }
+}

@@ -167,11 +167,11 @@ void AAR(
  *          Ax is calculated by calling function Ax().
  */
 void CG(SPARC_OBJ *pSPARC, 
-    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, double *, MPI_Comm),
-    int N, int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
+    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, const int, double *, const int, MPI_Comm),
+    int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
 )
 {
-    int i, j, iter_count = 0, sqrt_n = (int)sqrt(N);
+    int i, j, iter_count = 0, sqrt_n = (int)sqrt(pSPARC->Nd);
     double *r, *d, *q, delta_new, delta_old, alpha, beta, err, b_2norm;
 
     r = (double *)calloc( DMnd , sizeof(double) );
@@ -183,7 +183,7 @@ void CG(SPARC_OBJ *pSPARC,
     Vector2Norm(b, DMnd, &b_2norm, comm); 
     tol *= b_2norm;
 
-    Ax(pSPARC, DMnd, DMVertices, 1, 0.0, x, r, comm);
+    Ax(pSPARC, DMnd, DMVertices, 1, 0.0, x, DMnd, r, DMnd, comm);
 
     for (i = 0; i < DMnd; ++i){
         r[i] = b[i] + r[i];
@@ -193,7 +193,7 @@ void CG(SPARC_OBJ *pSPARC,
 
     err = tol + 1.0;
     while(iter_count < max_iter && err > tol){
-        Ax(pSPARC, DMnd, DMVertices, 1, 0.0, d, q, comm);
+        Ax(pSPARC, DMnd, DMVertices, 1, 0.0, d, DMnd, q, DMnd, comm);
         VectorDotProduct(d, q, DMnd, &alpha, comm);
 
         alpha = - delta_new * delta_new / alpha;
@@ -203,7 +203,7 @@ void CG(SPARC_OBJ *pSPARC,
         
         // Restart every sqrt_n cycles.
         if ((iter_count % sqrt_n)==0) {
-            Ax(pSPARC, N, DMVertices, 1, 0.0, x, r, comm);
+            Ax(pSPARC, DMnd, DMVertices, 1, 0.0, x, DMnd, r, DMnd, comm);
             for (j = 0; j < DMnd; ++j){
                 r[j] = b[j] + r[j];
             }

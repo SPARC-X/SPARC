@@ -21,27 +21,27 @@
 void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error);
 
 /*
-@ brief: calculate electron density from psi with no kpts
+@ brief: calculate electron density from psi
 */ 
- 
 void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho);
 
 /*
-@ brief: calculate electron density from psi with no kpts but spin polarized
+@ brief: calculate magx and magy from psi
 */ 
- 
-void CalculateDensity_psi_spin(SPARC_OBJ *pSPARC, double *rho);
+void Calculate_Magx_Magy_psi(SPARC_OBJ *pSPARC, double *mag);
 
 /*
-@ brief: calculate electron density from psi with kpts
+@ brief: calculate magz
 */ 
- 
-void CalculateDensity_psi_kpt(SPARC_OBJ *pSPARC, double *rho);
+void Calculate_Magz(SPARC_OBJ *pSPARC, int DMnd, double *magz, double *rhoup, double *rhodw);
 
 /*
-@ brief: calculate electron density from psi with kpts and spin polarized
+@ brief: calculate norm of magnetization
 */ 
- 
-void CalculateDensity_psi_kpt_spin(SPARC_OBJ *pSPARC, double *rho);
+void Calculate_Magnorm(SPARC_OBJ *pSPARC, int DMnd, double *magx, double *magy, double *magz, double *magnorm);
 
+/*
+@ brief: calculate diagnoal density
+*/ 
+void Calculate_diagonal_Density(SPARC_OBJ *pSPARC, int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22);
 #endif // ELECTRONDENSITY_H

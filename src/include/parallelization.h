@@ -254,9 +254,10 @@ void dims_divide_skbd(
  * @param recv_comm     New Domain Decomposition communicator, processes that are not part of this
  *                      should provide MPI_COMM_NULL. recv_comm is assumed to have a Cartesian topology.
  * @param rdims         Dimensions of the recv_comm.
+ * @param unit_size     either sizeof(double) or sizeof(double _Complex) for the type of sdata and rdata
  */
-void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, double *sdata, int *rDMVert, double *rdata, 
-           MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm);
+void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata, 
+           MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm, int unit_size);
 
 
 /**
@@ -310,35 +311,12 @@ void Free_D2D_Target(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, MPI_Comm send_comm
  *                          2. it is not required in this function that send_comm, recv_comm and 
  *                             union_comm share root process any more. As long as senders and receivers
  *                             are provided correctly.
+ * @param unit_size     either sizeof(double) or sizeof(double _Complex) for the type of sdata and rdata
  */
-void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, double *sdata, int *rDMVert, 
-         double *rdata, MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm);
-
-/**
- * @brief   Transfer complex data from one 3-d Domain Decomposition to another.
- * 
- *          See the description of D2D
- */
-void D2D_kpt(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, double _Complex *sdata, int *rDMVert,
-         double _Complex *rdata, MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm);
+void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, void *sdata, int *rDMVert,
+         void *rdata, MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm, int unit_size);
          
 #ifdef USE_DP_SUBEIG
-
-/** @ brief   Copy row-major matrix block
- *
- *  @param unit_size  Size of data element in bytes (double == 8, double _Complex == 16)
- *  @param src_       Pointer to the top-left element of the source matrix 
- *  @param lds        Leading dimension of the source matrix
- *  @param nrow       Number of rows to copy
- *  @param ncol       Number of columns to copy
- *  @param dst_       Pointer to the top-left element of the destination matrix
- *  @param ldd        Leading dimension of the destination matrix
- */
-void copy_mat_blk(
-    const size_t unit_size, const void *src_, const int lds, 
-    const int nrow, const int ncol, void *dst_, const int ldd
-);
-
 /** 
  *  Parameters for BP2DP and DP2BP
  *  comm           : MPI communicator 

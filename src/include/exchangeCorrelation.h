@@ -162,6 +162,17 @@ void wpbe_analy_erfc_approx_grad(double rho, double s, double omega, double *Fx_
  **/
 void Calculate_xc_energy_density(SPARC_OBJ *pSPARC, double *ExcRho);
 
+
+/**
+ * @brief  Calculate noncollinear xc potential 
+ *
+ * @param DMnd      number of local grid points
+ * @param Vxc       exchange correlation of diagonal term (DMnd x 2)
+ * @param mag       magnetization (DMnd x 4)
+ * @param Vxc_nc    noncollinear xc potential (DMnd x 4)
+ **/
+void Calculate_Xcpotential_Noncollinear(SPARC_OBJ *pSPARC, int DMnd, double *Vxc, double *mag, double *Vxc_nc);
+
 #endif // EXCHANGECORRELATION_H
 
 

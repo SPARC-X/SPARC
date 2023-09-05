@@ -44,7 +44,7 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray);
  *          computing, Cambridge university press, 2007.
  */
 double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double *totalLambdaArray, double tol, int max_iter,
-                                  double (*constraint)(SPARC_OBJ *, double));
+                                  double (*constraint)(SPARC_OBJ *, double, double *));
 /**
  * @brief   Fermi Dirac function.
  */
@@ -85,7 +85,7 @@ double occ_constraint(SPARC_OBJ *pSPARC, double lambda_f);
  * @brief   Similar usage to occ_constraint, but this function does not need Allreduce
  *
  */
-double local_occ_constraint(SPARC_OBJ *pSPARC, double lambda_f);
+double local_occ_constraint(SPARC_OBJ *pSPARC, double lambda_f, double *totalLambdaArray);
 
 
 #endif // OCCUPATION_H

@@ -51,34 +51,22 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     // find fermi level using Brent's method
     // Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint);
     int totalLambdaNumber = pSPARC->Nspin * pSPARC->Nkpts_sym * Ns;
-    pSPARC->totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));
-    double *totalLambdaArray = pSPARC->totalLambdaArray;
+    double *totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));     
     collect_all_lambda(pSPARC, totalLambdaArray);
     Efermi = local_Calculate_FermiLevel(pSPARC, x1, x2, totalLambdaArray, tol, max_iter, local_occ_constraint);
 
     // find occupations
-    if (pSPARC->isGammaPoint) { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+    for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+        for (k = 0; k < Nk; k++) {
             for (n = 0; n < Ns; n++) {
                 g_nk = smearing_function(
-                    pSPARC->Beta, pSPARC->lambda[n+spn_i*Ns], Efermi, pSPARC->elec_T_type
+                    pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], Efermi, pSPARC->elec_T_type
                 );
-                pSPARC->occ[n+spn_i*Ns] = g_nk;
+                pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] = g_nk;
             }
         }
-    } else { // for k-points
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (k = 0; k < Nk; k++) {
-                for (n = 0; n < Ns; n++) {
-                    g_nk = smearing_function(
-                        pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], Efermi, pSPARC->elec_T_type
-                    );
-                    pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] = g_nk;
-                }
-            }
-        }    
     }
-    free(pSPARC->totalLambdaArray);
+    free(totalLambdaArray);
     return Efermi;
 }
 
@@ -94,6 +82,15 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray)
     int kpt_start_indx = pSPARC->kpt_start_indx;
     int *kptBridgeCounts = (int *)malloc(sizeof(int) * (pSPARC->npkpt));
     int *kptBridgeDispls = (int *)malloc(sizeof(int) * (pSPARC->npkpt));                      // used for collecting all lambdas in this spin communicator through kpt_bridge_comm
+    int Nkpts_by_npkpt = pSPARC->Nkpts_sym / pSPARC->npkpt;
+    int Nkpts_mod_npkpt = pSPARC->Nkpts_sym % pSPARC->npkpt;
+    kptBridgeDispls[0] = 0;
+    for (int i = 0; i < pSPARC->npkpt; i++){
+        kptBridgeCounts[i] = (Nkpts_by_npkpt + (int) (i < Nkpts_mod_npkpt)) * Ns;
+        if (i != (pSPARC->npkpt-1))
+            kptBridgeDispls[i+1] = kptBridgeDispls[i] + kptBridgeCounts[i];
+    }
+
     double *theSpinLambdaArray = (double *)malloc(sizeof(double) * (Ns * pSPARC->Nkpts_sym)); // used for saving all lambdas in this spin communicator
     if (pSPARC->isGammaPoint)
     {
@@ -106,9 +103,6 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray)
         // distribution of totalLambdaArray: [spin_up_k0, spin_up_k1, ..., spin_dn_k0, spin_dn_k1, ...]
         // sum over processes with the same rank in kptcomm to find g
         int localArrayLength = Ns * Nk;
-        MPI_Allgather(&localArrayLength, 1, MPI_INT, kptBridgeCounts, 1, MPI_INT, pSPARC->kpt_bridge_comm);
-        int localArrayDispl = Ns * kpt_start_indx;
-        MPI_Allgather(&localArrayDispl, 1, MPI_INT, kptBridgeDispls, 1, MPI_INT, pSPARC->kpt_bridge_comm);
         if (pSPARC->Nspin_spincomm == 1) { // 2 spins are divided into 2 spin-comm
             MPI_Allgatherv(pSPARC->lambda, Ns * pSPARC->Nkpts_kptcomm, MPI_DOUBLE,
                            theSpinLambdaArray, kptBridgeCounts, kptBridgeDispls,
@@ -135,7 +129,7 @@ void collect_all_lambda(SPARC_OBJ *pSPARC, double *totalLambdaArray)
                     if (fabs(totalLambdaArray[count + Ns * pSPARC->Nkpts_sym * (spin_start_indx + spinIndex) + Ns * kpt_start_indx] - pSPARC->lambda[count + Ns * pSPARC->Nkpts_kptcomm * spinIndex]) > 1e-8)
                         printf("lambda %d local spin %d kpt %d (global spin %d kpt %d) is different after gather! %.9f %.9f\n", 
                             bandIndex, spinIndex, kptIndex, spinIndex + spin_start_indx, kptIndex + kpt_start_indx, totalLambdaArray[count + Ns * pSPARC->Nkpts_sym * (spin_start_indx + spinIndex) + Ns * kpt_start_indx],
-                            pSPARC->lambda[Ns * pSPARC->Nkpts_kptcomm * spinIndex]);
+                            pSPARC->lambda[count + Ns * pSPARC->Nkpts_kptcomm * spinIndex]);
                     count++;
                 }
             }
@@ -262,25 +256,20 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
  *
  */
 double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double *totalLambdaArray, double tol, int max_iter,
-                                  double (*constraint)(SPARC_OBJ *, double))
+                                  double (*constraint)(SPARC_OBJ *, double, double *))
 {
 #define EPSILON 1e-16
 #define SIGN(a, b) ((b) > 0.0 ? fabs((a)) : -fabs((a)))
-    if (pSPARC->SQFlag == 1)
-    {
-        if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL)
-            return 0.0;
-    }
-    else
-    {
-        if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL)
-            return 0.0;
+    if (pSPARC->SQFlag == 1) {
+        if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return 0.0;
+    } else {
+        if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return 0.0;
     }
     // let all root processors in each kptcomm work together to find fermi energy.
     int iter;
     double tol1q, eq;
     double a = min(x1, x2), b = max(x1, x2), c = b, d, e, min1, min2;
-    double fa = constraint(pSPARC, a), fb = constraint(pSPARC, b), fc, p, q, r, s, tol1, xm;
+    double fa = constraint(pSPARC, a, totalLambdaArray), fb = constraint(pSPARC, b, totalLambdaArray), fc, p, q, r, s, tol1, xm;
     d = e = min1 = min2 = fc = p = q = r = s = tol1 = xm = 0;
 
     int rank;
@@ -288,14 +277,13 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
 
     // if the given upperbound and lowerbound are not good enough, expand the bounds automatically
     int ext_count = 0;
-    while (fa * fb > 0.0 && ext_count++ < 10)
-    {
+    while (fa * fb > 0.0 && ext_count++ < 10) {
         double w = b - a;
         a -= w / 2.0;
         b += w / 2.0;
         c = b;
-        fa = constraint(pSPARC, a);
-        fb = constraint(pSPARC, b);
+        fa = constraint(pSPARC, a, totalLambdaArray);
+        fb = constraint(pSPARC, b, totalLambdaArray);
 #ifdef DEBUG
         if (rank == 0)
             printf("Fermi level calculation: expanded bounds = (%10.6E,%10.6E), (fa,fb) = (%10.6E,%10.6E)\n",
@@ -303,8 +291,7 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
 #endif
     }
 
-    if (fa * fb > 0.0)
-    {
+    if (fa * fb > 0.0) {
         if (rank == 0)
             printf("Cannot find root in Brent's method!\n"
                    "  original bounds (%f,%f)\n"
@@ -316,16 +303,13 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
     }
 
     fc = fb;
-    for (iter = 1; iter <= max_iter; iter++)
-    {
-        if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0))
-        {
+    for (iter = 1; iter <= max_iter; iter++) {
+        if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
             c = a;
             fc = fa;
             e = d = b - a;
         }
-        if (fabs(fc) < fabs(fb))
-        {
+        if (fabs(fc) < fabs(fb)) {
             a = b;
             b = c;
             c = a;
@@ -337,24 +321,19 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
         xm = 0.5 * (c - b);
         if (fabs(xm) <= tol1 || fabs(fb) < EPSILON)
             return b;
-        if (fabs(e) >= tol1 && fabs(fa) > fabs(fb))
-        {
+        if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
             // attempt inverse quadratic interpolation
             s = fb / fa;
-            if (a == c)
-            {
+            if (a == c) {
                 p = 2.0 * xm * s;
                 q = 1.0 - s;
-            }
-            else
-            {
+            } else {
                 q = fa / fc;
                 r = fb / fc;
                 p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
                 q = (q - 1.0) * (r - 1.0) * (s - 1.0);
             }
-            if (p > 0.0)
-            {
+            if (p > 0.0) {
                 // check whether in bounds
                 q = -q;
             }
@@ -363,21 +342,16 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
             min1 = 3.0 * xm * q - fabs(tol1q);
             eq = e * q;
             min2 = fabs(eq);
-            if (2.0 * p < (min1 < min2 ? min1 : min2))
-            {
+            if (2.0 * p < (min1 < min2 ? min1 : min2)) {
                 // accept interpolation
                 e = d;
                 d = p / q;
-            }
-            else
-            {
+            } else {
                 // Bounds decreasing too slowly, use bisection
                 d = xm;
                 e = d;
             }
-        }
-        else
-        {
+        } else {
             d = xm;
             e = d;
         }
@@ -385,16 +359,13 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
         a = b;
         fa = fb;
 
-        if (fabs(d) > tol1)
-        {
+        if (fabs(d) > tol1) {
             // evaluate new trial root
             b += d;
-        }
-        else
-        {
+        } else {
             b += SIGN(tol1, xm);
         }
-        fb = constraint(pSPARC, b);
+        fb = constraint(pSPARC, b, totalLambdaArray);
     }
     printf("Maximum iterations exceeded in brents root finding method...exiting\n");
     exit(EXIT_FAILURE);
@@ -416,78 +387,46 @@ double occ_constraint(SPARC_OBJ *pSPARC, double lambda_f)
     int Nk = pSPARC->Nkpts_kptcomm;
     // TODO: confirm whether to use number of electrons or NegCharge
     double g = 0.0, Ne = pSPARC->NegCharge; 
-    if (pSPARC->isGammaPoint) { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+    for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+        for (k = 0; k < Nk; k++) {
+            // TODO: each k-point group should access its local kpoints!
             for (n = 0; n < Ns; n++) {
-                g += (2.0/pSPARC->Nspin) * smearing_function(
-                    pSPARC->Beta, pSPARC->lambda[n+spn_i*Ns], lambda_f, pSPARC->elec_T_type
+                g += pSPARC->occfac * pSPARC->kptWts_loc[k] * smearing_function(
+                    pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], lambda_f, pSPARC->elec_T_type
                 );
             }
         }
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find g
-            MPI_Allreduce(MPI_IN_PLACE, &g, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }
-    } else { // for k-points
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (k = 0; k < Nk; k++) {
-                // TODO: each k-point group should access its local kpoints!
-                for (n = 0; n < Ns; n++) {
-                    g += (2.0/pSPARC->Nspin/pSPARC->Nspinor) * pSPARC->kptWts_loc[k] * smearing_function(
-                        pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], lambda_f, pSPARC->elec_T_type
-                    );
-                }
-            }
-        }    
-        g *= 1.0 / pSPARC->Nkpts; // find average
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find g
-            MPI_Allreduce(MPI_IN_PLACE, &g, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }
-        
-        if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find g
-            MPI_Allreduce(MPI_IN_PLACE, &g, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-        }
+    }    
+    g *= 1.0 / pSPARC->Nkpts; // find average
+    if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find g
+        MPI_Allreduce(MPI_IN_PLACE, &g, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+    }
+    
+    if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find g
+        MPI_Allreduce(MPI_IN_PLACE, &g, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
     }
     return g + Ne;
     // return g - pSPARC->Nelectron; // this will work even when Ns = Nelectron/2
 }
 
-double local_occ_constraint(SPARC_OBJ *pSPARC, double lambda_f)
+double local_occ_constraint(SPARC_OBJ *pSPARC, double lambda_f, double *totalLambdaArray)
 {
     // all processors entering the function have dmcomm
-    if (pSPARC->kptcomm_index < 0)
-        return 0.0;
-    double *totalLambdaArray = pSPARC->totalLambdaArray;
+    if (pSPARC->kptcomm_index < 0) return 0.0;
     int Ns = pSPARC->Nstates, n, k, spn_i;
     int count = 0;
     // TODO: confirm whether to use number of electrons or NegCharge
     double g = 0.0, Ne = pSPARC->NegCharge;
-    if (pSPARC->isGammaPoint)
-    { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin; spn_i++)
-        {
-            for (n = 0; n < Ns; n++)
-            {
-                g += (2.0 / pSPARC->Nspin) * smearing_function(
-                                                 pSPARC->Beta, totalLambdaArray[count], lambda_f, pSPARC->elec_T_type);
+    for (spn_i = 0; spn_i < pSPARC->Nspin; spn_i++) {
+        for (k = 0; k < pSPARC->Nkpts_sym; k++) {
+            double woccfac = pSPARC->occfac * pSPARC->kptWts[k];
+            // TODO: each k-point group should access its local kpoints!
+            for (n = 0; n < Ns; n++) {
+                g += woccfac * smearing_function(pSPARC->Beta, totalLambdaArray[count], lambda_f, pSPARC->elec_T_type);
                 count++;
             }
         }
     }
-    else
-    { // for k-points
-        for (spn_i = 0; spn_i < pSPARC->Nspin; spn_i++)
-        {
-            for (k = 0; k < pSPARC->Nkpts_sym; k++)
-            {
-                // TODO: each k-point group should access its local kpoints!
-                for (n = 0; n < Ns; n++)
-                {
-                    g += (2.0 / pSPARC->Nspin / pSPARC->Nspinor) * pSPARC->kptWts[k] * smearing_function(pSPARC->Beta, totalLambdaArray[count], lambda_f, pSPARC->elec_T_type);
-                    count++;
-                }
-            }
-        }
-        g *= 1.0 / pSPARC->Nkpts; // find average
-    }
+    g *= 1.0 / pSPARC->Nkpts; // find average
     return g + Ne;
 }

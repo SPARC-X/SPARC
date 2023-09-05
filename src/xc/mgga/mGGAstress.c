@@ -31,106 +31,106 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return; // mimic Calculate_nonlocal_kinetic_stress_linear in stress.c ???
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int nspin, ncol, Ns, DMnd, size_s, dim, count, spn_i, n, i, j;
+    int ncol, Ns, DMnd, DMndsp, dim, count, spinor, n, i, j;
     double *dpsi_ptr, *dpsi_ptr2, dpsi1_dpsi1, g_nk, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi3, dpsi2_dpsi2, dpsi3_dpsi3;
-    nspin = pSPARC->Nspin_spincomm; // number of spin in my spin communicator
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates; // total number of bands
     DMnd = pSPARC->Nd_d_dmcomm;
-    size_s = ncol * DMnd;
+    DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     double *stress_mGGA_psi, *stress_mGGA_psi_cartesian, *dpsi_full; // the metaGGA term directly related to all wave functions psi
     stress_mGGA_psi = (double*) calloc(6, sizeof(double));
     stress_mGGA_psi_cartesian = (double*) calloc(6, sizeof(double));
-    dpsi_full = (double *)malloc( size_s * sizeof(double) );
+    dpsi_full = (double *)malloc( DMnd * ncol * sizeof(double) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
     }
-    double *XorY = pSPARC->Xorb;
-    double *YorZ = pSPARC->Yorb;
 
     double *vxcMGGA3_loc = pSPARC->vxcMGGA3_loc_dmcomm; // local rho*d\epsilon_{xc} / d\tau array
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        int sg = pSPARC->spin_start_indx + spn_i;
+    for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
+        int sg = pSPARC->spinor_start_indx + spinor;
         count = 0;
         for (dim = 0; dim < 3; dim++) {
             // find dPsi in direction dim
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, XorY+spn_i*size_s, YorZ, dim, pSPARC->dmcomm);
+            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, pSPARC->Yorb, DMnd, dim, pSPARC->dmcomm);
             // Kinetic stress
             if(dim == 0){
                 // component (1,1)
                 // find d(Psi*Ds)                
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
                     dpsi1_dpsi1 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi1 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
-                    }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    }                    
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[0] += dpsi1_dpsi1 * g_nk; // component (1,1)
                 }
 
                 // component (1,2)
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 1, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, dpsi_full, DMnd, 1, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
                     dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
                     dpsi1_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[1] += dpsi1_dpsi2 * g_nk; // component (1,2)
                 }
                 
 
                 // component (1,3)
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 2, pSPARC->dmcomm);
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, dpsi_full, DMnd, 2, pSPARC->dmcomm);
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
                     dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                     dpsi1_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi1_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[2] += dpsi1_dpsi3 * g_nk; // component (1,3)
                 }
             } else if(dim == 1){
                 // component (2,3)
-                double *dpsi_3p; 
-                
-                dpsi_3p = dpsi_full;
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_2
-                    dpsi_ptr2 = dpsi_3p + n * DMnd; // dpsi_3
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_2
+                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
                     dpsi2_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi2_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
                     }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[4] += dpsi2_dpsi3 * g_nk; // component (2,3)
                 }
 
                 // component (2,2)
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
                     dpsi2_dpsi2 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
                     }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[3] += dpsi2_dpsi2 * g_nk; // component (2,2)
                 }
             } else if (dim == 2) {
                 // component (3,3)                
                 for(n = 0; n < ncol; n++){
-                    dpsi_ptr = YorZ + n * DMnd; // dpsi_1
+                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
                     dpsi3_dpsi3 = 0.0;
                     for(i = 0; i < DMnd; i++){
                         dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * *(dpsi_ptr + i) * *(dpsi_ptr + i);
                     }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
+                    double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
+                    g_nk = occ[n + pSPARC->band_start_indx];
                     stress_mGGA_psi[5] += dpsi3_dpsi3 * g_nk; // component (3,3)
                 }
             }
@@ -138,12 +138,12 @@ void Calculate_XC_stress_mGGA_psi_term(SPARC_OBJ *pSPARC) {
         count++;
     }
 
-    stress_mGGA_psi[0] *= -(2.0/pSPARC->Nspin); // component (1,1)
-    stress_mGGA_psi[1] *= -(2.0/pSPARC->Nspin); // component (1,2)
-    stress_mGGA_psi[2] *= -(2.0/pSPARC->Nspin); // component (1,3)
-    stress_mGGA_psi[3] *= -(2.0/pSPARC->Nspin); // component (2,2)
-    stress_mGGA_psi[4] *= -(2.0/pSPARC->Nspin); // component (2,3)
-    stress_mGGA_psi[5] *= -(2.0/pSPARC->Nspin); // component (3,3)
+    stress_mGGA_psi[0] *= -pSPARC->occfac; // component (1,1)
+    stress_mGGA_psi[1] *= -pSPARC->occfac; // component (1,2)
+    stress_mGGA_psi[2] *= -pSPARC->occfac; // component (1,3)
+    stress_mGGA_psi[3] *= -pSPARC->occfac; // component (2,2)
+    stress_mGGA_psi[4] *= -pSPARC->occfac; // component (2,3)
+    stress_mGGA_psi[5] *= -pSPARC->occfac; // component (3,3)
 
     free(dpsi_full);
     if (pSPARC->npNd > 1) {
@@ -248,14 +248,14 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int i, j, n, ncol, Ns, DMnd, dim, count, kpt, Nk, size_k, spn_i, nspin, size_s;
+    int i, j, n, ncol, Ns, DMnd, DMndsp, dim, count, kpt, Nk, size_k, spinor, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     DMnd = pSPARC->Nd_d_dmcomm;
-    Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;
-    size_s = size_k * Nk;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+    Nk = pSPARC->Nkpts_kptcomm;    
+    size_k = DMndsp * ncol;    
 
     double _Complex *dpsi_ptr, *dpsi_ptr2, *dpsi_full;
     double *temp_k, *stress_mGGA_psi, *stress_mGGA_psi_cartesian, g_nk;
@@ -264,9 +264,8 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
     temp_k = (double*) malloc(6 * sizeof(double));
     stress_mGGA_psi = (double*) calloc(6, sizeof(double));
     stress_mGGA_psi_cartesian = (double*) calloc(6, sizeof(double));
-
-    // dpsi_full = (double _Complex *)malloc( size_s * nspin * sizeof(double _Complex) );
-    dpsi_full = (double _Complex *)malloc( size_k * sizeof(double _Complex) );
+    
+    dpsi_full = (double _Complex *)malloc( DMnd * ncol * sizeof(double _Complex) );
     if (dpsi_full == NULL) {
         printf("\nMemory allocation failed!\n");
         exit(EXIT_FAILURE);
@@ -278,8 +277,8 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
 
 
     count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        int sg = pSPARC->spin_start_indx + spn_i;
+    for(spinor = 0; spinor < Nspinor; spinor++) {
+        int sg = pSPARC->spinor_start_indx + spinor;
         for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
             k1 = pSPARC->k1_loc[kpt];
             k2 = pSPARC->k2_loc[kpt];
@@ -287,12 +286,12 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
             for (dim = 0; dim < 3; dim++) {
                 // find dPsi in direction dim
                 kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
+                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spinor*DMnd+kpt*size_k, DMndsp, pSPARC->Yorb_kpt, DMnd, dim, &kpt_vec, pSPARC->dmcomm);
 
                 // Kinetic stress
                 if(dim == 0){
                     kpt_vec = k2;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, &kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spinor*DMnd+kpt*size_k, DMndsp, dpsi_full, DMnd, 1, &kpt_vec, pSPARC->dmcomm);
                     //ts = MPI_Wtime();
                     temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
                     for(n = 0; n < ncol; n++){
@@ -304,17 +303,19 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                             dpsi1_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
                             dpsi2_dpsi2 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
+                        double *occ = pSPARC->occ + kpt*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n + pSPARC->band_start_indx];
                         temp_k[0] += dpsi1_dpsi1 * g_nk;
                         temp_k[1] += dpsi1_dpsi2 * g_nk;
                         temp_k[3] += dpsi2_dpsi2 * g_nk;
                     }
-                    stress_mGGA_psi[0] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[0];
-                    stress_mGGA_psi[1] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[1];
-                    stress_mGGA_psi[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
+                    stress_mGGA_psi[0] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[0];
+                    stress_mGGA_psi[1] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[1];
+                    stress_mGGA_psi[3] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
 
                     kpt_vec = k3;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, &kpt_vec, pSPARC->dmcomm);
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spinor*DMnd+kpt*size_k, DMndsp, dpsi_full, DMnd, 2, &kpt_vec, pSPARC->dmcomm);
                     temp_k[2] = temp_k[5] = 0.0;
                     for(n = 0; n < ncol; n++){
                         dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
@@ -324,12 +325,14 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                             dpsi1_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
                             dpsi3_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
+                        double *occ = pSPARC->occ + kpt*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n + pSPARC->band_start_indx];
                         temp_k[2] += dpsi1_dpsi3 * g_nk;
                         temp_k[5] += dpsi3_dpsi3 * g_nk;
                     }
-                    stress_mGGA_psi[2] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[2];
-                    stress_mGGA_psi[5] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[5];
+                    stress_mGGA_psi[2] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[2];
+                    stress_mGGA_psi[5] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[5];
                 } else if(dim == 1){
                     temp_k[4] = 0.0;
                     for(n = 0; n < ncol; n++){
@@ -339,9 +342,12 @@ void Calculate_XC_stress_mGGA_psi_term_kpt(SPARC_OBJ *pSPARC) {
                         for(i = 0; i < DMnd; i++){
                             dpsi2_dpsi3 += vxcMGGA3_loc[sg*DMnd + i] * (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i)));
                         }
-                        temp_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
+                        double *occ = pSPARC->occ + kpt*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n + pSPARC->band_start_indx];
+                        temp_k[4] += dpsi2_dpsi3 * g_nk;
                     }
-                    stress_mGGA_psi[4] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[4];
+                    stress_mGGA_psi[4] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[4];
                 }
             }
             count++;

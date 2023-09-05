@@ -369,11 +369,12 @@ No unit
 
 \begin{block}{Description}
 \texttt{SPIN\_TYP}: 0 performs spin unpolarized calculation. \\
-\texttt{SPIN\_TYP}: 1 performs unconstrained collinear spin-polarized calculation.   
+\texttt{SPIN\_TYP}: 1 performs unconstrained collinear spin-polarized calculation.  \\
+\texttt{SPIN\_TYP}: 1 performs unconstrained noncollinear spin-polarized calculation.   
 \end{block}
 
 \begin{block}{Remark}
-\texttt{SPIN\_TYP} can only take values 0 and 1.
+\texttt{SPIN\_TYP} can only take values 0, 1, 2. For collinear calculation, non-relativistic pseudopotential need to be used. For noncollinear calculation, fully relativistic pseudopotentiail need to be used. 
 \end{block}
 
 \end{frame}
@@ -1022,13 +1023,13 @@ No unit
 
 \begin{block}{Example}
 \texttt{SPIN: \\}
-1.0 \\
--1.0
+0 0 1.0 \\
+0 0 -1.0
 \end{block}
 \end{columns}
 
 \begin{block}{Description}
-Specifies the net initial spin on each atom for a spin-polarized calculation.
+Specifies the net initial spin on each atom for a spin-polarized calculation. If collinear spin used, user could use either 1 column of data for z-direction of each atom, or 3 columns of data with 0 on the first 2 columns (x,y-directions). For noncollinear spin, use need to use 3 columns of data for all directions. 
 \end{block}
 
 \end{frame}

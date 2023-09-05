@@ -24,7 +24,7 @@
  */
 void Lap_vec_mult_kpt(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double c, double _Complex *x, double _Complex *Lapx, int kpt, MPI_Comm comm
+    const int ncol, const double c, double _Complex *x, const int ldi, double _Complex *Lapx, const int ldo, int kpt, MPI_Comm comm
 );
 
 
@@ -43,7 +43,7 @@ void Lap_vec_mult_kpt(
 void Lap_plus_diag_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,
+        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,
         const int *dims, int kpt
 );
 
@@ -57,8 +57,8 @@ void Lap_plus_diag_vec_mult_orth_kpt(
  */
 void Lap_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double _Complex *x, 
-        double _Complex *y, MPI_Comm comm, const int *dims, const int kpt
+        const int ncol, const double a, const double c, const double _Complex *x, const int ldi,
+        double _Complex *y, const int ldo, MPI_Comm comm, const int *dims, const int kpt
 );
 
 
@@ -118,9 +118,9 @@ void stencil_3axis_thread_complex_v2(
  * @brief   Calculate (a * Lap + c * I) times vectors.
  */
 void Lap_vec_mult_nonorth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double _Complex *x, 
-        double _Complex *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
+        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+        const int ncol, const double a, const double c, const double _Complex *x, const int ldi,
+        double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
 );
 
 
@@ -135,8 +135,8 @@ void Lap_vec_mult_nonorth_kpt(
  */
 void Lap_plus_diag_vec_mult_nonorth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-        const int ncol, const double a, const double b, const double c, 
-        const double *v, const double _Complex *x, double _Complex *y, MPI_Comm comm,  MPI_Comm comm2,
+        const int ncol, const double a, const double b, const double c,
+        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
         const int *dims, const int kpt
 );
 

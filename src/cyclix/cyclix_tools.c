@@ -285,15 +285,16 @@ void Jacobi_preconditioner_cyclix(SPARC_OBJ *pSPARC, int N, double c, double *r,
 void NormalizeEigfunc_cyclix(SPARC_OBJ *pSPARC, int spn_i) {
     if (pSPARC->dmcomm == MPI_COMM_NULL || pSPARC->bandcomm_index < 0) return;
 
-    int i, n, indx, size_s;
-    size_s = pSPARC->Nd_d_dmcomm * pSPARC->Nband_bandcomm;
+    int i, n, indx;
+    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
 
     double *intg_psi = (double *) calloc(pSPARC->Nband_bandcomm, sizeof(double));
     
     for(n = 0; n < pSPARC->Nband_bandcomm; n++){
-        for(i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
-            indx = size_s*spn_i + n*pSPARC->Nd_d_dmcomm + i;
-            intg_psi[n] += (pSPARC->Xorb[indx] * pSPARC->Xorb[indx])  * pSPARC->Intgwt_psi[i];
+        indx = spn_i*DMnd + n*DMndsp;
+        for(i = 0; i < DMnd; i++) {
+            intg_psi[n] += (pSPARC->Xorb[indx+i] * pSPARC->Xorb[indx+i])  * pSPARC->Intgwt_psi[i];
         }
     }    
     
@@ -301,9 +302,9 @@ void NormalizeEigfunc_cyclix(SPARC_OBJ *pSPARC, int spn_i) {
         MPI_Allreduce(MPI_IN_PLACE, intg_psi, pSPARC->Nband_bandcomm, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
     
     for(n = 0; n < pSPARC->Nband_bandcomm; n++){
-        for(i = 0; i < pSPARC->Nd_d_dmcomm; i++) {
-            indx = size_s*spn_i + n*pSPARC->Nd_d_dmcomm + i;
-            pSPARC->Xorb[indx] /= sqrt(intg_psi[n]);
+        indx = spn_i*DMnd + n*DMndsp;
+        for(i = 0; i < DMnd; i++) {
+            pSPARC->Xorb[indx+i] /= sqrt(intg_psi[n]);
         }
     }
 
@@ -317,20 +318,18 @@ void NormalizeEigfunc_cyclix(SPARC_OBJ *pSPARC, int spn_i) {
 void NormalizeEigfunc_kpt_cyclix(SPARC_OBJ *pSPARC, int spn_i, int kpt) {
     if (pSPARC->dmcomm == MPI_COMM_NULL || pSPARC->bandcomm_index < 0) return;
 
-    int i, n, indx, size_s, size_k, DMnd, spinor, Nspinor, DMndbyNspinor;
-    Nspinor = pSPARC->Nspinor;
-    DMnd = pSPARC->Nd_d_dmcomm * Nspinor;
-    DMndbyNspinor = pSPARC->Nd_d_dmcomm;
-    size_k = DMnd * pSPARC->Nband_bandcomm;
-    size_s = size_k * pSPARC->Nkpts_kptcomm;
+    int i, n, indx, size_k, DMnd, spinor, DMndsp;
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    size_k = DMndsp * pSPARC->Nband_bandcomm;
 
     double *intg_psi = (double *) calloc(pSPARC->Nband_bandcomm, sizeof(double));
 
     for(n = 0; n < pSPARC->Nband_bandcomm; n++){
-        for (spinor = 0; spinor < Nspinor; spinor++) {
-            for(i = 0; i < DMndbyNspinor; i++) {
-                indx = size_s*spn_i + kpt*size_k + n*DMnd + spinor*DMndbyNspinor + i;
-                intg_psi[n] += (pow(creal(pSPARC->Xorb_kpt[indx]), 2.0) + pow(cimag(pSPARC->Xorb_kpt[indx]), 2.0))  * pSPARC->Intgwt_psi[i];
+        for (spinor = 0; spinor < pSPARC->Nspinor_eig; spinor++) {
+            indx = kpt*size_k + n*DMndsp + (spinor+spn_i)*DMnd;
+            for(i = 0; i < DMnd; i++) {
+                intg_psi[n] += (pow(creal(pSPARC->Xorb_kpt[indx+i]), 2.0) + pow(cimag(pSPARC->Xorb_kpt[indx+i]), 2.0))  * pSPARC->Intgwt_psi[i];
             }
         }
     }
@@ -339,10 +338,10 @@ void NormalizeEigfunc_kpt_cyclix(SPARC_OBJ *pSPARC, int spn_i, int kpt) {
         MPI_Allreduce(MPI_IN_PLACE, intg_psi, pSPARC->Nband_bandcomm, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
 
     for(n = 0; n < pSPARC->Nband_bandcomm; n++){
-        for (spinor = 0; spinor < Nspinor; spinor++) {
-            for(i = 0; i < DMndbyNspinor; i++) {
-                indx = size_s*spn_i + kpt*size_k + n*DMnd + spinor*DMndbyNspinor + i;
-                pSPARC->Xorb_kpt[indx] /= sqrt(intg_psi[n]);
+        for (spinor = 0; spinor < pSPARC->Nspinor_eig; spinor++) {
+            indx = kpt*size_k + n*DMndsp + (spinor+spn_i)*DMnd;
+            for(i = 0; i < DMnd; i++) {
+                pSPARC->Xorb_kpt[indx+i] /= sqrt(intg_psi[n]);
             }
         }
     }

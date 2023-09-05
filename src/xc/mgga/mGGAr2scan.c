@@ -250,7 +250,6 @@ void Calculate_r2scanc(int length, double *rho, double **s_dsdn_dsddn, double **
     double betaRsInf = betaConst*0.1/0.1778;
     double f0 = -0.9;
     // constants for epsilon_c LSDA1
-    double p = 1.0;
     double AA = 0.0310907;
 	double alpha1 = 0.21370;
 	double beta1 = 7.5957;
@@ -301,7 +300,6 @@ void Calculate_r2scanc(int length, double *rho, double **s_dsdn_dsddn, double **
         double y = beta/(r*w1) * t*t;
         double deltafc2 = 1.0*(-0.64) + 2.0*(-0.4352) + 3.0*(-1.535685604549) + 4.0*3.061560252175 
             + 5.0*(-1.915710236206) + 6.0*0.516884468372 + 7.0*(-0.051848879792);
-        double ds = 1.0;
         double ec_lsda0 = ecLDA0;
         double declsda0_drs = b1c*(0.5*b2c/sqrRs + b3c) / pow(1.0 + b2c*sqrRs + b3c*rs, 2.0);
 

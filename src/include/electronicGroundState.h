@@ -92,8 +92,13 @@ void Calculate_Veff_loc_dmcomm_phi(SPARC_OBJ *pSPARC);
 /**
  * @brief   Update mixing_hist_xk.
  */
-void Update_mixing_hist_xk(SPARC_OBJ *pSPARC, double veff_mean);
+void Update_mixing_hist_xk(SPARC_OBJ *pSPARC);
 
+
+/**
+ * @brief   shift each column of Veff with mean value
+ */
+void shiting_Veff_mean(SPARC_OBJ *pSPARC, double *Veff, int ncol, double *Veff_mean, int option, int dir);
 
 /**
  * @brief   Transfer Veff_loc from phi-domain to psi-domain.
@@ -135,5 +140,10 @@ void Transfer_Veff_loc(SPARC_OBJ *pSPARC, double *Veff_phi_domain, double *Veff_
  * @brief   Transfer electron density from psi-domain to phi-domain.
  */
 void TransferDensity(SPARC_OBJ *pSPARC, double *rho_send, double *rho_recv);
+
+/**
+ * @brief   Calculate magnetization of atoms
+ */
+void CalculateAtomMag(SPARC_OBJ *pSPARC);
 
 #endif // GROUNDSTATE_H

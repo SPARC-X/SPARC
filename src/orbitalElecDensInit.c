@@ -38,8 +38,7 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
 #endif
     
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-        int  i, DMnd;
-        DMnd = pSPARC->Nd_d * (2*pSPARC->Nspin - 1);
+        int DMnd = pSPARC->Nd_d;
         // for 1st Relax step/ MDstep, set electron density to be sum of atomic potentials
         if( (pSPARC->elecgs_Count - pSPARC->StressCount) == 0){
             // TODO: implement restart based on previous MD electron density. Things to consider:
@@ -50,12 +49,12 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
                 // 4) Change (pSPARC->elecgs_Count + !pSPARC->RestartFlag) > 3  condition to pSPARC->elecgs_Count >= 3, below
                 //printf("\n\n Implement density extrapolation when restart flag is on!! \n\n");
             //} else {
-            for (i = 0; i < DMnd; i++)
+            for (int i = 0; i < DMnd * pSPARC->Nspdentd; i++)
                 pSPARC->electronDens[i] = pSPARC->electronDens_at[i];   
             //}
             // Storing atom position needed for charge extrapolation in future Relax/MD steps
 			if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1){
-            	for(i = 0; i < 3 * pSPARC->n_atom; i++)
+            	for(int i = 0; i < 3 * pSPARC->n_atom; i++)
         			pSPARC->atom_pos_0dt[i] = pSPARC->atom_pos[i];
 			}
         } else {
@@ -70,38 +69,37 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
             	//	pSPARC->electronDens_at[i] /= scal_fac;
 
                 // Perform charge extrapolation using scaled rho_at     
-       			for(i = 0; i < pSPARC->Nd_d; i++){
+       			for(int i = 0; i < DMnd; i++){
             		pSPARC->electronDens[i] = pSPARC->electronDens_at[i] + pSPARC->delectronDens[i]; // extrapolated density for the next step
                		if(pSPARC->electronDens[i] < 0.0)
                         pSPARC->electronDens[i] = pSPARC->xc_rhotol; // 1e-14
         		}
-
-                double rho_mag;
-                if(pSPARC->spin_typ != 0){
-                    for(i = 0; i < pSPARC->Nd_d; i++){
-                        rho_mag = pSPARC->electronDens[pSPARC->Nd_d+i] - pSPARC->electronDens[2*pSPARC->Nd_d+i]; // from previous step
-                        pSPARC->electronDens[pSPARC->Nd_d+i] = (pSPARC->electronDens[i] + rho_mag)/2.0;
-                        pSPARC->electronDens[2*pSPARC->Nd_d+i] = (pSPARC->electronDens[i] - rho_mag)/2.0;
-                    }
-                }
         	}
             
             // Scale density
 			double int_rho = 0.0, vscal;        
         	if (pSPARC->CyclixFlag) {
-                for (i = 0; i < pSPARC->Nd_d; i++) {
+                for (int i = 0; i < DMnd; i++) {
                     int_rho += pSPARC->electronDens[i] * pSPARC->Intgwt_phi[i];
                 }
             } else {
-                for (i = 0; i < pSPARC->Nd_d; i++) {
+                for (int i = 0; i < DMnd; i++) {
                     int_rho += pSPARC->electronDens[i];
                 }
                 int_rho *= pSPARC->dV;
             }
             MPI_Allreduce(MPI_IN_PLACE, &int_rho, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi); 	
             vscal = pSPARC->PosCharge / int_rho;
-            for (i = 0; i < DMnd; i++)
+            for (int i = 0; i < DMnd; i++)
             	pSPARC->electronDens[i] *= vscal;
+            
+            if(pSPARC->spin_typ != 0){
+                for(int i = 0; i < DMnd; i++){
+                    double rho_mag = pSPARC->mag[i];
+                    pSPARC->electronDens[DMnd+i] = (pSPARC->electronDens[i] + rho_mag)/2.0;
+                    pSPARC->electronDens[2*DMnd+i] = (pSPARC->electronDens[i] - rho_mag)/2.0;
+                }
+            }
 		}
 	}
 }
@@ -199,19 +197,19 @@ void Init_orbital(SPARC_OBJ *pSPARC)
     if (rank == 0) printf("Initializing Kohn-Sham orbitals ... \n");
 #endif
 
-    int k, n, i, DMnd, size_k, len_tot, size_s, spn_i, spinor;
+    int k, n, DMnd, DMndsp, size_k, len_tot, spinor;
 #ifdef DEBUG
     double t1, t2;
 #endif
     // Multiply a factor for a spinor wavefunction
-    DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    size_k = DMnd * pSPARC->Nband_bandcomm;
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    size_k = DMndsp * pSPARC->Nband_bandcomm;
     // notice that in processors not for orbital calculations len_tot = 0
-    size_s = size_k * pSPARC->Nkpts_kptcomm;
+    len_tot = size_k * pSPARC->Nkpts_kptcomm;
     
-    // Multiply a factor for a spin polarized calculation
-    len_tot = size_s * pSPARC->Nspin_spincomm;
-    
+    int gridsizes[3] = {pSPARC->Nx, pSPARC->Ny, pSPARC->Nz};
+
     // for 1st Relax step, set electron density to be sum of atomic potentials
     if((pSPARC->elecgs_Count) == 0){
         if (pSPARC->isGammaPoint){
@@ -231,27 +229,20 @@ void Init_orbital(SPARC_OBJ *pSPARC)
             t1 = MPI_Wtime();
 #endif
             if (pSPARC->FixRandSeed == 1) {
-                int gridsizes[3];
-                gridsizes[0] = pSPARC->Nx;
-                gridsizes[1] = pSPARC->Ny;
-                gridsizes[2] = pSPARC->Nz;
-                //int size_kg = pSPARC->Nd * pSPARC->Nstates;
-                int size_sg = pSPARC->Nd * pSPARC->Nstates;
-                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                    //int kg  = pSPARC->kpt_start_indx; // global kpt index
-                    int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
-                    for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
-                        int ng = pSPARC->band_start_indx + n; // global band index
-                        int shift_g = sg * size_sg + ng * pSPARC->Nd; // global shift
-                        int shift   = spn_i * size_s + n  * DMnd; // local shift
+                int Ndsp = pSPARC->Nd * pSPARC->Nspinor;
+                
+                for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
+                    int ng = pSPARC->band_start_indx + n; // global band index
+                    for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++) {
+                        int spinorg = pSPARC->spinor_start_indx + spinor;
+                        int shift_g = ng * Ndsp + spinorg * pSPARC->Nd; // global shift
+                        int shift   = n  * DMndsp + spinor * DMnd; // local shift
                         double *Psi_kn = pSPARC->Xorb + shift;
                         SeededRandVec(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
                     }
                 }
             } else {
-                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                    SetRandMat(pSPARC->Xorb + spn_i*size_s , DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
-                }
+                SetRandMat(pSPARC->Xorb, DMndsp, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
             }
         } else {
             // allocate memory in the very first relax/MD step
@@ -270,34 +261,25 @@ void Init_orbital(SPARC_OBJ *pSPARC)
             t1 = MPI_Wtime();
 #endif                
             if (pSPARC->FixRandSeed == 1) {
-                int gridsizes[3];
-                gridsizes[0] = pSPARC->Nx;
-                gridsizes[1] = pSPARC->Ny;
-                gridsizes[2] = pSPARC->Nz;
-                int size_ng = pSPARC->Nd * pSPARC->Nspinor;
-                int size_kg = size_ng * pSPARC->Nstates;
-                int size_sg = size_kg * pSPARC->Nkpts_sym;
-                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                    int sg  = pSPARC->spin_start_indx + spn_i; // global spin index
-                    for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
-                        int kg  = pSPARC->kpt_start_indx + k; // global kpt index
-                        for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
-                            int ng = pSPARC->band_start_indx + n; // global band index
-                            int shift   = spn_i * size_s + k  * size_k  + n  * DMnd; // local shift
-                            for (spinor = 0; spinor < pSPARC->Nspinor; spinor ++) {
-                                int shift_g = sg * size_sg + kg * size_kg + ng * size_ng + pSPARC->Nd * spinor; // global shift
-                                double _Complex *Psi_kn = pSPARC->Xorb_kpt + shift + spinor * pSPARC->Nd_d_dmcomm;
-                                SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
-                            }
+                int Ndsp = pSPARC->Nd * pSPARC->Nspinor;
+                int size_kg = Ndsp * pSPARC->Nstates;
+
+                for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
+                    int kg  = pSPARC->kpt_start_indx + k; // global kpt index
+                    for (n = 0; n < pSPARC->Nband_bandcomm; n++) {
+                        int ng = pSPARC->band_start_indx + n; // global band index
+                        for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++) {
+                            int spinorg = pSPARC->spinor_start_indx + spinor;
+                            int shift_g = kg * size_kg + ng * Ndsp + spinorg * pSPARC->Nd; // global shift
+                            int shift   = k  * size_k  + n  * DMndsp + spinor * DMnd; // local shift
+                            double _Complex *Psi_kn = pSPARC->Xorb_kpt + shift;
+                            SeededRandVec_complex(Psi_kn, pSPARC->DMVertices_dmcomm, gridsizes, -0.5, 0.5, shift_g);
                         }
                     }
-                }    
+                }
+                
             } else {
-                for(spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                    for (i = 0; i < pSPARC->Nkpts_kptcomm; i++) {
-                        SetRandMat_complex(pSPARC->Xorb_kpt + i*size_k + spn_i*size_s, DMnd, pSPARC->Nband_bandcomm, -0.5, 0.5, pSPARC->spincomm);
-                    }
-                }    
+                SetRandMat_complex(pSPARC->Xorb_kpt, DMndsp, pSPARC->Nband_bandcomm*pSPARC->Nkpts_kptcomm, -0.5, 0.5, pSPARC->spincomm); 
             }
         }        
 #ifdef DEBUG
