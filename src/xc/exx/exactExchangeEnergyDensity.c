@@ -36,8 +36,8 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
 
-    int i, Nband, DMnd, Ns, spn_i, Nk, kpt, count;
-    int n, nstart, nend, sg, size_s, size_k, spinDMnd;
+    int i, Nband, DMnd, Ns, Nk, kpt, count;
+    int n, size_k, spinDMnd;
     double *X, *Vexx, g_nk;
     double _Complex *X_kpt, *Vexx_kpt;
     MPI_Comm comm;
@@ -47,66 +47,64 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     #endif
 
     DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Nband = pSPARC->Nband_bandcomm;
+    size_k = DMndsp * Nband;
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
-    nstart = pSPARC->band_start_indx;
-    nend = pSPARC->band_end_indx;
     spinDMnd = (pSPARC->spin_typ == 0) ? DMnd : 2*DMnd;
     comm = pSPARC->dmcomm;
     memset(Exxrho, 0, sizeof(double) * DMnd * (2*pSPARC->Nspin-1));
 
     if (pSPARC->isGammaPoint == 1) {
-        size_s = DMnd * Nband;
-        Vexx = (double *) calloc(sizeof(double), DMnd * Nband);
+        Vexx = (double *) malloc(sizeof(double) * DMnd * Nband);
         assert(Vexx != NULL);
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            sg  = pSPARC->spin_start_indx + spn_i;
-            X = pSPARC->Xorb + spn_i*size_s;
+        for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
+            int sg  = pSPARC->spinor_start_indx + spinor;            
+            X = pSPARC->Xorb + spinor*DMnd;
+            double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ+spinor*Ns) : pSPARC->occ;
 
-            memset(Vexx, 0, sizeof(double)*size_s);
-            exact_exchange_potential(pSPARC, X, Nband, DMnd, Vexx, spn_i, comm);
+            memset(Vexx, 0, sizeof(double)* DMnd * Nband);
+            exact_exchange_potential(pSPARC, X, DMndsp, Nband, DMnd, Vexx, DMnd, spinor, comm);
 
             count = 0;
-            for (n = nstart; n <= nend; n++) {
-                g_nk = pSPARC->occ[n+spn_i*Ns];
+            for (n = 0; n < Nband; n++) {
+                g_nk = occ[n+pSPARC->band_start_indx];                
                 for (i = 0; i < DMnd; i++, count++) {
                     // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                     // only total in case of non-spin-polarized calculation
                     // different from electron density 
-                    Exxrho[sg*DMnd + i] += g_nk * X[count] * Vexx[count];
+                    Exxrho[sg*DMnd + i] += g_nk * X[i+n*DMndsp] * Vexx[count];
                 }
             }
         }
         free(Vexx);
-    } else {
-        size_k = DMnd * Nband;
-        size_s = size_k * Nk;
-        Vexx_kpt = (double _Complex *) calloc(sizeof(double _Complex), DMnd * Nband);
+    } else {                
+        Vexx_kpt = (double _Complex *) malloc(sizeof(double _Complex) * DMnd * Nband);
         assert(Vexx_kpt != NULL);
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            sg  = pSPARC->spin_start_indx + spn_i;
-            for (kpt = 0; kpt < Nk; kpt++) {
-                X_kpt = pSPARC->Xorb_kpt + kpt*size_k + spn_i*size_s;
+        for (kpt = 0; kpt < Nk; kpt++) {
+            for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
+                int sg  = pSPARC->spin_start_indx + spinor;
+                X_kpt = pSPARC->Xorb_kpt + kpt*size_k + spinor*DMnd;
+                double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ+spinor*Ns*Nk) : pSPARC->occ;
 
                 memset(Vexx_kpt, 0, sizeof(double _Complex) * DMnd * Nband);
-                exact_exchange_potential_kpt(pSPARC, X_kpt, Nband, DMnd, Vexx_kpt, spn_i, kpt, comm);
+                exact_exchange_potential_kpt(pSPARC, X_kpt, DMndsp, Nband, DMnd, Vexx_kpt, DMnd, spinor, kpt, comm);
                 
                 count = 0;
-                for (n = nstart; n <= nend; n++) {
-                    g_nk = (pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts) * pSPARC->occ[spn_i*Nk*Ns+kpt*Ns+n];
+                for (n = 0; n < Nband; n++) {
+                    g_nk = (pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts) * occ[kpt*Ns+n+pSPARC->band_start_indx];
                     for (i = 0; i < DMnd; i++, count++) {
                         // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                         // only total in case of non-spin-polarized calculation
                         // different from electron density 
-                        Exxrho[sg*DMnd + i] += g_nk * creal(conj(X_kpt[count]) * Vexx_kpt[count]);
+                        Exxrho[sg*DMnd + i] += g_nk * creal(conj(X_kpt[i+n*DMndsp]) * Vexx_kpt[count]);
                     }
                 }
             }
         }
         free(Vexx_kpt);
     }
-
 
     // sum over spin comm group
     if(pSPARC->npspin > 1) {
@@ -157,7 +155,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
         for (i = 0; i < 2*DMnd; i++) {
             Exxrho[i] *= vscal;
         }
-        // Total Kinetic energy density 
+        // Total exx energy density 
         for (i = 0; i < DMnd; i++) {
             Exxrho[i+2*DMnd] = Exxrho[i] + Exxrho[i+DMnd];
         }

@@ -38,7 +38,7 @@ tols = {"F_tol": 1e-5, # Ha/Bohr
 # -----------------   SYSTEMS INFO   ------------------------#
 ################################################################################################################
 SYSTEMS = { "systemname": ['BaTiO3_valgrind'],
-	    "Tags": [['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'memcheck', 'gamma', 'orth', 'smear_gauss']],
+	    "Tags": [['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'memcheck', 'gamma', 'orth', 'smear_gauss', 'SOC', 'cyclix', 'noncollinear']],
 	    "Tols": [[5e-5, 1e-4, 1e-1]], # E_tol(Ha/atom), F_tol, stress_tol(%)
 	    }
 
@@ -367,6 +367,18 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
 SYSTEMS["Tags"].append(['cyclix','SOC'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Fe3_noncollinear')
+SYSTEMS["Tags"].append(['molecule', 'gga','noncollinear'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('FePt_noncollinear')
+SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('MnAu_noncollinear')
+SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>

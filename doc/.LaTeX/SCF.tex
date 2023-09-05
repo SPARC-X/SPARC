@@ -86,7 +86,7 @@ Integer
 \end{block}
 
 \begin{block}{Default}
-4
+4 or 6
 \end{block}
 
 \column{0.4\linewidth}
@@ -105,13 +105,47 @@ The number of times Chebyshev filtering is repeated before updating the electron
 
 \begin{block}{Remark}
 Values smaller than the default value of 4 can result in a significant increase in the number of SCF
-iterations. Larger values can sometimes reduce the number of SCF iterations. 
+iterations. Larger values can sometimes reduce the number of SCF iterations. For non-collinear spin calculation, default is 6 otherwise 4.
 \end{block}
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NUM\_CHEFSI}} \label{NUM_CHEFSI}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NUM\_CHEFSI}: 2
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The number of times ChefSI algorithm is repeated in SCF iteration except the first one, which is controlled by \texttt{RHO\_TRIGGER}.
+\end{block}
+
+\begin{block}{Remark}
+For non-collinear spin calculation, it might helped SCF convergence in some cases. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

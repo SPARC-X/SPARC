@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Feb 03, 2023)                      *
+*                       SPARC (version Aug 01, 2023)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Sun Feb  5 13:47:29 2023                  *
+*                   Start time: Tue Sep  5 13:27:09 2023                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -40,6 +40,7 @@ PULAY_FREQUENCY: 1
 PULAY_RESTART: 0
 REFERENCE_CUTOFF: 0.5
 RHO_TRIGGER: 4
+NUM_CHEFSI: 1
 FIX_RAND: 0
 VERBOSITY: 1
 PRINT_FORCES: 1
@@ -56,6 +57,7 @@ Lattice vectors (Bohr):
 0.000000000000000 5.670000000000000 0.000000000000000 
 0.000000000000000 0.000000000000000 24.000000000000000 
 Volume: 7.7157360000E+02 (Bohr^3)
+Density: 2.3348841899E-02 (amu/Bohr^3), 2.6164415849E-01 (g/cc)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
@@ -79,57 +81,56 @@ Total number of atoms              :  3
 Total number of electrons          :  8
 Atom type 1  (valence electrons)   :  H 1
 Pseudopotential                    :  ../psps/01_H_1_1.0_1.0_pbe_v1.0.psp8
+Atomic mass                        :  1.007975
 Pseudocharge radii of atom type 1  :  3.58 3.58 3.60 (x, y, z dir)
 Number of atoms of type 1          :  2
 Atom type 2  (valence electrons)   :  O 6
 Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Atomic mass                        :  15.9994
 Pseudocharge radii of atom type 2  :  6.57 6.57 6.60 (x, y, z dir)
 Number of atoms of type 2          :  1
-Estimated total memory usage       :  489.86 MB
-Estimated memory per processor     :  5.10 MB
+Estimated total memory usage       :  568.44 MB
+Estimated memory per processor     :  5.92 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -5.8450327717E+00        4.588E-01        1.379
-2            -5.8725927497E+00        1.109E-01        0.908
-3            -5.8740914192E+00        8.571E-02        0.736
-4            -5.8742087860E+00        5.808E-02        0.648
-5            -5.8742471698E+00        4.078E-02        0.660
-6            -5.8742706111E+00        2.275E-02        0.640
-7            -5.8742759243E+00        4.760E-03        0.617
-8            -5.8742768342E+00        2.886E-03        0.529
-9            -5.8742768355E+00        1.655E-03        0.465
-10           -5.8742768494E+00        9.335E-04        0.388
-11           -5.8742768635E+00        6.019E-04        0.362
-12           -5.8742768566E+00        1.643E-04        0.339
-13           -5.8742768625E+00        1.487E-05        0.353
-14           -5.8742768619E+00        6.318E-06        0.272
-15           -5.8742768661E+00        1.628E-06        0.227
-16           -5.8742768654E+00        1.233E-06        0.246
-17           -5.8742768657E+00        1.070E-06        0.184
-18           -5.8742768655E+00        4.083E-07        0.188
-Total number of SCF: 18    
+1            -5.8450079670E+00        4.583E-01        1.143
+2            -5.8725880393E+00        1.036E-01        0.806
+3            -5.8740902406E+00        6.771E-02        0.623
+4            -5.8742214179E+00        3.954E-02        0.588
+5            -5.8742690808E+00        2.427E-02        0.562
+6            -5.8742742422E+00        7.477E-03        0.553
+7            -5.8742767022E+00        1.383E-03        0.546
+8            -5.8742768256E+00        6.216E-04        0.300
+9            -5.8742768644E+00        2.884E-04        0.391
+10           -5.8742768729E+00        2.013E-04        0.310
+11           -5.8742768631E+00        3.596E-05        0.278
+12           -5.8742768662E+00        1.210E-05        0.220
+13           -5.8742768563E+00        4.255E-06        0.160
+14           -5.8742768600E+00        1.137E-06        0.196
+15           -5.8742768575E+00        7.755E-07        0.158
+Total number of SCF: 15    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -5.8742768655E+00 (Ha/atom)
-Total free energy                  : -1.7622830596E+01 (Ha)
-Band structure energy              : -4.0593504200E+00 (Ha)
-Exchange correlation energy        : -4.9328634295E+00 (Ha)
+Free energy per atom               : -5.8742768575E+00 (Ha/atom)
+Total free energy                  : -1.7622830572E+01 (Ha)
+Band structure energy              : -4.0593506418E+00 (Ha)
+Exchange correlation energy        : -4.9328631514E+00 (Ha)
 Self and correction energy         : -2.6913674992E+01 (Ha)
--Entropy*kb*T                      : -1.6930213587E-07 (Ha)
-Fermi level                        : -1.8886486250E-01 (Ha)
-RMS force                          :  2.4095279986E-02 (Ha/Bohr)
-Maximum force                      :  2.9038263894E-02 (Ha/Bohr)
-Time for force calculation         :  0.030 (sec)
-Maximum stress                     :  5.9211280730E-03 (Ha/Bohr**2)
-Maximum stress equiv. to periodic  :  7.2585667490E+00 (GPa)
-Time for stress calculation        :  0.056 (sec)
+-Entropy*kb*T                      : -1.6944841894E-07 (Ha)
+Fermi level                        : -1.8886825029E-01 (Ha)
+RMS force                          :  2.4095491049E-02 (Ha/Bohr)
+Maximum force                      :  2.9038142207E-02 (Ha/Bohr)
+Time for force calculation         :  0.032 (sec)
+Maximum stress                     :  5.9211257933E-03 (Ha/Bohr**2)
+Maximum stress equiv. to periodic  :  7.2585639544E+00 (GPa)
+Time for stress calculation        :  0.049 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  10.605 sec
+Total walltime                     :  7.843 sec
 ___________________________________________________________________________
 
 ***************************************************************************

@@ -31,22 +31,47 @@ void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC);
 * @brief: find stress contributions from exchange-correlation
 */
 void Calculate_XC_stress(SPARC_OBJ *pSPARC);
-
+void Calculate_XC_stress_nlcc(SPARC_OBJ *pSPARC, double *stress_xc_nlcc);
 
 /**
  * @brief    Calculate local stress components.
  */
 void Calculate_local_stress(SPARC_OBJ *pSPARC);
 
-
-
-
 /**
- * @brief    Calculate nonlocal stress components.
+ * @brief    Calculate nonlocal + kinetic components of stress in terms of spinor wavefunction.
  */
 void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC);
 void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC);
 void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   Calculate <ChiSC_Jlm, ST(x-RJ')_beta, DPsi_n> for spinor stress
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int kpt, int dim2, char *option);
+void Compute_Integral_Chi_StXmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, double *beta, int dim2);
+
+/**
+ * @brief   Compute kinetic stress tensor
+ */
+void Compute_stress_tensor_kinetic_kpt(SPARC_OBJ *pSPARC, double _Complex * dpsi_full, double *stress_k);
+void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *stress_k);
+
+/**
+ * @brief   Compute nonlocal Energy with spin-orbit coupling
+ */
+double Compute_Nonlocal_Energy_by_integrals_kpt(SPARC_OBJ *pSPARC, double _Complex *alpha, char *option);
+double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha);
+
+/**
+ * @brief   Compute nonlocal stress tensor with spin-orbit coupling
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_stress_tensor_nloc_by_integrals_kpt(SPARC_OBJ *pSPARC, double *stress_nl, double _Complex *alpha, char *option);
+void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_nl, double *alpha);
 
 /*
 @ brief: function to print stress tensor
@@ -68,5 +93,6 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp);
  * @return double Stress component in GPa.
  */
 double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char origUnit[16]);
+
 
 #endif // STRESS_H 

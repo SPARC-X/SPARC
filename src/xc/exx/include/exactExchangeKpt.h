@@ -23,7 +23,7 @@
  *          for each k-point. 
  */
 void ACE_operator_kpt(SPARC_OBJ *pSPARC, 
-    double _Complex *psi, double *occ_outer, int spn_i, double _Complex *Xi_kpt);
+    double _Complex *psi, double *occ_outer, double _Complex *Xi_kpt);
 
 
 /**
@@ -32,7 +32,7 @@ void ACE_operator_kpt(SPARC_OBJ *pSPARC,
  *          This function basically prepares different variables for kptcomm_topo and dmcomm
  */
 void exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, 
-        double _Complex *X, int ncol, int DMnd, double _Complex *Hx, int spin, int kpt, MPI_Comm comm);
+        double _Complex *X, int ldx, int ncol, int DMnd, double _Complex *Hx, int ldhx, int spin, int kpt, MPI_Comm comm);
 
 
 /**
@@ -48,9 +48,9 @@ void exact_exchange_potential_kpt(SPARC_OBJ *pSPARC,
  * @param kpt_k           Local index of each k-point 
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
-void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X, 
+void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X, int ldx, 
         int ncol, int DMnd, int *dims, double *occ_outer, 
-        double _Complex *psi_outer, double _Complex *Hx, int kpt_k, MPI_Comm comm);
+        double _Complex *psi_outer, int ldpo, double _Complex *Hx, int ldhx, int kpt_k, MPI_Comm comm);
 
 
 /**
@@ -65,8 +65,8 @@ void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
 void evaluate_exact_exchange_potential_ACE_kpt(SPARC_OBJ *pSPARC, 
-        double _Complex *X, int ncol, int DMnd, double _Complex *Xi, 
-        double _Complex *Hx, int spin, int kpt, MPI_Comm comm);
+        double _Complex *X, int ldx, int ncol, int DMnd, double _Complex *Xi, int ldxi,
+        double _Complex *Hx, int ldhx, int kpt, MPI_Comm comm);
 
 
 /**
@@ -102,14 +102,6 @@ void pois_fft_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs_loc_order, double *poi
                     int ncolp, double _Complex *Vi_loc, int *kpt_k_list, int *kpt_q_list);
 
 
-/**
- * @brief   Transfer complex vectors from dmcomm to kptcomm_topo for Lancozs algorithm
- *
- *          Used to transfer psi_outer_kpt in case of no-ACE method and transfer 
- *          Xi_kpt (of ACE operator) in case of ACE method from dmcomm to kptcomm_topo
- */
-void Transfer_dmcomm_to_kptcomm_topo_complex(SPARC_OBJ *pSPARC, int ncols, double _Complex *psi_outer_kpt, double _Complex *psi_outer_kptcomm_topo_kpt);
-
 
 /**
  * @brief   Gather psi_outer_kpt and occupations in other bandcomms and kptcomms
@@ -140,29 +132,23 @@ void allocate_ACE_kpt(SPARC_OBJ *pSPARC);
 /**
  * @brief   Gather orbitals shape vectors across blacscomm
  */
-void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec);
+void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Complex *vec);
 
 /**
  * @brief   Gather orbitals shape vectors across kpt_bridge_comm
  */
-void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Ncol, double _Complex *vec);
+void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Complex *vec);
 
 /**
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
-void transfer_orbitals_blacscomm_kpt(SPARC_OBJ *pSPARC, 
-        double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs);
-
-/**
- * @brief   transfer orbitals in a cyclic rotation way to save memory
- */
-void transfer_orbitals_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, 
-        double _Complex *sendbuff, double _Complex *recvbuff, int shift, MPI_Request *reqs);
+void transfer_orbitals_kptbridgecomm(SPARC_OBJ *pSPARC, 
+        void *sendbuff, void *recvbuff, int shift, MPI_Request *reqs, int unit_size);
 
 /**
  * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
  */
 void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC, 
-    int ncol, double _Complex *psi, double _Complex *psi_storage, double *occ, double _Complex *Xi_kpt, int kpt_q, int shift, int Ns_occ);
+    int ncol, double _Complex *psi, int ldp, double _Complex *psi_storage, int ldps, double *occ, double _Complex *Xi_kpt, int ldxi, int kpt_q, int shift);
 
 #endif // EXACTEXCHANGEPOTENTIAL_KPT_H 

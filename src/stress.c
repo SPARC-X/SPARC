@@ -37,6 +37,8 @@
 #include "spinOrbitCoupling.h"
 #include "sqProperties.h"
 #include "cyclix_stress.h"
+#include "forces.h"
+#include "exchangeCorrelation.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -428,7 +430,7 @@ void Calculate_XC_stress_nlcc(SPARC_OBJ *pSPARC, double *stress_xc_nlcc) {
                         if (pSPARC->cell_typ != 0)
                             nonCart2Cart_grad(pSPARC, &drhocJ_x_val, &drhocJ_y_val, &drhocJ_z_val);
                         double Vxc_val;
-                        if (pSPARC->Nspin == 1)
+                        if (pSPARC->spin_typ == 0)
                             Vxc_val = Vxc[ishift_DM];
                         else
                             Vxc_val = 0.5 * (Vxc[ishift_DM] + Vxc[pSPARC->Nd_d+ishift_DM]);
@@ -497,41 +499,33 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
     if (!rank_comm_world) printf("Start calculating exchange-correlation components of stress ...\n");
 #endif
 
-    if(strcmpi(pSPARC->XC,"LDA_PW") == 0 || strcmpi(pSPARC->XC,"LDA_PZ") == 0){
-        pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
-        pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
-    } else if(pSPARC->isgradient){
-        pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
-        pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
-        int DMnd, i;
-        DMnd = (2*pSPARC->Nspin - 1) * pSPARC->Nd_d;
+    pSPARC->stress_xc[0] = pSPARC->stress_xc[3] = pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
+    pSPARC->stress_xc[1] = pSPARC->stress_xc[2] = pSPARC->stress_xc[4] = 0.0;
+
+    if(pSPARC->isgradient){    
+        int len_tot, i, DMnd;
+        DMnd = pSPARC->Nd_d;
+        len_tot = pSPARC->Nspdentd * DMnd;
         double *Drho_x, *Drho_y, *Drho_z;
         double *stress_xc;
         stress_xc = (double *) calloc(6, sizeof(double));
         
-        Drho_x = (double *)malloc( DMnd * sizeof(double));
-        Drho_y = (double *)malloc( DMnd * sizeof(double));
-        Drho_z = (double *)malloc( DMnd * sizeof(double));
+        Drho_x = (double *)malloc( len_tot * sizeof(double));
+        Drho_y = (double *)malloc( len_tot * sizeof(double));
+        Drho_z = (double *)malloc( len_tot * sizeof(double));
         assert(Drho_x != NULL && Drho_y != NULL && Drho_z != NULL);
 
-        double *rho;
-        if (pSPARC->NLCC_flag) {
-            rho = (double *)malloc(DMnd * sizeof(double) );
-            assert(rho != NULL);
-            for (i = 0; i < DMnd; i++)
-                rho[i] = pSPARC->electronDens[i] + pSPARC->electronDens_core[i];
-        } else {
-            rho = pSPARC->electronDens;
-        }
+        double *rho = (double *)malloc(len_tot * sizeof(double) );
+        add_rho_core(pSPARC, pSPARC->electronDens, rho, pSPARC->Nspdentd);
 
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_x, 0, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_y, 1, pSPARC->dmcomm_phi);
-        Gradient_vectors_dir(pSPARC, pSPARC->Nd_d, pSPARC->DMVertices, (2*pSPARC->Nspin - 1), 0.0, rho, Drho_z, 2, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_x, DMnd, 0, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_y, DMnd, 1, pSPARC->dmcomm_phi);
+        Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, pSPARC->Nspdentd, 0.0, rho, DMnd, Drho_z, DMnd, 2, pSPARC->dmcomm_phi);
         
-        if (pSPARC->NLCC_flag) free(rho);
+        free(rho);
 
         if(pSPARC->cell_typ == 0){
-            for(i = 0; i < DMnd; i++){
+            for(i = 0; i < len_tot; i++){
                 stress_xc[0] += Drho_x[i] * Drho_x[i] * pSPARC->Dxcdgrho[i];
                 stress_xc[1] += Drho_x[i] * Drho_y[i] * pSPARC->Dxcdgrho[i];
                 stress_xc[2] += Drho_x[i] * Drho_z[i] * pSPARC->Dxcdgrho[i];
@@ -545,7 +539,7 @@ void Calculate_XC_stress(SPARC_OBJ *pSPARC) {
             // do Allreduce/Reduce to find total integral // TODO: check if there's only 1 process, then skip this
             MPI_Allreduce(MPI_IN_PLACE, stress_xc, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
         } else{
-            for(i = 0; i < DMnd; i++){
+            for(i = 0; i < len_tot; i++){
                 nonCart2Cart_grad(pSPARC, Drho_x + i, Drho_y + i, Drho_z + i);
                 stress_xc[0] += Drho_x[i] * Drho_x[i] * pSPARC->Dxcdgrho[i];
                 stress_xc[1] += Drho_x[i] * Drho_y[i] * pSPARC->Dxcdgrho[i];
@@ -685,9 +679,9 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
     Dphi_y = (double *)malloc( DMnd * sizeof(double));
     Dphi_z = (double *)malloc( DMnd * sizeof(double));
     
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_x, 0, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_y, 1, pSPARC->dmcomm_phi);
-    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, Dphi_z, 2, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_x, DMnd, 0, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_y, DMnd, 1, pSPARC->dmcomm_phi);
+    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices, 1, 0.0, pSPARC->elecstPotential, DMnd, Dphi_z, DMnd, 2, pSPARC->dmcomm_phi);
     
     for(i = 0; i < DMnd; i++){
         nonCart2Cart_grad(pSPARC, Dphi_x + i, Dphi_y + i, Dphi_z + i);
@@ -1064,357 +1058,171 @@ void Calculate_local_stress(SPARC_OBJ *pSPARC) {
  * @brief    Calculate nonlocal stress components.
  */
 void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
-    if (pSPARC->isGammaPoint) {
-        if (pSPARC->SQFlag == 1) {
-            Calculate_nonlocal_kinetic_stress_SQ(pSPARC);
-        } else {
-        #ifdef SPARCX_ACCEL
-			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-			{
-				ACCEL_Calculate_nonlocal_kinetic_stress_linear(pSPARC);
-			} else
-        #endif
-			{
-				Calculate_nonlocal_kinetic_stress_linear(pSPARC);
-			}
+    if (pSPARC->SQFlag == 1) {
+        Calculate_nonlocal_kinetic_stress_SQ(pSPARC);   
+    } else if (pSPARC->isGammaPoint) {
+    #ifdef SPARCX_ACCEL
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        {
+        ACCEL_Calculate_nonlocal_kinetic_stress_linear(pSPARC);
+        } else
+    #endif
+        {
+            Calculate_nonlocal_kinetic_stress_linear(pSPARC);
         }
     } else {
-        if (pSPARC->Nspinor == 1) {
-        #ifdef SPARCX_ACCEL
-			if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-			{
-				ACCEL_Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
-			} else
-        #endif
-			{
-				Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
-			}
-        } else if (pSPARC->Nspinor == 2) {
-            Calculate_nonlocal_kinetic_stress_kpt_spinor(pSPARC);
+    #ifdef SPARCX_ACCEL
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        {
+            ACCEL_Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
+        } else
+    #endif
+        {
+            Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
         }
     }
  }
+
 
 /**
  * @brief    Calculate nonlocal + kinetic components of stress.
  */
 void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
 {
-    if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
+    if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
+    
     int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    int i, j, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, i_DM, j_DM, k_DM, dim, atom_index, count, l, m, lmax, spn_i, nspin, size_s;
-    nspin = pSPARC->Nspin_spincomm; // number of spin in my spin communicator
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);   
+    int i, ncol, DMnd, DMndsp;
+    int dim, dim2, count, size_k, spinor, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    Ns = pSPARC->Nstates; // total number of bands
     DMnd = pSPARC->Nd_d_dmcomm;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
-    size_s = ncol * DMnd;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+    size_k = DMndsp * ncol;
+    
+    double *alpha, *beta, *dpsi_full;
+    double *dpsi_xi, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv;
+    double energy_nl = 0.0, stress_k[6], stress_nl[6];
+    
+    for (i = 0; i < 6; i++) stress_nl[i] = stress_k[i] = 0;
 
-    double *alpha, *beta, *beta1, *beta2, *beta3, *psi_ptr, *dpsi_ptr, *psi_rc, *dpsi_x1_rc, *dpsi_x2_rc, *dpsi_x3_rc, *psi_rc_ptr, *dpsi_x1_rc_ptr, *dpsi_x2_rc_ptr, *dpsi_x3_rc_ptr, *dpsi_full, R1, R2, R3, x1_R1, x2_R2, x3_R3;
-    double *SJ, eJ, temp_e, *temp_s, temp2_e, *temp2_s, g_nk, *beta1_x1, *beta1_x2, *beta1_x3, *beta2_x1, *beta2_x2, *beta2_x3, *beta3_x1, *beta3_x2, *beta3_x3, gamma_jl;
-    double *dpsi_ptr2, dpsi1_dpsi1, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi2, dpsi2_dpsi3, dpsi3_dpsi3;
+    dpsi_full = (double *)malloc( 3 * size_k * sizeof(double) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
+    assert(dpsi_full != NULL);
     
-    //double ts, te;
-
-    double energy_nl = 0.0, *stress_k, *stress_nl;
-    stress_k = (double*) calloc(6, sizeof(double));
-    stress_nl = (double*) calloc(9, sizeof(double));
-    SJ = (double*) malloc(9 * sizeof(double));
-    temp_s = (double*) malloc(9 * sizeof(double));
-    temp2_s = (double*) malloc(9 * sizeof(double));
-    
-    // int len_psi = DMnd * ncol * nspin;
-    dpsi_full = (double *)malloc( size_s * sizeof(double) );
-    if (dpsi_full == NULL) {
-        printf("\nMemory allocation failed!\n");
-        exit(EXIT_FAILURE);
-    }
-    
-    alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 10, sizeof(double));
+    alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * 7 * Nspinor, sizeof(double));
+    assert(alpha != NULL);
     
 #ifdef DEBUG 
     if (!rank) printf("Start calculating stress contributions from kinetic and nonlocal psp. \n");
 #endif
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (!pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-            for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                psi_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                
-                /* first find inner product <Psi_n, Chi_Jlm> */
-                for (n = 0; n < ncol; n++) {
-                    psi_ptr = pSPARC->Xorb + spn_i * size_s + n * DMnd;
-                    psi_rc_ptr = psi_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(psi_rc_ptr + i) = *(psi_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]);
-                    }
-                }
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, pSPARC->dV, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                            psi_rc, ndc, 1.0, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); // multiplied dV to get inner-product
-                free(psi_rc);    
+
+    // find gradient of psi
+    if (pSPARC->cell_typ == 0){
+        for (dim = 0; dim < 3; dim++) {
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                // find dPsi in direction dim
+                dpsi_xi = dpsi_full + dim * size_k;
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
+                                    pSPARC->Xorb+spinor*DMnd, DMndsp, dpsi_xi+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
             }
         }
-        count++;
-    }    
-    
-    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
+    } else {
+        dpsi_xi_lv = (double *)malloc( size_k * sizeof(double) );  // dpsi_x, dpsi_y, dpsi_z along lattice vecotrs
+        assert(dpsi_xi_lv != NULL);
+        dpsi_x1 = dpsi_full;
+        dpsi_x2 = dpsi_full + size_k;
+        dpsi_x3 = dpsi_full + 2 * size_k;
         for (dim = 0; dim < 3; dim++) {
-            // find dPsi in direction dim
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, pSPARC->Yorb, dim, pSPARC->dmcomm);
-            beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+1) + count);
-            beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+2) + count);
-            beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (nspin * (3*dim+3) + count);
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
-                    R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    dpsi_x1_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                    dpsi_x2_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                    dpsi_x3_rc = (double *)malloc( ndc * ncol * sizeof(double));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    for (n = 0; n < ncol; n++) {
-                        dpsi_ptr = pSPARC->Yorb + n * DMnd;
-                        dpsi_x1_rc_ptr = dpsi_x1_rc + n * ndc;
-                        dpsi_x2_rc_ptr = dpsi_x2_rc + n * ndc;
-                        dpsi_x3_rc_ptr = dpsi_x3_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
-                            k_DM = indx / (DMnx * DMny);
-                            j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                            i_DM = indx % DMnx;
-                            x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
-                            x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
-                            x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
-                            
-                            *(dpsi_x1_rc_ptr + i) = *(dpsi_ptr + indx) * x1_R1;
-                            *(dpsi_x2_rc_ptr + i) = *(dpsi_ptr + indx) * x2_R2;
-                            *(dpsi_x3_rc_ptr + i) = *(dpsi_ptr + indx) * x3_R3;
-                        }
-                    }
-                
-                    /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                     *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                     *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                     *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                     */      
-                    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                                dpsi_x1_rc, ndc, 1.0, beta1+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                                dpsi_x2_rc, ndc, 1.0, beta2+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
-                                dpsi_x3_rc, ndc, 1.0, beta3+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);                        
-                    free(dpsi_x1_rc); free(dpsi_x2_rc); free(dpsi_x3_rc);
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                // find dPsi in direction dim along lattice vector directions
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
+                                    pSPARC->Xorb+spinor*DMnd, DMndsp, dpsi_xi_lv+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+            }
+            // find dPsi in direction dim in cartesian coordinates
+            for (i = 0; i < size_k; i++) {
+                if (dim == 0) {
+                    dpsi_x1[i] = pSPARC->gradT[0]*dpsi_xi_lv[i];
+                    dpsi_x2[i] = pSPARC->gradT[1]*dpsi_xi_lv[i];
+                    dpsi_x3[i] = pSPARC->gradT[2]*dpsi_xi_lv[i];
+                } else {
+                    dpsi_x1[i] += pSPARC->gradT[0+3*dim]*dpsi_xi_lv[i];
+                    dpsi_x2[i] += pSPARC->gradT[1+3*dim]*dpsi_xi_lv[i];
+                    dpsi_x3[i] += pSPARC->gradT[2+3*dim]*dpsi_xi_lv[i];
                 }
             }
-            
-            // Kinetic stress
-            if(dim == 0){
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 1, pSPARC->dmcomm);
-                for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
-                    dpsi1_dpsi1 = dpsi1_dpsi2 = dpsi2_dpsi2 = 0.0;
-                    for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi1 += *(dpsi_ptr + i) * *(dpsi_ptr + i);
-                        dpsi1_dpsi2 += *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
-                        dpsi2_dpsi2 += *(dpsi_ptr2 + i) * *(dpsi_ptr2 + i);
-                    }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
-                    stress_k[0] += dpsi1_dpsi1 * g_nk;
-                    stress_k[1] += dpsi1_dpsi2 * g_nk;
-                    stress_k[3] += dpsi2_dpsi2 * g_nk;
-                }
-                
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spn_i*size_s, dpsi_full, 2, pSPARC->dmcomm);
-                for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_1
-                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
-                    dpsi1_dpsi3 = dpsi3_dpsi3 = 0.0;
-                    for(i = 0; i < DMnd; i++){
-                        dpsi1_dpsi3 += *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
-                        dpsi3_dpsi3 += *(dpsi_ptr2 + i) * *(dpsi_ptr2 + i);
-                    }
-                    g_nk = pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
-                    stress_k[2] += dpsi1_dpsi3 * g_nk;
-                    stress_k[5] += dpsi3_dpsi3 * g_nk;
-                }
-            } else if(dim == 1){
-                for(n = 0; n < ncol; n++){
-                    dpsi_ptr = pSPARC->Yorb + n * DMnd; // dpsi_2
-                    dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
-                    dpsi2_dpsi3 = 0.0;
-                    for(i = 0; i < DMnd; i++){
-                        dpsi2_dpsi3 += *(dpsi_ptr + i) * *(dpsi_ptr2 + i);
-                    }
-                    stress_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Ns + n + pSPARC->band_start_indx];
-                }
-            }
-        }    
-        count++;
+        }
+        free(dpsi_xi_lv);
+    }
+
+    // find <chi_Jlm, psi> 
+    beta = alpha;
+    Compute_Integral_psi_Chi(pSPARC, beta, pSPARC->Xorb);
+
+    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
+    count = 1;
+    for (dim = 0; dim < 3; dim++) {
+        dpsi_xi = dpsi_full + dim * size_k;
+        for (dim2 = dim; dim2 < 3; dim2++) {
+            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * count;
+            Compute_Integral_Chi_StXmRjp_beta_Dpsi(pSPARC, dpsi_xi, beta, dim2);
+            count ++;
+        }
     }
     
-    stress_k[0] *= -(2.0/pSPARC->Nspin);
-    stress_k[1] *= -(2.0/pSPARC->Nspin);
-    stress_k[2] *= -(2.0/pSPARC->Nspin);
-    stress_k[3] *= -(2.0/pSPARC->Nspin);
-    stress_k[4] *= -(2.0/pSPARC->Nspin);
-    stress_k[5] *= -(2.0/pSPARC->Nspin);
-    
+    // Kinetic stress
+    Compute_stress_tensor_kinetic(pSPARC, dpsi_full, stress_k);
     free(dpsi_full);
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * nspin * 10, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        // MPI_Allreduce will fail randomly in valgrind test for unknown reason
+        MPI_Request req0, req3;
+        MPI_Status  sta0, sta3;
+        MPI_Iallreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 7, 
+                        MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm, &req0);
+        MPI_Iallreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm, &req3);
+        MPI_Wait(&req0, &sta0);
+        MPI_Wait(&req3, &sta3);
     }
 
     /* calculate nonlocal stress */
-    // go over all atoms and find nonlocal stress
-    beta1_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin;
-    beta1_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 2;
-    beta1_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 3;
-    beta2_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 4;
-    beta2_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 5;
-    beta2_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 6;
-    beta3_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 7;
-    beta3_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 8;
-    beta3_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*nspin * 9;
-    count = 0;
+    Compute_stress_tensor_nloc_by_integrals(pSPARC, stress_nl, alpha);
     
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            lmax = pSPARC->psd[ityp].lmax;
-            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
-                eJ = 0.0; for(i = 0; i < 9; i++) SJ[i] = 0.0;
-                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                    g_nk = pSPARC->occ[spn_i*Ns + n]; // TODO: for k-points calculation, use occ[n+k*Ns]
-                    temp2_e = 0.0; for(i = 0; i < 9; i++) temp2_s[i] = 0.0;
-                    ldispl = 0;
-                    for (l = 0; l <= lmax; l++) {
-                        // skip the local l
-                        if (l == pSPARC->localPsd[ityp]) {
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                            continue;
-                        }
-                        for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                            temp_e = 0.0; for(i = 0; i < 9; i++) temp_s[i] = 0.0;
-                            for (m = -l; m <= l; m++) {
-                                temp_e += alpha[count] * alpha[count];
-                                temp_s[0] += alpha[count] * beta1_x1[count]; temp_s[1] += alpha[count] * beta1_x2[count]; temp_s[2] += alpha[count] * beta1_x3[count];
-                                temp_s[3] += alpha[count] * beta2_x1[count]; temp_s[4] += alpha[count] * beta2_x2[count]; temp_s[5] += alpha[count] * beta2_x3[count];
-                                temp_s[6] += alpha[count] * beta3_x1[count]; temp_s[7] += alpha[count] * beta3_x2[count]; temp_s[8] += alpha[count] * beta3_x3[count];
-                                count++;
-                            }
-                            gamma_jl = pSPARC->psd[ityp].Gamma[ldispl+np];
-                            temp2_e += temp_e * gamma_jl;
-                            for(i = 0; i < 9; i++)
-                                temp2_s[i] += temp_s[i] * gamma_jl;
-                        }
-                        ldispl += pSPARC->psd[ityp].ppl[l];
-                    }
-                    eJ += temp2_e * g_nk;
-                    for(i = 0; i < 9; i++)
-                        SJ[i] += temp2_s[i] * g_nk;
-                }
-                
-                energy_nl -= eJ;
-                for(i = 0; i < 9; i++)
-                    stress_nl[i] -= SJ[i];
-            }
-        }
-    }    
+    /* calculate nonlocal energy */
+    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha);
+    free(alpha);
     
-    for(i = 0; i < 9; i++)
-        stress_nl[i] *= (2.0/pSPARC->Nspin) * 2.0;
+    for(i = 0; i < 6; i++)
+        stress_nl[i] *= pSPARC->occfac * 2.0;
     
-    energy_nl *= (2.0/pSPARC->Nspin)/pSPARC->dV;   
-    
-    
-    if(pSPARC->cell_typ == 0){
-        pSPARC->stress_nl[0] = stress_nl[0] + energy_nl;
-        pSPARC->stress_nl[1] = stress_nl[1];
-        pSPARC->stress_nl[2] = stress_nl[2];
-        pSPARC->stress_nl[3] = stress_nl[4] + energy_nl;
-        pSPARC->stress_nl[4] = stress_nl[5];
-        pSPARC->stress_nl[5] = stress_nl[8] + energy_nl;
-        for(i = 0; i < 6; i++)
-            pSPARC->stress_k[i] = stress_k[i];
-    } else {
-        double *c_g, *c_c;
-        c_g = (double*) malloc(9*sizeof(double));
-        c_c = (double*) malloc(9*sizeof(double));
-        for(i = 0; i < 3; i++){
-            for(j = 0; j < 3; j++){
-                c_g[3*i+j] = pSPARC->gradT[3*j+i];
-                c_c[3*i+j] = pSPARC->LatUVec[3*j+i];
-            }
-        }
-        // sigma_ab = sum(i,j) (grad^T(a,i) * LatUVec^T(b,j) * grad_i_psi (x-R)_j)
-        pSPARC->stress_nl[0] = c_g[0] * (c_c[0] * stress_nl[0] + c_c[1] * stress_nl[1] + c_c[2] * stress_nl[2]) +
-                               c_g[1] * (c_c[0] * stress_nl[3] + c_c[1] * stress_nl[4] + c_c[2] * stress_nl[5]) + 
-                               c_g[2] * (c_c[0] * stress_nl[6] + c_c[1] * stress_nl[7] + c_c[2] * stress_nl[8]) + energy_nl;                       
-        pSPARC->stress_nl[1] = c_g[0] * (c_c[3] * stress_nl[0] + c_c[4] * stress_nl[1] + c_c[5] * stress_nl[2]) +
-                               c_g[1] * (c_c[3] * stress_nl[3] + c_c[4] * stress_nl[4] + c_c[5] * stress_nl[5]) + 
-                               c_g[2] * (c_c[3] * stress_nl[6] + c_c[4] * stress_nl[7] + c_c[5] * stress_nl[8]);
-        pSPARC->stress_nl[2] = c_g[0] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[1] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[2] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]); 
-        pSPARC->stress_nl[3] = c_g[3] * (c_c[3] * stress_nl[0] + c_c[4] * stress_nl[1] + c_c[5] * stress_nl[2]) +
-                               c_g[4] * (c_c[3] * stress_nl[3] + c_c[4] * stress_nl[4] + c_c[5] * stress_nl[5]) + 
-                               c_g[5] * (c_c[3] * stress_nl[6] + c_c[4] * stress_nl[7] + c_c[5] * stress_nl[8]) + energy_nl;
-        pSPARC->stress_nl[4] = c_g[3] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[4] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[5] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]);
-        pSPARC->stress_nl[5] = c_g[6] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[7] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[8] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]) + energy_nl;
+    energy_nl *= pSPARC->occfac/pSPARC->dV;   
 
-        pSPARC->stress_k[0] = c_g[0] * (c_g[0] * stress_k[0] + c_g[1] * stress_k[1] + c_g[2] * stress_k[2]) +
-                              c_g[1] * (c_g[0] * stress_k[1] + c_g[1] * stress_k[3] + c_g[2] * stress_k[4]) +
-                              c_g[2] * (c_g[0] * stress_k[2] + c_g[1] * stress_k[4] + c_g[2] * stress_k[5]);
-        pSPARC->stress_k[1] = c_g[0] * (c_g[3] * stress_k[0] + c_g[4] * stress_k[1] + c_g[5] * stress_k[2]) +
-                              c_g[1] * (c_g[3] * stress_k[1] + c_g[4] * stress_k[3] + c_g[5] * stress_k[4]) +
-                              c_g[2] * (c_g[3] * stress_k[2] + c_g[4] * stress_k[4] + c_g[5] * stress_k[5]);
-        pSPARC->stress_k[2] = c_g[0] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[1] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[2] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);
-        pSPARC->stress_k[3] = c_g[3] * (c_g[3] * stress_k[0] + c_g[4] * stress_k[1] + c_g[5] * stress_k[2]) +
-                              c_g[4] * (c_g[3] * stress_k[1] + c_g[4] * stress_k[3] + c_g[5] * stress_k[4]) +
-                              c_g[5] * (c_g[3] * stress_k[2] + c_g[4] * stress_k[4] + c_g[5] * stress_k[5]);
-        pSPARC->stress_k[4] = c_g[3] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[4] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[5] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);
-        pSPARC->stress_k[5] = c_g[6] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[7] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[8] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);                                                                                   
-  
-        free(c_g); free(c_c);
-    }
-
-
+    pSPARC->stress_nl[0] = stress_nl[0] - energy_nl;
+    pSPARC->stress_nl[1] = stress_nl[1];
+    pSPARC->stress_nl[2] = stress_nl[2];
+    pSPARC->stress_nl[3] = stress_nl[3] - energy_nl;
+    pSPARC->stress_nl[4] = stress_nl[4];
+    pSPARC->stress_nl[5] = stress_nl[5] - energy_nl;
+    for(i = 0; i < 6; i++)
+        pSPARC->stress_k[i] = stress_k[i];
+    
     // sum over all spin
     if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-    }
-    
-    // sum over all bands
-    if (pSPARC->npband > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
     }
 
+    // sum over all kpoints
+    if (pSPARC->npkpt > 1) {    
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+    }
+
+    // sum over all bands
+    if (pSPARC->npband > 1) {        
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
+    }
 
     if (!rank) {
         // Define measure of unit cell
@@ -1426,10 +1234,10 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
         if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
-       for(int i = 0; i < 6; i++) {
+        for(i = 0; i < 6; i++) {
             pSPARC->stress_nl[i] /= cell_measure;
             pSPARC->stress_k[i] /= cell_measure;
-       }
+        }
 
     }
 
@@ -1441,16 +1249,226 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
         PrintStress(pSPARC, pSPARC->stress_k, NULL);  
     } 
 #endif
-    
-    
-    free(alpha);
-    free(stress_k);
-    free(stress_nl);
-    free(SJ);
-    free(temp_s);
-    free(temp2_s);
 }
 
+
+
+/**
+ * @brief   Calculate <ChiSC_Jlm, ST(x-RJ')_beta, DPsi_n> for spinor stress
+ */
+void Compute_Integral_Chi_StXmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, double *beta, int dim2) 
+{
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift;
+    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMnx = pSPARC->Nx_d_dmcomm;
+    DMny = pSPARC->Ny_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double R1, R2, R3, x1_R1, x2_R2, x3_R3, StXmRjp;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+            R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
+            R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
+            R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
+            dpsi_xi_rc = (double *)malloc( ndc * ncol * sizeof(double));
+            assert(dpsi_xi_rc);
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                for (n = 0; n < ncol; n++) {
+                    dpsi_ptr = dpsi_xi + n * DMndsp + spinor * DMnd;
+                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
+
+                    for (i = 0; i < ndc; i++) {
+                        indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
+                        k_DM = indx / (DMnx * DMny);
+                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                        i_DM = indx % DMnx;
+                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
+                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
+                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
+                        StXmRjp = pSPARC->LatUVec[0+dim2] * x1_R1 + pSPARC->LatUVec[3+dim2] * x2_R2 + pSPARC->LatUVec[6+dim2] * x3_R3;
+                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * StXmRjp;
+                    }
+                }
+                spinorshift = pSPARC->IP_displ[pSPARC->n_atom] * ncol * spinor;
+                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->nlocProj[ityp].Chi[iat], ndc, 
+                            dpsi_xi_rc, ndc, 1.0, beta+spinorshift+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
+            }
+            free(dpsi_xi_rc);
+        }
+    }
+}
+
+/**
+ * @brief   Compute kinetic stress tensor
+ */
+void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *stress_k) 
+{
+    int ncol, DMnd, Ns;
+    int Nspinor, DMndsp, size_k;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+    size_k = DMndsp * ncol;
+    Ns = pSPARC->Nstates;
+    
+    double *dpsi_xi, *dpsi_xj, *dpsi_xi_ptr, *dpsi_xj_ptr;
+    int count, dim, dim2, n, spinor, i;
+
+    count = 0;
+    for (dim = 0; dim < 3; dim++) {
+        dpsi_xi = dpsi_full + dim * size_k;
+        for (dim2 = dim; dim2 < 3; dim2++) {
+            dpsi_xj = dpsi_full + dim2 * size_k;
+            double temp_k = 0;
+            for(n = 0; n < ncol; n++){
+                for (spinor = 0; spinor < Nspinor; spinor++) {
+                    double dpsii_dpsij = 0;
+                    dpsi_xi_ptr = dpsi_xi + n * DMndsp + spinor * DMnd; // dpsi_xi
+                    dpsi_xj_ptr = dpsi_xj + n * DMndsp + spinor * DMnd; // dpsi_xj
+
+                    for(i = 0; i < DMnd; i++){
+                        dpsii_dpsij += *(dpsi_xi_ptr + i) * *(dpsi_xj_ptr + i);
+                    }
+                    double *occ = pSPARC->occ;
+                    if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+                    double g_nk = occ[n + pSPARC->band_start_indx];
+                    temp_k += dpsii_dpsij * g_nk;
+                }
+            }
+            stress_k[count] -= pSPARC->occfac * temp_k;
+            count ++;
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute nonlocal Energy with spin-orbit coupling
+ */
+double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha)
+{
+    int n, np, ldispl, ityp, iat, Ns;
+    int count, l, m, lmax, spinor, Nspinor;
+    double eJ, temp_e, temp2_e, g_nk, gamma_jl, energy_nl;
+    Ns = pSPARC->Nstates;
+    Nspinor = pSPARC->Nspinor_spincomm;
+
+    energy_nl = 0.0;
+    count = 0;
+    for (spinor = 0; spinor < Nspinor; spinor++) {
+        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+            lmax = pSPARC->psd[ityp].lmax;
+            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                eJ = 0.0; 
+                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                    double *occ = pSPARC->occ;
+                    if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+                    g_nk = occ[n];
+                    temp2_e = 0.0; 
+
+                    // scalar relativistic term
+                    ldispl = 0;
+                    for (l = 0; l <= lmax; l++) {
+                        // skip the local l
+                        if (l == pSPARC->localPsd[ityp]) {
+                            ldispl += pSPARC->psd[ityp].ppl[l];
+                            continue;
+                        }
+                        for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
+                            temp_e = 0.0; 
+                            for (m = -l; m <= l; m++) {
+                                temp_e += alpha[count] * alpha[count];
+                                count++;
+                            }
+                            gamma_jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                            temp2_e += temp_e * gamma_jl;
+                        }
+                        ldispl += pSPARC->psd[ityp].ppl[l];
+                    }   
+                    eJ += temp2_e * g_nk;
+                }
+                energy_nl += eJ;
+            }
+        }
+    }
+    return energy_nl;
+}
+
+/**
+ * @brief   Compute nonlocal stress tensor
+ */
+void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_nl, double *alpha)
+{
+    int i, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, spinor, Nspinor;
+    int ppl, *IP_displ;
+    double g_nk, SJ[6], temp2_s[6], gamma_Jl = 0;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    Ns = pSPARC->Nstates;    
+    Nspinor = pSPARC->Nspinor_spincomm;
+    IP_displ = pSPARC->IP_displ;
+
+    double *beta1_x1, *beta2_x1, *beta3_x1, *beta2_x2, *beta3_x2, *beta3_x3; 
+    beta1_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor;
+    beta2_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor * 2;
+    beta3_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor * 3;
+    beta2_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor * 4;
+    beta3_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor * 5;
+    beta3_x3 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor * 6;
+
+    count = 0;
+    for (spinor = 0; spinor < Nspinor; spinor++) {
+        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+            lmax = pSPARC->psd[ityp].lmax;
+            for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                for(i = 0; i < 6; i++) SJ[i] = 0.0;
+                for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                    double *occ = pSPARC->occ;
+                    if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+                    g_nk = occ[n];
+
+                    for(i = 0; i < 6; i++) temp2_s[i] = 0.0;
+                    ldispl = 0;
+                    for (l = 0; l <= lmax; l++) {
+                        ppl = pSPARC->psd[ityp].ppl[l];
+                        // skip the local l
+                        if (l == pSPARC->localPsd[ityp]) {
+                            ldispl += ppl;
+                            continue;
+                        }
+                        for (np = 0; np < ppl; np++) {
+                            for (m = -l; m <= l; m++) {
+                                gamma_Jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                                temp2_s[0] += gamma_Jl * alpha[count] * beta1_x1[count];
+                                temp2_s[1] += gamma_Jl * alpha[count] * beta2_x1[count];
+                                temp2_s[2] += gamma_Jl * alpha[count] * beta3_x1[count];
+                                temp2_s[3] += gamma_Jl * alpha[count] * beta2_x2[count];
+                                temp2_s[4] += gamma_Jl * alpha[count] * beta3_x2[count];
+                                temp2_s[5] += gamma_Jl * alpha[count] * beta3_x3[count];
+                                count++;
+                            }
+                        }
+                        ldispl += ppl;
+                    }
+                    for(i = 0; i < 6; i++)
+                        SJ[i] += temp2_s[i] * g_nk;
+                }
+                for(i = 0; i < 6; i++)
+                    stress_nl[i] -= SJ[i];
+            }
+        }
+    }
+}
 
 /**
  * @brief    Calculate nonlocal + kinetic components of stress.
@@ -1458,355 +1476,181 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
 void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int i, j, k, n, np, ldispl, ndc, ityp, iat, ncol, Ns, DMnd, DMnx, DMny, indx, i_DM, j_DM, k_DM, dim, atom_index, count, l, m, lmax, kpt, Nk, size_k, spn_i, nspin, size_s;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);   
+    int i, ncol, DMnd, DMndsp;
+    int dim, dim2, count, kpt, Nk, size_k, spinor, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    Ns = pSPARC->Nstates;
     DMnd = pSPARC->Nd_d_dmcomm;
     Nk = pSPARC->Nkpts_kptcomm;
-    nspin = pSPARC->Nspin_spincomm;
-    size_k = DMnd * ncol;
-    size_s = size_k * Nk;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+    size_k = DMndsp * ncol;
     
-    double _Complex *alpha, *beta, *beta1, *beta2, *beta3, *psi_ptr, *dpsi_ptr, *dpsi_ptr2, *psi_rc, *dpsi_x1_rc, *dpsi_x2_rc, *dpsi_x3_rc, *psi_rc_ptr, *dpsi_x1_rc_ptr, *dpsi_x2_rc_ptr, *dpsi_x3_rc_ptr, *dpsi_full;
-    double _Complex *beta1_x1, *beta1_x2, *beta1_x3, *beta2_x1, *beta2_x2, *beta2_x3, *beta3_x1, *beta3_x2, *beta3_x3;
-    double *SJ, eJ, *temp_k, temp_e, *temp_s, temp2_e, *temp2_s, g_nk, gamma_jl, kptwt,  R1, R2, R3, x1_R1, x2_R2, x3_R3;
-    double dpsi1_dpsi1, dpsi1_dpsi2, dpsi1_dpsi3, dpsi2_dpsi2, dpsi2_dpsi3, dpsi3_dpsi3;
+    double _Complex *alpha, *alpha_so1, *alpha_so2, *beta, *dpsi_full;
+    alpha = alpha_so1 = alpha_so2 = NULL;
+    double _Complex *dpsi_xi, *dpsi_x1, *dpsi_x2, *dpsi_x3, *dpsi_xi_lv;    
+    double energy_nl = 0.0, stress_k[6], stress_nl[6];
+    
+    for (i = 0; i < 6; i++) stress_nl[i] = stress_k[i] = 0;
 
-    double energy_nl = 0.0, *stress_k, *stress_nl;
-    temp_k = (double*) malloc(6 * sizeof(double));
-    stress_k = (double*) calloc(6, sizeof(double));
-    stress_nl = (double*) calloc(9, sizeof(double));
-    SJ = (double*) malloc(9 * sizeof(double));
-    temp_s = (double*) malloc(9 * sizeof(double));
-    temp2_s = (double*) malloc(9 * sizeof(double));
+    dpsi_full = (double _Complex *)malloc( 3 * size_k * Nk * sizeof(double _Complex) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
+    assert(dpsi_full != NULL);
     
-    // dpsi_full = (double _Complex *)malloc( size_s * nspin * sizeof(double _Complex) );
-    dpsi_full = (double _Complex *)malloc( size_k * sizeof(double _Complex) );
-    if (dpsi_full == NULL) {
-        printf("\nMemory allocation failed!\n");
-        exit(EXIT_FAILURE);
+    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * 7 * Nspinor, sizeof(double _Complex));
+    assert(alpha != NULL);
+    if (pSPARC->SOC_Flag == 1) {
+        alpha_so1 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 7 * Nspinor, sizeof(double _Complex));
+        alpha_so2 = (double _Complex *)calloc( pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 7 * Nspinor, sizeof(double _Complex));
+        assert(alpha_so1 != NULL && alpha_so2 != NULL);
     }
     
-    alpha = (double _Complex *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 10, sizeof(double _Complex));
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, kpt_vec;
-    double _Complex bloch_fac, a, b;
+    double k1, k2, k3, kpt_vec;
 #ifdef DEBUG 
     if (!rank) printf("Start calculating stress contributions from kinetic and nonlocal psp. \n");
 #endif
 
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < Nk; kpt++){
-            k1 = pSPARC->k1_loc[kpt];
-            k2 = pSPARC->k2_loc[kpt];
-            k3 = pSPARC->k3_loc[kpt];
-            beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * count;
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (!pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                    R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3  ];
-                    R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                    R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
-                    bloch_fac = cos(theta) - sin(theta) * I;
-                    a = bloch_fac * pSPARC->dV;
-                    b = 1.0;
-                    
-                    ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                    psi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                    atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                    
-                    /* first find inner product <Psi_n, Chi_Jlm> */
-                    for (n = 0; n < ncol; n++) {
-                        psi_ptr = pSPARC->Xorb_kpt + spn_i * size_s + kpt * size_k + n * DMnd;
-                        psi_rc_ptr = psi_rc + n * ndc;
-                        for (i = 0; i < ndc; i++) {
-                            *(psi_rc_ptr + i) = conj(*(psi_ptr + pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i]));
-                        }
-                    }
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &a, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                psi_rc, ndc, &b, beta+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj); // multiplied dV to get inner-product
-                    free(psi_rc);    
-                }
-            }
-            count++;
-        }
-    }       
-    
-    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
-    count = 0;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for(kpt = 0; kpt < pSPARC->Nkpts_kptcomm; kpt++) {
-            k1 = pSPARC->k1_loc[kpt];
-            k2 = pSPARC->k2_loc[kpt];
-            k3 = pSPARC->k3_loc[kpt];
-            for (dim = 0; dim < 3; dim++) {
-                // find dPsi in direction dim
+    // find gradient of psi
+    if (pSPARC->cell_typ == 0){
+        for (dim = 0; dim < 3; dim++) {
+            // count = 0;
+            for(kpt = 0; kpt < Nk; kpt++) {
+                k1 = pSPARC->k1_loc[kpt];
+                k2 = pSPARC->k2_loc[kpt];
+                k3 = pSPARC->k3_loc[kpt];
                 kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
-                Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, pSPARC->Yorb_kpt, dim, &kpt_vec, pSPARC->dmcomm);
-                beta1 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 1) + count);
-                beta2 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 2) + count);
-                beta3 = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * (Nk * nspin * (3*dim + 3) + count);
-                
-                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                    if (! pSPARC->nlocProj[ityp].nproj) continue; // this is typical for hydrogen
-                    for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
-                        R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
-                        R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
-                        R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
-                        theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
-                        bloch_fac = cos(theta) + sin(theta) * I;
-                        b = 1.0;
-                        ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
-                        dpsi_x1_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                        dpsi_x2_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                        dpsi_x3_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-                        atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
-                        for (n = 0; n < ncol; n++) {
-                            dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd;
-                            dpsi_x1_rc_ptr = dpsi_x1_rc + n * ndc;
-                            dpsi_x2_rc_ptr = dpsi_x2_rc + n * ndc;
-                            dpsi_x3_rc_ptr = dpsi_x3_rc + n * ndc;
-                            for (i = 0; i < ndc; i++) {
-                                indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
-                                k_DM = indx / (DMnx * DMny);
-                                j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                                i_DM = indx % DMnx;
-                                x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
-                                x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
-                                x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
-                                *(dpsi_x1_rc_ptr + i) = *(dpsi_ptr + indx) * x1_R1;
-                                *(dpsi_x2_rc_ptr + i) = *(dpsi_ptr + indx) * x2_R2;
-                                *(dpsi_x3_rc_ptr + i) = *(dpsi_ptr + indx) * x3_R3;
-                            }
-                        }
-                    
-                        /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                         *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                         *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                         *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-
-                         */      
-                        cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                    dpsi_x1_rc, ndc, &b, beta1+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                        cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                    dpsi_x2_rc, ndc, &b, beta2+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);
-                        cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->nlocProj[ityp].nproj, ncol, ndc, &bloch_fac, pSPARC->nlocProj[ityp].Chi_c[iat], ndc, 
-                                    dpsi_x3_rc, ndc, &b, beta3+pSPARC->IP_displ[atom_index]*ncol, pSPARC->nlocProj[ityp].nproj);                        
-                        free(dpsi_x1_rc); free(dpsi_x2_rc); free(dpsi_x3_rc);
-                    }
-                }
-                // Kinetic stress
-                if(dim == 0){
-                    kpt_vec = k2;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 1, &kpt_vec, pSPARC->dmcomm);
-                    //ts = MPI_Wtime();
-                    temp_k[0] = temp_k[1] = temp_k[3] = 0.0;
-                    for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
-                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_2
-                        dpsi1_dpsi1 = dpsi1_dpsi2 = dpsi2_dpsi2 = 0.0;
-                        for(i = 0; i < DMnd; i++){
-                            dpsi1_dpsi1 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i));
-                            dpsi1_dpsi2 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i));
-                            dpsi2_dpsi2 += creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i));
-                        }
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
-                        temp_k[0] += dpsi1_dpsi1 * g_nk;
-                        temp_k[1] += dpsi1_dpsi2 * g_nk;
-                        temp_k[3] += dpsi2_dpsi2 * g_nk;
-                    }
-                    stress_k[0] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[0];
-                    stress_k[1] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[1];
-                    stress_k[3] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[3];
-
-                    kpt_vec = k3;
-                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+spn_i*size_s+kpt*size_k, dpsi_full, 2, &kpt_vec, pSPARC->dmcomm);
-                    temp_k[2] = temp_k[5] = 0.0;
-                    for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_1
-                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
-                        dpsi1_dpsi3 = dpsi3_dpsi3 = 0.0;
-                        for(i = 0; i < DMnd; i++){
-                            dpsi1_dpsi3 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i));
-                            dpsi3_dpsi3 += creal(*(dpsi_ptr2 + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr2 + i)) * cimag(*(dpsi_ptr2 + i));
-                        }
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
-                        temp_k[2] += dpsi1_dpsi3 * g_nk;
-                        temp_k[5] += dpsi3_dpsi3 * g_nk;
-                    }
-                    stress_k[2] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[2];
-                    stress_k[5] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[5];
-                } else if(dim == 1){
-                    temp_k[4] = 0.0;
-                    for(n = 0; n < ncol; n++){
-                        dpsi_ptr = pSPARC->Yorb_kpt + n * DMnd; // dpsi_2
-                        dpsi_ptr2 = dpsi_full + n * DMnd; // dpsi_3
-                        dpsi2_dpsi3 = 0.0;
-                        for(i = 0; i < DMnd; i++){
-                            dpsi2_dpsi3 += creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr2 + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr2 + i));
-                        }
-                        temp_k[4] += dpsi2_dpsi3 * pSPARC->occ[spn_i*Nk*Ns + kpt*Ns + n + pSPARC->band_start_indx];
-                    }
-                    stress_k[4] -= (2.0/pSPARC->Nspin) * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k[4];
+                for (spinor = 0; spinor < Nspinor; spinor++) {
+                    // find dPsi in direction dim
+                    dpsi_xi = dpsi_full + dim * size_k * Nk;
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb_kpt+kpt*size_k+spinor*DMnd, DMndsp, 
+                                                dpsi_xi+kpt*size_k+spinor*DMnd, DMndsp, dim, &kpt_vec, pSPARC->dmcomm);
                 }
             }
-            count++;
-        }    
+        }
+    } else {
+        dpsi_xi_lv = (double _Complex *)malloc( size_k * sizeof(double _Complex) );  // dpsi_x, dpsi_y, dpsi_z along lattice vecotrs
+        assert(dpsi_xi_lv != NULL);
+        dpsi_x1 = dpsi_full;
+        dpsi_x2 = dpsi_full + size_k * Nk;
+        dpsi_x3 = dpsi_full + 2 * size_k * Nk;
+        for (dim = 0; dim < 3; dim++) {
+            // count = 0;
+            for(kpt = 0; kpt < Nk; kpt++) {
+                k1 = pSPARC->k1_loc[kpt];
+                k2 = pSPARC->k2_loc[kpt];
+                k3 = pSPARC->k3_loc[kpt];
+                kpt_vec = (dim == 0) ? k1 : ((dim == 1) ? k2 : k3);
+                for (spinor = 0; spinor < Nspinor; spinor++) {
+                    // find dPsi in direction dim along lattice vector directions
+                    Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
+                                            pSPARC->Xorb_kpt+kpt*size_k+spinor*DMnd, DMndsp, 
+                                            dpsi_xi_lv+spinor*DMnd, DMndsp, dim, &kpt_vec, pSPARC->dmcomm);
+                }
+                // find dPsi in direction dim in cartesian coordinates
+                for (i = 0; i < size_k; i++) {
+                    if (dim == 0) {
+                        dpsi_x1[i + kpt*size_k] = pSPARC->gradT[0]*dpsi_xi_lv[i];
+                        dpsi_x2[i + kpt*size_k] = pSPARC->gradT[1]*dpsi_xi_lv[i];
+                        dpsi_x3[i + kpt*size_k] = pSPARC->gradT[2]*dpsi_xi_lv[i];
+                    } else {
+                        dpsi_x1[i + kpt*size_k] += pSPARC->gradT[0+3*dim]*dpsi_xi_lv[i];
+                        dpsi_x2[i + kpt*size_k] += pSPARC->gradT[1+3*dim]*dpsi_xi_lv[i];
+                        dpsi_x3[i + kpt*size_k] += pSPARC->gradT[2+3*dim]*dpsi_xi_lv[i];
+                    }
+                }
+            }
+        }
+        free(dpsi_xi_lv);
+    }
+
+    // find <chi_Jlm, psi> 
+    for(kpt = 0; kpt < Nk; kpt++){
+        beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * kpt;
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SC");
+        if (pSPARC->SOC_Flag == 0) continue;
+        beta = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * kpt;
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SO1");
+        beta = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * kpt;            
+        Compute_Integral_psi_Chi_kpt(pSPARC, beta, pSPARC->Xorb_kpt+kpt*size_k, kpt, "SO2");
+    }
+
+    /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
+    count = 1;
+    for (dim = 0; dim < 3; dim++) {
+        dpsi_xi = dpsi_full + dim * size_k * Nk;
+        for (dim2 = dim; dim2 < 3; dim2++) {
+            for(kpt = 0; kpt < Nk; kpt++) {
+                beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+                Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(pSPARC, dpsi_xi+kpt*size_k, beta, kpt, dim2, "SC");
+                if (pSPARC->SOC_Flag == 0) continue;
+                beta = alpha_so1 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+                Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(pSPARC, dpsi_xi+kpt*size_k, beta, kpt, dim2, "SO1");
+                beta = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk * count + kpt);
+                Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(pSPARC, dpsi_xi+kpt*size_k, beta, kpt, dim2, "SO2");
+            }
+            count ++;
+        }
     }
     
+    // Kinetic stress
+    Compute_stress_tensor_kinetic_kpt(pSPARC, dpsi_full, stress_k);
     free(dpsi_full);
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * nspin * 10, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-        MPI_Allreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        // MPI_Allreduce will fail randomly in valgrind test for unknown reason
+        MPI_Request req0, req1, req2, req3;
+        MPI_Status  sta0, sta1, sta2, sta3;
+        MPI_Iallreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
+                        MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req0);
+        MPI_Iallreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm, &req3);
+        MPI_Wait(&req0, &sta0);
+        MPI_Wait(&req3, &sta3);
+        if (pSPARC->SOC_Flag == 1) {
+            MPI_Iallreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
+                            MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req1);
+            MPI_Iallreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
+                            MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req2);
+            MPI_Wait(&req1, &sta1);
+            MPI_Wait(&req2, &sta2);
+        }
     }
 
     /* calculate nonlocal stress */
-    // go over all atoms and find nonlocal stress
-    beta1_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin;
-    beta1_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 2;
-    beta1_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 3;
-    beta2_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 4;
-    beta2_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 5;
-    beta2_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 6;
-    beta3_x1 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 7;
-    beta3_x2 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 8;
-    beta3_x3 = alpha + pSPARC->IP_displ[pSPARC->n_atom]*ncol*Nk*nspin * 9;
-    count = 0;
+    Compute_stress_tensor_nloc_by_integrals_kpt(pSPARC, stress_nl, alpha, "SC");
+    if (pSPARC->SOC_Flag == 1) {
+        Compute_stress_tensor_nloc_by_integrals_kpt(pSPARC, stress_nl, alpha_so1, "SO1");
+        Compute_stress_tensor_nloc_by_integrals_kpt(pSPARC, stress_nl, alpha_so2, "SO2");
+    }
     
-    double alpha_r, alpha_i;
-    for(spn_i = 0; spn_i < nspin; spn_i++) {
-        for (k = 0; k < Nk; k++) {
-            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                lmax = pSPARC->psd[ityp].lmax;
-                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
-                    eJ = 0.0; for(i = 0; i < 9; i++) SJ[i] = 0.0;
-                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
-                        g_nk = pSPARC->occ[spn_i*Nk*Ns+k*Ns+n];
-                        temp2_e = 0.0; for(i = 0; i < 9; i++) temp2_s[i] = 0.0;
-                        ldispl = 0;
-                        for (l = 0; l <= lmax; l++) {
-                            // skip the local l
-                            if (l == pSPARC->localPsd[ityp]) {
-                                ldispl += pSPARC->psd[ityp].ppl[l];
-                                continue;
-                            }
-                            for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
-                                temp_e = 0.0; for(i = 0; i < 9; i++) temp_s[i] = 0.0;
-                                for (m = -l; m <= l; m++) {
-                                    alpha_r = creal(alpha[count]); alpha_i = cimag(alpha[count]);
-                                    temp_e += pow(alpha_r, 2.0) + pow(alpha_i, 2.0);
-                                    temp_s[0] += alpha_r * creal(beta1_x1[count]) - alpha_i * cimag(beta1_x1[count]);
-                                    temp_s[1] += alpha_r * creal(beta1_x2[count]) - alpha_i * cimag(beta1_x2[count]);
-                                    temp_s[2] += alpha_r * creal(beta1_x3[count]) - alpha_i * cimag(beta1_x3[count]);
-                                    temp_s[3] += alpha_r * creal(beta2_x1[count]) - alpha_i * cimag(beta2_x1[count]);
-                                    temp_s[4] += alpha_r * creal(beta2_x2[count]) - alpha_i * cimag(beta2_x2[count]);
-                                    temp_s[5] += alpha_r * creal(beta2_x3[count]) - alpha_i * cimag(beta2_x3[count]);
-                                    temp_s[6] += alpha_r * creal(beta3_x1[count]) - alpha_i * cimag(beta3_x1[count]);
-                                    temp_s[7] += alpha_r * creal(beta3_x2[count]) - alpha_i * cimag(beta3_x2[count]);
-                                    temp_s[8] += alpha_r * creal(beta3_x3[count]) - alpha_i * cimag(beta3_x3[count]);
-                                    count++;
-                                }
-                                gamma_jl = pSPARC->psd[ityp].Gamma[ldispl+np];
-                                temp2_e += temp_e * gamma_jl;
-                                for(i = 0; i < 9; i++)
-                                    temp2_s[i] += temp_s[i] * gamma_jl;
-                            }
-                            ldispl += pSPARC->psd[ityp].ppl[l];
-                        }
-                        eJ += temp2_e * g_nk;
-                        for(i = 0; i < 9; i++)
-                            SJ[i] += temp2_s[i] * g_nk;
-                    }
-                    
-                    kptwt = pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
-                    energy_nl -= kptwt * eJ;
-                    for(i = 0; i < 9; i++)
-                        stress_nl[i] -= kptwt * SJ[i];
-                }
-            }
-        }
-    }     
+    /* calculate nonlocal energy */
+    energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha,"SC");
+    free(alpha);
+    if (pSPARC->SOC_Flag == 1) {
+        energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha_so1,"SO1");
+        energy_nl += Compute_Nonlocal_Energy_by_integrals_kpt(pSPARC, alpha_so2,"SO2");
+        free(alpha_so1);
+        free(alpha_so2);
+    }
     
-    for(i = 0; i < 9; i++)
-        stress_nl[i] *= (2.0/pSPARC->Nspin) * 2.0;
+    for(i = 0; i < 6; i++)
+        stress_nl[i] *= pSPARC->occfac * 2.0;
     
-    energy_nl *= (2.0/pSPARC->Nspin)/pSPARC->dV;   
-    
-    
-    if(pSPARC->cell_typ == 0){
-        pSPARC->stress_nl[0] = stress_nl[0] + energy_nl;
-        pSPARC->stress_nl[1] = stress_nl[1];
-        pSPARC->stress_nl[2] = stress_nl[2];
-        pSPARC->stress_nl[3] = stress_nl[4] + energy_nl;
-        pSPARC->stress_nl[4] = stress_nl[5];
-        pSPARC->stress_nl[5] = stress_nl[8] + energy_nl;
-        for(i = 0; i < 6; i++)
-            pSPARC->stress_k[i] = stress_k[i];
-    } else {
-        double *c_g, *c_c;
-        c_g = (double*) malloc(9*sizeof(double));
-        c_c = (double*) malloc(9*sizeof(double));
-        for(i = 0; i < 3; i++){
-            for(j = 0; j < 3; j++){
-                c_g[3*i+j] = pSPARC->gradT[3*j+i];
-                c_c[3*i+j] = pSPARC->LatUVec[3*j+i];
-            }
-        }
-        pSPARC->stress_nl[0] = c_g[0] * (c_c[0] * stress_nl[0] + c_c[1] * stress_nl[1] + c_c[2] * stress_nl[2]) +
-                               c_g[1] * (c_c[0] * stress_nl[3] + c_c[1] * stress_nl[4] + c_c[2] * stress_nl[5]) + 
-                               c_g[2] * (c_c[0] * stress_nl[6] + c_c[1] * stress_nl[7] + c_c[2] * stress_nl[8]) + energy_nl;                       
-        pSPARC->stress_nl[1] = c_g[0] * (c_c[3] * stress_nl[0] + c_c[4] * stress_nl[1] + c_c[5] * stress_nl[2]) +
-                               c_g[1] * (c_c[3] * stress_nl[3] + c_c[4] * stress_nl[4] + c_c[5] * stress_nl[5]) + 
-                               c_g[2] * (c_c[3] * stress_nl[6] + c_c[4] * stress_nl[7] + c_c[5] * stress_nl[8]);
-        pSPARC->stress_nl[2] = c_g[0] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[1] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[2] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]); 
-        pSPARC->stress_nl[3] = c_g[3] * (c_c[3] * stress_nl[0] + c_c[4] * stress_nl[1] + c_c[5] * stress_nl[2]) +
-                               c_g[4] * (c_c[3] * stress_nl[3] + c_c[4] * stress_nl[4] + c_c[5] * stress_nl[5]) + 
-                               c_g[5] * (c_c[3] * stress_nl[6] + c_c[4] * stress_nl[7] + c_c[5] * stress_nl[8]) + energy_nl;
-        pSPARC->stress_nl[4] = c_g[3] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[4] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[5] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]);
-        pSPARC->stress_nl[5] = c_g[6] * (c_c[6] * stress_nl[0] + c_c[7] * stress_nl[1] + c_c[8] * stress_nl[2]) +
-                               c_g[7] * (c_c[6] * stress_nl[3] + c_c[7] * stress_nl[4] + c_c[8] * stress_nl[5]) + 
-                               c_g[8] * (c_c[6] * stress_nl[6] + c_c[7] * stress_nl[7] + c_c[8] * stress_nl[8]) + energy_nl;
+    energy_nl *= pSPARC->occfac/pSPARC->dV;   
 
-        pSPARC->stress_k[0] = c_g[0] * (c_g[0] * stress_k[0] + c_g[1] * stress_k[1] + c_g[2] * stress_k[2]) +
-                              c_g[1] * (c_g[0] * stress_k[1] + c_g[1] * stress_k[3] + c_g[2] * stress_k[4]) +
-                              c_g[2] * (c_g[0] * stress_k[2] + c_g[1] * stress_k[4] + c_g[2] * stress_k[5]);
-        pSPARC->stress_k[1] = c_g[0] * (c_g[3] * stress_k[0] + c_g[4] * stress_k[1] + c_g[5] * stress_k[2]) +
-                              c_g[1] * (c_g[3] * stress_k[1] + c_g[4] * stress_k[3] + c_g[5] * stress_k[4]) +
-                              c_g[2] * (c_g[3] * stress_k[2] + c_g[4] * stress_k[4] + c_g[5] * stress_k[5]);
-        pSPARC->stress_k[2] = c_g[0] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[1] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[2] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);
-        pSPARC->stress_k[3] = c_g[3] * (c_g[3] * stress_k[0] + c_g[4] * stress_k[1] + c_g[5] * stress_k[2]) +
-                              c_g[4] * (c_g[3] * stress_k[1] + c_g[4] * stress_k[3] + c_g[5] * stress_k[4]) +
-                              c_g[5] * (c_g[3] * stress_k[2] + c_g[4] * stress_k[4] + c_g[5] * stress_k[5]);
-        pSPARC->stress_k[4] = c_g[3] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[4] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[5] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);
-        pSPARC->stress_k[5] = c_g[6] * (c_g[6] * stress_k[0] + c_g[7] * stress_k[1] + c_g[8] * stress_k[2]) +
-                              c_g[7] * (c_g[6] * stress_k[1] + c_g[7] * stress_k[3] + c_g[8] * stress_k[4]) +
-                              c_g[8] * (c_g[6] * stress_k[2] + c_g[7] * stress_k[4] + c_g[8] * stress_k[5]);                                                                                   
-  
-        free(c_g); free(c_c);
-    }    
+    pSPARC->stress_nl[0] = stress_nl[0] - energy_nl;
+    pSPARC->stress_nl[1] = stress_nl[1];
+    pSPARC->stress_nl[2] = stress_nl[2];
+    pSPARC->stress_nl[3] = stress_nl[3] - energy_nl;
+    pSPARC->stress_nl[4] = stress_nl[4];
+    pSPARC->stress_nl[5] = stress_nl[5] - energy_nl;
+    for(i = 0; i < 6; i++)
+        pSPARC->stress_k[i] = stress_k[i];
     
     // sum over all spin
-    if (pSPARC->npspin > 1) {    
+    if (pSPARC->npspin > 1) {            
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);        
     }
 
 
@@ -1817,9 +1661,9 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
     }
 
     // sum over all bands
-    if (pSPARC->npband > 1) {
+    if (pSPARC->npband > 1) {        
         MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_nl, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
-        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, pSPARC->stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);        
     }
 
     if (!rank) {
@@ -1832,10 +1676,10 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
         if(pSPARC->BCz == 0)
             cell_measure *= pSPARC->range_z;
 
-       for(int i = 0; i < 6; i++) {
+        for(i = 0; i < 6; i++) {
             pSPARC->stress_nl[i] /= cell_measure;
             pSPARC->stress_k[i] /= cell_measure;
-       }
+        }
 
     }
 
@@ -1847,16 +1691,303 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
         PrintStress(pSPARC, pSPARC->stress_k, NULL);  
     } 
 #endif
-    
-    
-    free(alpha);
-    free(temp_k);
-    free(stress_k);
-    free(stress_nl);
-    free(SJ);
-    free(temp_s);
-    free(temp2_s);
 }
+
+
+/**
+ * @brief   Calculate <ChiSC_Jlm, ST(x-RJ')_beta, DPsi_n> for spinor stress
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_Integral_Chi_StXmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int kpt, int dim2, char *option) 
+{
+    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
+    int spinor, Nspinor, DMndsp, spinorshift, nproj, ispinor, *IP_displ;
+    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    DMnx = pSPARC->Nx_d_dmcomm;
+    DMny = pSPARC->Ny_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+
+    double _Complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
+    double Lx = pSPARC->range_x;
+    double Ly = pSPARC->range_y;
+    double Lz = pSPARC->range_z;
+    double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, StXmRjp;
+    double _Complex bloch_fac, b, **Chi = NULL;
+    
+    k1 = pSPARC->k1_loc[kpt];
+    k2 = pSPARC->k2_loc[kpt];
+    k3 = pSPARC->k3_loc[kpt];
+
+    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
+
+    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+        nproj = !strcmpi(option, "SC") ? pSPARC->nlocProj[ityp].nproj : pSPARC->nlocProj[ityp].nprojso_ext;
+        if (!strcmpi(option, "SC")) 
+            Chi = pSPARC->nlocProj[ityp].Chi_c;
+        else if (!strcmpi(option, "SO1")) 
+            Chi = pSPARC->nlocProj[ityp].Chisowt0;
+
+        if (! nproj) continue; // this is typical for hydrogen
+        for (iat = 0; iat < pSPARC->Atom_Influence_nloc[ityp].n_atom; iat++) {
+            R1 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3];
+            R2 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+1];
+            R3 = pSPARC->Atom_Influence_nloc[ityp].coords[iat*3+2];
+            theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
+            bloch_fac = cos(theta) + sin(theta) * I;
+            b = 1.0;
+            ndc = pSPARC->Atom_Influence_nloc[ityp].ndc[iat];
+            dpsi_xi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
+            assert(dpsi_xi_rc);
+            atom_index = pSPARC->Atom_Influence_nloc[ityp].atom_index[iat];
+            for (spinor = 0; spinor < Nspinor; spinor++) {
+                if (!strcmpi(option, "SO2")) 
+                    Chi = (spinor == 0) ? pSPARC->nlocProj[ityp].Chisowtnl : pSPARC->nlocProj[ityp].Chisowtl; 
+                ispinor = !strcmpi(option, "SO2") ? (1 - spinor) : spinor;
+
+                for (n = 0; n < ncol; n++) {
+                    dpsi_ptr = dpsi_xi + n * DMndsp + ispinor * DMnd;
+                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
+
+                    for (i = 0; i < ndc; i++) {
+                        indx = pSPARC->Atom_Influence_nloc[ityp].grid_pos[iat][i];
+                        k_DM = indx / (DMnx * DMny);
+                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
+                        i_DM = indx % DMnx;
+                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
+                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
+                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
+                        StXmRjp = pSPARC->LatUVec[0+dim2] * x1_R1 + pSPARC->LatUVec[3+dim2] * x2_R2 + pSPARC->LatUVec[6+dim2] * x3_R3;
+                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * StXmRjp;
+                    }
+                }
+
+                spinorshift = IP_displ[pSPARC->n_atom] * ncol * spinor;
+                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Chi[iat], ndc, 
+                            dpsi_xi_rc, ndc, &b, beta+spinorshift+IP_displ[atom_index]*ncol, nproj);                        
+            }
+            free(dpsi_xi_rc);
+        }
+    }
+}
+
+/**
+ * @brief   Compute kinetic stress tensor
+ */
+void Compute_stress_tensor_kinetic_kpt(SPARC_OBJ *pSPARC, double _Complex * dpsi_full, double *stress_k) 
+{
+    int ncol, DMnd, Ns;
+    int Nspinor, DMndsp, Nk, size_k;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    DMnd = pSPARC->Nd_d_dmcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+    DMndsp = DMnd * Nspinor;
+    size_k = DMndsp * ncol;
+    Nk = pSPARC->Nkpts_kptcomm;
+    Ns = pSPARC->Nstates;
+    
+    double _Complex *dpsi_xi, *dpsi_xj, *dpsi_xi_ptr, *dpsi_xj_ptr;
+    int count, dim, dim2, kpt, n, spinor, i;
+
+    count = 0;
+    for (dim = 0; dim < 3; dim++) {
+        dpsi_xi = dpsi_full + dim * size_k * Nk;
+        for (dim2 = dim; dim2 < 3; dim2++) {
+            dpsi_xj = dpsi_full + dim2 * size_k * Nk;
+            for(kpt = 0; kpt < Nk; kpt++) {
+                double temp_k = 0;
+                for(n = 0; n < ncol; n++){
+                    for (spinor = 0; spinor < Nspinor; spinor++) {
+                        double dpsii_dpsij = 0;
+                        dpsi_xi_ptr = dpsi_xi + kpt * size_k + n * DMndsp + spinor * DMnd; // dpsi_xi
+                        dpsi_xj_ptr = dpsi_xj + kpt * size_k + n * DMndsp + spinor * DMnd; // dpsi_xj
+
+                        for(i = 0; i < DMnd; i++){
+                            dpsii_dpsij += creal(*(dpsi_xi_ptr + i)) * creal(*(dpsi_xj_ptr + i)) + cimag(*(dpsi_xi_ptr + i)) * cimag(*(dpsi_xj_ptr + i));
+                        }
+                        double *occ = pSPARC->occ + kpt*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        double g_nk = occ[n + pSPARC->band_start_indx];
+                        temp_k += dpsii_dpsij * g_nk;
+                    }
+                }
+                stress_k[count] -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k;
+            }
+            count ++;
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute nonlocal energy with spin-orbit coupling
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+double Compute_Nonlocal_Energy_by_integrals_kpt(SPARC_OBJ *pSPARC, double _Complex *alpha, char *option)
+{
+    int k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spinor, Nspinor, shift;
+    int l_start, mexclude, ppl, *IP_displ;
+    double energy_nl, eJ, temp_e, temp2_e, g_nk, kptwt, alpha_r, alpha_i, beta_r, beta_i, scaled_gamma_Jl = 0;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    Ns = pSPARC->Nstates;
+    Nk = pSPARC->Nkpts_kptcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+
+    l_start = !strcmpi(option, "SC") ? 0 : 1;
+    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
+    shift = IP_displ[pSPARC->n_atom] * ncol;
+
+    count = 0;
+    energy_nl = 0.0;
+    for (k = 0; k < Nk; k++) {
+        for (spinor = 0; spinor < Nspinor; spinor++) {
+            double spinorfac = (spinor == 0) ? 1.0 : -1.0; 
+            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                lmax = pSPARC->psd[ityp].lmax;
+                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                    eJ = 0;
+                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                        double *occ = pSPARC->occ + k*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n];
+
+                        temp2_e = 0.0; 
+                        ldispl = 0;
+                        for (l = l_start; l <= lmax; l++) {
+                            mexclude = !strcmpi(option, "SC") ? (l+1) : (!strcmpi(option, "SO1") ? 0 : l);
+                            ppl = !strcmpi(option, "SC") ? pSPARC->psd[ityp].ppl[l] : pSPARC->psd[ityp].ppl_soc[l-1];
+
+                            // skip the local l
+                            if (l == pSPARC->localPsd[ityp]) {
+                                ldispl += ppl;
+                                continue;
+                            }
+                            for (np = 0; np < ppl; np++) {
+                                for (m = -l; m <= l; m++) {
+                                    if (m == mexclude) continue;
+                                    if (!strcmpi(option, "SC")) scaled_gamma_Jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                                    else if (!strcmpi(option, "SO1")) scaled_gamma_Jl = spinorfac*0.5*m*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+                                    else if (!strcmpi(option, "SO2")) scaled_gamma_Jl = 0.5*sqrt(l*(l+1)-m*(m+1))*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+
+                                    if (!strcmpi(option, "SO2")) {
+                                        alpha_r = creal(alpha[count]);       alpha_i = cimag(alpha[count]);
+                                        beta_r  = creal(alpha[count+shift]); beta_i  = cimag(alpha[count+shift]);
+                                        temp_e =  2*(alpha_r * beta_r + alpha_i * beta_i);
+                                    } else {
+                                        alpha_r = creal(alpha[count]); alpha_i = cimag(alpha[count]);
+                                        temp_e = alpha_r*alpha_r + alpha_i*alpha_i;
+                                    }
+                                    temp2_e += temp_e * scaled_gamma_Jl;
+                                    count++;
+                                }
+                            }
+                            ldispl += ppl;
+                        }
+                        eJ += temp2_e * g_nk;
+                    }
+                    
+                    kptwt = pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
+                    energy_nl += kptwt * eJ;
+                }
+            }
+            if (!strcmpi(option, "SO2")) {
+                count += shift;
+                break;
+            }
+        }
+    } 
+    return energy_nl;    
+}
+
+
+/**
+ * @brief   Compute nonlocal stress tensor with spin-orbit coupling
+ * 
+ *          Note: avail options are "SC", "SO1", "SO2"
+ */
+void Compute_stress_tensor_nloc_by_integrals_kpt(SPARC_OBJ *pSPARC, double *stress_nl, double _Complex *alpha, char *option)
+{
+    int i, k, n, np, ldispl, ityp, iat, ncol, Ns;
+    int count, l, m, lmax, Nk, spinor, Nspinor;
+    int l_start, mexclude, ppl, *IP_displ;
+    double g_nk, kptwt, alpha_r, alpha_i, SJ[6], temp2_s[6], scaled_gamma_Jl = 0;
+    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
+    Ns = pSPARC->Nstates;
+    Nk = pSPARC->Nkpts_kptcomm;
+    Nspinor = pSPARC->Nspinor_spincomm;
+
+    l_start = !strcmpi(option, "SC") ? 0 : 1;
+    IP_displ = !strcmpi(option, "SC") ? pSPARC->IP_displ : pSPARC->IP_displ_SOC;
+
+    double _Complex *beta1_x1, *beta2_x1, *beta3_x1, *beta2_x2, *beta3_x2, *beta3_x3; 
+    beta1_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk;
+    beta2_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 2;
+    beta3_x1 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 3;
+    beta2_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 4;
+    beta3_x2 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 5;
+    beta3_x3 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor*Nk * 6;
+
+    count = 0;
+    for (k = 0; k < Nk; k++) {
+        for (spinor = 0; spinor < Nspinor; spinor++) {
+            double spinorfac = (spinor == 0) ? 1.0 : -1.0; 
+            for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                lmax = pSPARC->psd[ityp].lmax;
+                for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                    for(i = 0; i < 6; i++) SJ[i] = 0.0;
+                    for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
+                        double *occ = pSPARC->occ + k*Ns;
+                        if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
+                        g_nk = occ[n];
+
+                        for(i = 0; i < 6; i++) temp2_s[i] = 0.0;
+                        ldispl = 0;
+                        for (l = l_start; l <= lmax; l++) {
+                            mexclude = !strcmpi(option, "SC") ? (l+1) : (!strcmpi(option, "SO1") ? 0 : l);
+                            ppl = !strcmpi(option, "SC") ? pSPARC->psd[ityp].ppl[l] : pSPARC->psd[ityp].ppl_soc[l-1];
+
+                            // skip the local l
+                            if (l == pSPARC->localPsd[ityp]) {
+                                ldispl += ppl;
+                                continue;
+                            }
+                            for (np = 0; np < ppl; np++) {
+                                for (m = -l; m <= l; m++) {
+                                    if (m == mexclude) continue;
+                                    if (!strcmpi(option, "SC")) scaled_gamma_Jl = pSPARC->psd[ityp].Gamma[ldispl+np];
+                                    else if (!strcmpi(option, "SO1")) scaled_gamma_Jl = spinorfac*0.5*m*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+                                    else if (!strcmpi(option, "SO2")) scaled_gamma_Jl = 0.5*sqrt(l*(l+1)-m*(m+1))*pSPARC->psd[ityp].Gamma_soc[ldispl+np];
+
+                                    alpha_r = creal(alpha[count]); alpha_i = cimag(alpha[count]);
+                                    temp2_s[0] += scaled_gamma_Jl * (alpha_r * creal(beta1_x1[count]) - alpha_i * cimag(beta1_x1[count]));
+                                    temp2_s[1] += scaled_gamma_Jl * (alpha_r * creal(beta2_x1[count]) - alpha_i * cimag(beta2_x1[count]));
+                                    temp2_s[2] += scaled_gamma_Jl * (alpha_r * creal(beta3_x1[count]) - alpha_i * cimag(beta3_x1[count]));
+                                    temp2_s[3] += scaled_gamma_Jl * (alpha_r * creal(beta2_x2[count]) - alpha_i * cimag(beta2_x2[count]));
+                                    temp2_s[4] += scaled_gamma_Jl * (alpha_r * creal(beta3_x2[count]) - alpha_i * cimag(beta3_x2[count]));
+                                    temp2_s[5] += scaled_gamma_Jl * (alpha_r * creal(beta3_x3[count]) - alpha_i * cimag(beta3_x3[count]));
+                                    count++;
+                                }
+                            }
+                            ldispl += ppl;
+                        }
+                        for(i = 0; i < 6; i++)
+                            SJ[i] += temp2_s[i] * g_nk;
+                    }
+                    
+                    kptwt = pSPARC->kptWts_loc[k] / pSPARC->Nkpts;
+                    for(i = 0; i < 6; i++)
+                        stress_nl[i] -= kptwt * SJ[i];
+                }
+            }
+        }
+    } 
+}
+
 
 
 /*
@@ -1983,3 +2114,6 @@ double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char o
 
     return StressGPa;
 }
+
+
+

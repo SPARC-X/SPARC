@@ -25,7 +25,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC);
  *          
  *          This function basically prepares different variables for kptcomm_topo and dmcomm
  */
-void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, int DMnd, double *Hx, int spn_i, MPI_Comm comm);
+void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, int DMnd, double *Hx, int ldhx, int spin, MPI_Comm comm);
 
 /**
  * @brief   Evaluate Exact Exchange potential using non-ACE operator
@@ -39,8 +39,8 @@ void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, int DMnd, 
  * @param Hx              Result of Hx plus fock operator times X 
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
-void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, int DMnd, int *dims, 
-                                    double *occ_outer, double *psi_outer, double *Hx, MPI_Comm comm);
+void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, int DMnd, int *dims, 
+                                    double *occ_outer, double *psi_outer, int ldpo, double *Hx, int ldhx, MPI_Comm comm);
 
 /**
  * @brief   Evaluate Exact Exchange potential using ACE operator
@@ -53,8 +53,8 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ncol, i
  * @param spin            Local spin index
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
-void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC, 
-    double *X, int ncol, int DMnd, double *Xi, double *Hx, int spin, MPI_Comm comm);
+void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC, double *X, int ldx, 
+    int ncol, int DMnd, double *Xi, int ldxi, double *Hx, int ldhx, MPI_Comm comm);
 
 /**
  * @brief   Evaluate Exact Exchange Energy
@@ -69,24 +69,6 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC);
  */
 void poissonSolve(SPARC_OBJ *pSPARC, double *rhs, double *pois_FFT_const, 
                     int ncol, int DMnd, int *dims, double *Vi, MPI_Comm comm);
-
-/**
- * @brief   Rearrange Vi after receiving from root comm
- *          
- *          Vi was ordered in continuous way and now is ordered in block-separated way
- *          Note: using unit_size to control whether it's double or double _Complex 
- */
-void rearrange_Vi(void *Vi_full, int ncol, int **DMVertices, int size_comm, 
-                    int Nx, int Ny, int Nd, void *Vi_full_order, int unit_size);
-                    
-/**
- * @brief   Rearrange rhs after receiving from other comms
- *          
- *          Vi was ordered in block-separated way and now is ordered in continuous way
- *          Note: using unit_size to control whether it's double or double _Complex 
- */
-void rearrange_rhs(void *rhs_full, int ncol, int **DMVertices, int *displs, int size_comm, 
-                    int Nx, int Ny, int Nd, void *rhs_full_order, int unit_size);
 
 /**
  * @brief   preprocessing RHS of Poisson's equation depends on the method for Exact Exchange
@@ -114,13 +96,6 @@ void pois_linearsolver(SPARC_OBJ *pSPARC, double *rhs_loc_order, int ncolp, doub
  */
 void MultipoleExpansion_phi_local(SPARC_OBJ *pSPARC, double *rhs, double *d_cor, int Nd, int ncolp);
 
-/**
- * @brief   Transfer vectors from dmcomm to kptcomm_topo for Lancozs algorithm
- *
- *          Used to transfer psi_outer in case of no-ACE method and transfer 
- *          Xi (of ACE operator) in case of ACE method from dmcomm to kptcomm_topo
- */
-void Transfer_dmcomm_to_kptcomm_topo(SPARC_OBJ *pSPARC, int ncols, double *psi_outer, double *psi_outer_kptcomm);
 
 /**
  * @brief   Gather psi_outers in other bandcomms
@@ -141,27 +116,27 @@ void allocate_ACE(SPARC_OBJ *pSPARC);
  *          Due to the symmetry of ACE operator, only half Poisson's 
  *          equations need to be solved.
  */
-void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, int spn_i, double *Xi);
+void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi);
 
 /**
  * @brief   Gather orbitals shape vectors across blacscomm
  */
-void gather_blacscomm(SPARC_OBJ *pSPARC, int Ncol, double *vec);
+void gather_blacscomm(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double *vec);
 
 /**
  * @brief   Solve half of poissons equation locally and apply to Xi
  */
-void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, double *psi, double *occ, double *Xi);
+void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, double *psi, int ldp, double *occ, double *Xi, int ldxi);
 
 /**
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
-void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, double *sendbuff, double *recvbuff, int shift, MPI_Request *reqs);
+void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, void *sendbuff, void *recvbuff, int shift, MPI_Request *reqs, int unit_size);
 
 /**
  * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
  */
 void solve_allpair_poissons_equation_apply2Xi(
-    SPARC_OBJ *pSPARC, int ncol, double *psi, double *psi_storage, double *occ, double *Xi, int shift, int Ns_occ);
+    SPARC_OBJ *pSPARC, int ncol, double *psi, int ldp, double *psi_storage, int ldps, double *occ, double *Xi, int ldxi, int shift);
 
 #endif // EXACTEXCHANGEPOTENTIAL_H 

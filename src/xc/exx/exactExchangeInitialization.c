@@ -31,48 +31,46 @@
  * @brief   Initialization of all variables for exact exchange.
  */
 void init_exx(SPARC_OBJ *pSPARC) {
-    int rank, DMnd, Nband, len_full_tot, Ns_full_total, blacs_size, kpt_bridge_size;
+    int rank, DMnd, DMndsp, len_full, len_full_kpt, Ns_full, blacs_size, kpt_bridge_size;
     
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
     MPI_Comm_size(pSPARC->kpt_bridge_comm, &kpt_bridge_size);
 
     DMnd = pSPARC->Nd_d_dmcomm;
-    Nband = pSPARC->Nband_bandcomm;
+    DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     
     find_local_kpthf(pSPARC);                                                                           // determine local number kpts for HF
-    Ns_full_total = pSPARC->Nstates * pSPARC->Nkpts_sym * pSPARC->Nspin_spincomm;                           // total length across all kpts.
+    Ns_full = pSPARC->Nstates * pSPARC->Nkpts_sym * pSPARC->Nspin_spincomm;                           // total length across all kpts.
 
     if (pSPARC->ACEFlag == 0) {
-        len_full_tot = DMnd * pSPARC->Nstates * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm;                  // total length across all kpts.
+        len_full = DMndsp * pSPARC->Nstates * pSPARC->Nkpts_hf_red;                  // total length across all kpts.
+        len_full_kpt = pSPARC->Nd_d_kptcomm * pSPARC->Nspinor_spincomm * pSPARC->Nstates * pSPARC->Nkpts_hf_red;
         if (pSPARC->isGammaPoint == 1) {
             // Storage of psi_outer in dmcomm
-            pSPARC->psi_outer = (double *)calloc( len_full_tot , sizeof(double) ); 
+            pSPARC->psi_outer = (double *)calloc( len_full , sizeof(double) ); 
             // Storage of psi_outer in kptcomm_topo
-            pSPARC->psi_outer_kptcomm_topo = 
-                    (double *)calloc(pSPARC->Nd_d_kptcomm * pSPARC->Nstates * pSPARC->Nspin_spincomm , sizeof(double));
+            pSPARC->psi_outer_kptcomm_topo = (double *)calloc(len_full_kpt, sizeof(double));
             assert (pSPARC->psi_outer != NULL && pSPARC->psi_outer_kptcomm_topo != NULL);
-            
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
+
+            pSPARC->occ_outer = (double *)calloc(Ns_full, sizeof(double));
             assert(pSPARC->occ_outer != NULL);
         } else {
             // Storage of psi_outer_kpt in dmcomm
-            pSPARC->psi_outer_kpt = (double _Complex *)calloc( len_full_tot , sizeof(double _Complex) ); 
+            pSPARC->psi_outer_kpt = (double _Complex *)calloc( len_full , sizeof(double _Complex) ); 
             // Storage of psi_outer in kptcomm_topo
-            pSPARC->psi_outer_kptcomm_topo_kpt = 
-                    (double _Complex *)calloc(pSPARC->Nd_d_kptcomm * pSPARC->Nstates * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm, sizeof(double _Complex));
+            pSPARC->psi_outer_kptcomm_topo_kpt = (double _Complex *)calloc(len_full_kpt, sizeof(double _Complex));
             assert (pSPARC->psi_outer_kpt != NULL && pSPARC->psi_outer_kptcomm_topo_kpt != NULL);
             
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
+            pSPARC->occ_outer = (double *)calloc(Ns_full, sizeof(double));
             assert(pSPARC->occ_outer != NULL);
         }
-    } else {
-        len_full_tot = DMnd * Nband * pSPARC->Nkpts_hf_red * pSPARC->Nspin_spincomm;                  // total length across all kpts.
+    } else {        
         if (pSPARC->isGammaPoint == 1) {
-            pSPARC->Nstates_occ[0] = pSPARC->Nstates_occ[1] = 0;
+            pSPARC->Nstates_occ = 0;
         } else {
-            pSPARC->Nstates_occ[0] = pSPARC->Nstates_occ[1] = 0;
-            pSPARC->occ_outer = (double *)calloc(Ns_full_total, sizeof(double));
+            pSPARC->Nstates_occ = 0;
+            pSPARC->occ_outer = (double *)calloc(Ns_full, sizeof(double));
             assert(pSPARC->occ_outer != NULL);
         }
     }
@@ -101,7 +99,11 @@ void init_exx(SPARC_OBJ *pSPARC) {
 
     // initialize Eexx
     pSPARC->Eexx = 0;
+
+    // initialize Nstates_occ_list
+    pSPARC->Nstates_occ_list = (int *) malloc(sizeof(int) * pSPARC->Nspin_spincomm);
 }
+
 
 /**
  * @brief   Compute constant coefficients for solving Poisson's equation using FFT

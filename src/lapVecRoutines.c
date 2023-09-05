@@ -36,14 +36,14 @@
  */
 void Lap_vec_mult(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double c, double *x, double *Lapx, MPI_Comm comm
+    const int ncol, const double c, double *x, const int ldi, double *Lapx, const int ldo, MPI_Comm comm
 ) 
 {
     int dims[3], periods[3], my_coords[3];
     MPI_Cart_get(comm, 3, dims, periods, my_coords);
     
     if(pSPARC->cell_typ == 0) {
-        Lap_vec_mult_orth(pSPARC, DMnd, DMVertices, ncol, 1.0, c, x, Lapx, comm, dims);
+        Lap_vec_mult_orth(pSPARC, DMnd, DMVertices, ncol, 1.0, c, x, ldi, Lapx, ldo, comm, dims);
     } else {
         MPI_Comm comm2;
         if (comm == pSPARC->kptcomm_topo)
@@ -53,7 +53,7 @@ void Lap_vec_mult(
         
         //comm2 = pSPARC->comm_dist_graph_phi;
         // TODO: make the second communicator general rather than only for phi
-        Lap_vec_mult_nonorth(pSPARC, DMnd, DMVertices, ncol, 1.0, c, x, Lapx, comm, comm2, dims);       
+        Lap_vec_mult_nonorth(pSPARC, DMnd, DMVertices, ncol, 1.0, c, x, ldi, Lapx, ldo, comm, comm2, dims);       
     }
 }
 
@@ -70,7 +70,7 @@ void poisson_residual(SPARC_OBJ *pSPARC, int N, double c, double *x, double *b, 
 {
     int i;
     double t1 = MPI_Wtime();
-    Lap_vec_mult(pSPARC, N, pSPARC->DMVertices, 1, c, x, r, comm);
+    Lap_vec_mult(pSPARC, N, pSPARC->DMVertices, 1, c, x, N, r, N, comm);
     double t2 = MPI_Wtime();
     *time_info = t2 - t1;
     
@@ -87,9 +87,9 @@ void poisson_residual(SPARC_OBJ *pSPARC, int N, double c, double *x, double *b, 
  *
  */
 void Lap_vec_mult_orth(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double *x, 
-        double *y, MPI_Comm comm, const int *dims
+    const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
+    const int ncol, const double a, const double c, const double *x, const int ldi, 
+    double *y, const int ldo, MPI_Comm comm, const int *dims
 ) 
 {   
     unsigned i;
@@ -97,7 +97,7 @@ void Lap_vec_mult_orth(
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_orth(
             pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL, 
-            x+i*(unsigned)DMnd, y+i*(unsigned)DMnd, comm, dims
+            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, dims
         );
     }
 }
@@ -306,13 +306,11 @@ void stencil_3axis_thread_v2(
 void Lap_plus_diag_vec_mult_orth(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double *x, double *y, MPI_Comm comm,
+        const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
         const int *dims
 ) 
 {
-#define INDEX(n,i,j,k) ((n)*DMnd+(k)*DMnxny+(j)*DMnx+(i))
-#define INDEX_EX(n,i,j,k) ((n)*DMnd_ex+(k)*DMnxny_ex+(j)*DMnx_ex+(i))
-#define X(n,i,j,k) x[(n)*DMnd+(k)*DMnxny+(j)*DMnx+(i)]
+#define X(n,i,j,k) x[(n)*ldi+(k)*DMnxny+(j)*DMnx+(i)]
 #define x_ex(n,i,j,k) x_ex[(n)*DMnd_ex+(k)*DMnxny_ex+(j)*DMnx_ex+(i)]
 
     #ifdef USE_EVA_MODULE
@@ -464,13 +462,13 @@ void Lap_plus_diag_vec_mult_orth(
     }
     
     // copy x into extended x_ex
-    int n, kp, jp, ip;
-    int count = 0;
+    int n, kp, jp, ip, count;    
     for (n = 0; n < ncol; n++) {
+        count = 0;
         for (kp = FDn; kp < DMnz_out; kp++) {
             for (jp = FDn; jp < DMny_out; jp++) {
                 for (ip = FDn; ip < DMnx_out; ip++) {
-                    x_ex(n,ip,jp,kp) = x[count++]; 
+                    x_ex(n,ip,jp,kp) = x[count++ + n*ldi]; 
                 }
             }
         }
@@ -575,16 +573,6 @@ void Lap_plus_diag_vec_mult_orth(
                     }
                 }
             }
-            //bc = periods[nbr_i / 2];
-            //for (n = 0; n < ncol; n++) {
-            //    for (k = kstart[nbrcount], kp = kstart_in[nbr_i]; k < kend[nbrcount]; k++, kp++) {
-            //        for (j = jstart[nbrcount], jp = jstart_in[nbr_i]; j < jend[nbrcount]; j++, jp++) {
-            //            for (i = istart[nbrcount], ip = istart_in[nbr_i]; i < iend[nbrcount]; i++, ip++) {
-            //                x_ex(n,ip,jp,kp) = X(n,i,j,k) * bc;
-            //            }
-            //        }
-            //    }
-            //}
         }
     }
     
@@ -598,7 +586,7 @@ void Lap_plus_diag_vec_mult_orth(
         stencil_3axis_thread_v2(
             x_ex+n*DMnd_ex, FDn, pshifty[1], pshifty_ex[1], pshiftz[1], pshiftz_ex[1], 
             0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 
-            Lap_weights, w2_diag, _b, _v, y+n*DMnd
+            Lap_weights, w2_diag, _b, _v, y+n*ldo
         );
     }
 
@@ -618,8 +606,6 @@ void Lap_plus_diag_vec_mult_orth(
     EVA_buff_rhs_add(ncol, 0);
     #endif
 
-#undef INDEX
-#undef INDEX_EX
 #undef X
 #undef x_ex
 }
@@ -631,8 +617,8 @@ void Lap_plus_diag_vec_mult_orth(
  */
 void Lap_vec_mult_nonorth(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-        const int ncol, const double a, const double c, const double *x, 
-        double *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims
+        const int ncol, const double a, const double c, const double *x, const int ldi,
+        double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2, const int *dims
 ) 
 {   
     unsigned i;
@@ -640,7 +626,7 @@ void Lap_vec_mult_nonorth(
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_nonorth(
             pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL, 
-            x+i*(unsigned)DMnd, y+i*(unsigned)DMnd, comm, comm2, dims
+            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, comm2, dims
         );
     }
 }
@@ -954,7 +940,7 @@ void snd_rcv_buffer(
 void Lap_plus_diag_vec_mult_nonorth(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double *x, double *y, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
         const int *dims
 ) 
 {
@@ -1055,7 +1041,7 @@ void Lap_plus_diag_vec_mult_nonorth(
             nbrcount = nbr_i;
             // TODO: Start loop over n here
             for (n = 0; n < ncol; n++) {
-                nshift = n * DMnd;
+                nshift = n * ldi;
                 for (k = kstart[nbrcount]; k < kend[nbrcount]; k++) {
                     kshift = nshift + k * DMnxny;
                     for (j = jstart[nbrcount]; j < jend[nbrcount]; j++) {
@@ -1094,16 +1080,17 @@ void Lap_plus_diag_vec_mult_nonorth(
     double *x_ex = (double *)calloc(ncol * DMnd_ex, sizeof(double));
     assert(x_ex != NULL);
     // copy x into extended x_ex
-    count = 0;
+    
     for (n = 0; n < ncol; n++) {
         nshift = n * DMnd_ex;
+        count = 0;
         for (kp = FDn; kp < DMnz_out; kp++) {
             kshift = nshift + kp * DMnxny_ex;
             for (jp = FDn; jp < DMny_out; jp++) {
                 jshift = kshift + jp * DMnx_ex;
                 for (ip = FDn; ip < DMnx_out; ip++) {
                     ind = jshift + ip;
-                    x_ex[ind] = x[count++];
+                    x_ex[ind] = x[count++ + n*ldi];
                 }
             }
         }
@@ -1199,7 +1186,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         for (nbr_i = 0; nbr_i < 26; nbr_i++) {
             if(isnonzero[nbr_i]){
                 for (n = 0; n < ncol; n++) {
-                    nshift = n * DMnd; nshift1 = n * DMnd_ex;
+                    nshift = n * ldi; nshift1 = n * DMnd_ex;
                     for (k = kstart[nbr_i], kp = kstart_in[nbr_i]; k < kend[nbr_i]; k++, kp++) {
                         kshift = nshift + k * DMnxny; kshift1 = nshift1 + kp * DMnxny_ex;
                         for (j = jstart[nbr_i], jp = jstart_in[nbr_i]; j < jend[nbr_i]; j++, jp++) {
@@ -1229,7 +1216,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
 
         free(Dx1); Dx1 = NULL;
@@ -1242,7 +1229,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
 
         free(Dx1); Dx1 = NULL;
@@ -1255,7 +1242,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
 
         free(Dx1); Dx1 = NULL;
@@ -1267,7 +1254,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, FDn, 1, pshifty, pshifty_ex, DMnx_ex, pshiftz, pshiftz_ex, DMnxexny,
-                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 15){
@@ -1278,7 +1265,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_zex, FDn, DMnxny, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxny,
-                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, 0, FDn, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, 0, FDn, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 16){
@@ -1289,7 +1276,7 @@ void Lap_plus_diag_vec_mult_nonorth(
 
         for (n = 0; n < ncol; n++) {
             stencil_4comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
-                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                            0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
         free(Dx1); Dx1 = NULL;
     } else if(pSPARC->cell_typ == 17){
@@ -1304,7 +1291,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         for (n = 0; n < ncol; n++) {
             stencil_5comp(x_ex+n*DMnd_ex, Dx1+n*DMnd_xex, Dx2+n*DMnd_yex, FDn, 1, DMnx, pshifty, pshifty_ex, DMnx_ex, DMnx,
                                 pshiftz, pshiftz_ex, DMnxexny, DMnxnyex,
-                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*DMnd);
+                                0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, FDn, 0, 0, 0, FDn, 0, Lap_wt, w2_diag, _b, _v, y+n*ldo);
         }
         free(Dx1); Dx1 = NULL;
         free(Dx2); Dx2 = NULL;
@@ -1313,7 +1300,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         for (n = 0; n < ncol; n++) {
             stencil_4comp_cyclix(pSPARC,x_ex+n*DMnd_ex, FDn, pshifty, pshifty_ex, pshiftz, pshiftz_ex,
                         0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn,
-                        Lap_wt, w2_diag, _b, pSPARC->xin + DMVertices[0] * pSPARC->delta_x, a, _v, y+n*DMnd);
+                        Lap_wt, w2_diag, _b, pSPARC->xin + DMVertices[0] * pSPARC->delta_x, a, _v, y+n*ldo);
         }
     } else if (pSPARC->cell_typ > 21 && pSPARC->cell_typ < 30) {
         // calculate Lx
@@ -1325,7 +1312,7 @@ void Lap_plus_diag_vec_mult_nonorth(
         for (n = 0; n < ncol; n++) {
             stencil_5comp_cyclix(pSPARC,x_ex+n*DMnd_ex, Dx1+n*DMnd_yex, FDn, DMnx, pshifty, pshifty_ex, DMnx, pshiftz, pshiftz_ex, DMnxnyex,
                         0, DMnx, 0, DMny, 0, DMnz, FDn, FDn, FDn, 0, FDn, 0,
-                        Lap_wt, w2_diag, _b, pSPARC->xin + DMVertices[0] * pSPARC->delta_x, a, _v, y+n*DMnd);
+                        Lap_wt, w2_diag, _b, pSPARC->xin + DMVertices[0] * pSPARC->delta_x, a, _v, y+n*ldo);
         }
 
         free(Dx1); Dx1 = NULL;

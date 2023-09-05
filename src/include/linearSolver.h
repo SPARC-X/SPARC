@@ -35,16 +35,6 @@ void AAR(
 );
 
 
-void AAR_complex(
-    SPARC_OBJ *pSPARC, 
-    void (*res_fun)(SPARC_OBJ *, int, double _Complex, double _Complex *, double _Complex *, double _Complex *, MPI_Comm, double *),
-    void (*precond_fun)(SPARC_OBJ *,int,double _Complex,double _Complex *,double _Complex *, MPI_Comm),
-    double _Complex c, 
-    int N, double _Complex *x, double _Complex *b, 
-    double omega, double beta, int m, int p, double tol, 
-    int max_iter, MPI_Comm comm
-);
-
 /**
  * @brief   Conjugate Gradient (CG) method for solving a general linear system Ax = b. 
  *
@@ -52,8 +42,8 @@ void AAR_complex(
  *          Ax is calculated by calling function Ax().
  */
 void CG(SPARC_OBJ *pSPARC, 
-    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, double *, MPI_Comm),
-    int N, int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
+    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, const int, double *, const int, MPI_Comm),
+    int DMnd, int *DMVertices, double *x, double *b, double tol, int max_iter, MPI_Comm comm
 );
 
 #endif //LINEARSOLVER_H

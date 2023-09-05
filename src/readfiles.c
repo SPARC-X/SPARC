@@ -296,6 +296,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"RHO_TRIGGER:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->rhoTrigger);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NUM_CHEFSI:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->Nchefsi);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"NSTATES:") == 0){
             fscanf(input_fp,"%d",&pSPARC_Input->Nstates);
             fscanf(input_fp, "%*[^\n]\n");
@@ -1068,7 +1071,7 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // allocate memory for atom positions, atom relax constraints and atom spin
     pSPARC->atom_pos = (double *)malloc(3*n_atom*sizeof(double));
     pSPARC->mvAtmConstraint = (int *)malloc(3*n_atom*sizeof(int));
-    pSPARC->atom_spin = (double *)calloc(n_atom, sizeof(double));
+    pSPARC->atom_spin = (double *)calloc(3*n_atom, sizeof(double));
     if (pSPARC->atom_pos == NULL || pSPARC->mvAtmConstraint == NULL || pSPARC->atom_spin == NULL) {
         printf("\nCannot allocate memory for atom positions, atom relax constraints and atom spin!\n");
         exit(EXIT_FAILURE);
@@ -1204,11 +1207,17 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 if (nums_read == 0) {
                     printf(RED "ERROR: Number of initial spin is less than number of atoms for atom type %d.\n" RESET, typcnt+1);
                     exit(EXIT_FAILURE);
-                } else if (nums_read != 1)  { 
-                    printf(RED "ERROR: please provide 1 initial spin for each atom of atom type %d in a row.\n"RESET, typcnt+1);
+                } else if (nums_read != 1 && nums_read != 3)  { 
+                    printf(RED "ERROR: Please specify either spin in z direction or spin in x, y, z directions for atom type %d.\n"RESET, typcnt+1);
                     exit(EXIT_FAILURE);
                 }
-                pSPARC->atom_spin[atmcnt_spin] = array_read_double[0];
+                if (nums_read == 1) {
+                    pSPARC->atom_spin[3*atmcnt_spin+2] = array_read_double[0];
+                } else if (nums_read == 3) {
+                    pSPARC->atom_spin[3*atmcnt_spin] = array_read_double[0];
+                    pSPARC->atom_spin[3*atmcnt_spin+1] = array_read_double[1];
+                    pSPARC->atom_spin[3*atmcnt_spin+2] = array_read_double[2];
+                }
                 atmcnt_spin++;
             }
             pSPARC->IsSpin[typcnt] = 1;

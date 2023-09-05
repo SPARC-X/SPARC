@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH -J SPARC_testsuite
 #SBATCH -A hive-phanish6                    # Account name
-#SBATCH -p hive                             # Partition
+#SBATCH -p hive-interact                             # Partition
 #SBATCH -N 2 --ntasks-per-node=24
 #SBATCH --mem-per-cpu=7G
-#SBATCH -t4:00:00
+#SBATCH -t1:00:00
 cd $SLURM_SUBMIT_DIR
 
-module reset
-module load mkl
+# module reset
+# module load mkl
 echo $PWD 
 
 

@@ -27,37 +27,10 @@
  *          reason it is more efficient than calling it ones and do the multiplication 
  *          together. TODO: think of a more efficient way!
  */
-void Hamiltonian_vectors_mult(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
-                              ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                              int ncol, double c, double *x, double *Hx, int spin, MPI_Comm comm);
-
-
-
-/**
- * @brief   Calculate (Hamiltonian + c * I) times vectors in a matrix-free way ON A SINGLE PROCESS.
- *          
- *          Note: this function is to take advantage of the band parallelization scheme when a single
- *                process contains the whole vector and therefore no communication is needed.
- */
-/*void Hamiltonian_vec_mult_seq_orth(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
-                              ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                              int ncol, double c, double *x, double *Hx);
-
-void Hamiltonian_vec_mult_seq_nonorth(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
-                              ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                              int ncol, double c, double *x, double *Hx);
-*/
-/**
- * @brief   Calculate (Hamiltonian + c * I) times vectors in a matrix-free way.
- */
-/*void Hamiltonian_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
-                          ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                          int ncol, double c, double *x, double *Hx, MPI_Comm comm);
-
-void Hamiltonian_vec_mult_nonorth(const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
-                          ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-                          int ncol, double c, double *x, double *Hx, MPI_Comm comm, MPI_Comm comm2);
-*/
+void Hamiltonian_vectors_mult(
+    const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
+    ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
+    int ncol, double c, double *x, const int ldi, double *Hx, const int ldo, int spin, MPI_Comm comm);
 
 
 /**
@@ -70,11 +43,15 @@ void Hamiltonian_vec_mult_nonorth(const SPARC_OBJ *pSPARC, int DMnd, int *DMVert
 void Hamiltonian_vectors_mult_kpt(
     const SPARC_OBJ *pSPARC, int DMnd, int *DMVertices, double *Veff_loc,
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, NLOC_PROJ_OBJ *nlocProj, 
-    int ncol, double c, double _Complex *x, double _Complex *Hx, int spin, int kpt, MPI_Comm comm
+    int ncol, double c, double _Complex *x, const int ldi, double _Complex *Hx, const int ldo, int spin, int kpt, MPI_Comm comm
 );
 
 
-
+/**
+ * @brief   Apply off-diagonal effective potential
+ */
+void off_diagonal_effective_potential(const SPARC_OBJ *pSPARC, 
+    int DMnd, int ncol, double *Veff_loc, double _Complex *x, const int ldi, double _Complex *Hx, const int ldo);
 
 #endif // HAMILTONIANVECROUTINES_H
 

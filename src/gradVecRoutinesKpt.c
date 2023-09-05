@@ -33,8 +33,8 @@
  *          the multiplication together. TODO: think of a more efficient way!
  */
 void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                              const int ncol, const double c, const double _Complex *x, 
-                              double _Complex *Dx, const int dir, const double *kpt_vec, MPI_Comm comm)
+                              const int ncol, const double c, const double _Complex *x, const int ldi,
+                              double _Complex *Dx, const int ldo, const int dir, const double *kpt_vec, MPI_Comm comm)
 {
     int nproc;
     MPI_Comm_size(comm, &nproc);
@@ -46,10 +46,10 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
         dims[0] = dims[1] = dims[2] = 1;
     
     if (pSPARC->CyclixFlag) {
-        Gradient_vectors_dir_kpt_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, Dx, dir, kpt_vec, comm, dims);
+        Gradient_vectors_dir_kpt_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, ldi, Dx, ldo, dir, kpt_vec, comm, dims);
     } else {
         for (int i = 0; i < ncol; i++)
-            Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)DMnd, Dx+i*(unsigned)DMnd, dir, kpt_vec, comm, dims);  
+            Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, kpt_vec, comm, dims);  
     }
 }
 
@@ -61,8 +61,8 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
 void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                      const int ncol, const double c, const double _Complex *x,
-                      double _Complex *Dx, const int dir, const double *kpt_vec, MPI_Comm comm, const int* dims)
+                      const int ncol, const double c, const double _Complex *x, const int ldi,
+                      double _Complex *Dx, const int ldo, const int dir, const double *kpt_vec, MPI_Comm comm, const int* dims)
 {
     int nproc = dims[0] * dims[1] * dims[2];
     double cellsizes[3];
@@ -84,7 +84,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     isDir[0] = (int)(dir == 0); isDir[1] = (int)(dir == 1); isDir[2] = (int)(dir == 2);
     exDir[0] = isDir[0] * FDn; exDir[1] = isDir[1] * FDn; exDir[2] = isDir[2] * FDn;
     
-    // The user has to make sure DMnd = DMnx * DMny * DMnz
+    // The user has to make sure DMnd = DMnx * DMny * DMnz * Nspinor_spincomm
     int DMnx = DMVertices[1] - DMVertices[0] + 1;
     int DMny = DMVertices[3] - DMVertices[2] + 1;
     int DMnz = DMVertices[5] - DMVertices[4] + 1;
@@ -141,7 +141,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
             // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
             nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)) * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
             for (n = 0; n < ncol; n++) {
-                nshift = n * DMnd;
+                nshift = n * ldi;
                 for (k = kstart[nbrcount]; k < kend[nbrcount]; k++) {
                     kshift = nshift + k * DMnxny;
                     for (j = jstart[nbrcount]; j < jend[nbrcount]; j++) {
@@ -193,15 +193,15 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     int DMnz_exDir = DMnz+exDir[2];
     int DMny_exDir = DMny+exDir[1];
     int DMnx_exDir = DMnx+exDir[0];
-    count = 0;
     for (n = 0; n < ncol; n++){
         nshift = n * DMnd_ex;
+        count = 0;
         for (k = exDir[2]; k < DMnz_exDir; k++){
             kshift = nshift + k * DMnxny_ex;
             for (j = exDir[1]; j < DMny_exDir; j++){
                 jshift = kshift + j * DMnx_ex;
                 for (i = exDir[0]; i < DMnx_exDir; i++){
-                    x_ex[jshift+i] = x[count++]; // this saves index calculation time
+                    x_ex[jshift+i] = x[count++ + n*ldi]; // this saves index calculation time
                 }
             }
         }
@@ -302,7 +302,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
                     ip_s, jp_s, kp_s, -exDir[0], -exDir[1], -exDir[2], DMVertices, gridsizes);
                 double _Complex phase_factor = is_block_out ? phase_factors[nbr_i] : 1.0;
                 for (n = 0; n < ncol; n++) {
-                    nshift = n * DMnd_ex; nshift1 = n * DMnd;
+                    nshift = n * DMnd_ex; nshift1 = n * ldi;
                     for (k = k_s, kp = kp_s; k < k_e; k++, kp++) {
                         kshift = nshift + kp * DMnxny_ex; kshift1 = nshift1 + k * DMnxny;
                         for (j = j_s, jp = jp_s; j < j_e; j++, jp++) {
@@ -332,7 +332,7 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
 
     // calculate dx
     for (n = 0; n < ncol; n++) {
-        Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*DMnd, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
+        Calc_DX_kpt(x_ex+n*DMnd_ex, Dx+n*ldo, FDn, pshift_ex, DMnx_ex, DMnx, DMnxny_ex, DMnxny,
                 0, DMnx, 0, DMny, 0, DMnz, exDir[0], exDir[1], exDir[2], D1_stencil_coeffs_dirs[dir], w1_diag);
     }
 

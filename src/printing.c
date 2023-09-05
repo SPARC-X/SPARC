@@ -47,6 +47,7 @@ void printElecDens(SPARC_OBJ *pSPARC) {
     rho = NULL;
     b_ref = NULL;
     b = NULL;
+    int n_rho = pSPARC->Nspdentd;
     if (nproc_dmcomm_phi > 1) { // if there's more than one process, need to collect rho first
         // use DD2DD to collect distributed data
         int gridsizes[3], sdims[3], rdims[3], rDMVert[6];
@@ -74,10 +75,6 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         Set_D2D_Target(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, rDMVert, pSPARC->dmcomm_phi, 
                        sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
         if (rank_dmcomm_phi == 0) {
-            int n_rho = 1;
-            if(pSPARC->Nspin > 1) { // for spin polarized systems
-                n_rho = 3; // rho, rho_up, rho_down
-            }
             rho_at = (double*)malloc(pSPARC->Nd * n_rho * sizeof(double));
             rho    = (double*)malloc(pSPARC->Nd * n_rho * sizeof(double));
             b_ref  = (double*)malloc(pSPARC->Nd * sizeof(double));
@@ -85,30 +82,30 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         }
         // send rho_at, rho and b_ref
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at, rDMVert, 
-            rho_at, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+            rho_at, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         
-        if (pSPARC->Nspin > 1) { // send rho_at_up, rho_at_down
+        if (n_rho > 1) { // send rho_at_up, rho_at_down
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at+DMnd, rDMVert, 
-                rho_at+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+                rho_at+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at+2*DMnd, rDMVert, 
-                rho_at+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+                rho_at+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         }
 
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens, rDMVert, 
-            rho, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+            rho, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         
-        if (pSPARC->Nspin > 1) { // send rho_up, rho_down
+        if (n_rho > 1) { // send rho_up, rho_down
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+DMnd, rDMVert, 
-                rho+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+                rho+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+2*DMnd, rDMVert, 
-                rho+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+                rho+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         }
 
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->psdChrgDens_ref, rDMVert, 
-            b_ref, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+            b_ref, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->psdChrgDens, rDMVert, 
-            b, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+            b, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, pSPARC->dmcomm_phi, recv_comm);
@@ -122,7 +119,7 @@ void printElecDens(SPARC_OBJ *pSPARC) {
     }
     
     if (rank_dmcomm_phi == 0) {
-        if (pSPARC->Nspin == 1) {
+        if (n_rho == 1) {
             // printing total electron density in cube format
             printDens_cube(pSPARC, rho, pSPARC->DensTCubFilename, "Electron density");
         } else {
@@ -478,9 +475,9 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
     double dz = pSPARC->delta_z;
     double dV = pSPARC->dV;
 
-    int DMnd = pSPARC->Nd_d_dmcomm * pSPARC->Nspinor;
-    int size_k = DMnd * pSPARC->Nband_bandcomm;
-    int size_s = size_k * pSPARC->Nkpts_kptcomm;
+    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    int size_k = DMndsp * pSPARC->Nband_bandcomm;
 
     int spin_start = max(pSPARC->PrintPsiFlag[1],0);
     int spin_end = min(pSPARC->PrintPsiFlag[2], pSPARC->Nspin-1);
@@ -506,7 +503,7 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
         fwrite(&dy, sizeof(double), 1, output_fp);          // dy
         fwrite(&dz, sizeof(double), 1, output_fp);          // dz
         fwrite(&dV, sizeof(double), 1, output_fp);          // dV
-        fwrite(&pSPARC->Nspinor, sizeof(int), 1, output_fp);          // Nspinor
+        fwrite(&pSPARC->Nspinor_eig, sizeof(int), 1, output_fp);      // Nspinor_eig
         fwrite(&pSPARC->isGammaPoint, sizeof(int), 1, output_fp);     // isGamma
         // number of spin, kpt and band
         int nspin = spin_end - spin_start + 1;
@@ -518,32 +515,32 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
         fclose(output_fp);
     }
 
-    for (int spin = spin_start; spin <= spin_end; spin++) {
-        int spin_flag = (pSPARC->spin_start_indx <= spin && spin <= pSPARC->spin_end_indx);
-        int spin_shift = spin - pSPARC->spin_start_indx;
+    for (int kpt = kpt_start; kpt <= kpt_end; kpt++) {
+        int kpt_flag = (pSPARC->kpt_start_indx <= kpt && kpt <= pSPARC->kpt_end_indx);
+        int kpt_shift = kpt - pSPARC->kpt_start_indx;
 
-        for (int kpt = kpt_start; kpt <= kpt_end; kpt++) {
-            int kpt_flag = (pSPARC->kpt_start_indx <= kpt && kpt <= pSPARC->kpt_end_indx);
-            int kpt_shift = kpt - pSPARC->kpt_start_indx;
+        for (int band = band_start; band <= band_end; band++) {
+            int band_flag = (pSPARC->band_start_indx <= band && band <= pSPARC->band_end_indx);
+            int band_shift = band - pSPARC->band_start_indx;
+            
+            for (int spin = spin_start; spin <= spin_end; spin++) {
+                int spin_flag = (pSPARC->spin_start_indx <= spin && spin <= pSPARC->spin_end_indx);
+                int spin_shift = spin - pSPARC->spin_start_indx;
 
-            for (int band = band_start; band <= band_end; band++) {
-                int band_flag = (pSPARC->band_start_indx <= band && band <= pSPARC->band_end_indx);
-                int band_shift = band - pSPARC->band_start_indx;
-                
                 if (spin_flag && kpt_flag && band_flag) {
                     double kpt_vec[3] = {pSPARC->k1_loc[kpt_shift]*pSPARC->range_x/(2.0*M_PI),
-                                         pSPARC->k2_loc[kpt_shift]*pSPARC->range_y/(2.0*M_PI),
-                                         pSPARC->k3_loc[kpt_shift]*pSPARC->range_z/(2.0*M_PI) };
+                                            pSPARC->k2_loc[kpt_shift]*pSPARC->range_y/(2.0*M_PI),
+                                            pSPARC->k3_loc[kpt_shift]*pSPARC->range_z/(2.0*M_PI) };
                     if (pSPARC->isGammaPoint) {
-                        print_orbital_real(pSPARC->Xorb + band_shift*DMnd + kpt_shift*size_k + spin_shift*size_s, gridsizes, 
-                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
+                        print_orbital_real(pSPARC->Xorb + band_shift*DMndsp + kpt_shift*size_k + spin_shift*DMnd, gridsizes, 
+                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor_eig, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
                     } else {
-                        print_orbital_complex(pSPARC->Xorb_kpt + band_shift*DMnd + kpt_shift*size_k + spin_shift*size_s, gridsizes, 
-                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
+                        print_orbital_complex(pSPARC->Xorb_kpt + band_shift*DMndsp + kpt_shift*size_k + spin_shift*DMnd, gridsizes, 
+                            pSPARC->DMVertices_dmcomm, pSPARC->dV, pSPARC->Nspinor_eig, fname, spin, kpt, kpt_vec, band, pSPARC->dmcomm);
                     }
                 }
-                MPI_Barrier(alldmcomm);
             }
+            MPI_Barrier(alldmcomm);
         }
     }
     MPI_Comm_free(&alldmcomm);
@@ -576,8 +573,7 @@ void print_orbital_real(
     int DMnx = DMVertices[1] - DMVertices[0] + 1;
     int DMny = DMVertices[3] - DMVertices[2] + 1;
     int DMnz = DMVertices[5] - DMVertices[4] + 1;
-    int DMndbyNspinor = DMnx * DMny * DMnz;
-    int DMnd = DMndbyNspinor * Nspinor;
+    int DMnd = DMnx * DMny * DMnz;
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
         int sdims[3], periods[3], my_coords[3];
@@ -609,8 +605,8 @@ void print_orbital_real(
         
         // collect vector to one process   
         for (int spinor = 0; spinor < Nspinor; spinor ++) {
-            D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMndbyNspinor*spinor, rDMVert, 
-                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm);
+            D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMnd*spinor, rDMVert, 
+                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm, sizeof(double));
         }
         
         // free D2D targets
@@ -673,8 +669,7 @@ void print_orbital_complex(
     int DMnx = DMVertices[1] - DMVertices[0] + 1;
     int DMny = DMVertices[3] - DMVertices[2] + 1;
     int DMnz = DMVertices[5] - DMVertices[4] + 1;
-    int DMndbyNspinor = DMnx * DMny * DMnz;
-    int DMnd = DMndbyNspinor * Nspinor;
+    int DMnd = DMnx * DMny * DMnz;    
 
     if (nproc_comm > 1) { // if there's more than one process, need to collect x first
         int sdims[3], periods[3], my_coords[3];
@@ -705,11 +700,9 @@ void print_orbital_complex(
         );
         
         // collect vector to one process   
-        
-
         for (int spinor = 0; spinor < Nspinor; spinor ++) {
-            D2D_kpt(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMndbyNspinor*spinor, rDMVert, 
-                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm);            
+            D2D(&d2d_sender, &d2d_recvr, gridsizes, DMVertices, x + DMnd*spinor, rDMVert, 
+                x_global + Nd*spinor, comm, sdims, recv_comm, rdims, comm, sizeof(double _Complex));            
         }
         
         // free D2D targets
@@ -929,7 +922,7 @@ void GatherEnergyDensity_dmcomm(SPARC_OBJ *pSPARC, double *rho_send, double *rho
 
         // send Kinetic energy density
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices_dmcomm, rho_send, rDMVert, 
-            rho_recv, pSPARC->dmcomm, sdims, recv_comm, rdims, pSPARC->dmcomm);
+            rho_recv, pSPARC->dmcomm, sdims, recv_comm, rdims, pSPARC->dmcomm, sizeof(double));
         
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, pSPARC->dmcomm, recv_comm);
@@ -983,7 +976,7 @@ void GatherEnergyDensity_dmcomm_phi(SPARC_OBJ *pSPARC, double *rho_send, double 
 
         // send Exchange correlation energy density
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, rho_send, rDMVert, 
-            rho_recv, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
+            rho_recv, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
 
         // free D2D targets
         Free_D2D_Target(&d2d_sender, &d2d_recvr, pSPARC->dmcomm_phi, recv_comm);

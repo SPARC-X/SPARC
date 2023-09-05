@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 163
+#define N_MEMBR 164
 
 
 
@@ -557,7 +557,8 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->ChebDegree = -1;            // default chebyshev polynomial degree (will be automatically found based on spectral width)
     pSPARC_Input->CheFSI_Optmz = 0;           // default is off
     pSPARC_Input->chefsibound_flag = 0;       // default is to find bound using Lanczos on H in the first SCF of each MD/Relax only
-    pSPARC_Input->rhoTrigger = 4;              // default step to start updating electron density, later will be subtracted by 1
+    pSPARC_Input->rhoTrigger = -1;             // default step to start updating electron density, later will be subtracted by 1
+    pSPARC_Input->Nchefsi = 1;                // default to do only 1 ChefSi each scf 
 
     /* default smearing */
     pSPARC_Input->elec_T_type = 1;            // default smearing type: 1 - gaussian smearing (the other option is 0 - fermi-dirac)
@@ -648,10 +649,6 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->hyb_range_fock = 0.1587;    // default using VASP's HSE03 value
     pSPARC_Input->hyb_range_pbe = 0.1587;     // default using VASP's HSE03 value
     pSPARC_Input->exx_frac = -1;              // default exx_frac
-
-    /* Default parameter for spin-orbit coupling */
-    pSPARC->Nspinor = 1;
-    pSPARC->SOC_Flag = 0;
 
     /* Default SQ method option */
     pSPARC_Input->SQFlag = 0;
@@ -840,7 +837,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         }
     }
 
-    l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + nprojsosize_sum + nprojsosize_sum + n_atom) * sizeof(double)
+    l_buff = (3*Ntypes + 3*n_atom + 4*size_sum + lmax_sum + nproj_sum + nprojsize_sum + nprojsosize_sum + nprojsosize_sum + 3*n_atom) * sizeof(double)
              + (6*Ntypes + 3*n_atom) * sizeof(int)
              + Ntypes * (L_PSD + L_ATMTYPE) * sizeof(char)
              + 0*(Ntypes+3*n_atom) *16; // last term is spare memory in case
@@ -861,7 +858,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         MPI_Pack(pSPARC->IsFrac, pSPARC->Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
         MPI_Pack(pSPARC->mvAtmConstraint, 3*n_atom, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
         MPI_Pack(pSPARC->IsSpin, pSPARC->Ntypes, MPI_INT, buff, l_buff, &position, MPI_COMM_WORLD);
-        MPI_Pack(pSPARC->atom_spin, n_atom, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+        MPI_Pack(pSPARC->atom_spin, 3*n_atom, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
         for (i = 0; i < Ntypes; i++) {
             nproj = 0;
             for (l = 0; l <= lmaxv[i]; l++) {
@@ -911,7 +908,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         // values to receive
         pSPARC->atom_pos = (double *)malloc(3*n_atom*sizeof(double));
         pSPARC->mvAtmConstraint = (int *)malloc(3*n_atom*sizeof(int));
-        pSPARC->atom_spin = (double *)malloc(n_atom*sizeof(double));
+        pSPARC->atom_spin = (double *)malloc(3*n_atom*sizeof(double));
         if (pSPARC->atom_pos == NULL || pSPARC->mvAtmConstraint == NULL || pSPARC->atom_spin == NULL) {
             printf("\nmemory cannot be allocated4\n");
             exit(EXIT_FAILURE);
@@ -969,7 +966,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
         MPI_Unpack(buff, l_buff, &position, pSPARC->IsFrac, Ntypes, MPI_INT, MPI_COMM_WORLD);
         MPI_Unpack(buff, l_buff, &position, pSPARC->mvAtmConstraint, 3*n_atom, MPI_INT, MPI_COMM_WORLD);
         MPI_Unpack(buff, l_buff, &position, pSPARC->IsSpin, Ntypes, MPI_INT, MPI_COMM_WORLD);
-        MPI_Unpack(buff, l_buff, &position, pSPARC->atom_spin, n_atom, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Unpack(buff, l_buff, &position, pSPARC->atom_spin, 3*n_atom, MPI_DOUBLE, MPI_COMM_WORLD);
         for (i = 0; i < Ntypes; i++) {
             nproj = 0;
             for (l = 0; l <= lmaxv[i]; l++) {
@@ -1058,7 +1055,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->ChebDegree = pSPARC_Input->ChebDegree;
     pSPARC->CheFSI_Optmz = pSPARC_Input->CheFSI_Optmz;
     pSPARC->chefsibound_flag = pSPARC_Input->chefsibound_flag;
-    pSPARC->rhoTrigger = pSPARC_Input->rhoTrigger; //pSPARC->rhoTrigger--;
+    pSPARC->rhoTrigger = pSPARC_Input->rhoTrigger;
+    pSPARC->Nchefsi = pSPARC_Input->Nchefsi;
     pSPARC->FixRandSeed = pSPARC_Input->FixRandSeed;
     pSPARC->accuracy_level = pSPARC_Input->accuracy_level;
     pSPARC->scf_err_type = pSPARC_Input->scf_err_type;
@@ -1260,12 +1258,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Eband = 0.0;
     pSPARC->Entropy = 0.0;
     pSPARC->Etot = 0.0;
+    pSPARC->Escc = 0.0;
 
     // 3 different spin options
     if(pSPARC->spin_typ == 0) {
     // spin-unpolarized calculation
         pSPARC->Nspin = 1;
-        pSPARC->Nspden = 1;
         if (pSPARC->SOC_Flag == 1) {
             pSPARC->Nspinor = 2;
         } else {
@@ -1277,43 +1275,48 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             if (!rank) printf("ERROR: Collinear spin could not be used with SOC, please use non-collinear spin (SPIN_TYP: 2)!\n");
             exit(EXIT_FAILURE);
         }
-        pSPARC->Nspinor = 1;
-        pSPARC->Nspin = 2;
-        pSPARC->Nspden = 2;
+        pSPARC->Nspinor = 2;
+        pSPARC->Nspin = 2;        
     } else if (pSPARC->spin_typ == 2) {
     // non-collinear spin calculation
         pSPARC->Nspin = 1;
         pSPARC->Nspinor = 2;
-        pSPARC->Nspden = 4;
-        if (!rank) printf("ERROR: non-collinear spin hasn't been implemented yet!\n");
-        exit(EXIT_FAILURE);
     } else {
-        if (!rank) printf("ERROR: Please use 0 (spin-unpolarized) or 1 (collinear spin) for SPIN_TYP option.\n");
+        if (!rank) printf("ERROR: Please use 0 (spin-unpolarized), 1 (collinear spin) or 2 (non-collinear spin) for SPIN_TYP option.\n");
         exit(EXIT_FAILURE);
     }
-    pSPARC->occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+    pSPARC->occfac = 2.0/pSPARC->Nspinor;
+    pSPARC->Nspinor_eig = pSPARC->Nspinor / pSPARC->Nspin;
+    // columns of vectors
+    pSPARC->Nspdentd = 1 + 2*(pSPARC->spin_typ > 0); // 1 1 3 3
+    pSPARC->Nspdend = 1 + (pSPARC->spin_typ > 0); // 1 1 2 2
+    pSPARC->Nspden = 1 << pSPARC->spin_typ; // 1 1 2 4
+    pSPARC->Nmag = pSPARC->spin_typ * pSPARC->spin_typ; // 0 0 1 4
 
 #ifdef DEBUG
-    if (!rank) 
-        printf("spin_typ: %d, SOC_flag: %d, Nspin: %d, Nspinor: %d, Nspden: %d, occfac %.2f\n", 
-            pSPARC->spin_typ, pSPARC->SOC_Flag, pSPARC->Nspin, pSPARC->Nspinor, pSPARC->Nspden, pSPARC->occfac);
+    if (!rank) {
+        printf("spin_typ: %d, SOC_flag: %d, Nspin: %d, Nspinor: %d, Nspinor_eig %d, occfac %.2f\n", 
+            pSPARC->spin_typ, pSPARC->SOC_Flag, pSPARC->Nspin, pSPARC->Nspinor, pSPARC->Nspinor_eig, pSPARC->occfac);
+        printf("Nspdentd: %d, Nspdend: %d, Nspden: %d, Nmag: %d\n", 
+            pSPARC->Nspdentd, pSPARC->Nspdend, pSPARC->Nspden, pSPARC->Nmag);
+    }
 #endif
 
     // estimate Nstates if not provided
-    if (pSPARC->Nstates == -1) {
+    if (pSPARC->Nstates < 0) {
         // estimate Nstates using the linear function y = 1.2 * x + 5
-        pSPARC->Nstates = (int) ((pSPARC->Nelectron / 2) * 1.2 + 5) * pSPARC->Nspinor;
-    }
-
-    if (pSPARC->Nspinor == 1) {
-        if (pSPARC->Nstates < (pSPARC->Nelectron / 2) && !pSPARC->SQFlag) {
-            if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
-            exit(EXIT_FAILURE);
-        }
-    } else if (pSPARC->Nspinor == 2) {
-        if (pSPARC->Nstates < pSPARC->Nelectron && !pSPARC->SQFlag) {
-            if (!rank) printf("\nERROR: number of states is less than Nelectron!\n");
-            exit(EXIT_FAILURE);
+        pSPARC->Nstates = (int) ((pSPARC->Nelectron / 2) * 1.2 + 5) * pSPARC->Nspinor_eig;
+    } else {
+        if (pSPARC->Nspinor_eig == 1) {
+            if (pSPARC->Nstates < (pSPARC->Nelectron / 2) && !pSPARC->SQFlag) {
+                if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
+                exit(EXIT_FAILURE);
+            }
+        } else if (pSPARC->Nspinor_eig == 2) {
+            if (pSPARC->Nstates < pSPARC->Nelectron && !pSPARC->SQFlag) {
+                if (!rank) printf("\nERROR: number of states is less than Nelectron!\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
@@ -1429,9 +1432,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     // Value of tol used in xc functional
-    pSPARC->xc_rhotol = 1e-14;
+    pSPARC->xc_rhotol = 1e-10;
     pSPARC->xc_magtol = 1e-8;
-    pSPARC->xc_sigmatol = 1e-24;
+    pSPARC->xc_sigmatol = 1e-10;
 
     if (pSPARC->Beta < 0) {
         if (pSPARC->elec_T_type == 1) { // gaussian
@@ -1470,7 +1473,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             if (pSPARC->BC == 1) {
                 // dirichlet boundary
                 pSPARC->BCx = 1; pSPARC->BCy = 1; pSPARC->BCz = 1;
-            } else if (pSPARC->BC == 2 || pSPARC->BC == 0) {
+            } else if (pSPARC->BC == 2) {
                 // periodic in all three directions
                 pSPARC->BCx = 0; pSPARC->BCy = 0; pSPARC->BCz = 0;
             } else if (pSPARC->BC == 3) {
@@ -1550,20 +1553,29 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         CellParm_cyclix(pSPARC); 
     }
 
-    // Provide number of spin
-    if(pSPARC->spin_typ == 0)
-        pSPARC->Nspin = 1;
-    else
-        pSPARC->Nspin = 2;
-
     // Provide default spin if not already provided
-    if(pSPARC->spin_typ != 0) { // spin polarized calculation
+    if(pSPARC->spin_typ == 1) { // spin polarized calculation
         srand(1); // TODO: provide this as a user input
         count = 0;
         for(i = 0; i < pSPARC->Ntypes; i++){
             if(pSPARC->IsSpin[i] == 0){
                 for (atm = 0; atm < pSPARC->nAtomv[i]; atm++) {
-                    pSPARC->atom_spin[count] = -pSPARC->Znucl[i] + 2 * pSPARC->Znucl[i] * ((double) rand() / RAND_MAX);
+                    pSPARC->atom_spin[3*count+2] = -pSPARC->Znucl[i] + 2 * pSPARC->Znucl[i] * ((double) rand() / RAND_MAX); // z direction
+                    count++;
+                }
+            } else{
+                count += pSPARC->nAtomv[i];
+            }
+        }
+    } else if (pSPARC->spin_typ == 2) {
+        srand(1); // TODO: provide this as a user input
+        count = 0;
+        for(i = 0; i < pSPARC->Ntypes; i++){
+            if(pSPARC->IsSpin[i] == 0){
+                for (atm = 0; atm < pSPARC->nAtomv[i]; atm++) {
+                    pSPARC->atom_spin[3*count]   = -pSPARC->Znucl[i] + 2 * pSPARC->Znucl[i] * ((double) rand() / RAND_MAX); // x direction
+                    pSPARC->atom_spin[3*count+1] = -pSPARC->Znucl[i] + 2 * pSPARC->Znucl[i] * ((double) rand() / RAND_MAX); // y direction
+                    pSPARC->atom_spin[3*count+2] = -pSPARC->Znucl[i] + 2 * pSPARC->Znucl[i] * ((double) rand() / RAND_MAX); // z direction
                     count++;
                 }
             } else{
@@ -1818,11 +1830,14 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 #endif
     }
 #ifdef DEBUG
-    else
-    {
+    else {
         if (!rank) printf("Chebyshev polynomial degree (provided by user): npl = %d\n",pSPARC->ChebDegree);
     }
 #endif
+
+    if (pSPARC->rhoTrigger < 0) {
+        pSPARC->rhoTrigger = (pSPARC->spin_typ == 2 ? 6 : 4);
+    }
 
     // set default simple (linear) mixing parameter to be the same as for pulay mixing
     if (pSPARC->MixingParameterSimple < 0.0) {
@@ -2233,11 +2248,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
 
     if (pSPARC->ixc[2]) {
-        // if (pSPARC->spin_typ != 0) {
-        //     if (rank == 0) 
-        //         printf(RED "ERROR: currently SCAN does not support spin polarization!\n" RESET);
-        //     exit(EXIT_FAILURE); 
-        // }
         if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->SQFlag) {
             if (!rank) 
                 printf(RED "ERROR: Spin-orbit coupling, hybrid and SQ are not supported in this version of SCAN implementation.\n" RESET);
@@ -2331,11 +2341,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: Hybrid functional, SCAN and SQ are not supported in this version of spin-orbit coupling implementation.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        if (pSPARC->spin_typ == 1) {
-            if (rank == 0) 
-                printf(RED "ERROR: Spin-polarized calculation is not supported in this version of spin-orbit coupling implementation.\n" RESET);
-            exit(EXIT_FAILURE);
-        }
     }
 
     if (pSPARC->CyclixFlag == 1) {
@@ -2392,6 +2397,14 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             exit(EXIT_FAILURE);
         }
         pSPARC->SQ_correction = 0;          // The correction term in energy and forces hasn't been implemented in this version.
+    }
+
+    if (pSPARC->spin_typ == 2) {
+        if (pSPARC->SQFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->CyclixFlag) {
+            if (!rank) 
+                printf(RED "ERROR: SQ, Hybrid functional, SCAN and Cyclix are not supported in this version of non-collinear implementation." RESET);
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (pSPARC->PrintPsiFlag[0] == 1 && pSPARC->PrintPsiFlag[1] < 0) {
@@ -3167,7 +3180,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Aug 15, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Sep 05, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3324,7 +3337,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"TOL_SCF: %.2E\n",pSPARC->TOL_SCF);
     } else if (pSPARC->scf_err_type == 1) {
         fprintf(output_fp,"TOL_SCF_QE: %.2E\n",pSPARC->TOL_SCF);
-        if (pSPARC->Nspin > 1) {
+        if (pSPARC->spin_typ) {
             fprintf(output_fp,"#WARNING: TOL_SCF_QE is not appropriatly set up for spin-polarized systems\n");
         }
         if (pSPARC->MixingVariable == 1) {
@@ -3355,7 +3368,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"MIXING_PRECOND: truncated_kerker\n");
     }
     
-    if (pSPARC->Nspin > 1) {
+    if (pSPARC->spin_typ) {
         if (pSPARC->MixingPrecondMag == 0) {
             fprintf(output_fp,"MIXING_PRECOND_MAG: none\n");
         } else if (pSPARC->MixingPrecondMag == 1) {
@@ -3399,7 +3412,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"PRECOND_FITPOW: %d\n",pSPARC->precond_fitpow);
     }
 
-    if (pSPARC->Nspin > 1) {
+    if (pSPARC->spin_typ) {
         if (pSPARC->MixingPrecondMag == 1) {
             fprintf(output_fp,"PRECOND_KERKER_KTF_MAG: %.10G\n",pSPARC->precond_kerker_kTF_mag);
             fprintf(output_fp,"PRECOND_KERKER_THRESH_MAG: %.10G\n",pSPARC->precond_kerker_thresh_mag);
@@ -3410,7 +3423,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     if (pSPARC->PulayFrequency > 1) {
         fprintf(output_fp,"MIXING_PARAMETER_SIMPLE: %.10G\n",pSPARC->MixingParameterSimple);
     }
-    if (pSPARC->Nspin > 1) {
+    if (pSPARC->spin_typ) {
         fprintf(output_fp,"MIXING_PARAMETER_MAG: %.10G\n",pSPARC->MixingParameterMag);
         if (pSPARC->PulayFrequency > 1) {
             fprintf(output_fp,"MIXING_PARAMETER_SIMPLE_MAG: %.10G\n",pSPARC->MixingParameterSimpleMag);
@@ -3421,6 +3434,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"PULAY_RESTART: %d\n",pSPARC->PulayRestartFlag);
     fprintf(output_fp,"REFERENCE_CUTOFF: %.10g\n",pSPARC->REFERENCE_CUTOFF);
     fprintf(output_fp,"RHO_TRIGGER: %d\n",pSPARC->rhoTrigger);
+    fprintf(output_fp,"NUM_CHEFSI: %d\n",pSPARC->Nchefsi);
     fprintf(output_fp,"FIX_RAND: %d\n",pSPARC->FixRandSeed);
     if (pSPARC->StandardEigenFlag == 1)
         fprintf(output_fp,"STANDARD_EIGEN: %d\n",pSPARC->StandardEigenFlag);
@@ -3653,7 +3667,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
-                                         MPI_INT, MPI_INT, MPI_INT, 
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3688,7 +3702,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, /* int */ 
+                          1, 1, 1, 1, /* int */ 
                           9, 3, L_QMASS, /* double array */
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
@@ -3748,6 +3762,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.CheFSI_Optmz, addr + i++);
     MPI_Get_address(&sparc_input_tmp.chefsibound_flag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.rhoTrigger, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.Nchefsi, addr + i++);
     MPI_Get_address(&sparc_input_tmp.FixRandSeed, addr + i++);
     MPI_Get_address(&sparc_input_tmp.accuracy_level, addr + i++);
     MPI_Get_address(&sparc_input_tmp.scf_err_type, addr + i++);

@@ -26,7 +26,7 @@
  */
 void Lap_vec_mult(
 	const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-	const int ncol, const double c, double *x, double *Lapx, MPI_Comm comm
+    const int ncol, const double c, double *x, const int ldi, double *Lapx, const int ldo, MPI_Comm comm
 );
 
 
@@ -52,8 +52,8 @@ void poisson_residual(
  */
 void Lap_vec_mult_orth(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double a, const double c, const double *x, 
-    double *y, MPI_Comm comm, const int *dims
+    const int ncol, const double a, const double c, const double *x, const int ldi, 
+    double *y, const int ldo, MPI_Comm comm, const int *dims
 );
 
 
@@ -71,7 +71,7 @@ void Lap_vec_mult_orth(
 void Lap_plus_diag_vec_mult_orth(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
     const int ncol, const double a, const double b, const double c, 
-    const double *v, const double *x, double *y, MPI_Comm comm,
+    const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
     const int *dims
 );
 
@@ -180,8 +180,8 @@ void stencil_3axis_thread_v1(
  */
 void Lap_vec_mult_nonorth(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
-    const int ncol, const double a, const double c, const double *x, 
-    double *y, MPI_Comm comm,  MPI_Comm comm2, const int *dims
+    const int ncol, const double a, const double c, const double *x, const int ldi,
+    double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2, const int *dims
 );
 
 
@@ -212,7 +212,7 @@ void snd_rcv_buffer(
 void Lap_plus_diag_vec_mult_nonorth(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
     const int ncol, const double a, const double b, const double c, 
-    const double *v, const double *x, double *y, MPI_Comm comm,  MPI_Comm comm2,
+    const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
     const int *dims
 );
 

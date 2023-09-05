@@ -51,11 +51,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
         Eband = Calculate_Eband(pSPARC);
     }
     
-    pSPARC->Eband = Eband;
     #ifdef DEBUG
     // find changes in Eband from previous SCF step
     dEband = fabs(Eband - pSPARC->Eband) / pSPARC->n_atom;
     #endif
+    pSPARC->Eband = Eband;
     
     // calculate entropy
     if (pSPARC->SQFlag == 1) {
@@ -144,42 +144,30 @@ double Calculate_Eband(SPARC_OBJ *pSPARC)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int n, Ns, k, spn_i, Nk;
+    int n, Ns, k, spn_i, Nk, Nspin;
     double Eband, occfac; 
     
     Eband = 0.0; // initialize energies
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
-    occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+    Nspin = pSPARC->Nspin_spincomm;
+    occfac = pSPARC->occfac;
 
-    if (pSPARC->isGammaPoint) { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+    for (spn_i = 0; spn_i < Nspin; spn_i++) {
+        for (k = 0; k < Nk; k++) {
+            int woccfac = occfac * pSPARC->kptWts_loc[k];
             for (n = 0; n < Ns; n++) {
-                // Eband += 2.0 * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n], pSPARC->Efermi) * pSPARC->lambda[n];
-                Eband += occfac * pSPARC->occ[n+spn_i*Ns] * pSPARC->lambda[n+spn_i*Ns];
+                Eband += woccfac * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
             }
         }
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }    
-    } else { // for k-points
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (k = 0; k < Nk; k++) {
-                for (n = 0; n < Ns; n++) {
-                    //Eband += 2.0 * pSPARC->kptWts_loc[k] * smearing_FermiDirac(pSPARC->Beta, pSPARC->lambda[n+k*Ns], pSPARC->Efermi)
-                    //         * pSPARC->lambda[n+k*Ns];
-                    Eband += occfac * pSPARC->kptWts_loc[k] * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
-                }
-            }
-        }    
-        Eband /= pSPARC->Nkpts;
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }
-        if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-        }
-    }  
+    }    
+    Eband /= pSPARC->Nkpts;
+    if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
+        MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+    }
+    if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
+        MPI_Allreduce(MPI_IN_PLACE, &Eband, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+    }
     return Eband;
 }
 
@@ -192,40 +180,27 @@ double Calculate_electronicEntropy(SPARC_OBJ *pSPARC)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0) return 0.0;
-    int k, Ns = pSPARC->Nstates, Nk = pSPARC->Nkpts_kptcomm, spn_i;
-    double occfac = 2.0/pSPARC->Nspin/pSPARC->Nspinor;
+    int k, Ns = pSPARC->Nstates, Nk = pSPARC->Nkpts_kptcomm, spn_i, Nspin = pSPARC->Nspin_spincomm;
+    double occfac = pSPARC->occfac;
     double Entropy = 0.0;
-    if (pSPARC->isGammaPoint) { // for gamma-point systems
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            Entropy += Calculate_entropy_term (
-                pSPARC->lambda+spn_i*Ns, pSPARC->occ+spn_i*Ns, pSPARC->Efermi, 0, Ns-1, 
+    for (spn_i = 0; spn_i < Nspin; spn_i++) {
+        for (k = 0; k < Nk; k++) {
+            double Entropy_k = Calculate_entropy_term (
+                pSPARC->lambda+k*Ns+spn_i*Nk*Ns, pSPARC->occ+k*Ns+spn_i*Nk*Ns, pSPARC->Efermi, 0, Ns-1, 
                 pSPARC->Beta, pSPARC->elec_T_type
             );
-        }    
-        Entropy *= -occfac / pSPARC->Beta;
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Entropy, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+            Entropy += Entropy_k * pSPARC->kptWts_loc[k]; // multiply by the kpoint weights
         }
-    } else { 
-        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-            for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
-                double Entropy_k = Calculate_entropy_term (
-                    pSPARC->lambda+k*Ns+spn_i*Nk*Ns, pSPARC->occ+k*Ns+spn_i*Nk*Ns, pSPARC->Efermi, 0, Ns-1, 
-                    pSPARC->Beta, pSPARC->elec_T_type
-                );
-                Entropy += Entropy_k * pSPARC->kptWts_loc[k]; // multiply by the kpoint weights
-            }
-        }    
-        Entropy *= -occfac / (pSPARC->Nkpts * pSPARC->Beta);
- 
-        if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Entropy, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
-        }
+    }    
+    Entropy *= -occfac / (pSPARC->Nkpts * pSPARC->Beta);
 
-        if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
-            MPI_Allreduce(MPI_IN_PLACE, &Entropy, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
-        }
-    }   
+    if (pSPARC->npspin != 1) { // sum over processes with the same rank in spincomm to find Eband
+        MPI_Allreduce(MPI_IN_PLACE, &Entropy, 1, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+    }
+
+    if (pSPARC->npkpt != 1) { // sum over processes with the same rank in kptcomm to find Eband
+        MPI_Allreduce(MPI_IN_PLACE, &Entropy, 1, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+    }
     return Entropy;
 }
 
@@ -291,7 +266,7 @@ double Calculate_entropy_term(
  * @brief   Calculate self consistent correction to free energy.
  */
 double Calculate_Escc(
-    SPARC_OBJ *pSPARC,      const int DMnd,
+    SPARC_OBJ *pSPARC, const int DMnd, const int ncol,
     const double *Veff_out, const double *Veff_in,
     const double *rho_out,  MPI_Comm comm
 )
@@ -305,30 +280,20 @@ double Calculate_Escc(
 
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-    double Escc_in, Escc_out, Escc;
+    double Escc_in = 0, Escc_out = 0, Escc;
     if (comm != MPI_COMM_NULL) {
         if (pSPARC->CyclixFlag) {
-            double Escc0_out, Escc0_in, Escc1_out, Escc1_in;        
-        
-            if (pSPARC->spin_typ == 0){
-                VectorDotProduct_wt(rho_out, Veff_out, pSPARC->Intgwt_phi, DMnd, &Escc_out, comm);
-                VectorDotProduct_wt(rho_out, Veff_in,  pSPARC->Intgwt_phi, DMnd, &Escc_in , comm);
-            } else {
-                VectorDotProduct_wt(rho_out, Veff_out, pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc0_out, comm);
-                VectorDotProduct_wt(rho_out, Veff_in,  pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc0_in , comm);
-
-                VectorDotProduct_wt(rho_out+pSPARC->Nd_d, Veff_out+pSPARC->Nd_d, pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc1_out, comm);
-                VectorDotProduct_wt(rho_out+pSPARC->Nd_d, Veff_in+pSPARC->Nd_d,  pSPARC->Intgwt_phi, pSPARC->Nd_d, &Escc1_in , comm);
-
-                Escc_out = Escc0_out + Escc1_out;
-                Escc_in = Escc0_in + Escc1_in;
-
+            for (int n = 0; n < ncol; n++) {
+                double temp;
+                VectorDotProduct_wt(rho_out+n*DMnd, Veff_out+n*DMnd, pSPARC->Intgwt_phi, DMnd, &temp, comm);
+                Escc_out += temp;
+                VectorDotProduct_wt(rho_out+n*DMnd, Veff_in+n*DMnd, pSPARC->Intgwt_phi, DMnd, &temp, comm);
+                Escc_in += temp;
             }
-            
-            Escc = (Escc_out - Escc_in);
+            Escc = Escc_out - Escc_in;
         } else {
-            VectorDotProduct(rho_out, Veff_out, DMnd, &Escc_out, comm);
-            VectorDotProduct(rho_out, Veff_in , DMnd, &Escc_in , comm);
+            VectorDotProduct(rho_out, Veff_out, DMnd*ncol, &Escc_out, comm);
+            VectorDotProduct(rho_out, Veff_in , DMnd*ncol, &Escc_in , comm);
             Escc = (Escc_out - Escc_in) * pSPARC->dV;
         }
     }

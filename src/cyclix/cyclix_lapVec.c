@@ -40,7 +40,7 @@ void stencil_4comp_cyclix(
     const double *v0,       double *X1
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
     double dx = pSPARC->delta_x;
     double c0 = pSPARC->D2_stencil_coeffs_y[0] * a;
 
@@ -102,7 +102,7 @@ void stencil_5comp_cyclix(
     const double *v0,       double *X1
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, r;
+    int i, j, k, jj, kk, jjj, kkk, r;
     double dx = pSPARC->delta_x;
     double tw2 = pSPARC->twist * pSPARC->twist;
     double c0 = pSPARC->D2_stencil_coeffs_y[0] * a;
@@ -168,7 +168,7 @@ void stencil_4comp_kpt_cyclix(
     const double a
 )
 {
-    int i, j, k, ii, jj, kk, r;
+    int i, j, k, jj, kk, r;
 
     double tw2 = pSPARC->twist * pSPARC->twist;
     double c0 = pSPARC->D2_stencil_coeffs_y[0] * a;
@@ -234,7 +234,7 @@ void stencil_5comp_kpt_cyclix(
     const double a
 )
 {
-    int i, j, k, ii, jj, kk, iii, jjj, kkk, r;
+    int i, j, k, jj, kk, jjj, kkk, r;
 
     double tw2 = pSPARC->twist * pSPARC->twist;
     double c0 = pSPARC->D2_stencil_coeffs_y[0] * a;

@@ -29,19 +29,19 @@ void Calculate_exact_exchange_stress_linear(SPARC_OBJ *pSPARC);
  * @brief   Calculate Exact Exchange stress
  */
 void Calculate_exact_exchange_stress_linear_nonACE(SPARC_OBJ *pSPARC, 
-        double *psi_outer, double *psi, double *occ_outer, double *stress_exx);
+        double *psi_outer, int ldpo, double *psi, int ldp, double *occ_outer, double *stress_exx);
 
 /**
  * @brief   Calculate Exact Exchange stress
  */
 void Calculate_exact_exchange_stress_linear_ACE(SPARC_OBJ *pSPARC, 
-        double *psi, double *occ, double *stress_exx);
+        double *psi, int ldp, double *occ, double *stress_exx);
 
 /**
  * @brief   Calculate Exact Exchange stress
  */
 void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC, 
-    double *psi_storage, double *psi, double *occ, int Nband_source, 
+    double *psi_storage, int ldps, double *psi, int ldp, double *occ, int Nband_source, 
     int band_start_indx_source, double *stress_exx);
 
 /**
@@ -53,18 +53,18 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC);
  * @brief   Calculate Exact Exchange stress
  */
 void Calculate_exact_exchange_stress_kpt_nonACE(SPARC_OBJ *pSPARC, 
-    double _Complex *psi_outer, double *occ_outer, double _Complex *psi, double *stress_exx);
+    double _Complex *psi_outer, int ldpo, double _Complex *psi, int ldp, double *occ_outer, double *stress_exx);
 
 /**
  * @brief   Calculate Exact Exchange stress
  */
 void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC, 
-    double _Complex *psi, double *occ_outer, double *stress_exx);
+    double _Complex *psi, int ldp, double *occ_outer, double *stress_exx);
 
 /**
  * @brief   Calculate Exact Exchange stress
  */
-void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, 
-    double _Complex *psi, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *stress_exx);
+void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, int ldps, 
+    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *stress_exx);
 
 #endif // EXACTEXCHANGESTRESS_H 

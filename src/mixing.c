@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <math.h>
 #include <complex.h>
+#include <string.h>
 #include <mpi.h>
 /* BLAS, LAPACK, LAPACKE routines */
 #ifdef USE_MKL
@@ -29,6 +30,7 @@
 #include "lapVecRoutines.h"
 #include "isddft.h"
 #include "linearSolver.h"
+#include "electronDensity.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -53,7 +55,8 @@ void  AndersonExtrapolation(
     double *f_wavg = (double *)malloc( N * sizeof(double) );
     
     // find the weighted average vectors
-    AndersonExtrapWtdAvg(N, m, x_k, f_k, X, F, x_kp1, f_wavg, comm);
+    // use Nspden = 0, opt = 0 here. default as previous
+    AndersonExtrapWtdAvg(N, m, 0, 0, x_k, f_k, X, F, x_kp1, f_wavg, comm);
     
     // add beta * f to x_{k+1}
     for (i = 0; i < N; i++)
@@ -71,7 +74,8 @@ void  AndersonExtrapolation(
  *          where Gamma = inv(F^T * F) * F^T * f.
  */
 void  AndersonExtrapWtdAvg(
-        const int N, const int m, const double *x_k, const double *f_k, 
+        const int N, const int m, const int Nspden, const int opt, 
+        const double *x_k, const double *f_k, 
         const double *X, const double *F, double *x_wavg, double *f_wavg, 
         MPI_Comm comm
 ) 
@@ -80,7 +84,7 @@ void  AndersonExtrapWtdAvg(
     assert(Gamma != NULL); 
     
     // find extrapolation weigths Gamma = inv(F^T * F) * F^T * f_k
-    AndersonExtrapCoeff(N, m, f_k, F, Gamma, comm); 
+    AndersonExtrapCoeff(N, m, Nspden, opt, f_k, F, Gamma, comm); 
     
     unsigned i;
     
@@ -107,35 +111,19 @@ void  AndersonExtrapWtdAvg(
  *          Gamma = inv(F^T * F) * F^T * f.         
  */
 void AndersonExtrapCoeff(
-    const int N, const int m, const double *f, const double *F, 
-    double* Gamma, MPI_Comm comm
+    const int N, const int m, const int Nspden, const int opt, 
+    const double *f, const double *F, double* Gamma, MPI_Comm comm
 ) 
 {
-// #define FtF(i,j) FtF[(j)*m+(i)]
-    // int i, j;
     int matrank;
     double *FtF, *s;
     
     FtF = (double *)malloc( m * m * sizeof(double) );
     s   = (double *)malloc( m * sizeof(double) );
     assert(FtF != NULL && s != NULL);  
-
-    //# If mkl-11.3 or later version is available, one may use cblas_dgemmt #
-    // calculate F^T * F, only update the LOWER part of the matrix
-    //cblas_dgemmt(CblasColMajor, CblasLower, CblasTrans, CblasNoTrans, 
-    //             m, N, 1.0, F, N, F, N, 0.0, FtF_Ftf, m);
-    //// copy the lower half of the matrix to the upper half (LOCAL)
-    //for (j = 0; j < m; j++)
-    //    for (i = 0; i < j; i++)
-    //        FtF_Ftf(i,j) = FtF_Ftf(j,i);
     
-    //#   Otherwise use cblas_dgemm instead    #
-    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, m, m, N, 
-                1.0, F, N, F, N, 0.0, FtF, m);
-
-    // calculate F^T * f using CBLAS  (LOCAL)
-    cblas_dgemv(CblasColMajor, CblasTrans, N, m, 
-                1.0, F, N, f, 1, 0.0, Gamma, 1);
+    compute_FtF(F, m, N, Nspden, opt, FtF);
+    compute_Ftf(F, f, m, N, Nspden, opt, Gamma);
 
     // Sum the local results of F^T * F and F^T * f (GLOBAL)
     MPI_Allreduce(MPI_IN_PLACE, FtF, m*m, MPI_DOUBLE, MPI_SUM, comm);
@@ -146,7 +134,58 @@ void AndersonExtrapCoeff(
 
     free(s);
     free(FtF);
-// #undef FtF 
+}
+
+void compute_FtF(const double *F, int m, int N, int Nspden, int opt, double *FtF)
+{
+#define FtF(i,j) FtF[i+j*m]
+    if (Nspden == 4) {
+        for (int i = 0; i < m; i++) {
+            for (int j = i; j < m; j++) {
+                FtF(i,j) = dotprod_nc(F+i*N, F+j*N, N, opt);
+                if (j != i) FtF(j,i) = FtF(i,j);
+            }
+        }
+    } else {
+        // calculate F^T * F using CBLAS  (LOCAL)
+        cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, m, m, N, 
+                1.0, F, N, F, N, 0.0, FtF, m);
+    }
+#undef FtF
+}
+
+void compute_Ftf(const double *F, const double *f, int m, int N, int Nspden, int opt, double *Ftf)
+{
+    if (Nspden == 4) {
+        for (int i = 0; i < m; i++) {
+            Ftf[i] = dotprod_nc(F+i*N, f, N, opt);
+        }
+    } else {
+        // calculate F^T * f using CBLAS  (LOCAL)
+        cblas_dgemv(CblasColMajor, CblasTrans, N, m, 
+                    1.0, F, N, f, 1, 0.0, Ftf, 1);
+    }
+}
+
+double dotprod_nc(const double *vec1, const double *vec2, int N, int opt)
+{    
+    double dotprod = 0;
+    if (opt == 1) { // potential mixing        
+        for (int i = 0; i < N/2; i++) {
+            dotprod += vec1[i] * vec2[i];
+        }
+        double sum_temp = 0;
+        for (int i = N/2; i < N; i++) {
+            sum_temp += vec1[i] * vec2[i];
+        }
+        dotprod += 2*sum_temp;
+    } else { // density mixing
+        for (int i = 0; i < N; i++) {
+            dotprod += vec1[i] * vec2[i];
+        }
+        dotprod *= 0.5;
+    }
+    return dotprod;
 }
 
 
@@ -178,21 +217,18 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    int N, p, m, i, i_hist;
-    double omega, beta, omega_mag, beta_mag, *g_k, *f_k, *Pf, *x_k,
-           *x_km1, *x_kp1, *f_km1, *R, *F;
-    int sindx_rho = (pSPARC->Nspin == 2) * pSPARC->Nd_d;
-
+    
+    double *g_k = NULL, *x_kp1 = NULL;
     double precond_tol = pSPARC->TOL_PRECOND;
 
-    N = pSPARC->Nd_d * pSPARC->Nspin;
-    m = pSPARC->MixingHistory;
-    p = pSPARC->PulayFrequency;
-    beta = pSPARC->MixingParameter;
-    omega = pSPARC->MixingParameterSimple;
-    beta_mag = pSPARC->MixingParameterMag;
-    omega_mag = pSPARC->MixingParameterSimpleMag;
+    int DMnd = pSPARC->Nd_d;
+    int N = DMnd * pSPARC->Nspden;
+    int m = pSPARC->MixingHistory;
+    int p = pSPARC->PulayFrequency;
+    double beta = pSPARC->MixingParameter;
+    double omega = pSPARC->MixingParameterSimple;
+    double beta_mag = pSPARC->MixingParameterMag;
+    double omega_mag = pSPARC->MixingParameterSimpleMag;
     
     // flag for Pulay (Anderson extrapolation) mixing, otherwise apply simple mixing 
     int Pulay_mixing_flag = (int) ((iter_count+1) % p == 0 && iter_count > 0);
@@ -209,46 +245,56 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
     // Note that x_kp1 points to the same location as g_k!
     // the unmixed g_k will be overwritten in the end
     if (pSPARC->MixingVariable == 0) {        // density mixing
-        g_k = x_kp1 = pSPARC->electronDens + sindx_rho; 
+        if (pSPARC->spin_typ == 0) {
+            g_k = x_kp1 = pSPARC->electronDens; 
+        } else {
+            g_k = x_kp1 = (double *) malloc(N*sizeof(double));
+            memcpy(g_k, pSPARC->electronDens, sizeof(double)*DMnd); // rho
+            if (pSPARC->spin_typ == 1) {
+                memcpy(g_k+DMnd, pSPARC->mag, sizeof(double)*DMnd); // magz
+            } else {
+                memcpy(g_k+DMnd, pSPARC->mag+DMnd, sizeof(double)*DMnd*3); // magx magy magz
+            }
+        }
     } else if (pSPARC->MixingVariable == 1) { // potential mixing
         g_k = x_kp1 = pSPARC->Veff_loc_dmcomm_phi;
     } else {
         exit(EXIT_FAILURE);
     }
-    x_k   = pSPARC->mixing_hist_xk;   // the current mixed var x (x^{in}_k)
-    x_km1 = pSPARC->mixing_hist_xkm1; // x_{k-1}
-    f_k   = pSPARC->mixing_hist_fk;   // f_k = g(x_k) - x_k
-    f_km1 = pSPARC->mixing_hist_fkm1; // f_{k-1}
-    R     = pSPARC->mixing_hist_Xk;   // [x_{k-m+1} - x_{k-m}, ... , x_k - x_{k-1}]
-    F     = pSPARC->mixing_hist_Fk;   // [f_{k-m+1} - f_{k-m}, ... , f_k - f_{k-1}]
-    Pf    = pSPARC->mixing_hist_Pfk;  // the preconditioned residual
+    double *x_k   = pSPARC->mixing_hist_xk;   // the current mixed var x (x^{in}_k)
+    double *x_km1 = pSPARC->mixing_hist_xkm1; // x_{k-1}
+    double *f_k   = pSPARC->mixing_hist_fk;   // f_k = g(x_k) - x_k
+    double *f_km1 = pSPARC->mixing_hist_fkm1; // f_{k-1}
+    double *R     = pSPARC->mixing_hist_Xk;   // [x_{k-m+1} - x_{k-m}, ... , x_k - x_{k-1}]
+    double *F     = pSPARC->mixing_hist_Fk;   // [f_{k-m+1} - f_{k-m}, ... , f_k - f_{k-1}]
+    double *Pf    = pSPARC->mixing_hist_Pfk;  // the preconditioned residual
 
     // update old residual f_{k-1}
     if (iter_count > 0) {
-        for (i = 0; i < N; i++) f_km1[i] = f_k[i];
+        for (int i = 0; i < N; i++) f_km1[i] = f_k[i];
     }
     
     // compute current residual     
-    for (i = 0; i < N; i++) f_k[i] = g_k[i] - x_k[i];     
+    for (int i = 0; i < N; i++) f_k[i] = g_k[i] - x_k[i];     
 
     // *** store residual & iteration history *** //
     if (iter_count > 0) {
-        i_hist = (iter_count - 1) % m;
+        int i_hist = (iter_count - 1) % m;
         if (pSPARC->PulayRestartFlag && i_hist == 0) {
             // TODO: check if this is necessary!
-            for (i = 0; i < N*(m-1); i++) {
+            for (int i = 0; i < N*(m-1); i++) {
                 R[N+i] = F[N+i] = 0.0; // set all cols to 0 (except for 1st col)
             }
             
             // set 1st cols of R and F
-            for (i = 0; i < N; i++) {
+            for (int i = 0; i < N; i++) {
                 // R[i] = Dx[i];
                 R[i] = x_k[i] - x_km1[i];
                 // F[i] = f[i] - f_old[i];
                 F[i] = f_k[i] - f_km1[i];
             }
         } else {
-            for (i = 0; i < N; i++) {
+            for (int i = 0; i < N; i++) {
                 // R(i, i_hist) = Dx[i];
                 R(i, i_hist) = x_k[i] - x_km1[i];
                 // F(i, i_hist) = f[i] - f_old[i];
@@ -268,7 +314,7 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         // Anderson extrapolation
         // find weighted average x_wavg, f_wavg
         AndersonExtrapWtdAvg(
-            N, m, x_k, f_k, R, F, x_wavg, f_wavg, pSPARC->dmcomm_phi
+            N, m, pSPARC->Nspden, pSPARC->MixingVariable, x_k, f_k, R, F, x_wavg, f_wavg, pSPARC->dmcomm_phi
         ); 
     } else {
         // Simple (linear) mixing
@@ -278,24 +324,12 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         }
     }
     
-    // calculate total density and magnetization density for spin-calculation
-    double *f_tot, *f_mag = NULL, sum_f_tot = 0.0, sum_f_mag = 0.0;
-    if (pSPARC->spin_typ != 0) {
-        f_tot = (double *)malloc(pSPARC->Nd_d * sizeof(double));
-        f_mag = (double *)malloc(pSPARC->Nd_d * sizeof(double));
-        assert(f_tot != NULL);
-        assert(f_mag != NULL);
-        for (i = 0; i < pSPARC->Nd_d; i++){
-            // weighted average of residual of total density/potential
-            f_tot[i] = f_wavg[i] + f_wavg[pSPARC->Nd_d+i];
-            // weighted average of residual of magnetization density/potential
-            f_mag[i] = f_wavg[i] - f_wavg[pSPARC->Nd_d+i];
-        }   
-        VectorSum(f_tot, pSPARC->Nd_d, &sum_f_tot, pSPARC->dmcomm_phi);
-        VectorSum(f_mag, pSPARC->Nd_d, &sum_f_mag, pSPARC->dmcomm_phi);
-    } else {
-        f_tot = f_wavg; // for spin-unpolarized calculations, f_tot is just f_wavg
-        // f_mag is N/A for spin-unporlaized calculations
+    // calculate total density and magnetization density for spin-calculation   
+    double sum_f[4] = {0,0,0,0};
+    if (pSPARC->spin_typ > 0) {
+        for (int n = 0; n < pSPARC->Nspden; n++) {
+            VectorSum(f_wavg+n*DMnd,  DMnd, sum_f+n,  pSPARC->dmcomm_phi);
+        }
     }
 
     // apply preconditioner if required, Pf = amix * (P * f_tot)
@@ -305,88 +339,61 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
             double idiemac = pSPARC->precond_kerker_thresh;
             // precondition the residual of total density/potential
             Kerker_precond(
-                pSPARC, f_tot, amix, 
-                k_TF, idiemac, precond_tol, pSPARC->Nd_d, 
+                pSPARC, f_wavg, amix, 
+                k_TF, idiemac, precond_tol, DMnd, 
                 pSPARC->DMVertices, Pf, pSPARC->dmcomm_phi
             ); 
         }
     } else {
         // un-preconditioned, i.e., P = amix * I
-        for (int i = 0; i < pSPARC->Nd_d; i++) {
-            Pf[i] = amix * f_tot[i];
+        for (int i = 0; i < DMnd; i++) {
+            Pf[i] = amix * f_wavg[i];
         } 
     }
 
     // Apply preconditioner for magnetization density
-    if (pSPARC->spin_typ != 0) {
-        if (pSPARC->MixingPrecondMag != 0) { 
-            if (pSPARC->MixingPrecondMag == 1) { // Kerker preconditioner
-                double k_TF_mag = pSPARC->precond_kerker_kTF_mag;
-                double idiemac_mag = pSPARC->precond_kerker_thresh_mag;
-                Kerker_precond(
-                    pSPARC, f_mag, amix_mag, 
-                    k_TF_mag, idiemac_mag, precond_tol, pSPARC->Nd_d, 
-                    pSPARC->DMVertices, Pf+pSPARC->Nd_d, pSPARC->dmcomm_phi
-                ); // precondition the residual of magnetization density
-            }
-        } else {
-            // un-preconditioned, i.e., P = amix_mag * I
-            for (int i = 0; i < pSPARC->Nd_d; i++) {
-                Pf[i+pSPARC->Nd_d] = amix_mag * f_mag[i];
+    if (pSPARC->MixingPrecondMag == 1) { // Kerker preconditioner
+        double k_TF_mag = pSPARC->precond_kerker_kTF_mag;
+        double idiemac_mag = pSPARC->precond_kerker_thresh_mag;
+        for (int n = 1; n < pSPARC->Nspden; n++) {
+            Kerker_precond(
+                pSPARC, f_wavg+n*DMnd, amix_mag, 
+                k_TF_mag, idiemac_mag, precond_tol, DMnd, 
+                pSPARC->DMVertices, Pf+n*DMnd, pSPARC->dmcomm_phi
+            ); // precondition the residual of magnetization density
+        }
+    } else {
+        // un-preconditioned, i.e., P = amix_mag * I
+        for (int n = 1; n < pSPARC->Nspden; n++) {
+            for (int i = 0; i < DMnd; i++) {
+                Pf[i+n*DMnd] = amix_mag * f_wavg[i+n*DMnd];
             } 
         }
     }
     
-    // shift Pf_tot and Pf_mag so that the integral is 
-    // preserved, note that mixing param is already applied
-    // shift Pf_tot and Pf_mag
-    if (pSPARC->spin_typ != 0) { 
-        double sum_Pf_tot;
-        VectorSum(Pf, pSPARC->Nd_d, &sum_Pf_tot, pSPARC->dmcomm_phi);
-        double shift_Pf_tot = (sum_f_tot - sum_Pf_tot) / pSPARC->Nd;
-        VectorShift(Pf, pSPARC->Nd_d, shift_Pf_tot, pSPARC->dmcomm_phi);
-        
-        double sum_Pf_mag;
-        VectorSum(Pf+pSPARC->Nd_d, pSPARC->Nd_d, &sum_Pf_mag, pSPARC->dmcomm_phi);
-        double shift_Pf_mag = (sum_f_mag - sum_Pf_mag) / pSPARC->Nd;
-        VectorShift(Pf+pSPARC->Nd_d, pSPARC->Nd_d, shift_Pf_mag, pSPARC->dmcomm_phi);
+    // shift Pf so that the integral is preserved
+    // note that mixing param is already applied shift Pf
+    double sum_Pf[4] = {0,0,0,0};
+    if (pSPARC->spin_typ > 0) {
+        for (int n = 0; n < pSPARC->Nspden; n++) {
+            VectorSum(Pf+n*DMnd,  DMnd, sum_Pf+n,  pSPARC->dmcomm_phi);
+            double shift = (sum_f[n] - sum_Pf[n]) / pSPARC->Nd;
+            VectorShift(Pf+n*DMnd, DMnd, shift, pSPARC->dmcomm_phi);
+        }
     }
     
     // find x_{k+1} := x_wavg + Pf (mixing param is included in Pf)
-    if (pSPARC->spin_typ == 0) { // spin-unpolarized
-        for (i = 0; i < N; i++)
-            x_kp1[i] = x_wavg[i] + Pf[i];
-    } else { // spin-polarized
-        for (i = 0; i < pSPARC->Nd_d; i++) {
-            int j = i + pSPARC->Nd_d;
-            double Pf_tot = Pf[i], Pf_mag = Pf[j];
-            x_kp1[i] = x_wavg[i] + (Pf_tot + Pf_mag)/2.0; // spin-up
-            x_kp1[j] = x_wavg[j] + (Pf_tot - Pf_mag)/2.0; // spin-down
-        }
-    }
-
-    free(x_wavg);
-    free(f_wavg);
-    if (pSPARC->spin_typ != 0) {
-        free(f_tot);
-        free(f_mag);
-    }
+    for (int i = 0; i < N; i++) x_kp1[i] = x_wavg[i] + Pf[i];
 
     // for density mixing, need to check if rho < 0
     if (pSPARC->MixingVariable == 0) {
         int neg_flag = 0;
-        for (i = 0; i < N; i++) {
+        for (int i = 0; i < DMnd; i++) {
             if (x_kp1[i] < 0.0) {
                 x_kp1[i] = 0.0;
                 neg_flag = 1;
             }
         }
-
-        if(pSPARC->spin_typ != 0) {
-            for (i = 0; i < pSPARC->Nd_d; i++)
-                pSPARC->electronDens[i] = x_kp1[i] + x_kp1[pSPARC->Nd_d + i];
-        }
-        
         MPI_Allreduce(MPI_IN_PLACE, &neg_flag, 1, MPI_INT,
                       MPI_SUM, pSPARC->dmcomm_phi);
         
@@ -397,30 +404,42 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         // scale electron density so that PosCharge + NegCharge = NetCharge 
         double int_rho = 0.0;
         if (pSPARC->CyclixFlag) {
-            double temp_sum = 0;
-            for (i = 0; i < pSPARC->Nspin; i++) {
-                VectorSum_wt(x_kp1 + i*pSPARC->Nd_d, pSPARC->Intgwt_phi, pSPARC->Nd_d, &temp_sum, pSPARC->dmcomm_phi);
-            }
-            int_rho += temp_sum;
+            VectorSum_wt(x_kp1, pSPARC->Intgwt_phi, DMnd, &int_rho, pSPARC->dmcomm_phi);
         } else {
-            VectorSum(x_kp1, N, &int_rho, pSPARC->dmcomm_phi);
+            VectorSum(x_kp1, DMnd, &int_rho, pSPARC->dmcomm_phi);
             int_rho *= pSPARC->dV;
         }
         double scal_fac = -pSPARC->NegCharge / int_rho;
-        int len = pSPARC->spin_typ ? 3 * pSPARC->Nd_d : pSPARC->Nd_d;
-        for (int i = 0; i < len; i++) {
-            pSPARC->electronDens[i] *= scal_fac;
+        for (int i = 0; i < DMnd; i++) {
+            x_kp1[i] *= scal_fac;
         }
-    }
+
+        if (pSPARC->spin_typ == 1) {
+            memcpy(pSPARC->electronDens, x_kp1, sizeof(double)*DMnd); // rho
+            memcpy(pSPARC->mag, x_kp1+DMnd, sizeof(double)*DMnd); // magz
+            Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd); 
+        } else if (pSPARC->spin_typ == 2) {
+            memcpy(pSPARC->electronDens, x_kp1, sizeof(double)*DMnd); // rho
+            memcpy(pSPARC->mag+DMnd, x_kp1+DMnd, sizeof(double)*DMnd*3); // magx magy magz
+            Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd, pSPARC->mag+2*DMnd, pSPARC->mag+3*DMnd, pSPARC->mag); 
+            Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd); 
+        }
+    }    
+
+    free(x_wavg);
+    free(f_wavg);
     
     // update x_km1 and x_k
-    for (i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         // update x_{k-1} = x_k
         x_km1[i] = x_k[i];
         // update x_k = x_{k+1};
         x_k[i] = x_kp1[i];
-    }
+    }    
 
+    if (pSPARC->MixingVariable == 0) {
+        if (pSPARC->spin_typ) free(x_kp1);
+    }
 #undef R
 #undef F
 }
@@ -466,7 +485,7 @@ void Kerker_precond(
     double *Lf;
     Lf = (double *)malloc(DMnd * sizeof(double));
     // find Lf = (L - idemac*lambda_TF^2)f
-    Lap_vec_mult(pSPARC, DMnd, DMVertices, 1, -lambda_TF*lambda_TF*idiemac, f, Lf, comm);
+    Lap_vec_mult(pSPARC, DMnd, DMVertices, 1, -lambda_TF*lambda_TF*idiemac, f, DMnd, Lf, DMnd, comm);
 
     //** solve -(L - lambda_TF^2) * Pf = Lf for Pf **//
     double omega = 0.6, beta = 0.6; 

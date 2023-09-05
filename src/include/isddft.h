@@ -221,8 +221,6 @@ typedef struct _SPARC_OBJ{
     int npNdx_kptcomm;  // number of processes in x-dir for creating Cartesian topology in kptcomm 
     int npNdy_kptcomm;  // number of processes in y-dir for creating Cartesian topology in kptcomm 
     int npNdz_kptcomm;  // number of processes in z-dir for creating Cartesian topology in kptcomm 
-    
-    unsigned is_domain_uniform; // a flag to check if domain parallelization is uniform (LOCAL)
     int FixRandSeed;    // flag to fix the random number seeds so that all random numbers generated in parallel 
                         // under MPI are the same as those generated in sequential execution
                         
@@ -251,6 +249,7 @@ typedef struct _SPARC_OBJ{
     MPI_Comm kptcomm_topo_dist_graph; // for nonorthogonal in lanczos
     int spincomm_index; // index of current spincomm (LOCAL)
     int Nspin_spincomm;  // number of spin assigned to current spincomm (LOCAL)
+    int Nspinor_spincomm;  // number of spinor assigned to current spincomm (LOCAL)
     int kptcomm_index;  // index of current kptcomm (LOCAL)
     int bandcomm_index; // index of current bandcomm (LOCAL)
     int Nkpts_kptcomm;  // number of k-points assigned to current kptcomm (LOCAL)
@@ -261,14 +260,21 @@ typedef struct _SPARC_OBJ{
     /* spin options */
     int spin_typ;       // flag to choose between spin unpolarized and spin polarized calculation
     int Nspin;          // number of spin in a calculation. 1 - spin unpolarized and 2 - spin polarized
-    double netM;        // Net magnetization of the system
+    double *mag;        // magnetization
+    double netM[4];     // net magnetization
     int spin_start_indx; // start index (global) of spin in the spin communicator
+    int spinor_start_indx; // start index (global) of spinor in the spin communicator
     int spin_end_indx;  // end index (global) of spin in the spin communicator
+    int spinor_end_indx;  // end index (global) of spinor in the spin communicator
     
     /* spin orbit coupling options */
     int Nspinor;        // Number of spinor in wavefunction
     int SOC_Flag;       // Flag for spin-orbit coupling (SOC) calculation
-    int Nspden;         // Number of spin density
+    int Nspinor_eig;    // Number of spinor in eigenvalue problem
+    int Nspdentd;       // Number of columns of electron density, total and diagonal term
+    int Nspdend;        // Number of columns of electron density, diagonal terms only
+    int Nspden;         // Number of columns of spin density
+    int Nmag;           // Number of columns of magnetization
 
     /* Options for MD & Relaxation */
     int MDFlag;
@@ -425,13 +431,12 @@ typedef struct _SPARC_OBJ{
     
     double *Lanczos_x0;                       // initial guess vector for Lanczos
     double _Complex *Lanczos_x0_complex;       // initial guess vector (complex) for Lanczos
-    //double *electronDensGLB;    // global electron density (whole vector), "rho" (GLOBAL)
-    //double *Veff_loc;           // global effective local potential vector (GLOBAL)
-    double *Veff_loc_dmcomm;      // effective local potential distributed in psi-domain (LOCAL)
-    double *Veff_loc_dmcomm_phi;  // effective local potential distributed in phi-domain (LOCAL)
-    double *Veff_loc_dmcomm_phi_in; // input effective local potential at each SCF distributed in phi-domain (LOCAL)
-    double *Veff_loc_kptcomm_topo;// effective local potential distributed in each kptcomm_topo (LOCAL), only used if npkpt > 1
-    double veff_mean;             //  mean value of Veff
+
+    double *Veff_loc_dmcomm;            // effective local potential distributed in psi-domain (LOCAL)
+    double *Veff_loc_dmcomm_phi;        // effective local potential distributed in phi-domain (LOCAL)
+    double *Veff_dia_loc_dmcomm_phi;    // effective local potential distributed in phi-domain (LOCAL), diagonal term
+    double *Veff_loc_dmcomm_phi_in;     // input effective local potential at each SCF distributed in phi-domain (LOCAL)
+    double *Veff_loc_kptcomm_topo;      // effective local potential distributed in each kptcomm_topo (LOCAL), only used if npkpt > 1    
 
     double *mixing_hist_xk;      // previous effective local potential distributed in phi-domain (LOCAL)
     double *mixing_hist_xkm1;    // residual of mixed Veff_loc (between new mixed and previous mixed) in phi-domain (LOCAL)
@@ -452,9 +457,10 @@ typedef struct _SPARC_OBJ{
     double *electronDens;         // electron density, "rho" (LOCAL)
     double *electronDens_at;      // electron density guess by summing atomic charge densities (LOCAL)
     double *electronDens_core;    // model core electron density for Non-Linear Core Correction (NLCC)
-    double *mag;                  // magnetization
+    double *electronDens_in;      // initial electron density, "rho" (LOCAL) at each SCF distributed in phi-domain (LOCAL)
     double *elecstPotential;      // electrostatic potential, "phi" (LOCAL)
     double *XCPotential;          // exchange-correlation potential, "Vxc" (LOCAL)
+    double *XCPotential_nc;       // exchange-correlation potential, "Vxc" (LOCAL), noncollinear 
     double *e_xc;                 // exchange-correlation energy per particle (LOCAL)
     double *Dxcdgrho;             // derivative of exchange-correlation enrgy per particle wrt to norm of the gradient
     double xc_rhotol;             // minimum value of rho below which it is made equal to xc_rhotol
@@ -467,8 +473,7 @@ typedef struct _SPARC_OBJ{
     double *occ_sorted;           // occupations corresponding to sorted lambda
     double occfac;                // occupation's scaling factor
     double *lambda;               // eigenvalues of the Hamiltonian
-    double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion
-    double *totalLambdaArray;     // all eigenvalues of the system, collected for computing lambda_f
+    double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion    
     double *Xorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Yorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Xorb_BLCYC;           // block-cyclically distributed orbitals (LOCAL)
@@ -558,8 +563,6 @@ typedef struct _SPARC_OBJ{
     int Nstates;        // number of states
     int Ntypes;         // number of atome types
     int Nelectron;      // total number of electrons, read from ion file
-    double Nelectron_up; // Total number of alpha electrons   
-    double Nelectron_dn; // Total number of beta electrons   
     int NetCharge;      // net charge of the system
     double PosCharge;   // positive charge, found by integrating the pseudocharge density
     double NegCharge;   // negative charge, defined as -1*integarl of electron density
@@ -592,13 +595,13 @@ typedef struct _SPARC_OBJ{
     /* Chebyshev filtering */
     int ChebDegree;        // degree of Chebyshev polynomial
     int CheFSI_Optmz;      // flag for optimizing Chebyshev filtering polynomial degrees
-    int rhoTrigger;         // triger for starting to update electron density during scf iterations
+    int rhoTrigger;        // triger for starting to update electron density during scf iterations
     int chefsibound_flag;  // flag for estimating upper bounds of Chebyshev Filtering in every SCF iter
     double *eigmin;        // Stores minimum eigenvalue of Hamiltonian/Laplacian
     double *eigmax;        // Stores maximum eigenvalue of Hamiltonian/Laplacian
     int npl_min;
     int npl_max;
-    int Ncheb;
+    int Nchefsi;           // Number of ChefSi for each scf step
     
     /* Energies */
     double Esc;            // self + correction energy, Esc = Eself + Ec
@@ -613,6 +616,7 @@ typedef struct _SPARC_OBJ{
     
     /* Forces */
     double *forces;        // atomic forces
+    double *AtomMag;       // atom magnetization
     
     /* Stress and Pressure */
     int Calc_stress;       // Flag for calculating stress
@@ -866,7 +870,8 @@ typedef struct _SPARC_OBJ{
     double *pois_FFT_const_stress2; // Constants for FFT solver in Poisson's equation in stress
     double *pois_FFT_const_press;   // Constants for FFT solver in Poisson's equation in press
     int ACEFlag;                    // Flag for ACE operator 
-    int Nstates_occ[2];             // Number of occupied states 
+    int Nstates_occ;                // Number of occupied states 
+    int *Nstates_occ_list;          // List of number of occupied states 
     int EXXMem_batch;               // Option for speed or memory efficiency when using ACE operator
     int EXXACEVal_state;            // Number of extra unoccupied states in constructing ACE operator
     int EXXDownsampling[3];         // Downsampling info
@@ -876,11 +881,11 @@ typedef struct _SPARC_OBJ{
     int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
     MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
     // variabels for band parallelization with ACE
-    int desc_M[2][9];               // descriptor for matirx M in ACE case
-    int desc_Xi[2][9];              // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
-    int nrows_M[2];                 // local number of row of M matrix
-    int ncols_M[2];                 // local number of column of M matrix
-    int Nband_bandcomm_M[2];        // number of bands of M assigned to current bandcomm (LOCAL)
+    int desc_M[9];               // descriptor for matirx M in ACE case
+    int desc_Xi[9];              // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
+    int nrows_M;                 // local number of row of M matrix
+    int ncols_M;                 // local number of column of M matrix
+    int Nband_bandcomm_M;        // number of bands of M assigned to current bandcomm (LOCAL)
 
     /* SQ methods */
     int SQFlag;                     // Flag of SQ method
@@ -1028,6 +1033,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int CheFSI_Optmz;   // flag for optimizing Chebyshev filtering polynomial degrees
     int chefsibound_flag; // flag for calculating bounds for Chebyshev filtering
     int rhoTrigger;      // triger for starting to update electron density during scf iterations
+    int Nchefsi;         // Number of ChefSi for each scf step
     
     /* Iterations */
     int FixRandSeed;    // flag to fix the random number seeds so that all random numbers generated in parallel 
