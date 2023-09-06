@@ -134,6 +134,35 @@ If you publish work using/regarding SPARC, please cite some of the following art
   \begin{frame}[allowframebreaks,fragile]{\textbf{Installation - lib}} \label{Installation:lib}
   Once compilation is done, a binary named \texttt{sparc} will be created in the \texttt{lib/} directory.
   \end{frame}
+
+  \begin{frame}[allowframebreaks,fragile]{\textbf{Installation - Option 4}} \label{Installation:4}
+  \begin{itemize}
+  \item Option 4: Install pre-compiled \texttt{sparc} binaries distributed by \texttt{conda-forge}
+
+    Pre-compiled \texttt{sparc} package can be installed on x86\_64 or
+    aarch64 Linux platforms with \texttt{anaconda} or
+    \texttt{miniconda} installed.  The binary is compiled with
+    OpenBLAS and OpenMPI using flags \texttt{USE\_MKL=0 USE\_SCALAPACK=1 USE\_FFTW=1}.
+    
+    \begin{itemize}
+   
+    \item  Step 1 (optional): create a conda environment (e.g. \texttt{sparc-env})
+\begin{verbatim}
+$ conda create -n sparc-env
+$ conda activate sparc-env
+\end{verbatim}
+      
+    \item Step 2: install conda package \texttt{sparc-x}
+\begin{verbatim}
+$ conda install -c conda-forge sparc-x
+$ echo sparc binary is located at: $(which sparc)
+$ echo .psp files installed at: $SPARC_PSP_PATH
+$ echo SPARC doc files installed at: $SPARC_DOC_PATH
+\end{verbatim}
+    \end{itemize}
+  \end{itemize}
+  
+  \end{frame}
   
   
   
@@ -157,7 +186,7 @@ If you publish work using/regarding SPARC, please cite some of the following art
   \end{verbatim} 
   As an example, one can run one of the tests located in `SPARC/tests/`. First go to `SPARC/tests/Example\_tests/` directory:
   \begin{verbatim}
-  $ $ cd tests/Example_tests/
+  $ cd tests/Example_tests/
   \end{verbatim} 
   There are a few input files available. Run a DC silicon system by
   \begin{verbatim}
