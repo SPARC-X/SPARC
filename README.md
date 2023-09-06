@@ -75,6 +75,25 @@ There are several options to compile SPARC, depending on the available external 
 
 Once compilation is done, a binary named `sparc` will be created in the `lib/` directory.
 
+* Option 4: Install pre-compiled `sparc` binaries distributed by `conda-forge`
+
+Pre-compiled `sparc` package can be installed on x86_64 or aarch64 Linux platforms using `anaconda` or `miniconda`. 
+The binary is compiled with OpenBLAS and OpenMPI and flags `USE_MKL=0 USE_SCALAPACK=1 USE_FFTW=1`.
+
+  * Step 1 (optional): create a conda environment (e.g. `sparc-env`)
+    ```shell
+    conda create -n sparc-env
+    conda activate sparc-env
+    ```
+  * Step 2: install conda package `sparc-x`
+    ```shell
+    conda install -c conda-forge sparc-x
+    echo sparc binary is located at: $(which sparc)
+    echo .psp files installed at: $SPARC_PSP_PATH
+    echo SPARC doc files installed at: $SPARC_DOC_PATH
+    ```
+
+
 ### (3) Input files:
 The required input files to run a simulation with SPARC are (with shared names)  
 
