@@ -15,6 +15,11 @@
 #include <assert.h>
 #include <mpi.h>
 #include <time.h>
+#ifdef USE_MKL
+    #include <mkl.h>
+#else
+    #include <cblas.h>
+#endif
 
 #include "sq.h"
 #include "sqtool.h"
@@ -26,6 +31,9 @@
 #include "sqEnergy.h"
 #include "tools.h"
 
+#ifdef SPARCX_ACCEL
+#include "accel.h"
+#endif
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -85,17 +93,27 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
         time2 = MPI_Wtime();
     #endif
 
-    t0 = (double *) malloc(sizeof(double) * pSQ->Nd_loc);
-    int center = nloc[0] + nloc[1]*Nx_loc + nloc[2]*Nx_loc*Ny_loc;    
-    for (nd = 0; nd < DMnd; nd ++) {
-        // initialize t0 as identity vector
-        memset(t0, 0, sizeof(double)*pSQ->Nd_loc);
-        t0[center] = 1.0;                
+    #ifdef SPARCX_ACCEL
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ == 0)
+	{
+		 ACCEL_SQ_LanczosAlgorithm_gauss(pSPARC, DMnx, DMny, DMnz, &lambda_min, &lambda_max);
+	}
+	else
+	#endif // SPARCX_ACCEL
+	{
+    	t0 = (double *) malloc(sizeof(double) * pSQ->Nd_loc);
+    	int center = nloc[0] + nloc[1]*Nx_loc + nloc[2]*Nx_loc*Ny_loc;    
+    	for (nd = 0; nd < DMnd; nd ++) {
+        	// initialize t0 as identity vector
+        	memset(t0, 0, sizeof(double)*pSQ->Nd_loc);
+        	t0[center] = 1.0;                
 
-        LanczosAlgorithm_gauss(pSPARC, t0, &lambda_min, &lambda_max, nd);
-        pSQ->mineig[nd]  = lambda_min;
-        pSQ->maxeig[nd]  = lambda_max;
-    }
+        	LanczosAlgorithm_gauss(pSPARC, t0, &lambda_min, &lambda_max, nd);
+        	pSQ->mineig[nd]  = lambda_min;
+        	pSQ->maxeig[nd]  = lambda_max;
+    	}
+		free(t0);
+	}
 
     // This barrier fixed the severe slowdown of MPI communication on hive
     MPI_Barrier(pSQ->dmcomm_SQ);    
@@ -155,8 +173,7 @@ void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount) {
     // Transfer rho into phi domain
     TransferDensity_sq2phi(pSPARC, rho, pSPARC->electronDens);
 
-    free(rho);
-    free(t0);
+    free(rho);    
 }
 
 

@@ -223,6 +223,15 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     if (rank == 0) printf("\nrank = %d, Copying data from SPARC_Input into SPARC & set up subcomm took %.3f ms\n",rank,(t2-t1)*1000);
 #endif
 
+#ifdef SPARCX_ACCEL // Activating flag for using hardware acceleration at compile time.
+    pSPARC->useACCEL = 1;
+    if (rank == 0) 
+    {	
+    	 char *hwaccel[2] = { "DISABLED", "ENABLED" };
+       printf ("[INFO] Hardware acceleration is %s\n", hwaccel[pSPARC->useACCEL]);
+    }
+#endif // ACCEL
+
     // set up sub-communicators
     if (pSPARC->SQFlag == 1) {
         Setup_Comms_SQ(pSPARC);
@@ -239,22 +248,6 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
             pSPARC->useLAPACK = 1;
         }
         #endif
-
-        // SPARCX_ACCEL_NOTE Need to add this. Make sure it is always within "#ifdef USE_DP_SUBEIG" branch
-        // --- BEGIN. Alfredo Metere
-        #ifdef ACCEL // Activating flag for using hardware acceleration at compile time.
-        pSPARC->useACCEL = 1;
-    //	#else
-    //	pSPARC->useACCEL = 0;
-        
-
-        if (rank == 0) 
-        {	
-            char *hwaccel[2] = { "DISABLED", "ENABLED" };
-            printf ("[INFO] Hardware acceleration is %s\n", hwaccel[pSPARC->useACCEL]);
-        }
-        #endif // ACCEL
-        // --- END. Alfredo Metere
 
         pSPARC->DP_CheFSI     = NULL;
         pSPARC->DP_CheFSI_kpt = NULL;
@@ -3180,7 +3173,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Sep 05, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Sep 08, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

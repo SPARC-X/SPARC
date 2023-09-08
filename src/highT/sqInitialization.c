@@ -124,4 +124,5 @@ void init_SQ(SPARC_OBJ *pSPARC) {
             pSQ->DMVertices_PR[3], pSQ->DMVertices_PR[4], pSQ->DMVertices_PR[5],
             pSQ->nloc[0], pSQ->nloc[1], pSQ->nloc[2]);
 #endif
+    pSQ->forceFlag = 0;
 }

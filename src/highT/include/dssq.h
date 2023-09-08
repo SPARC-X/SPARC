@@ -92,6 +92,7 @@ typedef struct _SQ_OBJ
     double **gwt;
     double *Veff_PR;                // Veff operator within PR (process+Rcut) domain
     double *x_ex;
+    int forceFlag;
 } SQ_OBJ;
 
 
