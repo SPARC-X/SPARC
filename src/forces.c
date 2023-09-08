@@ -715,6 +715,15 @@ void Calculate_forces_xc_linear(SPARC_OBJ *pSPARC, double *forces_xc) {
 void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
 {
     if (pSPARC->SQFlag == 1) {
+    #ifdef SPARCX_ACCEL
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ == 0)
+        {
+            pSPARC->pSQ->forceFlag = 1;
+            double lambda_min, lambda_max;
+            ACCEL_SQ_LanczosAlgorithm_gauss(pSPARC, pSPARC->pSQ->DMnx_SQ, pSPARC->pSQ->DMny_SQ, pSPARC->pSQ->DMnz_SQ, &lambda_min, &lambda_max);
+            pSPARC->pSQ->forceFlag = 0;
+        } else
+    #endif
         Calculate_nonlocal_forces_SQ(pSPARC);
     } else if (pSPARC->isGammaPoint) {
     #ifdef SPARCX_ACCEL
