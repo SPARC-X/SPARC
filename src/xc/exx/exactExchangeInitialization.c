@@ -99,9 +99,6 @@ void init_exx(SPARC_OBJ *pSPARC) {
 
     // initialize Eexx
     pSPARC->Eexx = 0;
-
-    // initialize Nstates_occ_list
-    pSPARC->Nstates_occ_list = (int *) malloc(sizeof(int) * pSPARC->Nspin_spincomm);
 }
 
 

@@ -47,7 +47,6 @@
 #define N_MEMBR 164
 
 
-
 /**
  * @brief   Prints usage of SPARC through command line.
  */
@@ -533,9 +532,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->latvec_scale_y = -1.0;
     pSPARC_Input->latvec_scale_z = -1.0;
     pSPARC_Input->BC = -1;                    // default BC will be set up after reading input
-	pSPARC_Input->BCx = -1;
-	pSPARC_Input->BCy = -1;
-	pSPARC_Input->BCz = -1;
+    pSPARC_Input->BCx = -1;
+    pSPARC_Input->BCy = -1;
+    pSPARC_Input->BCz = -1;
     // pSPARC_Input->Beta = 1000;                // electronic smearing (1/(k_B*T)) [1/Ha]
     // pSPARC_Input->elec_T = 315.7751307269723; // default electronic temperature in Kelvin
     pSPARC_Input->Beta = -1.0;                // electronic smearing (1/(k_B*T)) [1/Ha], will be specified later
@@ -550,7 +549,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->ChebDegree = -1;            // default chebyshev polynomial degree (will be automatically found based on spectral width)
     pSPARC_Input->CheFSI_Optmz = 0;           // default is off
     pSPARC_Input->chefsibound_flag = 0;       // default is to find bound using Lanczos on H in the first SCF of each MD/Relax only
-    pSPARC_Input->rhoTrigger = -1;             // default step to start updating electron density, later will be subtracted by 1
+    pSPARC_Input->rhoTrigger = -1;            // default step to start updating electron density, later will be subtracted by 1
     pSPARC_Input->Nchefsi = 1;                // default to do only 1 ChefSi each scf 
 
     /* default smearing */
@@ -682,7 +681,7 @@ void bcast_SPARC_Atom(SPARC_OBJ *pSPARC) {
     pspxcv = (int *)malloc( Ntypes * sizeof(int) );
     pspsocv = (int *)malloc( Ntypes * sizeof(int) );
     ppl_sdispl = (int *)malloc( (Ntypes+1) * sizeof(int) );
-    tempbuff = (int *)malloc( (5*Ntypes+3) * sizeof(int) );
+    tempbuff = (int *)malloc( (5*Ntypes+2) * sizeof(int) );
     assert(lmaxv != NULL && sizev != NULL && is_r_uniformv != NULL 
         && pspxcv!= NULL && pspsocv!= NULL && ppl_sdispl != NULL 
         && tempbuff != NULL);
@@ -2226,7 +2225,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
 
-    #if !defined(USE_MKL) && !defined(USE_FFTW)
+#if !defined(USE_MKL) && !defined(USE_FFTW)
     if (pSPARC->ixc[3] != 0){
         if (rank == 0)
             printf(RED "ERROR: To use vdW-DF, please turn on MKL or FFTW in makefile!\n"
@@ -2238,7 +2237,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             printf(RED "ERROR: To use hybrid functionals like PBE0 or HF, please turn on MKL or FFTW in makefile!\n" RESET);
         exit(EXIT_FAILURE); 
     }
-    #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
+#endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
 
     if (pSPARC->ixc[2]) {
         if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->SQFlag) {
@@ -2326,12 +2325,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->EXXMem_batch = 0;
         pSPARC->EXXACEVal_state = 0;
     }
-
-    // constraints on SOC 
+    
     if (pSPARC->SOC_Flag == 1) {
-        if (pSPARC->usefock || pSPARC->ixc[2] || pSPARC->SQFlag) {
+        if (pSPARC->SQFlag || pSPARC->usefock || pSPARC->ixc[2]) {
             if (rank == 0) 
-                printf(RED "ERROR: Hybrid functional, SCAN and SQ are not supported in this version of spin-orbit coupling implementation.\n" RESET);
+                printf(RED "ERROR: SQ, Hybrid functional, SCAN and SQ are not supported in this version of SOC implementation.\n" RESET);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (pSPARC->spin_typ == 2) {
+        if (pSPARC->SQFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->CyclixFlag) {
+            if (rank == 0) 
+                printf(RED "ERROR: SQ, Hybrid functional, SCAN and SQ are not supported in this version of non-collinear implementation.\n" RESET);
             exit(EXIT_FAILURE);
         }
     }
@@ -2356,7 +2362,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: SQ method only supports orthogonal systems in this version.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        if (pSPARC->isGammaPoint != 1 || pSPARC->spin_typ == 1) {
+        if (pSPARC->isGammaPoint != 1 || pSPARC->spin_typ != 0) {
             if (rank == 0)
                 printf(RED "ERROR: Polarized calculation and Kpoint options are not supported in this version of SQ implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -2385,19 +2391,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
         
         if (pSPARC->PrintEigenFlag > 0) {
-            if (!rank) 
+            if (!rank)
                 printf(RED "ERROR: PRINT_EIGEN is not valid in SQ method.\n" RESET);
             exit(EXIT_FAILURE);
         }
         pSPARC->SQ_correction = 0;          // The correction term in energy and forces hasn't been implemented in this version.
-    }
-
-    if (pSPARC->spin_typ == 2) {
-        if (pSPARC->SQFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->CyclixFlag) {
-            if (!rank) 
-                printf(RED "ERROR: SQ, Hybrid functional, SCAN and Cyclix are not supported in this version of non-collinear implementation." RESET);
-            exit(EXIT_FAILURE);
-        }
     }
 
     if (pSPARC->PrintPsiFlag[0] == 1 && pSPARC->PrintPsiFlag[1] < 0) {
@@ -2678,12 +2676,12 @@ void Calculate_kpoints(SPARC_OBJ *pSPARC) {
             pSPARC->Kz_hf = pSPARC->Kz / pSPARC->EXXDownsampling[2];
             pSPARC->Nkpts_hf *= (pSPARC->Kz / pSPARC->EXXDownsampling[2]);
         }
-        pSPARC->k1_hf = (double *) calloc(sizeof(double), pSPARC->Nkpts_hf);
-        pSPARC->k2_hf = (double *) calloc(sizeof(double), pSPARC->Nkpts_hf);
-        pSPARC->k3_hf = (double *) calloc(sizeof(double), pSPARC->Nkpts_hf);
-        pSPARC->kpthf_ind = (int *) calloc(sizeof(int), pSPARC->Nkpts_hf);
-        pSPARC->kpthf_ind_red = (int *) calloc(sizeof(int), pSPARC->Nkpts_hf);
-        pSPARC->kpthf_pn  = (int *) calloc(sizeof(int), pSPARC->Nkpts_hf);
+        pSPARC->k1_hf = (double *) calloc(pSPARC->Nkpts_hf, sizeof(double));
+        pSPARC->k2_hf = (double *) calloc(pSPARC->Nkpts_hf, sizeof(double));
+        pSPARC->k3_hf = (double *) calloc(pSPARC->Nkpts_hf, sizeof(double));
+        pSPARC->kpthf_ind = (int *) calloc(pSPARC->Nkpts_hf, sizeof(int));
+        pSPARC->kpthf_ind_red = (int *) calloc(pSPARC->Nkpts_hf, sizeof(int));
+        pSPARC->kpthf_pn  = (int *) calloc(pSPARC->Nkpts_hf, sizeof(int));
         pSPARC->kptWts_hf = 1.0 / pSPARC->Nkpts_hf;
     }
 
@@ -3173,7 +3171,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Sep 08, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Sept 20, 2023)                     *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3182,17 +3180,23 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"***************************************************************************\n");
     if (pSPARC->Flag_latvec_scale == 0) {
         fprintf(output_fp,"CELL: %.15g %.15g %.15g \n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
+        if (pSPARC->cell_typ <= 20) {
+            fprintf(output_fp,"LATVEC:\n");
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0],pSPARC->LatUVec[1],pSPARC->LatUVec[2]);
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3],pSPARC->LatUVec[4],pSPARC->LatUVec[5]);
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6],pSPARC->LatUVec[7],pSPARC->LatUVec[8]);
+        }
     } else {
         fprintf(output_fp,"LATVEC_SCALE: %.15g %.15g %.15g \n",pSPARC->latvec_scale_x,pSPARC->latvec_scale_y,pSPARC->latvec_scale_z);
+        if (pSPARC->cell_typ <= 20) {
+            fprintf(output_fp,"LATVEC:\n");
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
+            fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
+        }
     }
-    if (pSPARC->cell_typ <= 20) {
-        fprintf(output_fp,"LATVEC:\n");
-        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
-        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
-        fprintf(output_fp,"%.15g %.15g %.15g \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
-    } else {
+    if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30)
         fprintf(output_fp,"TWIST_ANGLE: %f \n",pSPARC->twist);
-    }
     fprintf(output_fp,"FD_GRID: %d %d %d\n",pSPARC->numIntervals_x,pSPARC->numIntervals_y,pSPARC->numIntervals_z);
     fprintf(output_fp,"FD_ORDER: %d\n",pSPARC->order);
     fprintf(output_fp,"BC:");
@@ -3235,7 +3239,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         } else {
             fprintf(output_fp,"SQ_GAUSS_MEM: LOW\n");
         }  
-        fprintf(output_fp,"SQ_TOL_OCC: %.2E\n", pSPARC->SQ_tol_occ);    
+        fprintf(output_fp,"SQ_TOL_OCC: %.2E\n", pSPARC->SQ_tol_occ);
     } else {
         fprintf(output_fp,"NSTATES: %d\n",pSPARC->Nstates);
         // this should depend on temperature and preconditoner used
@@ -3360,7 +3364,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     } else if (pSPARC->MixingPrecond == 3) {
         fprintf(output_fp,"MIXING_PRECOND: truncated_kerker\n");
     }
-    
+
     if (pSPARC->spin_typ) {
         if (pSPARC->MixingPrecondMag == 0) {
             fprintf(output_fp,"MIXING_PRECOND_MAG: none\n");
@@ -3503,11 +3507,13 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[0]*pSPARC->range_x,pSPARC->LatUVec[1]*pSPARC->range_x,pSPARC->LatUVec[2]*pSPARC->range_x);
         fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[3]*pSPARC->range_y,pSPARC->LatUVec[4]*pSPARC->range_y,pSPARC->LatUVec[5]*pSPARC->range_y);
         fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatUVec[6]*pSPARC->range_z,pSPARC->LatUVec[7]*pSPARC->range_z,pSPARC->LatUVec[8]*pSPARC->range_z);
-        fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet);
-        fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet), 
-                                                    pSPARC->TotalMass / (pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet) * CONST_AMU_BOHR3_GCC);
+        double vol = pSPARC->range_x * pSPARC->range_y * pSPARC->range_z * pSPARC->Jacbdet;
+        fprintf(output_fp,"Volume: %-.10E (Bohr^3)\n", vol);
+        fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / vol, pSPARC->TotalMass / vol * CONST_AMU_BOHR3_GCC);
     } else {
-        fprintf(output_fp,"Volume :%18.10E (Bohr^3)\n", pSPARC->range_x * ((pSPARC->xin + pSPARC->xout)/2.0) * pSPARC->range_y * pSPARC->range_z);
+        double vol = pSPARC->range_x * ((pSPARC->xin + pSPARC->xout)/2.0) * pSPARC->range_y * pSPARC->range_z;
+        fprintf(output_fp,"Volume :%18.10E (Bohr^3)\n", vol);
+        fprintf(output_fp,"Density: %-.10E (amu/Bohr^3), %-.10E (g/cc)\n", pSPARC->TotalMass / vol, pSPARC->TotalMass / vol * CONST_AMU_BOHR3_GCC);
     }
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                           Parallelization                                 \n");

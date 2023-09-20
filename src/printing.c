@@ -42,12 +42,10 @@ void printElecDens(SPARC_OBJ *pSPARC) {
     int Nd = pSPARC->Nd;
     DMnd = pSPARC->Nd_d;
     
-    double *rho_at, *rho, *b_ref, *b;
-    rho_at = NULL;
-    rho = NULL;
-    b_ref = NULL;
-    b = NULL;
-    int n_rho = pSPARC->Nspdentd;
+    double *rho_at, *rho, *mag, *mag_at, *b_ref, *b;
+    rho_at = rho = mag = mag_at = b_ref = b = NULL;
+    // TODO: add printing mag and mag_at etc as followed
+    
     if (nproc_dmcomm_phi > 1) { // if there's more than one process, need to collect rho first
         // use DD2DD to collect distributed data
         int gridsizes[3], sdims[3], rdims[3], rDMVert[6];
@@ -75,26 +73,19 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         Set_D2D_Target(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, rDMVert, pSPARC->dmcomm_phi, 
                        sdims, recv_comm, rdims, pSPARC->dmcomm_phi);
         if (rank_dmcomm_phi == 0) {
-            rho_at = (double*)malloc(pSPARC->Nd * n_rho * sizeof(double));
-            rho    = (double*)malloc(pSPARC->Nd * n_rho * sizeof(double));
+            rho_at = (double*)malloc(pSPARC->Nd * sizeof(double));
+            rho    = (double*)malloc(pSPARC->Nd * pSPARC->Nspdentd * sizeof(double));
             b_ref  = (double*)malloc(pSPARC->Nd * sizeof(double));
             b      = (double*)malloc(pSPARC->Nd * sizeof(double));
         }
         // send rho_at, rho and b_ref
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at, rDMVert, 
             rho_at, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
-        
-        if (n_rho > 1) { // send rho_at_up, rho_at_down
-            D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at+DMnd, rDMVert, 
-                rho_at+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
-            D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens_at+2*DMnd, rDMVert, 
-                rho_at+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
-        }
 
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens, rDMVert, 
             rho, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         
-        if (n_rho > 1) { // send rho_up, rho_down
+        if (pSPARC->Nspdentd > 1) { // send rho_up, rho_down
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+DMnd, rDMVert, 
                 rho+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+2*DMnd, rDMVert, 
@@ -119,7 +110,7 @@ void printElecDens(SPARC_OBJ *pSPARC) {
     }
     
     if (rank_dmcomm_phi == 0) {
-        if (n_rho == 1) {
+        if (pSPARC->Nspdentd == 1) {
             // printing total electron density in cube format
             printDens_cube(pSPARC, rho, pSPARC->DensTCubFilename, "Electron density");
         } else {
@@ -390,11 +381,13 @@ void printEigen(SPARC_OBJ *pSPARC) {
                         fprintf(output_fp,
                                 "\n"
                                 "kred #%d = (%f,%f,%f)\n"
+                                "weight = %f\n"
                                 "n        eigval                 occ\n",
                                 kred_index,
                                 kred_i[kpt_displs[Kcomm_indx]+3*k], 
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+1], 
-                                kred_i[kpt_displs[Kcomm_indx]+3*k+2]);
+                                kred_i[kpt_displs[Kcomm_indx]+3*k+2],
+                                (pSPARC->kptWts[kred_index-1]+0.0)/pSPARC->Nkpts);
                         for (i = 0; i < pSPARC->Nstates; i++) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f\n", 
                                 i+1,
@@ -411,12 +404,14 @@ void printEigen(SPARC_OBJ *pSPARC) {
                         fprintf(output_fp,
                                 "\n"
                                 "kred #%d = (%f,%f,%f)\n"
+                                "weight = %f\n"
                                 "                       Spin-up                                    Spin-down\n"
                                 "n        eigval                 occ                 eigval                 occ\n",
                                 kred_index,
                                 kred_i[kpt_displs[Kcomm_indx]+3*k], 
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+1], 
-                                kred_i[kpt_displs[Kcomm_indx]+3*k+2]);
+                                kred_i[kpt_displs[Kcomm_indx]+3*k+2],
+                                (pSPARC->kptWts[kred_index-1]+0.0)/pSPARC->Nkpts);
                         for (i = 0; i < pSPARC->Nstates; i++) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f    %20.12E %18.12f\n", 
                                 i+1,

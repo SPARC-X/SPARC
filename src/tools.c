@@ -833,7 +833,6 @@ void VectorShift(double *Vec, const int len, const double c, MPI_Comm comm)
 }
 
 
-
 /**
  * @brief   Scale a vector, x = x * c.
  */

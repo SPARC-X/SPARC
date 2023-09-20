@@ -50,7 +50,6 @@ void find_element(char element[8], char *atom_type)
         memcpy(element, str, pch-str);
         element[pch-str] = '\0';
     } else {
-        // strncpy( element, str, min(sizeof(element)+1,strlen(str)) );
         strncpy( element, str, 8 );
     }
 }
@@ -618,7 +617,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"TARGET_PRESSURE:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->prtarget);
             fscanf(input_fp, "%*[^\n]\n");
-	    } else if (strcmpi(str,"NPT_NP_QMASS:") == 0) {    
+        } else if (strcmpi(str,"NPT_NP_QMASS:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NP_qmass);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"NPT_NP_BMASS:") == 0) {    

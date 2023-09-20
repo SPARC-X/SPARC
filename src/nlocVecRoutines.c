@@ -282,62 +282,20 @@ void GetInfluencingAtoms_nloc(SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ **Atom_
                         // first allocate memory for the rectangular rc-region, resize later to the spherical rc-region
                         Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc] = (int *)malloc(sizeof(int) * ndc);
                         count = 0;
-                        if(pSPARC->cell_typ == 0) {
-                            for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
-                                k_DM = k - DMVertices[4];
-                                z2 = k * pSPARC->delta_z - z0_i;
-                                z2 *= z2;
-                                for (j = Atom_Influence_nloc_temp.ys[count_overlap_nloc]; j <= Atom_Influence_nloc_temp.ye[count_overlap_nloc]; j++) {
-                                    j_DM = j - DMVertices[2];
-                                    y2 = j * pSPARC->delta_y - y0_i;
-                                    y2 *= y2;
-                                    for (i = Atom_Influence_nloc_temp.xs[count_overlap_nloc]; i <= Atom_Influence_nloc_temp.xe[count_overlap_nloc]; i++) {
-                                        i_DM = i - DMVertices[0];
-                                        x2 = i * pSPARC->delta_x - x0_i;
-                                        x2 *= x2;
-                                        r2 = x2 + y2 + z2;
-                                        if (r2 <= rc2) {
-                                            Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc][count] = k_DM * (DMnx * DMny) + j_DM * DMnx + i_DM;
-                                            count++;
-                                        }
-                                    }
-                                }
-                            }
-                        } else if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20) {
-                            for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
-                                k_DM = k - DMVertices[4];
-                                z = k * pSPARC->delta_z - z0_i;
-                                for (j = Atom_Influence_nloc_temp.ys[count_overlap_nloc]; j <= Atom_Influence_nloc_temp.ye[count_overlap_nloc]; j++) {
-                                    j_DM = j - DMVertices[2];
-                                    y = j * pSPARC->delta_y - y0_i;
-                                    for (i = Atom_Influence_nloc_temp.xs[count_overlap_nloc]; i <= Atom_Influence_nloc_temp.xe[count_overlap_nloc]; i++) {
-                                        i_DM = i - DMVertices[0];
-                                        x = i * pSPARC->delta_x - x0_i;
-                                        r2 = pSPARC->metricT[0] * (x*x) + pSPARC->metricT[1] * (x*y) + pSPARC->metricT[2] * (x*z) 
-                                           + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z);
-                                        if (r2 <= rc2) {
-                                            Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc][count] = k_DM * (DMnx * DMny) + j_DM * DMnx + i_DM;
-                                            count++;
-                                        }
-                                    }
-                                }
-                            } 
-                        } else if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30) {
-                            for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
-                                k_DM = k - DMVertices[4];
-                                z = k * pSPARC->delta_z;
-                                for (j = Atom_Influence_nloc_temp.ys[count_overlap_nloc]; j <= Atom_Influence_nloc_temp.ye[count_overlap_nloc]; j++) {
-                                    j_DM = j - DMVertices[2];
-                                    y = j * pSPARC->delta_y;
-                                    for (i = Atom_Influence_nloc_temp.xs[count_overlap_nloc]; i <= Atom_Influence_nloc_temp.xe[count_overlap_nloc]; i++) {
-                                        i_DM = i - DMVertices[0];
-                                        x = pSPARC->xin + i * pSPARC->delta_x;
-                                        CalculateDistance(pSPARC, x, y, z, x0_i, y0_i, z0_i, &r2);
-                                        r2 *= r2;
-                                        if (r2 <= rc2) {
-                                            Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc][count] = k_DM * (DMnx * DMny) + j_DM * DMnx + i_DM;
-                                            count++;
-                                        }
+                        for (k = Atom_Influence_nloc_temp.zs[count_overlap_nloc]; k <= Atom_Influence_nloc_temp.ze[count_overlap_nloc]; k++) {
+                            k_DM = k - DMVertices[4];
+                            z = k * pSPARC->delta_z;
+                            for (j = Atom_Influence_nloc_temp.ys[count_overlap_nloc]; j <= Atom_Influence_nloc_temp.ye[count_overlap_nloc]; j++) {
+                                j_DM = j - DMVertices[2];
+                                y = j * pSPARC->delta_y;
+                                for (i = Atom_Influence_nloc_temp.xs[count_overlap_nloc]; i <= Atom_Influence_nloc_temp.xe[count_overlap_nloc]; i++) {
+                                    i_DM = i - DMVertices[0];
+                                    x = pSPARC->xin + i * pSPARC->delta_x;
+                                    CalculateDistance(pSPARC, x, y, z, x0_i, y0_i, z0_i, &r2);
+                                    r2 *= r2;
+                                    if (r2 <= rc2) {
+                                        Atom_Influence_nloc_temp.grid_pos[count_overlap_nloc][count] = k_DM * (DMnx * DMny) + j_DM * DMnx + i_DM;
+                                        count++;
                                     }
                                 }
                             }
@@ -460,8 +418,7 @@ void CalculateNonlocalProjectors(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj,
 
     (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
     double *Intgwt = NULL;
-    double y0, z0, xi, yi, zi;
-    double ty, tz;
+    double y0, z0, xi, yi, zi, ty, tz;
     double xin = pSPARC->xin + DMVertices[0] * pSPARC->delta_x;
     if (pSPARC->CyclixFlag) {
         if(comm == pSPARC->kptcomm_topo){

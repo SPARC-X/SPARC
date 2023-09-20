@@ -47,7 +47,7 @@ void Calculate_PseudochargeCutoff(SPARC_OBJ *pSPARC) {
 #define V_temp(i,j,k) V_temp[(k)*(xlen_ex)*(ylen_ex)+(j)*(xlen_ex)+(i)]
 // TODO: rb_max depends on finite difference order as well, improve this function
 #define RB_MAX(h) (h) < 1.5 ? (h)*10+10 : 20*(h)-9.5
-#define RB_Y(y,L,typ) (typ) < 20 ? (y) : acos(1 - (y)*(y)/(2*(L)*(L))) + pSPARC->twist*y
+#define RB_Y(y,L,typ) (typ) < 20 ? (y) : asin(y/L) + 0.5*pSPARC->twist*y //acos(1 - (y)*(y)/(2*(L)*(L))) + pSPARC->twist*y
 //#define RB_MAX(h) (h) < 1.5 ? (h)*30+5.5 : 40*(h)-9.5 
     double Rbmax_x, Rbmax_y, Rbmax_z;
     int rank, nx, ny, nz, nxp, nyp, nzp, FDn, rlen_ex, rlen, i, j, k, ityp, xlen, ylen, zlen, xlen_ex, ylen_ex, zlen_ex;
@@ -769,7 +769,7 @@ void GetInfluencingAtoms(SPARC_OBJ *pSPARC) {
  * @brief   Calculate pseudocharge density for given atom positions
  */
 void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
-#define electronDens_at(s,i,j,k) electronDens_at[s+(k)*DMnx*DMny+(j)*DMnx+(i)]
+#define electronDens_at(i,j,k) electronDens_at[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define electronDens_core(i,j,k) electronDens_core[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define psdChrgDens(i,j,k) psdChrgDens[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define psdChrgDens_ref(i,j,k) psdChrgDens_ref[(k)*DMnx*DMny+(j)*DMnx+(i)]
@@ -839,7 +839,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     DMnd = pSPARC->Nd_d;
     
     // initialize to zero at the beginning of each relax/MD step
-    memset(pSPARC->electronDens_at, 0, sizeof(double)*DMnd*pSPARC->Nspdentd);
+    memset(pSPARC->electronDens_at, 0, sizeof(double)*DMnd);
     memset(pSPARC->electronDens_core, 0, sizeof(double)*DMnd);
     memset(pSPARC->psdChrgDens, 0, sizeof(double)*DMnd);
     memset(pSPARC->psdChrgDens_ref, 0, sizeof(double)*DMnd);
@@ -848,13 +848,13 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     double *magx, *magy, *magz;
     magx = magy = magz = NULL;
     if (pSPARC->spin_typ == 1) {
-        magz = pSPARC->mag;
-        memset(pSPARC->mag, 0, sizeof(double)*DMnd*pSPARC->Nmag);
+        memset(pSPARC->mag_at, 0, sizeof(double)*DMnd);
+        magz = pSPARC->mag_at;
     } else if (pSPARC->spin_typ == 2) {
-        magx = pSPARC->mag + DMnd;
-        magy = pSPARC->mag + DMnd*2;
-        magz = pSPARC->mag + DMnd*3;
-        memset(pSPARC->mag, 0, sizeof(double)*DMnd*pSPARC->Nmag);
+        memset(pSPARC->mag_at, 0, sizeof(double)*DMnd*3);
+        magx = pSPARC->mag_at;
+        magy = pSPARC->mag_at + DMnd;
+        magz = pSPARC->mag_at + DMnd*2;
     }
 
     // calculate pseudocharge density bJ and (self + correction) energy
@@ -1027,9 +1027,9 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
                         i_global = i + pSPARC->Atom_Influence_local[ityp].xs[iat];
                         i_DM = i_global - pSPARC->DMVertices[0]; // local coord 
                         if (i_DM < 0 || i_DM >= DMnx) continue;
-                        pSPARC->electronDens_at(0,i_DM,j_DM,k_DM) += rho_J(ip,jp,kp);
+                        pSPARC->electronDens_at(i_DM,j_DM,k_DM) += rho_J(ip,jp,kp);
                         pSPARC->electronDens_core(i_DM,j_DM,k_DM) += rho_c_J(ip,jp,kp);
-                        if (pSPARC->spin_typ == 1) {                            
+                        if (pSPARC->spin_typ == 1) {
                             magz(i_DM,j_DM,k_DM) += (pSPARC->Atom_Influence_local[ityp].atom_spin[3*iat+2] / pSPARC->Znucl[ityp]) * rho_J(ip,jp,kp);
                         } else if (pSPARC->spin_typ == 2) {
                             magx(i_DM,j_DM,k_DM) += (pSPARC->Atom_Influence_local[ityp].atom_spin[3*iat] / pSPARC->Znucl[ityp]) * rho_J(ip,jp,kp);
@@ -1093,13 +1093,6 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
         }
     }
 
-    if (pSPARC->spin_typ == 1) {
-        Calculate_diagonal_Density(pSPARC, DMnd, magz, pSPARC->electronDens_at, pSPARC->electronDens_at+DMnd, pSPARC->electronDens_at+2*DMnd);
-    } else if (pSPARC->spin_typ == 2) {
-        Calculate_Magnorm(pSPARC, DMnd, magx, magy, magz, pSPARC->mag);
-        Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens_at, pSPARC->electronDens_at+DMnd, pSPARC->electronDens_at+2*DMnd);
-    }    
-
     /*  Calculate integral of b and Esc  */
     double int_b = 0.0, int_rho = 0.0;
     // find integral of b, Esc locally
@@ -1109,7 +1102,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
             for (j = 0; j < DMny; j++) {
                 for (i = 0; i < DMnx; i++) {
                     int_b += pSPARC->psdChrgDens(i,j,k) * pSPARC->Intgwt_phi[count];
-                    int_rho += pSPARC->electronDens_at(0,i,j,k) * pSPARC->Intgwt_phi[count];
+                    int_rho += pSPARC->electronDens_at(i,j,k) * pSPARC->Intgwt_phi[count];
                     Esc += (pSPARC->psdChrgDens(i,j,k) + pSPARC->psdChrgDens_ref(i,j,k)) * pSPARC->Vc(i,j,k) * pSPARC->Intgwt_phi[count];
                     count++;
                 }
@@ -1121,7 +1114,7 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
             for (j = 0; j < DMny; j++) {
                 for (i = 0; i < DMnx; i++) {
                     int_b += pSPARC->psdChrgDens(i,j,k);
-                    int_rho += pSPARC->electronDens_at(0,i,j,k);
+                    int_rho += pSPARC->electronDens_at(i,j,k);
                     Esc += (pSPARC->psdChrgDens(i,j,k) + pSPARC->psdChrgDens_ref(i,j,k)) * pSPARC->Vc(i,j,k);
                 }
             }
@@ -1153,16 +1146,12 @@ void Generate_PseudoChargeDensity(SPARC_OBJ *pSPARC) {
     if (pSPARC->CyclixFlag) {
         for (int i = 0; i < DMnd; i++) {
             pSPARC->electronDens_at[i] *= scal_fac;
-            for(int n = 1; n < pSPARC->Nspdentd; n++) 
-                pSPARC->electronDens_at[n*DMnd + i] *= scal_fac;
             Nelectron_check += pSPARC->electronDens_at[i] * pSPARC->Intgwt_phi[i];            
         }                    
     } else {
         for (int i = 0; i < DMnd; i++) {
             pSPARC->electronDens_at[i] *= scal_fac;
             Nelectron_check += pSPARC->electronDens_at[i];
-            for(int n = 1; n < pSPARC->Nspdentd; n++) 
-                pSPARC->electronDens_at[n*DMnd + i] *= scal_fac;
         }
         Nelectron_check *= pSPARC->dV;
     }

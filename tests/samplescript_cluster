@@ -7,8 +7,8 @@
 #SBATCH -t1:00:00
 cd $SLURM_SUBMIT_DIR
 
-# module reset
-# module load mkl
+module reset
+module load intel
 echo $PWD 
 
 

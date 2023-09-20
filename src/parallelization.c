@@ -82,7 +82,6 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         pSPARC->npNdz = dims[2];
     }
 
-
     //------------------------------------------------//
     //                 set up spincomm                //
     //------------------------------------------------//
@@ -1025,7 +1024,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         int DMnz = pSPARC->DMVertices[5] - pSPARC->DMVertices[4] + 1;
         int DMnd = DMnx * DMny * DMnz;
         // allocate memory for electron density (sum of atom potential) and charge density
-        pSPARC->electronDens_at = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
+        pSPARC->electronDens_at = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->electronDens_core = (double *)calloc( DMnd, sizeof(double) );
         pSPARC->psdChrgDens = (double *)malloc( DMnd * sizeof(double) );
         pSPARC->psdChrgDens_ref = (double *)malloc( DMnd * sizeof(double) );
@@ -1040,6 +1039,9 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         if (pSPARC->spin_typ > 0) {
             pSPARC->mag = (double *)malloc( DMnd * pSPARC->Nmag * sizeof(double) );
             assert(pSPARC->mag != NULL);
+            int ncol = (pSPARC->spin_typ > 1) + pSPARC->spin_typ; // 0 0 1 3
+            pSPARC->mag_at = (double *)malloc( DMnd * ncol * sizeof(double) );
+            assert(pSPARC->mag_at != NULL);
             pSPARC->AtomMag = (double *)malloc( (pSPARC->spin_typ == 2 ? 3 : 1) * pSPARC->n_atom * sizeof(double) );
             assert(pSPARC->AtomMag != NULL);
         }
@@ -1483,7 +1485,6 @@ void ScaLAPACK_Dims_2D_BLCYC(int nproc, int *gridsizes, int *dims)
 
 
 
-
 /**
  * @brief  For the given parallelization params, find how many count of 
  *         work load each process is assigned, we take the ceiling since
@@ -1755,7 +1756,7 @@ double skbd_weighted_efficiency(
     
     if (isfock) {
         // scale by DMndbyNband coefficients 
-        eff *= scaling_DMndbyNband(Ns, gridsizes, npb, npd);        
+        eff *= scaling_DMndbyNband(Ns, gridsizes, npb, npd);
     }
     return eff;
 }

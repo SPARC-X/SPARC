@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+#include <string.h> 
 /* LAPACK, LAPACKE routines */
 #ifdef USE_MKL
     #include <mkl.h>
@@ -23,6 +24,7 @@
 #include "orbitalElecDensInit.h"
 #include "isddft.h"
 #include "tools.h"
+#include "electronDensity.h"
 
 #define max(x,y) ((x)>(y)?(x):(y))
 
@@ -42,16 +44,23 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
         // for 1st Relax step/ MDstep, set electron density to be sum of atomic potentials
         if( (pSPARC->elecgs_Count - pSPARC->StressCount) == 0){
             // TODO: implement restart based on previous MD electron density. Things to consider:
-            //if (pSPARC->RestartFlag) {
-                // 1) Each processor stores the density in its memory in a separate file at the end of MD (same frequency as the main restart file).
-                // 2) After all processors have printed their density, a counter in main restart file will be updated.
-                // 3) If the counter says "success" then use the density from previous step as guess otherwise start from a guess based on electronDens_at.
-                // 4) Change (pSPARC->elecgs_Count + !pSPARC->RestartFlag) > 3  condition to pSPARC->elecgs_Count >= 3, below
-                //printf("\n\n Implement density extrapolation when restart flag is on!! \n\n");
-            //} else {
-            for (int i = 0; i < DMnd * pSPARC->Nspdentd; i++)
-                pSPARC->electronDens[i] = pSPARC->electronDens_at[i];   
-            //}
+            // 1) Each processor stores the density in its memory in a separate file at the end of MD (same frequency as the main restart file).
+            // 2) After all processors have printed their density, a counter in main restart file will be updated.
+            // 3) If the counter says "success" then use the density from previous step as guess otherwise start from a guess based on electronDens_at.
+            // 4) Change (pSPARC->elecgs_Count + !pSPARC->RestartFlag) > 3  condition to pSPARC->elecgs_Count >= 3, below
+            
+            // copy initial electron density
+            memcpy(pSPARC->electronDens, pSPARC->electronDens_at, DMnd * sizeof(double));
+            // get intial magnetization
+            if (pSPARC->spin_typ == 1) {
+                memcpy(pSPARC->mag, pSPARC->mag_at, DMnd * sizeof(double));
+                Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+            } else if (pSPARC->spin_typ == 2) {
+                memcpy(pSPARC->mag+DMnd, pSPARC->mag_at, DMnd * 3 * sizeof(double));
+                Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd*1, pSPARC->mag+DMnd*2, pSPARC->mag+DMnd*3, pSPARC->mag);
+                Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+            }
+            
             // Storing atom position needed for charge extrapolation in future Relax/MD steps
 			if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1){
             	for(int i = 0; i < 3 * pSPARC->n_atom; i++)
@@ -59,14 +68,10 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
 			}
         } else {
             if( (pSPARC->elecgs_Count - pSPARC->StressCount) >= 3 && (pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1)){
-#ifdef DEBUG
+            #ifdef DEBUG
         		if(!rank)
         		    printf("Using charge extrapolation for density guess\n");
-#endif
-        		// Test if needed by using unscaled atomic charge density 
-                // double scal_fac = (pSPARC->NetCharge - pSPARC->PosCharge) / pSPARC->NegCharge;    
-        		// for(i = 0; i < DMnd; i++)
-            	//	pSPARC->electronDens_at[i] /= scal_fac;
+            #endif
 
                 // Perform charge extrapolation using scaled rho_at     
        			for(int i = 0; i < DMnd; i++){
@@ -93,7 +98,7 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
             for (int i = 0; i < DMnd; i++)
             	pSPARC->electronDens[i] *= vscal;
             
-            if(pSPARC->spin_typ != 0){
+            if (pSPARC->spin_typ != 0) {
                 for(int i = 0; i < DMnd; i++){
                     double rho_mag = pSPARC->mag[i];
                     pSPARC->electronDens[DMnd+i] = (pSPARC->electronDens[i] + rho_mag)/2.0;

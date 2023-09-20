@@ -236,6 +236,13 @@ int Mesh2ChebDegree(double h);
 
 /**
  * @brief   Orthogonalization of dense matrix A by Choleskey factorization
+ * 
+ * @param A            (INPUT)  Distributed dense matrix A.
+ * @param descA        (INPUT)  Descriptor of A.
+ * @param z            (INPUT/OUTPUT) INPUT: z=A'*A, OUTPUT: A'*A=z'*z, z is upper triangular matrix.
+ * @param descz        (INPUT)  Descriptor of Z.
+ * @param m            (INPUT)  Row blocking factor.
+ * @param n            (INPUT)  Column blocking factor.
  */
 void Chol_orth(double *A, const int *descA, double *z, const int *descz, const int *m, const int *n);
 

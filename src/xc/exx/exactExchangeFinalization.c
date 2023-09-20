@@ -14,25 +14,26 @@
 
 #include "exactExchangeFinalization.h"
 
-
-#define max(a,b) ((a)>(b)?(a):(b))
-#define min(a,b) ((a)<(b)?(a):(b))
-
-
-#define TEMP_TOL (1e-12)
-
-
 /**
  * @brief   Memory free of all variables for exact exchange.
  */
 void free_exx(SPARC_OBJ *pSPARC) {
-    int blacs_size, kpt_bridge_size;
-    MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
-    MPI_Comm_size(pSPARC->kpt_bridge_comm, &kpt_bridge_size);
+    free(pSPARC->k1_hf);
+    free(pSPARC->k2_hf);
+    free(pSPARC->k3_hf);
+    free(pSPARC->kpthf_ind);
+    free(pSPARC->kpthf_ind_red);
+    free(pSPARC->kpthfred2kpthf);
+    free(pSPARC->kpthf_pn);
+    free(pSPARC->kpts_hf_red_list);
+    free(pSPARC->k1_shift);
+    free(pSPARC->k2_shift);
+    free(pSPARC->k3_shift);
+    free(pSPARC->Kptshift_map);
     
     free(pSPARC->kpthf_flag_kptcomm);
     free(pSPARC->Nkpts_hf_list);
-    free(pSPARC->kpthf_start_indx_list);
+    free(pSPARC->kpthf_start_indx_list);    
     if (pSPARC->ACEFlag == 0) {
         if (pSPARC->isGammaPoint == 1) {
             free(pSPARC->psi_outer);

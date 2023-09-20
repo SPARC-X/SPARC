@@ -20,7 +20,6 @@
 /**
  * @brief    Calculate atomic forces.
  */
-//void Calculate_Atomicforces(SPARC_OBJ *pSPARC);
 void Calculate_EGS_Forces(SPARC_OBJ *pSPARC);
 
 /**
