@@ -56,7 +56,6 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    	
 #ifdef DEBUG
     double t1, t2;
     t1 = MPI_Wtime();
@@ -292,35 +291,18 @@ double Calculate_XC_pressure_nlcc(SPARC_OBJ *pSPARC) {
             
             // find distance between atom and finite-difference grids
             count = 0; count_interp = 0;
-            if(pSPARC->cell_typ == 0) {    
-                for (k = 0; k < nz2p; k++) {
-                    z = k * pSPARC->delta_z - z0_i_shift; 
-                    for (j = 0; j < ny2p; j++) {
-                        y = j * pSPARC->delta_y - y0_i_shift;
-                        for (i = 0; i < nx2p; i++) {
-                            x = i * pSPARC->delta_x - x0_i_shift;
-                            R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
-                            if (R[count] <= rchrg) count_interp++;
-                            count++;
-                        }
+            for (k = 0; k < nz2p; k++) {
+                z = k * pSPARC->delta_z;
+                for (j = 0; j < ny2p; j++) {
+                    y = j * pSPARC->delta_y;
+                    for (i = 0; i < nx2p; i++) {
+                        x = i * pSPARC->delta_x;
+                        CalculateDistance(pSPARC, x, y, z, x0_i_shift, y0_i_shift, z0_i_shift, R+count);
+                        if (R[count] <= rchrg) count_interp++;
+                        count++;
                     }
                 }
-            } else {
-                for (k = 0; k < nz2p; k++) {
-                    z = k * pSPARC->delta_z - z0_i_shift; 
-                    for (j = 0; j < ny2p; j++) {
-                        y = j * pSPARC->delta_y - y0_i_shift;
-                        for (i = 0; i < nx2p; i++) {
-                            x = i * pSPARC->delta_x - x0_i_shift;
-                            R[count] = sqrt(pSPARC->metricT[0] * (x*x) + pSPARC->metricT[1] * (x*y) + pSPARC->metricT[2] * (x*z) 
-                                          + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z) );
-                            //R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
-                            if (R[count] <= rchrg) count_interp++;
-                            count++;
-                        }
-                    }
-                }
-            } 
+            }
 
             // VJ = (double *)malloc( nd_2ex * sizeof(double) );
             double *rhocJ = (double *)calloc( nd_2ex,sizeof(double) );
@@ -418,7 +400,7 @@ double Calculate_XC_pressure_nlcc(SPARC_OBJ *pSPARC) {
                         if (pSPARC->cell_typ != 0)
                             nonCart2Cart_grad(pSPARC, &drhocJ_x_val, &drhocJ_y_val, &drhocJ_z_val);
                         double Vxc_val;
-                        if (pSPARC->Nspin == 1)
+                        if (pSPARC->spin_typ == 0)
                             Vxc_val = Vxc[ishift_DM];
                         else
                             Vxc_val = 0.5 * (Vxc[ishift_DM] + Vxc[pSPARC->Nd_d+ishift_DM]);
@@ -589,35 +571,18 @@ void Calculate_local_pressure(SPARC_OBJ *pSPARC) {
             
             // find distance between atom and finite-difference grids
             count = 0; count_interp = 0;
-            if(pSPARC->cell_typ == 0) {    
-                for (k = 0; k < nz2p; k++) {
-                    z = k * pSPARC->delta_z - z0_i_shift; 
-                    for (j = 0; j < ny2p; j++) {
-                        y = j * pSPARC->delta_y - y0_i_shift;
-                        for (i = 0; i < nx2p; i++) {
-                            x = i * pSPARC->delta_x - x0_i_shift;
-                            R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
-                            if (R[count] <= rchrg) count_interp++;
-                            count++;
-                        }
+            for (k = 0; k < nz2p; k++) {
+                z = k * pSPARC->delta_z; 
+                for (j = 0; j < ny2p; j++) {
+                    y = j * pSPARC->delta_y;
+                    for (i = 0; i < nx2p; i++) {
+                        x = i * pSPARC->delta_x;
+                        CalculateDistance(pSPARC, x, y, z, x0_i_shift, y0_i_shift, z0_i_shift, R+count);
+                        if (R[count] <= rchrg) count_interp++;
+                        count++;
                     }
                 }
-            } else {
-                for (k = 0; k < nz2p; k++) {
-                    z = k * pSPARC->delta_z - z0_i_shift; 
-                    for (j = 0; j < ny2p; j++) {
-                        y = j * pSPARC->delta_y - y0_i_shift;
-                        for (i = 0; i < nx2p; i++) {
-                            x = i * pSPARC->delta_x - x0_i_shift;
-                            R[count] = sqrt(pSPARC->metricT[0] * (x*x) + pSPARC->metricT[1] * (x*y) + pSPARC->metricT[2] * (x*z) 
-                                          + pSPARC->metricT[4] * (y*y) + pSPARC->metricT[5] * (y*z) + pSPARC->metricT[8] * (z*z) );
-                            //R[count] = sqrt((x*x) + (y*y) + (z*z) );                   
-                            if (R[count] <= rchrg) count_interp++;
-                            count++;
-                        }
-                    }
-                }
-            } 
+            }
             
             VJ_ref = (double *)malloc( nd_2ex * sizeof(double) );
             if (VJ_ref == NULL) {

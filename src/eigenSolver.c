@@ -354,9 +354,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #else
     // allocate memory for block cyclic format of the wavefunction
     if (pSPARC->npband > 1 || pSPARC->Nspinor_eig != pSPARC->Nspinor_spincomm) {
-        pSPARC->Yorb_BLCYC = (double *)malloc(
-            pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-        assert(pSPARC->Yorb_BLCYC != NULL);
+        pSPARC->Xorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        pSPARC->Yorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
+        assert(pSPARC->Xorb_BLCYC != NULL && pSPARC->Yorb_BLCYC != NULL);
+    } else {
+        pSPARC->Xorb_BLCYC = pSPARC->Xorb + spn_i*DMnd;
+        pSPARC->Yorb_BLCYC = pSPARC->Yorb + spn_i*DMnd;
     }
     Project_Hamiltonian(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*DMnd, DMndsp, pSPARC->Xorb + spn_i*DMnd, DMndsp,
                         pSPARC->Hp, pSPARC->Mp, k, spn_i, pSPARC->dmcomm);
@@ -416,14 +419,6 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef USE_DP_SUBEIG
     DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*DMnd);
     #else
-    if (pSPARC->npband > 1 || pSPARC->Nspinor_eig != pSPARC->Nspinor_spincomm) {
-        // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
-        pSPARC->Xorb_BLCYC = (double *)malloc(pSPARC->nr_orb_BLCYC * pSPARC->nc_orb_BLCYC * sizeof(double));
-        assert(pSPARC->Xorb_BLCYC != NULL);
-    } else {
-        pSPARC->Xorb_BLCYC = pSPARC->Xorb + spn_i*DMnd;
-    }
-
     // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
     Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q, 
                         pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*DMnd, k, spn_i);
@@ -1505,9 +1500,7 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi,
         // distribute orbitals into block cyclic format
         pdgemr2d_(&DMndspe, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
                   pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
-    } else {
-        pSPARC->Yorb_BLCYC = Y;
-    }
+    } 
     t2 = MPI_Wtime();  
     #ifdef DEBUG  
     if(!rank && spn_i == 0) 
@@ -1528,7 +1521,7 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi,
                 &ONE, &ONE, pSPARC->desc_Mp_BLCYC);
         } else {
             #ifdef DEBUG    
-            if (!rank && spn_i == 0) printf("rank = %d, STARTING PDGEMM ...\n",rank);
+            if (!rank && spn_i == 0) printf("rank = %d, STARTING PDSYRK ...\n",rank);
             #endif   
             // perform matrix multiplication using ScaLAPACK routines
             pdsyrk_("U", "T", &pSPARC->Nstates, &DMndspe, &alpha, pSPARC->Yorb_BLCYC, &ONE, &ONE,

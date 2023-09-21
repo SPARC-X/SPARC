@@ -1,0 +1,25 @@
+# nprocs: 2
+
+SPIN_TYP: 1
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
+LATVEC_SCALE: 21 18 18
+MESH_SPACING: 0.3
+FD_ORDER: 12
+BC: D D D
+EXCHANGE_CORRELATION: GGA_PBE
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 315.775131
+TOL_SCF: 1e-6
+MIXING_VARIABLE: density
+
+NP_SPIN_PARAL: 1
+MIXING_PRECOND_MAG: kerker
+
+MD_FLAG: 1                    # 1= MD, 0= no MD (default)
+ION_TEMP: 315.775131               # kelvin
+MD_METHOD: NVK_G              # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+MD_TIMESTEP: 0.2            # fs
+MD_NSTEP: 10                  # run MD_NSTEP steps or TWTIME minutes, whichever comes first

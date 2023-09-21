@@ -54,7 +54,8 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     double *totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));     
     collect_all_lambda(pSPARC, totalLambdaArray);
     Efermi = local_Calculate_FermiLevel(pSPARC, x1, x2, totalLambdaArray, tol, max_iter, local_occ_constraint);
-
+    free(totalLambdaArray);
+    
     // find occupations
     for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
         for (k = 0; k < Nk; k++) {
@@ -66,7 +67,6 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
             }
         }
     }
-    free(totalLambdaArray);
     return Efermi;
 }
 

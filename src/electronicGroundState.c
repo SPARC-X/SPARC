@@ -84,13 +84,13 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         else
             SCF_ind = 1;
         if (pSPARC->REFERENCE_CUTOFF > 0.5*nn) {
-            printf("\nWARNING: REFERENCE _CUFOFF (%.6f Bohr) > 1/2 nn (nearest neighbor) distance (%.6f Bohr) in SCF#%d\n",
+            printf("\nWARNING: REFERENCE_CUFOFF (%.6f Bohr) > 1/2 nn (nearest neighbor) distance (%.6f Bohr) in SCF#%d\n",
                         pSPARC->REFERENCE_CUTOFF, 0.5*nn,  SCF_ind);
         }
         if (pSPARC->REFERENCE_CUTOFF < pSPARC->delta_x ||
             pSPARC->REFERENCE_CUTOFF < pSPARC->delta_y ||
             pSPARC->REFERENCE_CUTOFF < pSPARC->delta_z ) {
-            printf("\nWARNING: REFERENCE _CUFOFF (%.6f Bohr) < MESH_SPACING (dx %.6f Bohr, dy %.6f Bohr, dz %.6f Bohr) in SCF#%d\n",
+            printf("\nWARNING: REFERENCE_CUFOFF (%.6f Bohr) < MESH_SPACING (dx %.6f Bohr, dy %.6f Bohr, dz %.6f Bohr) in SCF#%d\n",
                         pSPARC->REFERENCE_CUTOFF, pSPARC->delta_x, pSPARC->delta_y, pSPARC->delta_z, SCF_ind );
         }
     }
@@ -247,8 +247,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         }
     } else if(pSPARC->Calc_pres == 1){
         t1 = MPI_Wtime();
-        Calculate_electronic_pressure(pSPARC);
-        // if (pSPARC->d3Flag == 1) d3_grad_cell_stress(pSPARC); // add the D3 contribution on pressure to total pressure. move this function into Calculate_electronic_pressure?
+        Calculate_electronic_pressure(pSPARC);        
         t2 = MPI_Wtime();
         if(!rank && pSPARC->Verbosity) {
         	output_fp = fopen(pSPARC->OutFilename,"a");
@@ -583,7 +582,7 @@ void scf(SPARC_OBJ *pSPARC)
             Transfer_Veff_loc(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->Veff_loc_dmcomm + i*pSPARC->Nd_d_dmcomm);
     }
     
-	#ifdef DEBUG
+    #ifdef DEBUG
     t2 = MPI_Wtime();
     if (rank == 0) {
         printf("rank = %d, Veff calculation and Bcast (non-blocking) took %.3f ms\n",rank,(t2-t1)*1e3); 
@@ -608,13 +607,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     
     int DMnd = pSPARC->Nd_d;    
     int i, k, SCFcount;
-
-#ifdef DEBUG
-    int spn_i;
-    int Nk = pSPARC->Nkpts_kptcomm;
-    int Ns = pSPARC->Nstates;
-#endif
-
     double error, dEtot, dEband;
     double t_scf_s, t_scf_e, t_cum_scf;
     double Veff_mean[4];
@@ -914,6 +906,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         }
     } else {
         #ifdef DEBUG
+        int spn_i;
+        int Nk = pSPARC->Nkpts_kptcomm;
+        int Ns = pSPARC->Nstates;
         int spin_maxocc = 0, k_maxocc = 0;
         double maxocc = -1.0;
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++){
@@ -928,7 +923,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                     k_maxocc = k;
                 }
 
-                // #ifdef DEBUG
                 if(!rank) {
                     int nocc_print = min(200,pSPARC->Nstates - pSPARC->Nelectron/2 + 10);
                     nocc_print = min(nocc_print, pSPARC->Nstates);
@@ -964,8 +958,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             if (pSPARC->BC != 1) printf("\nk = [%.3f, %.3f, %.3f]\n", k1_red, k2_red, k3_red);
             printf("Occupation of state %d (90%%) = %.15f.\n"
                 "Occupation of state %d (100%%) = %.15f.\n",
-                ind_90percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_90percent,
-                ind_100percent+1, (3.0-pSPARC->Nspin)/pSPARC->Nspinor * g_ind_100percent);
+                ind_90percent+1, pSPARC->occfac * g_ind_90percent,
+                ind_100percent+1, pSPARC->occfac * g_ind_100percent);
         }
         #endif
     }

@@ -220,7 +220,7 @@ typedef struct _SPARC_OBJ{
     int npNdz_phi;      // number of processes for calculating phi in paral. over domain in z-dir 
     int npNdx_kptcomm;  // number of processes in x-dir for creating Cartesian topology in kptcomm 
     int npNdy_kptcomm;  // number of processes in y-dir for creating Cartesian topology in kptcomm 
-    int npNdz_kptcomm;  // number of processes in z-dir for creating Cartesian topology in kptcomm 
+    int npNdz_kptcomm;  // number of processes in z-dir for creating Cartesian topology in kptcomm
     int FixRandSeed;    // flag to fix the random number seeds so that all random numbers generated in parallel 
                         // under MPI are the same as those generated in sequential execution
                         
@@ -258,9 +258,10 @@ typedef struct _SPARC_OBJ{
     int band_end_indx;  // end index of bands assigned to current bandcomm (LOCAL)
     
     /* spin options */
-    int spin_typ;       // flag to choose between spin unpolarized and spin polarized calculation
+    int spin_typ;       // flag to choose 0 - spin unpolarized, 1 - collinear spin, 2 - non-collinear spin
     int Nspin;          // number of spin in a calculation. 1 - spin unpolarized and 2 - spin polarized
     double *mag;        // magnetization
+    double *mag_at;     // initial magnetization
     double netM[4];     // net magnetization
     int spin_start_indx; // start index (global) of spin in the spin communicator
     int spinor_start_indx; // start index (global) of spinor in the spin communicator
@@ -473,7 +474,7 @@ typedef struct _SPARC_OBJ{
     double *occ_sorted;           // occupations corresponding to sorted lambda
     double occfac;                // occupation's scaling factor
     double *lambda;               // eigenvalues of the Hamiltonian
-    double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion    
+    double *lambda_sorted;        // eigenvalues of the Hamiltonian in the sorted fashion
     double *Xorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Yorb;                 // Kohn-Sham orbitals (LOCAL)
     double *Xorb_BLCYC;           // block-cyclically distributed orbitals (LOCAL)
@@ -509,7 +510,7 @@ typedef struct _SPARC_OBJ{
     double eig_paral_orfac; // specifies which eigenvectors should be reorthogonalized when the "expert" parallel
                             // eigensolver p?syevx or p?sygvx is used.
     int eig_paral_maxnp;           // max number of processes for eigenvalue solver
-    int eig_paral_subdims[2];      // dimensions of subgrid of eigensolver    
+    int eig_paral_subdims[2];      // dimensions of subgrid of eigensolver
 
     /* tool variable*/
     MPI_Request req_veff_loc;     // when transmitting Veff_loc, we use nonblocking collectives, 
@@ -871,7 +872,7 @@ typedef struct _SPARC_OBJ{
     double *pois_FFT_const_press;   // Constants for FFT solver in Poisson's equation in press
     int ACEFlag;                    // Flag for ACE operator 
     int Nstates_occ;                // Number of occupied states 
-    int *Nstates_occ_list;          // List of number of occupied states 
+    int Nstates_occ_list[2];        // List of number of occupied states 
     int EXXMem_batch;               // Option for speed or memory efficiency when using ACE operator
     int EXXACEVal_state;            // Number of extra unoccupied states in constructing ACE operator
     int EXXDownsampling[3];         // Downsampling info
@@ -881,11 +882,11 @@ typedef struct _SPARC_OBJ{
     int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
     MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
     // variabels for band parallelization with ACE
-    int desc_M[9];               // descriptor for matirx M in ACE case
-    int desc_Xi[9];              // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
-    int nrows_M;                 // local number of row of M matrix
-    int ncols_M;                 // local number of column of M matrix
-    int Nband_bandcomm_M;        // number of bands of M assigned to current bandcomm (LOCAL)
+    int desc_M[9];                  // descriptor for matirx M in ACE case
+    int desc_Xi[9];                 // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
+    int nrows_M;                    // local number of row of M matrix
+    int ncols_M;                    // local number of column of M matrix
+    int Nband_bandcomm_M;           // number of bands of M assigned to current bandcomm (LOCAL)
 
     /* SQ methods */
     int SQFlag;                     // Flag of SQ method
@@ -1204,7 +1205,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int EXXDiv_Flag;        // Method for integrable singularity 
     double hyb_range_fock;  // hybrid short range for fock operator 
     double hyb_range_pbe;   // hybrid short range for exchange correlation 
-    double exx_frac;                // hybrid mixing coefficient
+    double exx_frac;        // hybrid mixing coefficient
 
     /* SQ methods */
     int SQFlag;             // Flag of SQ method

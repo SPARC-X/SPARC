@@ -169,6 +169,7 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free(pSPARC->electronDens);
         if (pSPARC->spin_typ > 0) {
             free(pSPARC->mag);
+            free(pSPARC->mag_at);
             free(pSPARC->AtomMag);
         }
         free(pSPARC->psdChrgDens);
@@ -181,29 +182,6 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         }    
         free(pSPARC->elecstPotential);
         free(pSPARC->Veff_loc_dmcomm_phi);
-        free(pSPARC->mixing_hist_xk);
-        free(pSPARC->mixing_hist_fk);
-        free(pSPARC->mixing_hist_fkm1);
-        free(pSPARC->mixing_hist_xkm1);
-        free(pSPARC->mixing_hist_Xk);
-        free(pSPARC->mixing_hist_Fk);
-
-        // saving potential history
-        if (pSPARC->MixingVariable == 1) {
-            free(pSPARC->Veff_loc_dmcomm_phi_in);
-        }
-
-        if (pSPARC->MixingVariable == 0 && pSPARC->spin_typ) {
-            free(pSPARC->electronDens_in);
-        }
-
-        // for using QE scf error definition
-        if (pSPARC->scf_err_type == 1) {
-            free(pSPARC->rho_dmcomm_phi_in);
-            free(pSPARC->phi_dmcomm_phi_in);
-        }
-        
-        free(pSPARC->mixing_hist_Pfk);
         
         // free MD and relax stuff
     	if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){
@@ -219,10 +197,37 @@ void Free_basic(SPARC_OBJ *pSPARC) {
 
         if (pSPARC->spin_typ == 2) {
             free(pSPARC->XCPotential_nc);
-            if (pSPARC->MixingVariable == 1) {
+        }
+    }
+
+    // mixing variables
+    if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
+        free(pSPARC->mixing_hist_xk);
+        free(pSPARC->mixing_hist_fk);
+        free(pSPARC->mixing_hist_fkm1);
+        free(pSPARC->mixing_hist_xkm1);
+        free(pSPARC->mixing_hist_Xk);
+        free(pSPARC->mixing_hist_Fk);
+
+        // saving potential history
+        if (pSPARC->MixingVariable == 1) {
+            free(pSPARC->Veff_loc_dmcomm_phi_in);
+            if (pSPARC->spin_typ == 2) {
                 free(pSPARC->Veff_dia_loc_dmcomm_phi);
             }
         }
+
+        if (pSPARC->MixingVariable == 0 && pSPARC->spin_typ) {
+            free(pSPARC->electronDens_in);
+        }
+
+        // for using QE scf error definition
+        if (pSPARC->scf_err_type == 1) {
+            free(pSPARC->rho_dmcomm_phi_in);
+            free(pSPARC->phi_dmcomm_phi_in);
+        }
+        
+        free(pSPARC->mixing_hist_Pfk);
     }
 
     // free preconditioner coeff arrays
@@ -280,18 +285,6 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         free(pSPARC->IP_displ_SOC); 
 
     if (pSPARC->usefock > 0) {
-        free(pSPARC->k1_hf);
-        free(pSPARC->k2_hf);
-        free(pSPARC->k3_hf);
-        free(pSPARC->kpthf_ind);
-        free(pSPARC->kpthf_ind_red);
-        free(pSPARC->kpthfred2kpthf);
-        free(pSPARC->kpthf_pn);
-        free(pSPARC->kpts_hf_red_list);
-        free(pSPARC->k1_shift);
-        free(pSPARC->k2_shift);
-        free(pSPARC->k3_shift);
-        free(pSPARC->Kptshift_map);
         free_exx(pSPARC);
     }
 
@@ -332,7 +325,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->ixc[3] != 0){
         vdWDF_free(pSPARC);
     }
-    if(pSPARC->ixc[2] == 1) {
+    if (pSPARC->ixc[2] == 1) {
         free_MGGA(pSPARC);
     }
     

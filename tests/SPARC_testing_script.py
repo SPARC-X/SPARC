@@ -13,9 +13,9 @@ import math
 
 # Other parameters to run the test (can be changed by the user)
 nprocs_tests = 24  # In default tests are run with 24 processors per node
-nnodes_tests = 4  # In default tests are run with 1 node
-npbs = 1  # By default (number of PBS files the tests are distributed to)
-launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .pbs
+nnodes_tests = 2  # In default tests are run with 1 node
+npbs = 2  # By default (number of script files the tests are distributed to)
+launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .sbatch
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
 MPI_command = "srun"  # MPI command to run the executable on the given cluster
 
@@ -38,7 +38,7 @@ tols = {"F_tol": 1e-5, # Ha/Bohr
 # -----------------   SYSTEMS INFO   ------------------------#
 ################################################################################################################
 SYSTEMS = { "systemname": ['BaTiO3_valgrind'],
-	    "Tags": [['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'memcheck', 'gamma', 'orth', 'smear_gauss', 'SOC', 'cyclix', 'noncollinear']],
+	    "Tags": [['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'memcheck', 'gamma', 'orth', 'smear_gauss']],
 	    "Tols": [[5e-5, 1e-4, 1e-1]], # E_tol(Ha/atom), F_tol, stress_tol(%)
 	    }
 
@@ -132,8 +132,8 @@ SYSTEMS["systemname"].append('LiF_NVKG')
 SYSTEMS["Tags"].append(['bulk','gga','potmix','orth','smear_fd','md_nvkg','gamma'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
-SYSTEMS["systemname"].append('O2spin_spin_paral')
-SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'denmix', 'kerker', 'orth','smear_fd','paral'])
+SYSTEMS["systemname"].append('O2_spin_spinparal_NVKG')
+SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'denmix', 'kerker', 'orth','smear_fd','paral','md_nvkg'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si2_kpt_paral')
@@ -370,15 +370,15 @@ SYSTEMS["Tags"].append(['cyclix','SOC'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe3_noncollinear')
-SYSTEMS["Tags"].append(['molecule', 'gga','noncollinear'])
+SYSTEMS["Tags"].append(['molecule', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('FePt_noncollinear')
-SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear'])
+SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MnAu_noncollinear')
-SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear'])
+SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
@@ -971,6 +971,7 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 				if re.findall(r'Total number of SCF',lines) == ['Total number of SCF']:
 					temp_spin = re.findall(r'\b[+-]?\d+\.\d+E[+-]\d+\b',f_out_content[index-1])
 					magnetization=float(temp_spin[1])
+
 		index=index+1
 	if isMD == None and geopt_typ ==  None:
 		SCF_no = 0
@@ -2698,9 +2699,16 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			
 			if info_run["isspin"] == True:
 				if info_run["isorient"] == False:
+					# print(systems[i])
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
-					errspin = abs(magnetization_run - magnetization_ref)
+					if (type(magnetization_ref) == list):
+						errspin = 0.0;
+						for mm in range(len(magnetization_run)):
+							if (abs(magnetization_run[mm] - magnetization_ref[mm])>errspin):
+								errspin = abs(magnetization_run[mm] - magnetization_ref[mm])
+					else:
+						errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
 					if isabinit == True:
