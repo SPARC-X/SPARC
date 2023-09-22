@@ -42,6 +42,12 @@ double smearing_function(double beta, double lambda, double lambda_f, int type)
  */
 double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol, int max_iter)
 {
+    #ifdef DEBUG
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    double t1, t2;
+    #endif
+
     double Efermi, g_nk;
     int n, Ns, k, Nk, spn_i;
     
@@ -52,10 +58,30 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     // Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint);
     int totalLambdaNumber = pSPARC->Nspin * pSPARC->Nkpts_sym * Ns;
     double *totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));     
+
+    #ifdef DEBUG
+    t1 = MPI_Wtime();
+    #endif
+
     collect_all_lambda(pSPARC, totalLambdaArray);
+
+    #ifdef DEBUG
+    t2 = MPI_Wtime();
+    if (rank == 0)
+        printf("collect_all_lambda took: %.3f ms\n",(t2-t1)*1000);
+    t1 = MPI_Wtime();
+    #endif
+
     Efermi = local_Calculate_FermiLevel(pSPARC, x1, x2, totalLambdaArray, tol, max_iter, local_occ_constraint);
     free(totalLambdaArray);
-    
+
+    #ifdef DEBUG
+    t2 = MPI_Wtime();
+    if (rank == 0)
+        printf("Calculate Efermi locally took: %.3f ms\n",(t2-t1)*1000);
+    t1 = MPI_Wtime();
+    #endif
+
     // find occupations
     for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
         for (k = 0; k < Nk; k++) {
@@ -67,6 +93,13 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
             }
         }
     }
+
+    #ifdef DEBUG
+    t2 = MPI_Wtime();
+    if (rank == 0)
+         printf("Calculate occ from eigvals locally took: %.3f ms\n",(t2-t1)*1000);
+    #endif
+
     return Efermi;
 }
 

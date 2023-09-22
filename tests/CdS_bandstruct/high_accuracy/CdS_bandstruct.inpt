@@ -1,0 +1,58 @@
+# Test: CdS band structure calculation
+LATVEC:   
+5.8859069297953903 0.0 0.0
+0.0 5.8859069297953903 0.0
+0.0 0.0 5.8859069297953903
+LATVEC_SCALE: 1.0 1.0 1.0
+MESH_SPACING: 0.20
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 7 7 7
+EXCHANGE_CORRELATION: GGA_PBE
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 315.775131
+TOL_SCF: 1e-6
+MAXIT_SCF: 50
+PRINT_EIGEN: 1
+PRINT_DENSITY: 1
+MIXING_VARIABLE: density
+MIXING_PRECOND: none
+
+# RHO_TRIGGER: 40
+
+# Band sturcture calculation
+# First do a ground-state calculation with `BAND_STRUCTURE: 0` and `PRINT_DENSITY: 1`,
+# then run a band structure calculation with `BAND_STRUCTURE: 1` and provide the k-path
+# using the `KPT_PATHS` keyword.
+BAND_STRUCTURE: 1
+INPUT_DENS_FILE: ../densfiles/CdS_high_accuracy.indens
+KPT_PER_LINE: 10 # number of k-points on each high-symmetry line
+KPT_PATHS: 9
+0.0 0.0 0.0 
+0.0 0.5 0.5
+
+0.0 0.5 0.5
+0.25 0.5 0.75
+
+0.25 0.5 0.75
+0.375 0.375 0.75
+
+0.375 0.375 0.75
+0.0 0.0 0.0
+
+0.0 0.0 0.0
+0.5 0.5 0.5
+
+0.5 0.5 0.5
+0.25 0.625 0.625
+
+0.25 0.625 0.625
+0.25 0.5 0.75
+
+0.25 0.5 0.75
+0.5 0.5 0.5
+
+0.5 0.5 0.5
+0.375 0.375 0.75
+
+

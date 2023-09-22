@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <mpi.h>
 #include <string.h> 
@@ -25,8 +26,78 @@
 #include "isddft.h"
 #include "tools.h"
 #include "electronDensity.h"
-
+#include "parallelization.h"
+#include "readfiles.h"
 #define max(x,y) ((x)>(y)?(x):(y))
+
+
+/**
+ * @brief Read vector(s) from Cube file(s) and distribute in comm.
+ * 
+ * @param pSPARC 
+ * @param filenames An array of n file names.
+ * @param data_dist The pointer to the final distributed vector.
+ * @param n Number of files (also number of columns of data_dist).
+ * @param DMverts Domain vertices of the local distributed domain.
+ * @param comm Communicator with a Cartesian topology.
+ */
+void read_cube_and_dist_vec(
+    SPARC_OBJ *pSPARC, char filenames[3][L_STRING+L_PSD], double *data_dist, int n,
+    int DMverts[6], MPI_Comm comm)
+{
+    if (comm == MPI_COMM_NULL) return;
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+
+    // initialize D2D for distributing the vectors from root to comm
+    MPI_Comm send_comm;
+    if (rank != 0) {
+        send_comm = MPI_COMM_NULL;
+    } else {
+        int dims[3] = {1,1,1}, periods[3] = {1,1,1};
+        // create a cartesian topology on one process (rank 0)
+        MPI_Cart_create(MPI_COMM_SELF, 3, dims, periods, 0, &send_comm);
+    }
+    int gridsizes[3];
+    gridsizes[0] = pSPARC->Nx;
+    gridsizes[1] = pSPARC->Ny;
+    gridsizes[2] = pSPARC->Nz;
+    int sdims[3], sVert[6], rdims[3], periods[3], coords[3];
+    sdims[0] = sdims[1] = sdims[2] = 1;
+    sVert[0] = 0; sVert[1] = gridsizes[0] - 1;
+    sVert[2] = 0; sVert[3] = gridsizes[1] - 1;
+    sVert[4] = 0; sVert[5] = gridsizes[2] - 1;
+
+    MPI_Cart_get(comm, 3, rdims, periods, coords);
+    D2D_OBJ d2d_sender, d2d_recvr;
+    Set_D2D_Target(&d2d_sender, &d2d_recvr, gridsizes, sVert, DMverts, send_comm, sdims, comm, rdims, comm);
+
+    int DMnx = DMverts[1] - DMverts[0] + 1;
+    int DMny = DMverts[3] - DMverts[2] + 1;
+    int DMnz = DMverts[5] - DMverts[4] + 1;
+    int DMnd = DMnx * DMny * DMnz;
+
+    double *vec_in = NULL;
+    // loop over the n filenames
+    for (int i = 0; i < n; i++) {
+        // let root process read the density from file
+        if (rank == 0) {
+            vec_in = read_vec_cube(pSPARC, filenames[i]);
+        }
+
+        // distribute the density from root to comm
+        D2D(&d2d_sender, &d2d_recvr, gridsizes, sVert, vec_in, DMverts, data_dist+i*DMnd, send_comm, sdims, comm, rdims, comm, sizeof(double));
+
+        if (rank == 0) free(vec_in);
+    }
+
+    Free_D2D_Target(&d2d_sender, &d2d_recvr, send_comm, comm);
+
+    if (rank == 0) {
+        MPI_Comm_free(&send_comm);
+    }
+}
+
 
 
 /**
@@ -41,24 +112,43 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
     
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         int DMnd = pSPARC->Nd_d;
-        // for 1st Relax step/ MDstep, set electron density to be sum of atomic potentials
+        // for 1st Relax step/ MDstep, set initial electron density
         if( (pSPARC->elecgs_Count - pSPARC->StressCount) == 0){
-            // TODO: implement restart based on previous MD electron density. Things to consider:
-            // 1) Each processor stores the density in its memory in a separate file at the end of MD (same frequency as the main restart file).
-            // 2) After all processors have printed their density, a counter in main restart file will be updated.
-            // 3) If the counter says "success" then use the density from previous step as guess otherwise start from a guess based on electronDens_at.
-            // 4) Change (pSPARC->elecgs_Count + !pSPARC->RestartFlag) > 3  condition to pSPARC->elecgs_Count >= 3, below
-            
-            // copy initial electron density
-            memcpy(pSPARC->electronDens, pSPARC->electronDens_at, DMnd * sizeof(double));
-            // get intial magnetization
-            if (pSPARC->spin_typ == 1) {
-                memcpy(pSPARC->mag, pSPARC->mag_at, DMnd * sizeof(double));
-                Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
-            } else if (pSPARC->spin_typ == 2) {
-                memcpy(pSPARC->mag+DMnd, pSPARC->mag_at, DMnd * 3 * sizeof(double));
-                Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd*1, pSPARC->mag+DMnd*2, pSPARC->mag+DMnd*3, pSPARC->mag);
-                Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+            // read initial density from file 
+            if (pSPARC->BandStructFlag == 1) {
+                char inputDensFnames[3][L_STRING+L_PSD];
+                // set up input density filename
+                if (rank == 0) {
+                    char INPUT_DIR[L_PSD];
+                    extract_path_from_file(pSPARC->filename, INPUT_DIR, L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InDensTCubFilename, inputDensFnames[0], L_STRING+L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InDensUCubFilename, inputDensFnames[1], L_STRING+L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InDensDCubFilename, inputDensFnames[2], L_STRING+L_PSD);
+                }
+
+                int nFileToRead = pSPARC->densfilecount;
+                read_cube_and_dist_vec(
+                    pSPARC, inputDensFnames, pSPARC->electronDens, nFileToRead,
+                    pSPARC->DMVertices, pSPARC->dmcomm_phi
+                );
+            } else {
+                // TODO: implement restart based on previous MD electron density. Things to consider:
+                // 1) Each processor stores the density in its memory in a separate file at the end of MD (same frequency as the main restart file).
+                // 2) After all processors have printed their density, a counter in main restart file will be updated.
+                // 3) If the counter says "success" then use the density from previous step as guess otherwise start from a guess based on electronDens_at.
+                // 4) Change (pSPARC->elecgs_Count + !pSPARC->RestartFlag) > 3  condition to pSPARC->elecgs_Count >= 3, below
+                
+                // copy initial electron density
+                memcpy(pSPARC->electronDens, pSPARC->electronDens_at, DMnd * sizeof(double));
+                // get intial magnetization
+                if (pSPARC->spin_typ == 1) {
+                    memcpy(pSPARC->mag, pSPARC->mag_at, DMnd * sizeof(double));
+                    Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                } else if (pSPARC->spin_typ == 2) {
+                    memcpy(pSPARC->mag+DMnd, pSPARC->mag_at, DMnd * 3 * sizeof(double));
+                    Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd*1, pSPARC->mag+DMnd*2, pSPARC->mag+DMnd*3, pSPARC->mag);
+                    Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                }
             }
             
             // Storing atom position needed for charge extrapolation in future Relax/MD steps

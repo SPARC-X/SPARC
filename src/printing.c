@@ -219,7 +219,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
     int *kpt_displs= (int    *)malloc((pSPARC->npkpt+1) * sizeof(int));
 
     char EigenFilename[L_STRING];
-    snprintf(EigenFilename, L_STRING, "%s", pSPARC->EigenFilename);
+    if (rank == 0) snprintf(EigenFilename, L_STRING, "%s", pSPARC->EigenFilename);
     
     FILE *output_fp;
     // first create an empty file
@@ -299,11 +299,19 @@ void printEigen(SPARC_OBJ *pSPARC) {
             double *kpt_sendbuf = (double *)malloc(Nk * 3 * sizeof(double));
             int *kpt_recvcounts = (int *)malloc(pSPARC->npkpt * sizeof(int));
             // int *kpt_displs     = (int *)malloc((pSPARC->npkpt+1) * sizeof(int));
-            for (i = 0; i < Nk; i++) {
-                kpt_sendbuf[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
-                kpt_sendbuf[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
-                kpt_sendbuf[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
-            } 
+            if (pSPARC->BandStructFlag == 1) {
+                for (i = 0; i < Nk; i++) {
+                    kpt_sendbuf[3*i  ] = pSPARC->k1_inpt_kpt[i];
+                    kpt_sendbuf[3*i+1] = pSPARC->k2_inpt_kpt[i];
+                    kpt_sendbuf[3*i+2] = pSPARC->k3_inpt_kpt[i];
+                }
+            } else {
+                for (i = 0; i < Nk; i++) {
+                    kpt_sendbuf[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
+                    kpt_sendbuf[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
+                    kpt_sendbuf[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
+                }
+            }
             kpt_displs[0] = 0; 
             for (i = 0; i < pSPARC->npkpt; i++) {
                 kpt_recvcounts[i]  = Nk_i[i] * 3;
@@ -322,10 +330,18 @@ void printEigen(SPARC_OBJ *pSPARC) {
             // collect all the kpoints assigend to each kptcomm
             double *kpt_sendbuf = (double *)malloc(Nk * 3 * sizeof(double));
             int kpt_recvcounts[1]={0}, i;
-            for (i = 0; i < Nk; i++) {
-                kpt_sendbuf[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
-                kpt_sendbuf[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
-                kpt_sendbuf[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
+            if (pSPARC->BandStructFlag == 1) {
+                for (i = 0; i < Nk; i++){
+                    kpt_sendbuf[3*i  ] = pSPARC->k1_inpt_kpt[i];
+                    kpt_sendbuf[3*i+1] = pSPARC->k2_inpt_kpt[i];
+                    kpt_sendbuf[3*i+2] = pSPARC->k3_inpt_kpt[i];
+                }
+            } else {
+                for (i = 0; i < Nk; i++) {
+                    kpt_sendbuf[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
+                    kpt_sendbuf[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
+                    kpt_sendbuf[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
+                }
             }
             // collect reduced kpoints from all kptcomms
             MPI_Gatherv(kpt_sendbuf, Nk*3, MPI_DOUBLE, 
@@ -351,10 +367,18 @@ void printEigen(SPARC_OBJ *pSPARC) {
         kpt_displs[0] = 0;
         displs_all[0] = 0;
         if (pSPARC->BC != 1) {
-            for (i = 0; i < Nk; i++) {
-                kred_i[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
-                kred_i[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
-                kred_i[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
+            if(pSPARC->BandStructFlag == 1) {
+                for (i = 0; i < Nk; i++) {
+                    kred_i[3*i  ] = pSPARC->k1_inpt_kpt[i];
+                    kred_i[3*i+1] = pSPARC->k2_inpt_kpt[i];
+                    kred_i[3*i+2] = pSPARC->k3_inpt_kpt[i];
+                }
+            } else {
+                for (i = 0; i < Nk; i++) {
+                    kred_i[3*i  ] = pSPARC->k1_loc[i]*pSPARC->range_x/(2.0*M_PI);
+                    kred_i[3*i+1] = pSPARC->k2_loc[i]*pSPARC->range_y/(2.0*M_PI);
+                    kred_i[3*i+2] = pSPARC->k3_loc[i]*pSPARC->range_z/(2.0*M_PI);
+                }
             }
         } else {
             kred_i[0] = kred_i[1] = kred_i[2] = 0.0;
@@ -378,7 +402,17 @@ void printEigen(SPARC_OBJ *pSPARC) {
                     int Nk_Kcomm_indx = Nk_i[Kcomm_indx];
                     for (k = 0; k < Nk_Kcomm_indx; k++) {
                         int kred_index = kpt_displs[Kcomm_indx]/3+k+1;
-                        fprintf(output_fp,
+                        if (pSPARC->BandStructFlag == 1) {
+                            fprintf(output_fp,
+                                    "\n"
+                                    "kred #%d = (%f,%f,%f)\n"
+                                    "n        eigval                 occ\n",
+                                    kred_index,
+                                    pSPARC->k1_inpt_kpt[kred_index-1],
+                                    pSPARC->k2_inpt_kpt[kred_index-1],
+                                    pSPARC->k3_inpt_kpt[kred_index-1]);
+                        } else {
+                            fprintf(output_fp,
                                 "\n"
                                 "kred #%d = (%f,%f,%f)\n"
                                 "weight = %f\n"
@@ -388,6 +422,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+1], 
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+2],
                                 (pSPARC->kptWts[kred_index-1]+0.0)/pSPARC->Nkpts);
+                        }
                         for (i = 0; i < pSPARC->Nstates; i++) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f\n", 
                                 i+1,
@@ -401,7 +436,18 @@ void printEigen(SPARC_OBJ *pSPARC) {
                     int Nk_Kcomm_indx = Nk_i[Kcomm_indx];
                     for (k = 0; k < Nk_Kcomm_indx; k++) {
                         int kred_index = kpt_displs[Kcomm_indx]/3+k+1;
-                        fprintf(output_fp,
+                        if (pSPARC->BandStructFlag == 1) {
+                            fprintf(output_fp,
+                                "\n"
+                                "kred #%d = (%f,%f,%f)\n"
+                                "                       Spin-up                                    Spin-down\n"
+                                "n        eigval                 occ                 eigval                 occ\n",
+                                kred_index,
+                                pSPARC->k1_inpt_kpt[kred_index-1],
+                                pSPARC->k2_inpt_kpt[kred_index-1],
+                                pSPARC->k3_inpt_kpt[kred_index-1]);
+                        } else {
+                            fprintf(output_fp,
                                 "\n"
                                 "kred #%d = (%f,%f,%f)\n"
                                 "weight = %f\n"
@@ -412,6 +458,7 @@ void printEigen(SPARC_OBJ *pSPARC) {
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+1], 
                                 kred_i[kpt_displs[Kcomm_indx]+3*k+2],
                                 (pSPARC->kptWts[kred_index-1]+0.0)/pSPARC->Nkpts);
+                        }
                         for (i = 0; i < pSPARC->Nstates; i++) {
                             fprintf(output_fp, "%-7d%20.12E %18.12f    %20.12E %18.12f\n", 
                                 i+1,

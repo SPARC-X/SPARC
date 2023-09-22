@@ -4,6 +4,17 @@
 -changes
 
 --------------
+Sep 22, 2023
+Name: Qimen Xu, Ziao Tang, Yu Zhang
+Changes: (eigenSolver.c, electronicGroundState.c, initialization.c, occupation.c, orbitalElecDensInit.c, printing.c, readfiles.c, isddft.h, readfiles.h, utils/)
+1. Add band structure calculation feature.
+2. Add `readDens_cube` routine for reading input density file.
+3. Fix memory leak issues:
+(a) when ixc[2] is nonzero, countPotentialCalculate is not initialized,
+(b) EigenFilename is not initialized on processes with rank > 0.
+4. Add a python script in `utils/` for processing `.eigen` files and visualizing the band structure of a given system.
+
+--------------
 Sep 18, 2023
 Name: Xin Jing
 Changes: (highT/)
