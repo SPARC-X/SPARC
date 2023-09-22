@@ -52,6 +52,28 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC);
 void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC);
 
 
+/**
+ * @brief Read density in cube format.
+ * 
+ * @param filename Name of the density file in cube format.
+ * @param dens_gridsizes (OUTPUT) Grid sizes (in 3-dim) of the density read.
+ * @param dens_latvecs (OUTPUT) Lattice vectors (scaled) read.
+ * @return double* (OUTPUT) Density array.
+ */
+double* readDens_cube(char *filename, int dens_gridsizes[3], double dens_latvecs[9]);
+
+
+/**
+ * @brief Read data from cube file and check if the lattice vectors
+ * and the grid sizes match with the input lattice and grid.
+ * 
+ * @param pSPARC 
+ * @param filename File name of the cube file.
+ * @return double* Data from file, allocated within this function.
+ */
+double* read_vec_cube(SPARC_OBJ *pSPARC, char *filename);
+
+
 #endif // READFILES_H
 
 

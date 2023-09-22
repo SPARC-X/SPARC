@@ -239,6 +239,47 @@ char* goUpper(char* head, char* tail, char* prefix)
 }
 
 
+/**
+ * @brief Exact file path from a file name.
+ * 
+ * @param filename File name.
+ * @param path (OUTPUT) Path (relative or absolute) where the file is located.
+ * @param maxlen Maximum length of the path.
+ */
+void extract_path_from_file(const char *filename, char *path, int maxlen) {
+    const char *inpt_path = filename;
+    char *pch = strrchr(inpt_path,'/'); // find last occurrence of '/'
+    if (pch == NULL) { // in case '/' is not found
+        snprintf(path, maxlen, "%s", ".");
+    } else {
+        memcpy(path, inpt_path, pch-inpt_path);
+        path[(int)(pch-inpt_path)] = '\0';
+    }
+}
+
+
+/**
+ * @brief Combine a path and a file name and simplify the path.
+ *        
+ * If the file name is already provided in the absolute path form, then
+ * path is ignored. Otherwise, the new file name would be a simplified path
+ * equivalent to "path/fname".
+ * 
+ * @param path The path relative to which fname is given.
+ * @param fname The name provided relative to path.
+ * @param newfname (OUTPUT) The new file name.
+ */
+void combine_path_filename(const char *path, const char *fname, char *newfname, int maxlen)
+{
+    if (fname[0] == '/') { // absolute path 
+        snprintf(newfname, maxlen, "%s", fname);
+    } else { // relative path to where the .ion file is located
+        snprintf(newfname, maxlen, "%s/%s", path, fname);
+    }
+    // simplify the final path
+    simplifyPath(newfname, newfname, maxlen);
+}
+
 
 /**
  * @brief   The following code for factorizing an integer is copied from Rosetta Code

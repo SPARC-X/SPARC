@@ -55,14 +55,82 @@ void find_element(char element[8], char *atom_type)
 }
 
 
+/**
+ * @brief Read strings from a given line, with comments removed.
+ *   This function takes in a string and reads all the strings deliminated by
+ * spaces into a list of strings until it reaches the `#` character or the end
+ * of the line, or until it reaches the maximum number of input strings allowed.
+ * 
+ * @param input_fp File pointer that points to the line to be read.
+ * @param max_nstr Maximum number of input strings allowed.
+ * @param inputArgv (OUTPUT) The input arguments.
+ * @return int Count of input arguments.
+ */
+int readStringInputsFromLine(char *line, const int max_nstr, char inputArgv[][L_STRING]) {
+    char *token;
+
+    int inputArgc = 0; // Initialize the count of input args
+
+    // Read the entire line from the file
+    token = strtok(line, " ");
+
+    while (token != NULL) {
+        // Remove newline characters if present
+        token[strcspn(token, "\n")] = '\0';
+
+        // Ignore comments indicated by '#' and exit the loop
+        if (token[0] == '#' || token[0] == '\0') {
+            break;
+        }
+        #ifdef DEBUG
+        printf("count = %d, token = `%s`\n", inputArgc, token);
+        #endif
+        // if count exceeds max number, exit
+        if (inputArgc >= max_nstr) {
+            printf("Error: Exceeded the maximum number of inputs (%d).\n", max_nstr);
+            return -1;
+        }
+
+        // Copy the file name into the array
+        strncpy(inputArgv[inputArgc], token, L_STRING);
+        inputArgc++; // Increment the count
+        token = strtok(NULL, " ");
+    }
+
+    return inputArgc; // Success
+}
+
+
+/**
+ * @brief Read strings from a line in a file, with comments removed.
+ *   This function takes in a file pointer and starts to read from the inital
+ * position of the file pointer. It reads all the strings deliminated by spaces
+ * into a list of strings until it reaches the `#` character or the end
+ * of the line, or until it reaches the maximum number of input strings allowed.
+ * 
+ * @param input_fp File pointer that points to the line to be read.
+ * @param max_nstr Maximum number of input strings allowed.
+ * @param inputArgv (OUTPUT) The input arguments.
+ * @return int Count of input arguments.
+ */
+int readStringInputsFromFile(FILE *input_fp, const int max_nstr, char inputArgv[][L_STRING]) {
+    char line[L_STRING*3+20]; // Assuming a maximum length for the line
+    // Read the entire line from the file
+    if (fgets(line, sizeof(line), input_fp) == NULL) {
+        fprintf(stderr, "Error reading line from file.\n");
+        return -1;
+    }
+    
+    int inputArgc = readStringInputsFromLine(line, max_nstr, inputArgv);
+    return inputArgc;
+}
+
 
 /**
  * @brief   Read input file.
  */
 void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
-    char *input_filename = malloc(L_STRING * sizeof(char));
-    char *str            = malloc(L_STRING * sizeof(char));
-    char *temp           = malloc(L_STRING * sizeof(char));
+    char input_filename[L_STRING], str[L_STRING], temp[L_STRING];
     int i, Flag_smear_typ = 0, Flag_Temp = 0, Flag_elecT = 0, Flag_ionT = 0, Flag_ionT_end = 0; // Flag_eqT = 0,
     int Flag_cell = 0;
     int Flag_latvec_scale = 0;
@@ -735,6 +803,77 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d", &pSPARC_Input->npNdy_SQ);
             fscanf(input_fp,"%d", &pSPARC_Input->npNdz_SQ);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"BAND_STRUCTURE:") == 0) {
+            fscanf(input_fp, "%d", &pSPARC_Input->BandStructFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"KPT_PER_LINE:") == 0) {
+            fscanf(input_fp, "%d", &pSPARC_Input->kpt_per_line);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"KPT_PATHS:") == 0) {
+            fscanf(input_fp, "%d", &pSPARC_Input->n_kpt_line);
+            fscanf(input_fp, "%*[^\n]\n");
+            char tmpstr[L_STRING];
+            double kpt_x, kpt_y, kpt_z;
+            for (int line = 0; line < 2 * pSPARC_Input->n_kpt_line; line++) {
+                // read x coords
+                fscanf(input_fp, "%s", tmpstr);
+                // if this line is a comment, skip it
+                if (tmpstr[0]== '#') {
+                    fscanf(input_fp, "%*[^\n]\n");
+                    line--;
+                    continue;
+                }
+                kpt_x = strtod(tmpstr, NULL);
+                // read y coords
+                fscanf(input_fp, "%s", tmpstr);
+                kpt_y = strtod(tmpstr, NULL);
+                // read z coords
+                fscanf(input_fp, "%s", tmpstr);
+                kpt_z = strtod(tmpstr, NULL);
+                fscanf(input_fp, "%*[^\n]\n");
+                pSPARC_Input->kredx[line] = kpt_x;
+                pSPARC_Input->kredy[line] = kpt_y;
+                pSPARC_Input->kredz[line] = kpt_z;
+            }
+
+            #ifdef DEBUG
+            for (int line = 0; line < pSPARC_Input->n_kpt_line; line++) {
+                int k_ind = 2 * line;
+                printf(" Starting coordinates of k-point line %d: (%lf, %lf, %lf)\n", line+1,
+                    pSPARC_Input->kredx[k_ind], pSPARC_Input->kredy[k_ind], pSPARC_Input->kredz[k_ind]);
+                k_ind++;
+                printf("   Ending coordinates of k-point line %d: (%lf, %lf, %lf)\n", line+1,
+                    pSPARC_Input->kredx[k_ind], pSPARC_Input->kredy[k_ind], pSPARC_Input->kredz[k_ind]);
+            }
+            #endif
+        } else if (strcmpi(str,"INPUT_DENS_FILE:") == 0) {
+            char inputDensFnames[3][L_STRING]; // at most 3 file names
+            int nInputDensFname = readStringInputsFromFile(input_fp, 3, inputDensFnames);
+            pSPARC_Input->densfilecount = nInputDensFname;
+            if (nInputDensFname == 1) {
+                strncpy(pSPARC_Input->InDensTCubFilename, inputDensFnames[0], L_STRING);
+            } else if (nInputDensFname == 3) {
+                strncpy(pSPARC_Input->InDensTCubFilename, inputDensFnames[0], L_STRING);
+                strncpy(pSPARC_Input->InDensUCubFilename, inputDensFnames[1], L_STRING);
+                strncpy(pSPARC_Input->InDensDCubFilename, inputDensFnames[2], L_STRING);
+            } else {
+                printf(RED "[FATAL] Density file names not provided properly! (Provide 1 file w/o spin or 3 files with spin)\n" RESET);
+                exit(EXIT_FAILURE);
+            }
+
+            #ifdef DEBUG
+            if (nInputDensFname >= 0) {
+                printf("Density file names read = ([");
+                for (int i = 0; i < nInputDensFname; i++) {
+                    if (i == 0) printf("%s", inputDensFnames[i]);
+                    else printf(", %s", inputDensFnames[i]);
+                }
+                printf("], %d)\n", nInputDensFname);
+            }
+            printf("Total Dens file name: %s\n", pSPARC_Input->InDensTCubFilename);
+            printf("Dens_up file name: %s\n", pSPARC_Input->InDensUCubFilename);
+            printf("Dens_dw file name: %s\n", pSPARC_Input->InDensDCubFilename);
+            #endif
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
@@ -953,12 +1092,184 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             pSPARC_Input->kptshift[2] = 0.5;
         }
     }
-    free(input_filename);
-    free(str);
-    free(temp);
     fclose(input_fp);
 } 
 
+
+/**
+ * @brief Read density in cube format.
+ * 
+ * @param filename Name of the density file in cube format.
+ * @param dens_gridsizes (OUTPUT) Grid sizes (in 3-dim) of the density read.
+ * @param dens_latvecs (OUTPUT) Lattice vectors (scaled) read.
+ * @return double* (OUTPUT) Density array.
+ */
+double* readDens_cube(char *filename, int dens_gridsizes[3], double dens_latvecs[9]) {
+#ifdef DEBUG
+    printf("Reading CUBE file: %s ...\n", filename);
+#endif
+
+    FILE *dens_fp = fopen(filename, "r");
+    if (dens_fp == NULL) {
+        printf("Cannot open file \"%s\"\n", filename);
+        exit(EXIT_FAILURE);
+    }
+
+    int n_atom,cube_size_x,cube_size_y,cube_size_z;
+    double x1,x2,x3;
+    double y1,y2,y3;
+    double z1,z2,z3;
+    char tempchar[L_STRING];
+    double tempval;
+
+    fscanf(dens_fp, "%*[^\n]\n");
+    fscanf(dens_fp,"%s", tempchar);
+    fscanf(dens_fp,"%s", tempchar);
+
+    fscanf(dens_fp, "%lf", &tempval);
+    fscanf(dens_fp, "%*[^\n]\n");
+    fscanf(dens_fp, "%d", &n_atom);
+    // printf("n_atom = %d\n", n_atom);
+
+    fscanf(dens_fp, "%*[^\n]\n");
+    fscanf(dens_fp, "%d", &cube_size_x);
+    fscanf(dens_fp, "%lf", &x1);
+    fscanf(dens_fp, "%lf", &x2);
+    fscanf(dens_fp, "%lf", &x3);
+    fscanf(dens_fp, "%d", &cube_size_y);
+    fscanf(dens_fp, "%lf", &y1);
+    fscanf(dens_fp, "%lf", &y2);
+    fscanf(dens_fp, "%lf", &y3);
+    fscanf(dens_fp, "%d", &cube_size_z);
+    fscanf(dens_fp, "%lf", &z1);
+    fscanf(dens_fp, "%lf", &z2);
+    fscanf(dens_fp, "%lf", &z3);
+
+    dens_latvecs[0] = cube_size_x * x1;
+    dens_latvecs[1] = cube_size_x * x2;
+    dens_latvecs[2] = cube_size_x * x3;
+    dens_latvecs[3] = cube_size_y * y1;
+    dens_latvecs[4] = cube_size_y * y2;
+    dens_latvecs[5] = cube_size_y * y3;
+    dens_latvecs[6] = cube_size_z * z1;
+    dens_latvecs[7] = cube_size_z * z2;
+    dens_latvecs[8] = cube_size_z * z3;
+    dens_gridsizes[0] = cube_size_x;
+    dens_gridsizes[1] = cube_size_y;
+    dens_gridsizes[2] = cube_size_z;
+
+    int len = cube_size_x * cube_size_y * cube_size_z;
+    double *dens = malloc(len * sizeof(double));
+    assert(dens != NULL);
+
+    // read density data and save it in dens
+	for(int i = 0; i < n_atom; i++) {
+		fscanf(dens_fp, "%lf",&tempval);
+		fscanf(dens_fp, "%lf",&tempval);
+		fscanf(dens_fp, "%lf",&tempval);
+		fscanf(dens_fp, "%lf",&tempval);
+		fscanf(dens_fp, "%lf",&tempval);
+	}
+	
+	for (int i = 0; i < cube_size_x; i++) 
+	{
+		for (int j = 0; j < cube_size_y; j++) 
+		{
+			for (int k = 0; k < cube_size_z; k++) 
+			{
+				fscanf(dens_fp, "%lf", &dens[(i)+(j)*cube_size_x+(k)*cube_size_x*cube_size_y]);
+			}
+		}
+	}
+
+    return dens;
+}
+
+
+/**
+ * @brief Double-check if the given scaled latvecs are equiv. to the
+ * latvecs and the given scale factors.
+ * 
+ * @param latvecs_scaled The scaled lattice vectors.
+ * @param latvec Lattice vectors to be scaled.
+ * @param scalex Scale factor in the 1st dim.
+ * @param scaley Scale factor in the 2nd dim.
+ * @param scalez Scale factor in the 3rd dim.
+ * @return int 0 - success, 1 - fail.
+ */
+int check_lattice(
+    const double latvecs_scaled[9], const double latvec[9],
+    const double scalex, const double scaley, const double scalez,
+    double tol)
+{
+    // check lattice vectors
+    double diffx = (latvecs_scaled[0] - scalex * latvec[0])
+                 * (latvecs_scaled[0] - scalex * latvec[0])
+                 + (latvecs_scaled[1] - scalex * latvec[1])
+                 * (latvecs_scaled[1] - scalex * latvec[1])
+                 + (latvecs_scaled[2] - scalex * latvec[2])
+                 * (latvecs_scaled[2] - scalex * latvec[2]);
+    diffx = sqrt(diffx);
+
+    double diffy = (latvecs_scaled[3] - scaley * latvec[3])
+                 * (latvecs_scaled[3] - scaley * latvec[3])
+                 + (latvecs_scaled[4] - scaley * latvec[4])
+                 * (latvecs_scaled[4] - scaley * latvec[4])
+                 + (latvecs_scaled[5] - scaley * latvec[5])
+                 * (latvecs_scaled[5] - scaley * latvec[5]);
+    diffy = sqrt(diffy);
+
+    double diffz = (latvecs_scaled[6] - scalez * latvec[6])
+                 * (latvecs_scaled[6] - scalez * latvec[6])
+                 + (latvecs_scaled[7] - scalez * latvec[7])
+                 * (latvecs_scaled[7] - scalez * latvec[7])
+                 + (latvecs_scaled[8] - scalez * latvec[8])
+                 * (latvecs_scaled[8] - scalez * latvec[8]);
+    diffz = sqrt(diffz);
+
+	if (diffx > tol || diffy > tol || diffz > tol) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * @brief Read data from cube file and check if the lattice vectors
+ * and the grid sizes match with the input lattice and grid.
+ * 
+ * @param pSPARC 
+ * @param filename File name of the cube file.
+ * @return double* Data from file, allocated within this function.
+ */
+double* read_vec_cube(SPARC_OBJ *pSPARC, char *filename) {
+    int dens_gridsizes[3];
+	double dens_latvecs[9];
+	// read_dens2(filename, dens, gridsizes, dens_latvecs);
+	double *dens = readDens_cube(filename, dens_gridsizes, dens_latvecs);
+
+    // check lattice vectors
+    if (check_lattice(dens_latvecs, pSPARC->LatVec,
+        pSPARC->latvec_scale_x, pSPARC->latvec_scale_y,
+        pSPARC->latvec_scale_z, 1e-4) == 1)
+    {
+        printf("\n[FATAL] Incorrect CUBE file (%s): inconsistent lattice vectors!\n", filename);
+        free(dens);
+        MPI_Abort(MPI_COMM_WORLD,1);
+    }
+
+    // check gridsizes
+    int gridsizes[3];
+	gridsizes[0] = pSPARC->Nx;
+	gridsizes[1] = pSPARC->Ny;
+	gridsizes[2] = pSPARC->Nz;
+    if (gridsizes[0] != dens_gridsizes[0] || gridsizes[1] != dens_gridsizes[1] || gridsizes[2] != dens_gridsizes[2]) {
+        printf("\n[FATAL] Incorrect CUBE file (%s): inconsistent grid sizes!\n", filename);
+        free(dens);
+        MPI_Abort(MPI_COMM_WORLD,1);
+    }
+
+    return dens;
+}
 
 
 /**
@@ -1647,3 +1958,5 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         exit(EXIT_FAILURE);
     }
 }
+
+

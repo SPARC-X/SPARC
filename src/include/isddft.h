@@ -29,7 +29,8 @@
 #define L_STRING 512
 #define L_ATMTYPE 8
 #define L_QMASS  60
-
+// max length of kpoint set
+#define L_kpoint 512
 
 // TO PRINT IN COLOR
 #define RED   "\x1B[31m"
@@ -972,6 +973,18 @@ typedef struct _SPARC_OBJ{
 
     /* EigenValue problem*/
     int StandardEigenFlag;
+    
+    /* Band structure plot*/
+    int n_kpt_line;
+    double kredx[L_kpoint],kredy[L_kpoint],kredz[L_kpoint];
+    double k1_inpt_kpt[L_kpoint],k2_inpt_kpt[L_kpoint],k3_inpt_kpt[L_kpoint];
+    int BandStructFlag;
+    int kpt_per_line;
+    char InDensTCubFilename[L_STRING];
+    char InDensUCubFilename[L_STRING];
+    char InDensDCubFilename[L_STRING]; 
+    int densfilecount;
+
 }SPARC_OBJ;
 
 
@@ -1229,6 +1242,16 @@ typedef struct _SPARC_INPUT_OBJ{
     
     char SPARCROOT[L_STRING]; // SPARC root directory
 
+
+    /* Band structure plot*/
+    int n_kpt_line;
+    double kredx[L_kpoint],kredy[L_kpoint],kredz[L_kpoint];
+    int BandStructFlag;
+    int kpt_per_line;
+    char InDensTCubFilename[L_STRING];
+    char InDensUCubFilename[L_STRING];
+    char InDensDCubFilename[L_STRING]; 
+    int densfilecount;
 }SPARC_INPUT_OBJ;
 
 
