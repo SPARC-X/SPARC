@@ -233,12 +233,12 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, in
     t1 = MPI_Wtime();
 
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 	{
-    	ACCEL_ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*DMnd, 
-                           pSPARC->Yorb_kpt, pSPARC->Nband_bandcomm, 
-                           pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
-                           pSPARC->dmcomm);
+    	ACCEL_ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*DMnd, DMndsp, 
+                            pSPARC->Yorb_kpt + spn_i*DMnd, DMndsp, pSPARC->Nband_bandcomm, 
+                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
+                            pSPARC->dmcomm);
 	}
 	else
     #endif // SPARCX_ACCEL   
@@ -690,7 +690,7 @@ void DP_Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Comp
     double *Veff_loc_sg = pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm;
     st = MPI_Wtime();
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 	{
 	}
 	else

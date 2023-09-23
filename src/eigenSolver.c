@@ -312,12 +312,12 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     } else {
     #endif
         #ifdef SPARCX_ACCEL
-		if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+		if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 		{
-    		ACCEL_ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*size_s, 
-                                 pSPARC->Yorb, pSPARC->Nband_bandcomm, 
-                                 pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
-                                 pSPARC->dmcomm);
+    		ACCEL_ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*DMnd, DMndsp,
+                           pSPARC->Yorb + spn_i*DMnd, DMndsp, pSPARC->Nband_bandcomm, 
+                           pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
+                           pSPARC->dmcomm);
 		}
 		else
 		#endif // SPARCX_ACCEL
@@ -951,7 +951,7 @@ void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int l
     double *Veff_loc_sg = pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm;
     st = MPI_Wtime();
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
 	{
 	}
 	else
