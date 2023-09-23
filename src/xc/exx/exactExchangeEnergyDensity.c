@@ -145,7 +145,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     #endif
     }
 
-    double vscal = 1.0 / pSPARC->dV * pSPARC->exx_frac;
+    double vscal = 1.0 / pSPARC->dV;
     if (pSPARC->spin_typ == 0) {
         for (i = 0; i < DMnd; i++) {
             Exxrho[i] *= vscal;
@@ -170,6 +170,6 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     }
     Exx *= pSPARC->dV;
     if (!rank) printf("\nExact exchange energy from energy density: %f\n"
-                        "Exact exchange energy calculated directly: %f\n", Exx, pSPARC->exx_frac*pSPARC->Eexx);
+                        "Exact exchange energy calculated directly: %f\n", Exx, pSPARC->Eexx);
 #endif
 }

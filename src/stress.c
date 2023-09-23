@@ -1062,7 +1062,7 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
         Calculate_nonlocal_kinetic_stress_SQ(pSPARC);   
     } else if (pSPARC->isGammaPoint) {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
         {
         ACCEL_Calculate_nonlocal_kinetic_stress_linear(pSPARC);
         } else
@@ -1072,7 +1072,7 @@ void Calculate_nonlocal_kinetic_stress(SPARC_OBJ *pSPARC) {
         }
     } else {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
         {
             ACCEL_Calculate_nonlocal_kinetic_stress_kpt(pSPARC);
         } else
