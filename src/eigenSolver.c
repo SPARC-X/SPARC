@@ -477,7 +477,7 @@ void Solve_standard_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
     #endif
     
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE
-    if (pSPARC->useACCEL == 1) {
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20) {
 		int info = 0;
 		t1 = MPI_Wtime();
 		if (!pSPARC->bandcomm_index) {
@@ -1265,7 +1265,7 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
     if (DP_CheFSI == NULL) return;
     
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE -- ADDS GPU Eigensolver
-	if (pSPARC->useACCEL == 1)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20)
 	{
 		int Ns_dp = DP_CheFSI->Ns_dp;
 		int rank_kpt = DP_CheFSI->rank_kpt;
@@ -1312,11 +1312,14 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
                 double *Hp_local = DP_CheFSI->Hp_local;
                 double *Mp_local = DP_CheFSI->Mp_local; 
                 double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
-                if (pSPARC->StandardEigenFlag == 0)
+                if (pSPARC->CyclixFlag) {
+                    info = generalized_eigenvalue_problem_cyclix(pSPARC, Hp_local, Mp_local, eig_val);
+                } else if (pSPARC->StandardEigenFlag == 0) {
                     info = LAPACKE_dsygvd( LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
                                 Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val);
-                else 
+                } else {
                     info = LAPACKE_dsyevd(LAPACK_COL_MAJOR,'V','U', Ns_dp, Hp_local, Ns_dp, eig_val);
+                }
                 
                 copy_mat_blk(sizeof(double), Hp_local, Ns_dp, Ns_dp, Ns_dp, eig_vecs, Ns_dp);
             }
@@ -1684,7 +1687,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
     #endif
 
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE
-    if (pSPARC->useACCEL == 1) {
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20) {
 		int info = 0;
 		t1 = MPI_Wtime();
 		if (!pSPARC->bandcomm_index) {
@@ -1733,32 +1736,16 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
             int info = 0;
             t1 = MPI_Wtime();
             if (!pSPARC->bandcomm_index) {
-
                 if (pSPARC->CyclixFlag) {
-                    info = LAPACKE_dggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates,pSPARC->Hp,
-                            pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
-                            pSPARC->lambda_temp1, pSPARC->lambda_temp2, pSPARC->lambda_temp3,
-                            pSPARC->vl, pSPARC->Nstates, pSPARC->vr, pSPARC->Nstates);
-                    int indx0, n, indx, m;
-                    indx0 = spn_i*pSPARC->Nstates;
-                    for(n = 0; n < pSPARC->Nstates; n++){
-                        indx = indx0 + n;
-                        // Warning if lambda_temp3 is almost zero                        
-                        assert(fabs(pSPARC->lambda_temp3[n]) > 1e-15);
-                        
-                        pSPARC->lambda[indx] = pSPARC->lambda_temp1[n]/pSPARC->lambda_temp3[n];
-                        for(m = 0; m < pSPARC->Nstates; m++){
-                            pSPARC->Hp[n*pSPARC->Nstates+m] = pSPARC->vr[n*pSPARC->Nstates+m];
-                        }
-                    }
+                    info = generalized_eigenvalue_problem_cyclix(pSPARC, 
+                                pSPARC->Hp, pSPARC->Mp, pSPARC->lambda + spn_i*pSPARC->Nstates);
+                } else if (pSPARC->StandardEigenFlag == 0) {
+                    info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
+                                pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
+                                pSPARC->lambda + spn_i*pSPARC->Nstates);
                 } else {
-                    if (pSPARC->StandardEigenFlag == 0)
-                        info = LAPACKE_dsygvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp,
-                                    pSPARC->Nstates,pSPARC->Mp,pSPARC->Nstates,
-                                    pSPARC->lambda + spn_i*pSPARC->Nstates);
-                    else 
-                        info = LAPACKE_dsyevd(LAPACK_COL_MAJOR,'V','U',pSPARC->Nstates,pSPARC->Hp,
-                                    pSPARC->Nstates, pSPARC->lambda + spn_i*pSPARC->Nstates);
+                    info = LAPACKE_dsyevd(LAPACK_COL_MAJOR,'V','U',pSPARC->Nstates,pSPARC->Hp,
+                                pSPARC->Nstates, pSPARC->lambda + spn_i*pSPARC->Nstates);
                 }
             }
             t2 = MPI_Wtime();

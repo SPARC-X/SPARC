@@ -15,10 +15,20 @@
 #include <math.h>
 #include <mpi.h>
 #include <time.h>
+#include <assert.h>
+
+/* BLAS and LAPACK routines */
+#ifdef USE_MKL
+    #define MKL_Complex16 double _Complex
+    #include <mkl.h>
+#else
+    #include <cblas.h>
+    #include <lapacke.h>
+#endif
+
 // this is for checking existence of files
 #include "cyclix_tools.h"
 #include "isddft.h"
-
 
 
 void init_cyclix(SPARC_OBJ *pSPARC)
@@ -47,20 +57,20 @@ void init_cyclix(SPARC_OBJ *pSPARC)
     pSPARC->Intgwt_phi = (double *) malloc(pSPARC->Nd_d * sizeof(double));
     Integration_weights_cyclix(pSPARC, pSPARC->Intgwt_phi, pSPARC->DMVertices[0], pSPARC->Nx_d, pSPARC->Ny_d, pSPARC->Nz_d);
     
-    #if defined(USE_MKL) || defined(USE_SCALAPACK)
-    if (pSPARC->isGammaPoint){
-        pSPARC->vl = (double *) calloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC, sizeof(double));
-        pSPARC->vr = (double *) calloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC, sizeof(double));
-        pSPARC->lambda_temp1 = (double *)calloc(pSPARC->Nstates, sizeof(double));
-        pSPARC->lambda_temp2 = (double *)calloc(pSPARC->Nstates, sizeof(double));
-        pSPARC->lambda_temp3 = (double *)calloc(pSPARC->Nstates, sizeof(double));
-    } else{         
-        pSPARC->vl_kpt = (double _Complex *) calloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC, sizeof(double _Complex));
-        pSPARC->vr_kpt = (double _Complex *) calloc(pSPARC->nr_Hp_BLCYC * pSPARC->nc_Hp_BLCYC, sizeof(double _Complex));
-        pSPARC->lambda_temp1_kpt = (double _Complex *)calloc(pSPARC->Nstates, sizeof(double _Complex));
-        pSPARC->lambda_temp2_kpt = (double _Complex *)calloc(pSPARC->Nstates, sizeof(double _Complex));
+    if (pSPARC->bandcomm_index == 0) {
+        if (pSPARC->isGammaPoint){
+            pSPARC->vl = (double *) calloc(pSPARC->Nstates * pSPARC->Nstates, sizeof(double));
+            pSPARC->vr = (double *) calloc(pSPARC->Nstates * pSPARC->Nstates, sizeof(double));
+            pSPARC->lambda_temp1 = (double *)calloc(pSPARC->Nstates, sizeof(double));
+            pSPARC->lambda_temp2 = (double *)calloc(pSPARC->Nstates, sizeof(double));
+            pSPARC->lambda_temp3 = (double *)calloc(pSPARC->Nstates, sizeof(double));
+        } else{         
+            pSPARC->vl_kpt = (double _Complex *) calloc(pSPARC->Nstates * pSPARC->Nstates, sizeof(double _Complex));
+            pSPARC->vr_kpt = (double _Complex *) calloc(pSPARC->Nstates * pSPARC->Nstates, sizeof(double _Complex));
+            pSPARC->lambda_temp1_kpt = (double _Complex *)calloc(pSPARC->Nstates, sizeof(double _Complex));
+            pSPARC->lambda_temp2_kpt = (double _Complex *)calloc(pSPARC->Nstates, sizeof(double _Complex));
+        }    
     }
-    #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
 }
 
 void free_cyclix(SPARC_OBJ *pSPARC)
@@ -72,20 +82,20 @@ void free_cyclix(SPARC_OBJ *pSPARC)
     free(pSPARC->Intgwt_psi);
     free(pSPARC->Intgwt_phi);    
     
-    #if defined(USE_MKL) || defined(USE_SCALAPACK)
-    if (pSPARC->isGammaPoint) {
-        free(pSPARC->lambda_temp1);
-        free(pSPARC->lambda_temp2);
-        free(pSPARC->lambda_temp3);
-        free(pSPARC->vl);
-        free(pSPARC->vr);
-    } else {
-        free(pSPARC->lambda_temp1_kpt);
-        free(pSPARC->lambda_temp2_kpt);
-        free(pSPARC->vl_kpt);
-        free(pSPARC->vr_kpt);
-    }
-    #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+    if (pSPARC->bandcomm_index == 0) {
+        if (pSPARC->isGammaPoint) {
+            free(pSPARC->lambda_temp1);
+            free(pSPARC->lambda_temp2);
+            free(pSPARC->lambda_temp3);
+            free(pSPARC->vl);
+            free(pSPARC->vr);
+        } else {
+            free(pSPARC->lambda_temp1_kpt);
+            free(pSPARC->lambda_temp2_kpt);
+            free(pSPARC->vl_kpt);
+            free(pSPARC->vr_kpt);
+        }
+    }    
 }
 
 /*
@@ -347,4 +357,48 @@ void NormalizeEigfunc_kpt_cyclix(SPARC_OBJ *pSPARC, int spn_i, int kpt) {
     }
 
     free(intg_psi);
+}
+
+/*
+@ brief: generalized eigenvalue problem solver for cyclix
+*/
+int generalized_eigenvalue_problem_cyclix(SPARC_OBJ *pSPARC, double *Hp_local, double *Mp_local, double *eig_val)
+{
+    int info = LAPACKE_dggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates, Hp_local,
+            pSPARC->Nstates, Mp_local, pSPARC->Nstates,
+            pSPARC->lambda_temp1, pSPARC->lambda_temp2, pSPARC->lambda_temp3,
+            pSPARC->vl, pSPARC->Nstates, pSPARC->vr, pSPARC->Nstates);    
+    
+    for(int n = 0; n < pSPARC->Nstates; n++){        
+        // Warning if lambda_temp3 is almost zero                        
+        assert(fabs(pSPARC->lambda_temp3[n]) > 1e-15);
+        
+        eig_val[n] = pSPARC->lambda_temp1[n]/pSPARC->lambda_temp3[n];
+        for(int m = 0; m < pSPARC->Nstates; m++){
+            Hp_local[n*pSPARC->Nstates+m] = pSPARC->vr[n*pSPARC->Nstates+m];
+        }
+    }
+   return info; 
+}
+
+/*
+@ brief: generalized eigenvalue problem solver for cyclix complex case
+*/
+int generalized_eigenvalue_problem_cyclix_kpt(SPARC_OBJ *pSPARC, double _Complex *Hp_local, double _Complex *Mp_local, double *eig_val)
+{
+    int info = LAPACKE_zggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates, Hp_local,
+                pSPARC->Nstates, Mp_local,pSPARC->Nstates,
+                pSPARC->lambda_temp1_kpt, pSPARC->lambda_temp2_kpt,
+                pSPARC->vl_kpt, pSPARC->Nstates, pSPARC->vr_kpt, pSPARC->Nstates);
+    
+    for(int n = 0; n < pSPARC->Nstates; n++){        
+        // Warning if lambda_temp2_kpt is almost zero
+        assert(fabs(creal(pSPARC->lambda_temp2_kpt[n])) > 1e-15);
+        
+        eig_val[n] = creal(pSPARC->lambda_temp1_kpt[n])/creal(pSPARC->lambda_temp2_kpt[n]);
+        for(int m = 0; m < pSPARC->Nstates; m++){
+            Hp_local[n*pSPARC->Nstates+m] = pSPARC->vr_kpt[n*pSPARC->Nstates+m];
+        }
+    }
+    return info;
 }

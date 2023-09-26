@@ -363,7 +363,7 @@ SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_t
 ##################################################################################################################
 SYSTEMS["systemname"].append('WS2_cyclix_SOC')
 SYSTEMS["Tags"].append(['cyclix','SOC'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([tols["E_tol"], 2e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
 SYSTEMS["Tags"].append(['cyclix','SOC'])

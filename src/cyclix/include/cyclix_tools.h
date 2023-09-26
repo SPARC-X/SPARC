@@ -81,5 +81,14 @@ void NormalizeEigfunc_cyclix(SPARC_OBJ *pSPARC, int spn_i);
 */
 void NormalizeEigfunc_kpt_cyclix(SPARC_OBJ *pSPARC, int spn_i, int kpt);
 
+/*
+@ brief: generalized eigenvalue problem solver for cyclix
+*/
+int generalized_eigenvalue_problem_cyclix(SPARC_OBJ *pSPARC, double *Hp_local, double *Mp_local, double *eig_val);
+
+/*
+@ brief: generalized eigenvalue problem solver for cyclix complex case
+*/
+int generalized_eigenvalue_problem_cyclix_kpt(SPARC_OBJ *pSPARC, double _Complex *Hp_local, double _Complex *Mp_local, double *eig_val);
 
 #endif // CYCLIX_TOOLS_H
