@@ -233,9 +233,9 @@ void CheFSI_kpt(SPARC_OBJ *pSPARC, double lambda_cutoff, double _Complex *x0, in
     t1 = MPI_Wtime();
 
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-	{
-    	ACCEL_ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*DMnd, DMndsp, 
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->SOC_Flag == 0 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+    {
+        ACCEL_ChebyshevFiltering_kpt(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb_kpt + kpt*size_k + spn_i*DMnd, DMndsp, 
                             pSPARC->Yorb_kpt + spn_i*DMnd, DMndsp, pSPARC->Nband_bandcomm, 
                             pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i*pSPARC->Nkpts_kptcomm + kpt], pSPARC->eigmin[spn_i*pSPARC->Nkpts_kptcomm + kpt], kpt, spn_i,
                             pSPARC->dmcomm);
@@ -561,8 +561,8 @@ void init_DP_CheFSI_kpt(SPARC_OBJ *pSPARC)
     MPI_Comm_split(pSPARC->kptcomm, proc_active, rank_kpt, &DP_CheFSI_kpt->kpt_comm);
     if (proc_active == 0)
     {
-        free(DP_CheFSI_kpt);
         MPI_Comm_free(&DP_CheFSI_kpt->kpt_comm);
+        free(DP_CheFSI_kpt);
         pSPARC->DP_CheFSI_kpt = NULL;
         return;
     } else {
@@ -872,22 +872,27 @@ void DP_Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i
             int rank_kpt = DP_CheFSI_kpt->rank_kpt;
             double _Complex *eig_vecs = DP_CheFSI_kpt->eig_vecs;
             double st = MPI_Wtime();
+            int info = 0;
             if (rank_kpt == 0)
             {
                 double _Complex *Hp_local = DP_CheFSI_kpt->Hp_local;
                 double _Complex *Mp_local = DP_CheFSI_kpt->Mp_local;
                 double *eig_val = pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates;
-                LAPACKE_zhegvd(
-                    LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
-                    Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
-                );
+                if (pSPARC->CyclixFlag) {
+                    info = generalized_eigenvalue_problem_cyclix_kpt(pSPARC, Hp_local, Mp_local, eig_val);
+                } else {
+                    info = LAPACKE_zhegvd(
+                        LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
+                        Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val
+                    );
+                }
                 copy_mat_blk(sizeof(double _Complex), Hp_local, Ns_dp, Ns_dp, Ns_dp, eig_vecs, Ns_dp);
             }
             double et0 = MPI_Wtime();
             MPI_Bcast(eig_vecs, Ns_dp * Ns_dp, MPI_C_DOUBLE_COMPLEX, 0, DP_CheFSI_kpt->kpt_comm);
             double et1 = MPI_Wtime();
             #ifdef DEBUG
-            if (rank_kpt == 0) printf("Rank 0, DP_Solve_Generalized_EigenProblem_kpt used %.3lf ms, LAPACKE_zhegvd used %.3lf ms\n", 1000.0 * (et1 - st), 1000.0 * (et0 - st));
+            if (rank_kpt == 0) printf("Rank 0, DP_Solve_Generalized_EigenProblem_kpt, info = %d, used %.3lf ms, LAPACKE_zhegvd used %.3lf ms\n", info, 1000.0 * (et1 - st), 1000.0 * (et0 - st));
             #endif
         } else {
             #if defined(USE_MKL) || defined(USE_SCALAPACK)
@@ -1207,24 +1212,8 @@ void Solve_Generalized_EigenProblem_kpt(SPARC_OBJ *pSPARC, int kpt, int spn_i)
         t1 = MPI_Wtime();
         if (!pSPARC->bandcomm_index) {
             if (pSPARC->CyclixFlag) {
-                info = LAPACKE_zggev(LAPACK_COL_MAJOR,'N','V',pSPARC->Nstates,pSPARC->Hp_kpt,
-                            pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
-                            pSPARC->lambda_temp1_kpt, pSPARC->lambda_temp2_kpt,
-                            pSPARC->vl_kpt, pSPARC->Nstates, pSPARC->vr_kpt, pSPARC->Nstates);
-                int indx0, n, indx, m;
-                indx0 = spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates + kpt*pSPARC->Nstates;
-                for(n = 0; n < pSPARC->Nstates; n++){
-                    indx = indx0 + n;
-                    // Warning if lambda_temp2_kpt is almost zero
-                    assert(fabs(creal(pSPARC->lambda_temp2_kpt[n])) > 1e-15);
-                    
-                    pSPARC->lambda[indx] = creal(pSPARC->lambda_temp1_kpt[n])/creal(pSPARC->lambda_temp2_kpt[n]);
-                    //if(pSPARC->bandcomm_index == 0)
-                    //    printf("eigenvalues %.15f\n",pSPARC->lambda[indx]);
-                    for(m = 0; m < pSPARC->Nstates; m++){
-                        pSPARC->Hp_kpt[n*pSPARC->Nstates+m] = pSPARC->vr_kpt[n*pSPARC->Nstates+m];
-                    }
-                }
+                info = generalized_eigenvalue_problem_cyclix_kpt(pSPARC, 
+                            pSPARC->Hp_kpt, pSPARC->Mp_kpt, pSPARC->lambda + kpt*pSPARC->Nstates + spn_i*pSPARC->Nkpts_kptcomm*pSPARC->Nstates);
             } else {
                 info = LAPACKE_zhegvd(LAPACK_COL_MAJOR,1,'V','U',pSPARC->Nstates,pSPARC->Hp_kpt,
                             pSPARC->Nstates,pSPARC->Mp_kpt,pSPARC->Nstates,
