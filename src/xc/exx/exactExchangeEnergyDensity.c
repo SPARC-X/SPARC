@@ -37,7 +37,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
 
     int i, Nband, DMnd, Ns, Nk, kpt, count;
-    int n, size_k, spinDMnd;
+    int n, size_k, ncol;
     double *X, *Vexx, g_nk;
     double _Complex *X_kpt, *Vexx_kpt;
     MPI_Comm comm;
@@ -52,15 +52,16 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     size_k = DMndsp * Nband;
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;
-    spinDMnd = (pSPARC->spin_typ == 0) ? DMnd : 2*DMnd;
+    ncol = (pSPARC->spin_typ == 0) ? DMnd : 2*DMnd;
     comm = pSPARC->dmcomm;
     memset(Exxrho, 0, sizeof(double) * DMnd * (2*pSPARC->Nspin-1));
+    double *Exxrho_ = (pSPARC->spin_typ > 0) ? Exxrho+DMnd : Exxrho;
 
     if (pSPARC->isGammaPoint == 1) {
         Vexx = (double *) malloc(sizeof(double) * DMnd * Nband);
         assert(Vexx != NULL);
         for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-            int sg  = pSPARC->spinor_start_indx + spinor;            
+            int sg  = pSPARC->spinor_start_indx + spinor;
             X = pSPARC->Xorb + spinor*DMnd;
             double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ+spinor*Ns) : pSPARC->occ;
 
@@ -69,12 +70,12 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
 
             count = 0;
             for (n = 0; n < Nband; n++) {
-                g_nk = occ[n+pSPARC->band_start_indx];                
+                g_nk = occ[n+pSPARC->band_start_indx];
                 for (i = 0; i < DMnd; i++, count++) {
                     // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                     // only total in case of non-spin-polarized calculation
                     // different from electron density 
-                    Exxrho[sg*DMnd + i] += g_nk * X[i+n*DMndsp] * Vexx[count];
+                    Exxrho_[sg*DMnd + i] += g_nk * X[i+n*DMndsp] * Vexx[count];
                 }
             }
         }
@@ -98,7 +99,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
                         // first column spin up, second colum spin down, last column total in case of spin-polarized calculation
                         // only total in case of non-spin-polarized calculation
                         // different from electron density 
-                        Exxrho[sg*DMnd + i] += g_nk * creal(conj(X_kpt[i+n*DMndsp]) * Vexx_kpt[count]);
+                        Exxrho_[sg*DMnd + i] += g_nk * creal(conj(X_kpt[i+n*DMndsp]) * Vexx_kpt[count]);
                     }
                 }
             }
@@ -111,7 +112,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     #ifdef DEBUG
         t1 = MPI_Wtime();
     #endif
-        MPI_Allreduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, Exxrho_, ncol, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
 
     #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -124,7 +125,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     #ifdef DEBUG
         t1 = MPI_Wtime();
     #endif
-        MPI_Allreduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
+        MPI_Allreduce(MPI_IN_PLACE, Exxrho_, ncol, MPI_DOUBLE, MPI_SUM, pSPARC->kpt_bridge_comm);
         
     #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -137,7 +138,7 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
     #ifdef DEBUG
         t1 = MPI_Wtime();
     #endif
-        MPI_Allreduce(MPI_IN_PLACE, Exxrho, spinDMnd, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        MPI_Allreduce(MPI_IN_PLACE, Exxrho_, ncol, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
 
     #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -151,19 +152,19 @@ void computeExactExchangeEnergyDensity(SPARC_OBJ *pSPARC, double *Exxrho)
             Exxrho[i] *= vscal;
         }
     } else {
-        vscal *= 0.5;       // spin factor
+        vscal *= 0.5;
         for (i = 0; i < 2*DMnd; i++) {
-            Exxrho[i] *= vscal;
+            Exxrho[i+DMnd] *= vscal;
         }
         // Total exx energy density 
         for (i = 0; i < DMnd; i++) {
-            Exxrho[i+2*DMnd] = Exxrho[i] + Exxrho[i+DMnd];
+            Exxrho[i] = Exxrho[i+DMnd] + Exxrho[i+2*DMnd];
         }
     }
 #ifdef DEBUG
     double Exx = 0.0;
     for (i = 0; i < DMnd; i++) {
-        Exx += Exxrho[i + pSPARC->spin_typ*2*DMnd];
+        Exx += Exxrho[i];
     }
     if (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) {
         MPI_Allreduce(MPI_IN_PLACE, &Exx, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
