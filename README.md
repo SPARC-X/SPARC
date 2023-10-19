@@ -10,7 +10,10 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 * Structural relaxation and ab initio molecular dynamics (NVE, NVT, and NPT).
 * Spin polarized and unpolarized calculations.
 * Spin-orbit coupling.
+* Noncollinear spin.
 * Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
+* Symmetry-adaption for cyclic and/or helical symmetries.
+* Linear-scaling Spectral Quadrature (SQ) method.
 
 SPARC is straightforward to install, use, and modify, with minimal external library dependencies. It has shown to be an order of magnitude faster than state-of-the-art planewave codes, with a range of exchange-correlation functionals, and with increasing advantages as the number of processors is increased. In particular, SPARC efficiently scales to thousands of processors in regular operation, bringing solution times down to about a minute for systems with O(500-1000) atoms, and a few seconds for O(100-500) atoms. Future versions will target similar solution times for larger systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
 
@@ -188,12 +191,14 @@ If you publish work using/regarding SPARC, please cite some of the following art
 * **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
 * **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
 * **SPMS pseudopotentials**: https://doi.org/10.1016/j.cpc.2022.108594
+* **Cyclic and/or helical symmetry**: https://doi.org/10.1103/PhysRevB.103.035101, https://doi.org/10.1103/PhysRevB.100.125143
+* **O(N) Spectral Quadrature method**: https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cplett.2013.08.035, https://doi.org/10.1007/978-3-031-22340-2_12
 
 
 ### (7) Acknowledgement:
   
-* **U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0019410**
+* **U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0023445, DE-SC0019410**
 * **U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): Advanced Simulation and Computing (ASC) Program**
-
-  * Preliminary developments
-    * U.S. National Science Foundation: 1553212, 1663244, and 1333500
+* **U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): DE-NA0004128 (highT feature)**
+* **U.S. National Science Foundation (NSF): 1553212 (cyclix feature)**
+* **U.S. National Science Foundation (NSF): 1663244, and 1333500 (preliminary developments)**
