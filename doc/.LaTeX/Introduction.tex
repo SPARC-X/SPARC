@@ -9,6 +9,8 @@
     \item Spin polarized and unpolarized calculations.
     \item Spin-orbit coupling.
     \item Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
+    \item Symmetry-adaption for cyclic and/or helical symmetries.
+    \item Linear-scaling Spectral Quadrature (SQ) method.
     \item Soft and transferable table of SPMS pseudopotentials.
   \end{itemize}
   % Additional details regarding the formulation and implementation of SPARC can be found in the accompanying paper. Please direct any questions and report any bugs to Prof.~Phanish Suryanarayana.
@@ -29,7 +31,9 @@
  	    \item \textbf{Abhiraj Sharma}: Code infrastructure, k-points, PBE, Stress, Non-orthogonal, Relaxation, NLCC \\   
  	    \item \textbf{Boqin Zhang}: vdW-DF, DFT-D3, meta-GGA (SCAN) \\  
  	    \item \textbf{Shashikant Kumar}: Testing framework, NLCC \\  
-            \item \textbf{Mostafa Faghih Shojaei}: SPMS table of pseudopotentials \\  
+            \item \textbf{Mostafa Faghih Shojaei}: SPMS table of pseudopotentials \\ 
+            \item \textbf{Swarnava Ghosh}: Preliminary development \\
+            \item \textbf{Deepa Phanish}: Initial development
  	\end{itemize}
     \item \textbf{John E. Pask} (co-PI)
     \item \textbf{Edmond Chow} (co-PI)
@@ -57,6 +61,13 @@ If you publish work using/regarding SPARC, please cite some of the following art
     \item Atomic forces: \url{https://doi.org/10.1016/j.cpc.2016.09.020}, \url{https://doi.org/10.1016/j.cpc.2017.02.019}
     \item Mixing: \url{https://doi.org/10.1016/j.cplett.2016.01.033}, \url{https://doi.org/10.1016/j.cplett.2015.06.029}, \url{https://doi.org/10.1016/j.cplett.2019.136983}
     \item SPMS pseudopotentials: \url{https://doi.org/10.1016/j.cpc.2022.108594}
+    \item Cyclic and/or helical symmetry:
+    \url{https://doi.org/10.1103/PhysRevB.103.035101},
+    \url{https://doi.org/10.1103/PhysRevB.100.125143}
+    \item O(N) Spectral Quadrature method:
+    \url{https://doi.org/10.1016/j.cpc.2015.11.005},
+    \url{https://doi.org/10.1016/j.cplett.2013.08.035},
+    \url{https://doi.org/10.1007/978-3-031-22340-2_12}
 \end{itemize}
 \end{frame}
   
@@ -65,17 +76,16 @@ If you publish work using/regarding SPARC, please cite some of the following art
   \begin{frame}[allowframebreaks]{\textbf{Acknowledgments}} \label{Acknowledgments}
   
   \begin{itemize}
-      \item \textbf{U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0019410} \\
-      \item \textbf{U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): Advanced Simulation and Computing (ASC) Program} \\
-      \vspace{10pt}
-      \begin{itemize}
-          \item Preliminary developments
-          \begin{itemize}
-              \item U.S. National Science Foundation: 1553212, 1663244, and 1333500
-          \end{itemize}
-      \end{itemize}
-      
-      
+      \item \textbf{U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0023445, DE-SC0019410} \\
+
+       \item \textbf{U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): Advanced Simulation and Computing (ASC) Program} \\
+
+        \item \textbf{U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): DE-NA0004128 (highT feature)} \\
+
+        \item \textbf{U.S. National Science Foundation (NSF): 1553212 (cyclix feature)
+        } \\
+
+        \item \textbf{U.S. National Science Foundation (NSF): 1663244, and 1333500 (preliminary developments)} \\
   \end{itemize}
   
   \end{frame}

@@ -1,10 +1,14 @@
 \documentclass[xcolor=dvipsnames,t]{beamer}
-%\usepackage[utf8]{inputenc}
+% \usepackage[utf8]{inputenc}
 \usepackage{verbatim} % for comment
 \usetheme{Madrid}
 \usecolortheme{seahorse}
 \usepackage{beamerouterthemesplit}
+\usepackage{array}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[T1]{fontenc}
+
 
 \setbeamerfont{institute}{size=\normalsize}
 
@@ -14,11 +18,13 @@
 
 \institute[]
 {
-Material Physics \& Mechanics Group \\
+Material Physics \& Mechanics Group, Georgia Tech \\
 PI: Phanish Suryanarayana \\
-Main Developers: Xin Jing, Abhiraj Sharma, Phanisri P. Pratapa\\
-Collaborators: J.E. Pask (LLNL)\\
-Georgia Institute of Technology
+\hyperlink{Contributors}{\texttt{Contributors}} \\
+\hyperlink{Citation}{\texttt{Citation}}\\
+\hyperlink{Acknowledgments}{\texttt{Acknowledgements}}\\
+%Collaborators: J.E. Pask (LLNL), A.J. Medford (GT), E. Chow (GT) \\
+%Georgia Institute of Technology
 }
 
 \date{}
@@ -48,12 +54,30 @@ filecolor=pink,
     \end{beamercolorbox}}%
 }
 
+% \setbeamertemplate{headline} [split theme] 
+% {%
+% \begin{beamercolorbox}{section in head/foot}
+% \vskip2pt\insertnavigation{\paperwidth}\vskip2pt
+% \end{beamercolorbox}%
+% }
+
+% \defbeamertemplate*{footline}{split theme}
+% {%
+%   \leavevmode%
+%   \hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{section in head/foot}%
+%     \usebeamerfont{author in head/foot}\insertshortauthor
+%   \end{beamercolorbox}%
+%   \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+%     \usebeamerfont{title in head/foot}\insertshorttitle
+%   \end{beamercolorbox}}%
+%   \vskip0pt%
+% }
+
+
+
 \let\otp\titlepage
 \renewcommand{\titlepage}{\otp\addtocounter{framenumber}{-1}}
 
-
-%\includeonly{Introduction,Stress,MD,Optimization,Print}
-%\includeonly{Introduction}
 
 \begin{document}
 
@@ -68,3 +92,4 @@ filecolor=pink,
 
 
 \end{document}
+
