@@ -25,7 +25,8 @@ jobs:
         python-version: "3.10"
         activate-environment: sparc-test
         conda-build-version: ">=3.20"
-        mamba-version: "*"
+        #mamba-version: "*"
+        miniforge-variant: "Mambaforge" # Fix according to https://github.com/nextstrain/cli/commit/4a764976519ca5c540c745463548a9d883eae079
         channels: conda-forge,defaults
         channel-priority: true
     - name: Install boa dependencies
