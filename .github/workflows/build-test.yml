@@ -32,12 +32,12 @@ jobs:
     - name: Install boa dependencies
       run: |
         mamba install -c conda-forge "conda-build>=3.20" colorama pip ruamel ruamel.yaml rich mamba jsonschema
-        pip install git+https://github.com/mamba-org/boa.git
+        pip install git+https://github.com/mamba-org/boa.git@81dc74a9974ecd02494b300fb97a0a7b2f186afc
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
         conda info
-        CPU_COUNT=2 conda build .conda/
+        CPU_COUNT=2 conda mambabuild .conda/
     - name: Install local build
       run: |
         mamba install --use-local sparc
