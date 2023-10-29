@@ -31,8 +31,8 @@ jobs:
         channel-priority: true
     - name: Install boa dependencies
       run: |
-        mamba install -c conda-forge "conda-build>=3.20" colorama pip ruamel ruamel.yaml rich mamba jsonschema
-        pip install git+https://github.com/mamba-org/boa.git
+        mamba install -c conda-forge pip "conda-build>=3.20" "colorama=0.4"  "ruamel=1.0" "ruamel.yaml=0.17" "rich=13.6" "mamba=1.5" "jsonschema=4.19"
+        pip install git+https://github.com/mamba-org/boa.git@81dc74a9974ecd02494b300fb97a0a7b2f186afc
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
