@@ -155,7 +155,7 @@ double Calculate_Eband(SPARC_OBJ *pSPARC)
 
     for (spn_i = 0; spn_i < Nspin; spn_i++) {
         for (k = 0; k < Nk; k++) {
-            int woccfac = occfac * pSPARC->kptWts_loc[k];
+            double woccfac = occfac * pSPARC->kptWts_loc[k];
             for (n = 0; n < Ns; n++) {
                 Eband += woccfac * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
             }
