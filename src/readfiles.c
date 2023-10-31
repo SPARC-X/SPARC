@@ -662,15 +662,39 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             int dir[3] = {0, 0, 0};
             pSPARC_Input->NPTscaleVecs[0] = 0; pSPARC_Input->NPTscaleVecs[1] = 0; pSPARC_Input->NPTscaleVecs[2] = 0; 
             int scanfResult;
-            scanfResult = fscanf(input_fp,"%d %d %d",&dir[0], &dir[1], &dir[2]);
+            scanfResult = fscanf(input_fp,"%d %d %d\n",&dir[0], &dir[1], &dir[2]);
             if (scanfResult == -1) {
-                scanfResult = fscanf(input_fp,"%d %d",&dir[0], &dir[1]);
+                scanfResult = fscanf(input_fp,"%d %d\n",&dir[0], &dir[1]);
             }
             if (scanfResult == -1) {
-                scanfResult = fscanf(input_fp,"%d",&dir[0]);
+                scanfResult = fscanf(input_fp,"%d\n",&dir[0]);
+            }
+            if (scanfResult == -1) {
+                printf("To correctly input NPT_SCALE_VECS, please do not add space or other characters between number and newline.\n");
+                printf("input as NPT_SCALE_VECS: 1 2 3\n");
+                exit(EXIT_FAILURE);
             }
             for (int i = 0; i < 3; i++) {
                 if (dir[i] > 0) pSPARC_Input->NPTscaleVecs[dir[i] - 1] = 1;
+            }
+            // fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"NPT_SCALE_CONSTRAINTS:") == 0) {
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"none") == 0) {
+                pSPARC_Input->NPTconstraintFlag = 0;
+            } else if ((strcmpi(temp, "12") == 0) || (strcmpi(temp, "21") == 0)) {
+                pSPARC_Input->NPTconstraintFlag = 1;
+            } else if ((strcmpi(temp, "13") == 0) || (strcmpi(temp, "31") == 0)) {
+                pSPARC_Input->NPTconstraintFlag = 2;
+            } else if ((strcmpi(temp, "23") == 0) || (strcmpi(temp, "32") == 0)) {
+                pSPARC_Input->NPTconstraintFlag = 3;
+            } else if ((strcmpi(temp, "123") == 0) || (strcmpi(temp, "132") == 0) || (strcmpi(temp, "213") == 0) ||
+                (strcmpi(temp, "231") == 0) || (strcmpi(temp, "312") == 0) || (strcmpi(temp, "321") == 0)) {
+                pSPARC_Input->NPTconstraintFlag = 4;
+            }
+            else {
+                printf("Cannot recognize NPT_SCALE_CONSTRAINTS: %s\n", temp);
+                exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"NPT_NH_QMASS:") == 0) { 
