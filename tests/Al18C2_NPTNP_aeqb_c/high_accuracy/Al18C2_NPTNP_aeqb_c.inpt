@@ -1,15 +1,14 @@
-# nprocs: 24
-LATVEC_SCALE: 15 15 15
+# nprocs: 48
+LATVEC_SCALE: 18.897259886 18.897259886 18.897259886
 LATVEC:
 1.0 0.0 0.0
 0.0 1.0 0.0
 0.0 0.0 1.0
-MESH_SPACING: 0.35
+MESH_SPACING: 0.15
 BC: P P P
 KPOINT_GRID: 1 1 1
-# SPIN_TYP: 1
 EXCHANGE_CORRELATION: GGA_PBE
-TOL_SCF: 5e-7
+TOL_SCF: 1e-6
 # TOL_POISSON: 1e-7
 # TOL_PSEUDOCHARGE: 1e-5
 MIXING_PARAMETER: 1.0
@@ -19,21 +18,21 @@ PRECOND_KERKER_THRESH: 0
 
 # MD
 MD_FLAG: 1                    # 1 = MD, 0 = no MD (default)
-ION_TEMP: 1120            # kelvin
+ION_TEMP: 2400            # kelvin
 # ION_TEMP_END: 1120
 MD_METHOD: NPT_NP          # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
 #QMASS: 1600                # mass for NH thermostat
-MD_TIMESTEP: 0.6              # fs
-MD_NSTEP: 10              # run MD for MD_NSTEP steps or TWTIME minutes, whichever comes first
+MD_TIMESTEP: 1              # fs
+MD_NSTEP: 10             # run MD for MD_NSTEP steps or TWTIME minutes, whichever comes first
 #TWTIME: 1400
-RESTART_FLAG: 1               # 1 = restart MD from .restart file if present, 0 = start new
+RESTART_FLAG: 0               # 1 = restart MD from .restart file if present, 0 = start new
 #ION_VEL_DSTR: 1               # Initial velocities: 1 = uniform, 2 = Maxwell-Boltzmann (default)
-TARGET_PRESSURE: 0 GPa
-NPT_NP_QMASS: 500.0
-NPT_NP_BMASS: 0.1
-NPT_SCALE_CONSTRAINTS: 123
+TARGET_PRESSURE: 0.1 GPa
+NPT_NP_QMASS: 20000
+NPT_NP_BMASS: 400
+NPT_SCALE_CONSTRAINTS: 12
 
-NSTATES: 76
+NSTATES: 72
 
 # outputs
 # CALC_PRES: 1

@@ -327,12 +327,6 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
         }
-		if ((pSPARC->NPTscaleVecs[0] == 0) || (pSPARC->NPTscaleVecs[1] == 0) || (pSPARC->NPTscaleVecs[2] == 0)) {
-			if (!rank) {
-                printf("NPT-NP does not support specifying the rescaled lattice vectors!\n");
-                exit(EXIT_FAILURE);
-            }
-		}
 		
         pSPARC->S_NPT_NP = 1.0; 
         pSPARC->Sv_NPT_NP = 0.0; 
@@ -340,9 +334,18 @@ void Initialize_MD(SPARC_OBJ *pSPARC) {
         pSPARC->thermos_Ti = pSPARC->ion_T;
 		pSPARC->thermos_T  = pSPARC->thermos_Ti;
 
-		pSPARC->Pm_NPT_NP[0] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_x*pSPARC->range_x_velo/pSPARC->G_NPT_NP[0];
-		pSPARC->Pm_NPT_NP[1] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_y*pSPARC->range_y_velo/pSPARC->G_NPT_NP[1];
-		pSPARC->Pm_NPT_NP[2] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_z*pSPARC->range_z_velo/pSPARC->G_NPT_NP[2];
+		if (pSPARC->NPTscaleVecs[0] == 1)
+			pSPARC->Pm_NPT_NP[0] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_x*pSPARC->range_x_velo/pSPARC->G_NPT_NP[0];
+		else
+			pSPARC->Pm_NPT_NP[0] = 0.0;
+		if (pSPARC->NPTscaleVecs[1] == 1)
+			pSPARC->Pm_NPT_NP[1] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_y*pSPARC->range_y_velo/pSPARC->G_NPT_NP[1];
+		else
+			pSPARC->Pm_NPT_NP[1] = 0.0;
+		if (pSPARC->NPTscaleVecs[2] == 1)
+			pSPARC->Pm_NPT_NP[2] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)/pSPARC->S_NPT_NP*2*pSPARC->range_z*pSPARC->range_z_velo/pSPARC->G_NPT_NP[2];
+		else 
+			pSPARC->Pm_NPT_NP[2] = 0.0;
     }
     else if(strcmpi(pSPARC->MDMeth,"NPT_NP") == 0) { // restart
 		int rank;
@@ -834,7 +837,6 @@ void Calc_vel2_G(SPARC_OBJ *pSPARC) {
 	}
 }
 
-
 /*
 @ brief function to perform NPT MD simulation with Nose hoover chain.
 wherein number of particles, pressure and temperature are kept constant (equivalent to ionmov = 13, optcell = 1 in ABINIT)
@@ -1112,10 +1114,10 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
         double t1, t2;
 #endif
 
-    int p;
-#ifdef DEBUG
+    int p, i;
     // scaling factor
     double scal = pSPARC->scale; // the ratio between length
+#ifdef DEBUG
     if(rank == 0){
     	printf("scal: %12.6f\n", scal);
     }
@@ -1133,7 +1135,7 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
         // printf("Volume: %12.6f\n", vol);
         printf("CELL  : %12.6f\t%12.6f\t%12.6f\n",pSPARC->range_x,pSPARC->range_y,pSPARC->range_z);
         printf("COORD : \n");
-        for (int i = 0; i < 3 * pSPARC->n_atom; i++) {
+        for (i = 0; i < 3 * pSPARC->n_atom; i++) {
             printf("%12.6f\t",pSPARC->atom_pos[i]);
             if (i%3==2 && i>0) printf("\n");
         }
@@ -1318,8 +1320,8 @@ The Journal of Chemical Physics 115, no. 22 (2001): 10282-10290.
 void NPT_NP (SPARC_OBJ *pSPARC) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Bcast(&pSPARC->pres, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&pSPARC->pres_i, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&pSPARC->stress, 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&pSPARC->stress_i, 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	// calculate Hamiltonian of the NPT_NP system.
 	initialize_Hamiltonian(pSPARC);
 	// updating momentums of thermostat and barostat variables and particles in the first half step in NPT_NP.
@@ -1351,9 +1353,18 @@ void initialize_Hamiltonian(SPARC_OBJ *pSPARC){
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	double ktemp;
 
-	pSPARC->Pm_NPT_NP[0] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_x*pSPARC->range_x_velo / pow(pSPARC->G_NPT_NP[0], 2.0);
-	pSPARC->Pm_NPT_NP[1] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_y*pSPARC->range_y_velo / pow(pSPARC->G_NPT_NP[1], 2.0);
-	pSPARC->Pm_NPT_NP[2] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_z*pSPARC->range_z_velo / pow(pSPARC->G_NPT_NP[2], 2.0);
+	if (pSPARC->NPTscaleVecs[0] == 1)
+		pSPARC->Pm_NPT_NP[0] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_x*pSPARC->range_x_velo / pow(pSPARC->G_NPT_NP[0], 2.0);
+	else
+		pSPARC->Pm_NPT_NP[0] = 0;
+	if (pSPARC->NPTscaleVecs[1] == 1)
+		pSPARC->Pm_NPT_NP[1] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_y*pSPARC->range_y_velo / pow(pSPARC->G_NPT_NP[1], 2.0);
+	else
+		pSPARC->Pm_NPT_NP[1] = 0;
+	if (pSPARC->NPTscaleVecs[2] == 1)
+		pSPARC->Pm_NPT_NP[2] = pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0) / pSPARC->S_NPT_NP * 2.0 *pSPARC->range_z*pSPARC->range_z_velo / pow(pSPARC->G_NPT_NP[2], 2.0);
+	else
+		pSPARC->Pm_NPT_NP[2] = 0;
 
 	pSPARC->KE = 0.0;
 	int ityp, atm;
@@ -1422,19 +1433,45 @@ void updateMomentum_FirstHalf(SPARC_OBJ *pSPARC) {
 		printf("Sv_NPT_NP in the 1st half step is %12.9f\n", pSPARC->Sv_NPT_NP);
 	}
 	#endif
+
+	double diagElecStress[3], innerControlStress[3]; 
+	diagElecStress[0] = pSPARC->stress[0] - pSPARC->stress_i[0]; 
+	diagElecStress[1] = pSPARC->stress[3] - pSPARC->stress_i[3]; 
+	diagElecStress[2] = pSPARC->stress[5] - pSPARC->stress_i[5];
+	// innerControlStress is used for adding confinements on the scale of lattice vectors, such as |a|=|b|.
+	innerControlStress[0] = diagElecStress[0];
+	innerControlStress[1] = diagElecStress[1];
+	innerControlStress[2] = diagElecStress[2];
+	if (pSPARC->NPTconstraintFlag == 1) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[1]) / 2;
+		innerControlStress[1] = innerControlStress[0];
+	} else if (pSPARC->NPTconstraintFlag == 2) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[2]) / 2;
+		innerControlStress[2] = innerControlStress[0];
+	} else if (pSPARC->NPTconstraintFlag == 3) {
+		innerControlStress[1] = (diagElecStress[1] + diagElecStress[2]) / 2;
+		innerControlStress[2] = innerControlStress[1];
+	} else if (pSPARC->NPTconstraintFlag == 4) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[1] + diagElecStress[2]) / 3;
+		innerControlStress[1] = innerControlStress[0];
+		innerControlStress[2] = innerControlStress[0];
+	}
 	// update momentum of barostat variables in a half step
 	for (int i = 0; i < 3; i++){
-		Ga1[i] = -(pSPARC->pres - pSPARC->pres_i) * pSPARC->volumeCell / 2.0 / pSPARC->G_NPT_NP[i];
-		B[i] = 1.0 / (pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) * pow(pSPARC->Pm_NPT_NP[i],2.0) * pSPARC->G_NPT_NP[i];
-		Ga3[i] = (pSPARC->prtarget * pSPARC->volumeCell / 2.0 - pSPARC->Kbaro) / pSPARC->G_NPT_NP[i];
-		PmA[i] = Ga1[i] + B[i] + Ga3[i];
-		pSPARC->Pm_NPT_NP[i] -= pSPARC->MD_dt * pSPARC->S_NPT_NP / 2.0 * PmA[i];
-		#ifdef DEBUG
-		if (rank == 0){
-			printf("PmA[%d] is %12.9f\n", i, PmA[i]);
-			printf("pSPARC->Pm_NPT_NP[%d] in 1st half step is %12.9f\n", i, pSPARC->Pm_NPT_NP[i]);
+		if (pSPARC->NPTscaleVecs[i] == 1) {
+			Ga1[i] = innerControlStress[i] * pSPARC->volumeCell / 2.0 / pSPARC->G_NPT_NP[i];
+			B[i] = 1.0 / (pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) * pow(pSPARC->Pm_NPT_NP[i],2.0) * pSPARC->G_NPT_NP[i];
+			Ga3[i] = (pSPARC->prtarget * pSPARC->volumeCell / 2.0 - pSPARC->Kbaro) / pSPARC->G_NPT_NP[i];
+			PmA[i] = Ga1[i] + B[i] + Ga3[i];
+			pSPARC->Pm_NPT_NP[i] -= pSPARC->MD_dt * pSPARC->S_NPT_NP / 2.0 * PmA[i];
+			#ifdef DEBUG
+			if (rank == 0){
+				// printf("pSPARC->pres is %12.9f, pSPARC->pres_i is %12.9f, pSPARC->volumeCell is %12.9f, pSPARC->G_NPT_NP[%d] is %12.9f\n", pSPARC->pres, pSPARC->pres_i, pSPARC->volumeCell, i, pSPARC->G_NPT_NP[i]);
+				printf("PmA[%d] is %12.9f\n", i, PmA[i]);
+				printf("pSPARC->Pm_NPT_NP[%d] in 1st half step is %12.9f\n", i, pSPARC->Pm_NPT_NP[i]);
+			}
+			#endif
 		}
-		#endif
 	}
 	// update momentum/mass of particles (reminder: not velocity!) in a step
 	int ityp, atm;
@@ -1470,26 +1507,56 @@ void updateMomentum_SecondHalf(SPARC_OBJ *pSPARC) {
 	int timeIter = 0;
 	double G1[3], Gatmp1[3], Gatmp2[3], Gatmp3[3], PmAtmp[3];
 	double KbaroTmp = 0;
+
+	double diagElecStress[3], innerControlStress[3]; 
+	diagElecStress[0] = pSPARC->stress[0] - pSPARC->stress_i[0]; 
+	diagElecStress[1] = pSPARC->stress[3] - pSPARC->stress_i[3]; 
+	diagElecStress[2] = pSPARC->stress[5] - pSPARC->stress_i[5];
+	// innerControlStress is used for adding confinements on the scale of lattice vectors, such as |a|=|b|.
+	innerControlStress[0] = diagElecStress[0];
+	innerControlStress[1] = diagElecStress[1];
+	innerControlStress[2] = diagElecStress[2];
+	if (pSPARC->NPTconstraintFlag == 1) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[1]) / 2;
+		innerControlStress[1] = innerControlStress[0];
+	} else if (pSPARC->NPTconstraintFlag == 2) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[2]) / 2;
+		innerControlStress[2] = innerControlStress[0];
+	} else if (pSPARC->NPTconstraintFlag == 3) {
+		innerControlStress[1] = (diagElecStress[1] + diagElecStress[2]) / 2;
+		innerControlStress[2] = innerControlStress[1];
+	} else if (pSPARC->NPTconstraintFlag == 4) {
+		innerControlStress[0] = (diagElecStress[0] + diagElecStress[1] + diagElecStress[2]) / 3;
+		innerControlStress[1] = innerControlStress[0];
+		innerControlStress[2] = innerControlStress[0];
+	}
+
 	while (judge == 0) {
 		timeIter++;
 		KbaroTmp = 0;
 		for (i = 0; i < 3; i++) {
-			G1[i] = 1 / (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) * PmTmp[i] * pSPARC->G_NPT_NP[i];
-			KbaroTmp += (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) / 2 * pow(G1[i],2.0);
-		}
-		for (i = 0; i < 3; i++) {
-			Gatmp1[i] = -(pSPARC->pres - pSPARC->pres_i) * pSPARC->volumeCell / 2.0 / pSPARC->G_NPT_NP[i];
-			Gatmp2[i] = G1[i] * PmTmp[i];
-			Gatmp3[i] = (pSPARC->prtarget * pSPARC->volumeCell / 2.0 - KbaroTmp) / pSPARC->G_NPT_NP[i];
-			PmAtmp[i] = Gatmp1[i] + Gatmp2[i] + Gatmp3[i];
-			PmNew[i] = pSPARC->Pm_NPT_NP[i] - pSPARC->MD_dt / 2.0 * pSPARC->S_NPT_NP * PmAtmp[i];
-		}
-		for (i = 0; i < 3; i++) {
-			judge = 1;
-			if (fabs(PmNew[i] - PmTmp[i]) > 1e-7){
-				judge = 0;
+			if (pSPARC->NPTscaleVecs[i] == 1) {
+				G1[i] = 1 / (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) * PmTmp[i] * pSPARC->G_NPT_NP[i];
+				KbaroTmp += (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) / 2 * pow(G1[i],2.0);
 			}
-			PmTmp[i] = PmNew[i];
+		}
+		for (i = 0; i < 3; i++) {
+			if (pSPARC->NPTscaleVecs[i] == 1) {
+				Gatmp1[i] = innerControlStress[i] * pSPARC->volumeCell / 2.0 / pSPARC->G_NPT_NP[i];
+				Gatmp2[i] = G1[i] * PmTmp[i];
+				Gatmp3[i] = (pSPARC->prtarget * pSPARC->volumeCell / 2.0 - KbaroTmp) / pSPARC->G_NPT_NP[i];
+				PmAtmp[i] = Gatmp1[i] + Gatmp2[i] + Gatmp3[i];
+				PmNew[i] = pSPARC->Pm_NPT_NP[i] - pSPARC->MD_dt / 2.0 * pSPARC->S_NPT_NP * PmAtmp[i];
+			}
+		}
+		judge = 1;
+		for (i = 0; i < 3; i++) {
+			if (pSPARC->NPTscaleVecs[i] == 1) {
+				if (fabs(PmNew[i] - PmTmp[i]) > 1e-7){
+					judge = 0;
+				}
+				PmTmp[i] = PmNew[i];
+			}
 		}
 		if (timeIter > pSPARC->maxTimeIter){
 			judge = 1;
@@ -1498,11 +1565,13 @@ void updateMomentum_SecondHalf(SPARC_OBJ *pSPARC) {
 		}
 	}
 	for (i = 0; i < 3; i++) {
-		pSPARC->Pm_NPT_NP[i] = PmTmp[i];
-		#ifdef DEBUG
-		if (rank == 0)
-			printf("pSPARC->Pm_NPT_NP[%d] in 2nd half step is %12.9f\n", i, pSPARC->Pm_NPT_NP[i]);
-		#endif
+		if (pSPARC->NPTscaleVecs[i] == 1) {
+			pSPARC->Pm_NPT_NP[i] = PmTmp[i];
+			#ifdef DEBUG
+			if (rank == 0)
+				printf("pSPARC->Pm_NPT_NP[%d] in 2nd half step is %12.9f\n", i, pSPARC->Pm_NPT_NP[i]);
+			#endif
+		}
 	}
 
 	// update thermostat velocity in the second half time step
@@ -1518,8 +1587,10 @@ void updateMomentum_SecondHalf(SPARC_OBJ *pSPARC) {
 	pSPARC->KE /= pow(pSPARC->S_NPT_NP, 2.0); // from momentum/mass to true velocity
 	pSPARC->Kbaro = 0.0;
 	for (i = 0; i < 3; i++) {
-		G1[i] = 1.0 / (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) * PmTmp[i] * pSPARC->G_NPT_NP[i];
-		pSPARC->Kbaro += (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) / 2.0 * pow(G1[i],2.0);
+		if (pSPARC->NPTscaleVecs[i] == 1) {
+			G1[i] = 1.0 / (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) * PmTmp[i] * pSPARC->G_NPT_NP[i];
+			pSPARC->Kbaro += (pSPARC->NPT_NP_bmass * pow(pSPARC->volumeCell, 2.0)) / 2.0 * pow(G1[i],2.0);
+		}
 	}
 	double factor;
 	double ktemp = pSPARC->kB * pSPARC->thermos_T;
@@ -1573,22 +1644,28 @@ void updatePosition(SPARC_OBJ *pSPARC) {
 	double Gtmp[3], Gnew[3], Gpig[3], GpigOld[3];
 	int i;
 	for (i = 0; i < 3; i++) {
-		Gtmp[i] = pSPARC->G_NPT_NP[i];
-		GpigOld[i] = pow(pSPARC->G_NPT_NP[i], 2.0) * pSPARC->Pm_NPT_NP[i];
+		if (pSPARC->NPTscaleVecs[i] == 1) {
+			Gtmp[i] = pSPARC->G_NPT_NP[i];
+			GpigOld[i] = pow(pSPARC->G_NPT_NP[i], 2.0) * pSPARC->Pm_NPT_NP[i];
+		}
 	}
 	judge = 0; timeIter = 0;
 	while (judge == 0){
 		timeIter++;
 		for (i = 0; i < 3; i++) {
-			Gpig[i] = pow(Gtmp[i], 2.0) * pSPARC->Pm_NPT_NP[i];
-			Gnew[i] = pSPARC->G_NPT_NP[i] + pSPARC->MD_dt / 2.0 * (pSPARC->S_NPT_NP/(pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0))*GpigOld[i] + Stemp/(pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0))*Gpig[i]);
+			if (pSPARC->NPTscaleVecs[i] == 1) {
+				Gpig[i] = pow(Gtmp[i], 2.0) * pSPARC->Pm_NPT_NP[i];
+				Gnew[i] = pSPARC->G_NPT_NP[i] + pSPARC->MD_dt / 2.0 * (pSPARC->S_NPT_NP/(pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0))*GpigOld[i] + Stemp/(pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0))*Gpig[i]);
+			}
 		}
 		judge = 1;
 		for (i = 0; i < 3; i++) {
-			if (fabs(Gnew[i] - Gtmp[i]) > 1e-7) {
-				judge = 0;
+			if (pSPARC->NPTscaleVecs[i] == 1) {
+				if (fabs(Gnew[i] - Gtmp[i]) > 1e-7) {
+					judge = 0;
+				}
+				Gtmp[i] = Gnew[i];
 			}
-			Gtmp[i] = Gnew[i];
 		}
 		if (timeIter > pSPARC->maxTimeIter) {
 			judge = 1;
@@ -1598,8 +1675,10 @@ void updatePosition(SPARC_OBJ *pSPARC) {
 	}
 	double G3[3];
 	for (i = 0; i < 3; i++) {
-		pSPARC->G_NPT_NP[i] = Gtmp[i];
-		G3[i] = pow(Gtmp[i], 2.0) * pSPARC->Pm_NPT_NP[i];
+		if (pSPARC->NPTscaleVecs[i] == 1) {
+			pSPARC->G_NPT_NP[i] = Gtmp[i];
+			G3[i] = pow(Gtmp[i], 2.0) * pSPARC->Pm_NPT_NP[i];
+		}
 	}
 	#ifdef DEBUG
 	if (rank == 0) {
@@ -1609,25 +1688,32 @@ void updatePosition(SPARC_OBJ *pSPARC) {
 	}
 	#endif
 	// update side lengths of cells and velocities of them
-	pSPARC->scale = sqrt(pSPARC->G_NPT_NP[0]) / pSPARC->range_x; // isotropic expansion
-	#ifdef DEBUG
-	if (rank == 0)
-		printf("pSPARC->scale is %12.9f.\n", pSPARC->scale);
-	#endif
+	double scalex = sqrt(pSPARC->G_NPT_NP[0]) / pSPARC->range_x;
 	pSPARC->range_x = sqrt(pSPARC->G_NPT_NP[0]);
+	double scaley = sqrt(pSPARC->G_NPT_NP[1]) / pSPARC->range_y;
 	pSPARC->range_y = sqrt(pSPARC->G_NPT_NP[1]);
+	double scalez = sqrt(pSPARC->G_NPT_NP[2]) / pSPARC->range_z;
 	pSPARC->range_z = sqrt(pSPARC->G_NPT_NP[2]);
 	pSPARC->volumeCell = pSPARC->Jacbdet*pSPARC->range_x*pSPARC->range_y*pSPARC->range_z;
-	pSPARC->range_x_velo = G3[0] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_x;
-	pSPARC->range_y_velo = G3[1] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_y;
-	pSPARC->range_z_velo = G3[2] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_z;
+	if (pSPARC->NPTscaleVecs[0] == 1)
+		pSPARC->range_x_velo = G3[0] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_x;
+	else
+		pSPARC->range_x_velo = 0.0;
+	if (pSPARC->NPTscaleVecs[1] == 1)
+		pSPARC->range_y_velo = G3[1] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_y;
+	else
+		pSPARC->range_y_velo = 0.0;
+	if (pSPARC->NPTscaleVecs[2] == 1)
+		pSPARC->range_z_velo = G3[2] * Stemp / (2.0*pSPARC->NPT_NP_bmass*pow(pSPARC->volumeCell, 2.0)) / pSPARC->range_z;
+	else
+		pSPARC->range_z_velo = 0.0;
 	// update positions of particles, and restore the values of particle velocities
 	int count = 0;
 	int atm;
 	for(atm = 0; atm < pSPARC->n_atom; atm++){
-		pSPARC->atom_pos[count * 3] = (pSPARC->atom_pos[count * 3]) * pSPARC->scale + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3]/Stemp); //
-		pSPARC->atom_pos[count * 3 + 1] = (pSPARC->atom_pos[count * 3 + 1]) * pSPARC->scale + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3 + 1]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3 + 1]/Stemp); //
-		pSPARC->atom_pos[count * 3 + 2] = (pSPARC->atom_pos[count * 3 + 2]) * pSPARC->scale + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3 + 2]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3 + 2]/Stemp); //
+		pSPARC->atom_pos[count * 3] = (pSPARC->atom_pos[count * 3]) * scalex + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3]/Stemp); //
+		pSPARC->atom_pos[count * 3 + 1] = (pSPARC->atom_pos[count * 3 + 1]) * scaley + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3 + 1]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3 + 1]/Stemp); //
+		pSPARC->atom_pos[count * 3 + 2] = (pSPARC->atom_pos[count * 3 + 2]) * scalez + pSPARC->MD_dt/2.0 * (pSPARC->ion_vel[count * 3 + 2]/pSPARC->S_NPT_NP + pSPARC->ion_vel[count * 3 + 2]/Stemp); //
 		pSPARC->ion_vel[count * 3] /= Stemp;
 		pSPARC->ion_vel[count * 3 + 1] /= Stemp;
 		pSPARC->ion_vel[count * 3 + 2] /= Stemp; 
@@ -1653,7 +1739,6 @@ void Cart2nonCart(double *gradT, double *carCoord, double *nonCarCoord) {
     nonCarCoord[1] = gradT[3] * carCoord[0] + gradT[4] * carCoord[1] + gradT[5] * carCoord[2];
     nonCarCoord[2] = gradT[6] * carCoord[0] + gradT[7] * carCoord[1] + gradT[8] * carCoord[2];
 }
-
 
 /*
  @ brief: function to wrap around atom positions that lie outside main domain in case of PBC and check if the atoms are too close to the boundary in case of bounded domain
@@ -1803,6 +1888,7 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 		ken_ig = 3.0/2.0 * pSPARC->n_atom * pSPARC->kB * pSPARC->ion_T;
 
 	    // Print Temperature and energy
+		fprintf(output_md,":TWIST: %.15g\n", pSPARC->twist);
 	    fprintf(output_md,":TEL: %.15g\n", pSPARC->elec_T);
 	    fprintf(output_md,":TIO: %.15g\n", pSPARC->ion_T);
 		fprintf(output_md,":TEN: %18.10E\n", pSPARC->TE);

@@ -680,7 +680,11 @@ typedef struct _SPARC_OBJ{
     double fs2atu;         // conversion factor for femto second -> atomic unit of time (Jiffy) 
     // NPT
     int NPTscaleVecs[3];    // which lattice vector can be rescaled?
-    int NPTisotropicFlag;   // whether it is an isotropic cell expansion
+    int NPTconstraintFlag; // confinement on side length of cell. none: no length confinement (default); 1: a:b keeps unchanged; 2: a:c keeps unchanged; 
+    // 3: a:c keeps unchanged; 4: a:b:c keeps unchanged, isotropic expansion. It is only available for NPT_NP.
+    int NPTisotropicFlag;   // whether it is an isotropic cell expansion; a:b:c keeps similar during NPT. 
+    // For NPT_NH, if all 3 lattive vectors are scalable, it will be an isotropic expansion;
+    // For NPT_NP, if all 3 lattive vectors are scalable, AND NPTconstraintFlag is 4, it will be an isotropic expansion.
     double prtarget;       // Target pressure of barostatic system, used in both NPT_NH and NPT_NP
     double scale;          // length ratio of the size of cell in NPT, used in both NPT_NH and NPT_NP
     double volumeCell;  // volume of the cell, used in both NPT_NH and NPT_NP
@@ -1167,6 +1171,8 @@ typedef struct _SPARC_INPUT_OBJ{
 
     int NPT_NHnnos;            // number of thermostat variables in NPT_NH
     int NPTscaleVecs[3];       // which lattice vector can be rescaled?
+    int NPTconstraintFlag; // confinement on side length of cell. none: no length confinement (default); 1: a:b keeps unchanged; 2: a:c keeps unchanged; 
+    // 3: a:c keeps unchanged; 4: a:b:c keeps unchanged, isotropic expansion. It is only available for NPT_NP.
     double NPT_NHqmass[L_QMASS];// qmass used in NPT_NH
     double NPT_NHbmass;        // Bmass used in NPT_NH
     double prtarget;     // Target pressure of barostatic system, UNIT on input file is GPa

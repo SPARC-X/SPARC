@@ -72,7 +72,7 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), NVK\_G (isokinetic ensemble with Gaussian thermostat), NPT\_NH (isothermal-isobaric ensemble with Nose-Hoover thermostat) and NPT\_NP (isothermal-isobaric ensemble with Nose-Poincare thermostat) are supported
+Type of QMD to be performed. Currently, NVE (microcanonical ensemble), NVT\_NH (canonical ensemble with Nose-Hoover thermostat), NVK\_G (isokinetic ensemble with Gaussian thermostat), NPT\_NH (isothermal-isobaric ensemble with Nose-Hoover thermostat) and NPT\_NP (isothermal-isobaric ensemble with Nose-Poincare thermostat) are supported.
 \end{block}
 
 \end{frame}
@@ -517,7 +517,7 @@ Program will exit if NPT\_NP is selected but NPT\_NP\_BMASS is not input
 \begin{columns}
 \column{0.4\linewidth}
 \begin{block}{Type}
-Permutation of 1, 2, 3
+Int
 \end{block}
 
 \begin{block}{Default}
@@ -535,11 +535,55 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Specify which lattice vectors can be rescaled in NPT-NH
+Specify which lattice vectors can be rescaled in NPT\_NH and NPT\_NP. The cell will only expand or shrink in the specified directions.
+
+Rescaled vectors can be specified for orthogonal systems if NPT\_NP thermostat is used.
 \end{block}
 
 \begin{block}{Remark}
-Only numbers 1, 2 and 3 can be accepted. For example, if `` 2 3" is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3. Only NPT-NH can specify the rescaled vector
+Only three numbers 1, 2 and 3 can be accepted. For example, if ``2 3'' is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3.
+
+If it is set in NPT\_NH, the expansion or shrinkage on designated lattice vector will try to keep the total pressure to oscillate near the target pressure.
+
+If it is set in NPT\_NP, the expansion or shrinkage on designated lattice vector will only try to keep the normal stress at their direction to oscillate near the target pressure.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{NPT\_SCALE\_CONSTRAINTS}} \label{NPT_SCALE_CONSTRAINTS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+none
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{NPT\_SCALE\_CONSTRAINTS}: 12
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Set the scale constraint for lattice vectors in NPT\_NP. The length ratio between the designated lattice vector keeps constant in NPT\_NP thermostat. For example, if ``12'' is set, then the length ratio between 1st and 2nd lattice vectors will keep constant.
+\end{block}
+
+\begin{block}{Remark}
+Applicable to orthogonal system using NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
+
+There are 4 types of available constraints. ``12'' or ``21''; ``13'' or ``31''; ``23'' or ``32''; ``123'' or ``132'' or ``213'' or ``231'' or ``312'' or ``321''.
 \end{block}
 
 \end{frame}

@@ -188,6 +188,14 @@ SYSTEMS["systemname"].append('Al16Si16_NPTNP_restart')
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('Al18C2_NPTNP_aeqb_c')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al18C2_NPTNP_onlyc')
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 SYSTEMS["systemname"].append('Au_wire_d3')
 SYSTEMS["Tags"].append(['wire', 'gga','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
