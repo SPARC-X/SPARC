@@ -418,15 +418,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"TOL_SCF:") == 0) { 
             fscanf(input_fp,"%lf",&pSPARC_Input->TOL_SCF);
-            pSPARC_Input->scf_err_type = 0; // can remove since default is 0
             snprintf(str, L_STRING, "undefined");    // initialize str
             fscanf(input_fp, "%*[^\n]\n");
-        } /*else if (strcmpi(str,"TOL_SCF_QE:") == 0) { 
-            fscanf(input_fp,"%lf",&pSPARC_Input->TOL_SCF);
-            pSPARC_Input->scf_err_type = 1;
-            snprintf(str, L_STRING, "undefined");    // initialize str
-            fscanf(input_fp, "%*[^\n]\n");
-        } */else if (strcmpi(str,"TOL_POISSON:") == 0) {
+        } else if (strcmpi(str,"TOL_POISSON:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->TOL_POISSON);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"TOL_RELAX:") == 0) {

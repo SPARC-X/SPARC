@@ -586,7 +586,8 @@ void GetInfluencingAtoms(SPARC_OBJ *pSPARC) {
     double Lx, Ly, Lz, rbx, rby, rbz, x0, y0, z0, x0_i, y0_i, z0_i;
     double DMxs, DMxe, DMys, DMye, DMzs, DMze;
     int rb_xl, rb_xr, rb_yl, rb_yr, rb_zl, rb_zr;
-    int isRbOut[3] = {0,0,0}; // check rb-region of atom is out of the domain
+    int *isRbOut = pSPARC->isRbOut; // check rb-region of atom is out of the domain
+    isRbOut[0] = isRbOut[1] = isRbOut[2] = 0; 
     MPI_Comm grid_comm = pSPARC->dmcomm_phi;
     MPI_Comm_size(grid_comm, &nproc);
     MPI_Comm_rank(grid_comm, &rank);
@@ -757,9 +758,9 @@ void GetInfluencingAtoms(SPARC_OBJ *pSPARC) {
     } 
     if (pSPARC->BCx == 1 || pSPARC->BCy == 1 || pSPARC->BCz == 1) {        
         MPI_Allreduce(MPI_IN_PLACE, isRbOut, 3, MPI_INT, MPI_LAND, pSPARC->dmcomm_phi);
-        #ifdef DEBUG
-        if (!rank) printf("Is Rb region out? isRbOut = [%d, %d, %d]\n", isRbOut[0], isRbOut[1], isRbOut[2]);
-        #endif
+        if (isRbOut[0] || isRbOut[1] || isRbOut[2]) {
+            if (!rank) printf("WARNING: Atoms are too close to boundary for pseudocharge calculation.\n");
+        }
     }
 
 }

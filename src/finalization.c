@@ -220,12 +220,6 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         if (pSPARC->MixingVariable == 0 && pSPARC->spin_typ) {
             free(pSPARC->electronDens_in);
         }
-
-        // for using QE scf error definition
-        if (pSPARC->scf_err_type == 1) {
-            free(pSPARC->rho_dmcomm_phi_in);
-            free(pSPARC->phi_dmcomm_phi_in);
-        }
         
         free(pSPARC->mixing_hist_Pfk);
     }

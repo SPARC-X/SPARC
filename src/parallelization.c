@@ -80,6 +80,10 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         pSPARC->npNdx = dims[0];
         pSPARC->npNdy = dims[1];
         pSPARC->npNdz = dims[2];
+        pSPARC->useDefaultParalFlag = 1;
+    } else {
+        if (!rank) printf("WARNING: Default parallelization not used. This could result in degradation of performance.\n");
+        pSPARC->useDefaultParalFlag = 0;
     }
 
     //------------------------------------------------//
@@ -1103,14 +1107,6 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         if (pSPARC->MixingVariable == 0 && pSPARC->spin_typ) {
             pSPARC->electronDens_in = (double *)malloc(DMnd * pSPARC->Nspdentd * sizeof(double));
             assert(pSPARC->electronDens_in != NULL);
-        }
-
-        // The following rho_in and phi_in are only used for evaluating QE scf errors
-        if (pSPARC->scf_err_type == 1) {
-            pSPARC->rho_dmcomm_phi_in = (double *)malloc(DMnd * sizeof(double));
-            assert(pSPARC->rho_dmcomm_phi_in != NULL);
-            pSPARC->phi_dmcomm_phi_in = (double *)malloc(DMnd * sizeof(double));
-            assert(pSPARC->phi_dmcomm_phi_in != NULL);
         }
 
         // initialize electrostatic potential as random guess vector
