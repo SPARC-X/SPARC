@@ -1236,7 +1236,7 @@ void reinitialize_cell_mesh(SPARC_OBJ *pSPARC, double vol)
             pSPARC->ChebDegree = Mesh2ChebDegree(h_eff);
     #ifdef DEBUG
             if (!rank && h_eff < 0.1) {
-                printf("#WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
+                printf("WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
             }
             if (!rank) printf("h_eff = %.2f, npl = %d\n", h_eff,pSPARC->ChebDegree);
     #endif

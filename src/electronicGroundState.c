@@ -636,12 +636,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         }
 #endif
         
-        // used for QE scf error, save input rho_in and phi_in
-        if (pSPARC->scf_err_type == 1) {
-            memcpy(pSPARC->phi_dmcomm_phi_in, pSPARC->elecstPotential, DMnd * sizeof(double));
-            memcpy(pSPARC->rho_dmcomm_phi_in, pSPARC->electronDens   , DMnd * sizeof(double));
-		}
-
         // update Veff_loc_dmcomm_phi_in
         if (pSPARC->MixingVariable == 1) {
             double *Veff_out = (pSPARC->spin_typ == 2) ? pSPARC->Veff_dia_loc_dmcomm_phi : pSPARC->Veff_loc_dmcomm_phi;
@@ -770,12 +764,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         int scf_conv = 0;
 
         // find SCF error
-        if (pSPARC->scf_err_type == 0) { // default
-            Evaluate_scf_error(pSPARC, &error, &scf_conv);
-        } else if (pSPARC->scf_err_type == 1) { // QE scf err: conv_thr
-            Evaluate_QE_scf_error(pSPARC, &error, &scf_conv);
-        }
-        
+        Evaluate_scf_error(pSPARC, &error, &scf_conv);
+
         // check if Etot is NaN
         if (pSPARC->Etot != pSPARC->Etot) {
             if (!rank) printf("ERROR: Etot is NaN\n");
@@ -871,10 +861,6 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             exit(EXIT_FAILURE);
         }
         fprintf(output_fp,"Total number of SCF: %-6d\n",SCFcount);
-        // for density mixing, extra poisson solve is needed
-        if (pSPARC->scf_err_type == 1 && pSPARC->MixingVariable == 0) { 
-            fprintf(output_fp,"Extra time for evaluating QE SCF Error: %.3f (sec)\n", pSPARC->t_qe_extra);
-        }
         fclose(output_fp);
     }
 
@@ -1028,55 +1014,6 @@ void Evaluate_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv) {
     *scf_conv  = (pSPARC->usefock % 2 == 1) 
                 ? ((int) (error < pSPARC->TOL_SCF_INIT)) : ((int) (error < pSPARC->TOL_SCF));
 }
-
-
-
-/**
- * @brief Evaluate the scf error defined in Quantum Espresso.
- *
- *        Find the scf error defined in Quantum Espresso. QE implements 
- *        Eq.(A.7) of the reference paper, with a slight modification: 
- *          conv_thr = 4 \pi e^2 \Omega \sum_G |\Delta \rho(G)|^2 / G^2
- *        This is equivalent to 2 * Eq.(A.6) in the reference paper.
- *
- * @ref   P Giannozzi et al, J. Phys.:Condens. Matter 21(2009) 395502.
- */
-void Evaluate_QE_scf_error(SPARC_OBJ *pSPARC, double *scf_error, int *scf_conv) 
-{
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    // update phi_out for density mixing
-    if (pSPARC->MixingVariable == 0) { // desity mixing
-        double t1, t2;
-        t1 = MPI_Wtime();
-        // solve the poisson equation for electrostatic potential, "phi"
-        Calculate_elecstPotential(pSPARC);
-        t2 = MPI_Wtime();
-        if (!rank) printf("QE scf error: update phi_out took %.3f ms\n", (t2-t1)*1e3); 
-        pSPARC->t_qe_extra += (t2 - t1);
-    }
-
-    double error = 0.0;
-    if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-        int i;
-        int DMnd = pSPARC->Nd_d;
-        double loc_err = 0.0;
-        for (i = 0; i < DMnd; i++) {
-            loc_err += (pSPARC->electronDens[i]    - pSPARC->rho_dmcomm_phi_in[i]) * 
-                       (pSPARC->elecstPotential[i] - pSPARC->phi_dmcomm_phi_in[i]);
-        }
-        loc_err = fabs(loc_err * pSPARC->dV); // in case error is not numerically positive
-        MPI_Allreduce(&loc_err, &error, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
-    }
-
-    MPI_Bcast(&error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);   
-    // output
-    *scf_error = error;
-    *scf_conv  = (pSPARC->usefock % 2 == 1) 
-                ? ((int) (error < pSPARC->TOL_SCF_INIT)) : ((int) (error < pSPARC->TOL_SCF));
-}
-
 
 
 /**

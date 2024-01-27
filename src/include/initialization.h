@@ -94,11 +94,6 @@ void Calculate_SplineDerivRadFun(SPARC_OBJ *pSPARC);
 
 void Cart2nonCart_transformMat(SPARC_OBJ *pSPARC);
 
-/**
- * @brief   Write the initialized parameters into the output file.
- *
- * @param pSPARC    The pointer that points to SPARC_OBJ type structure.
- */
  
 /*
  * @brief   function to convert non cartesian to cartesian coordinates
@@ -134,6 +129,8 @@ void CalculateDistance(SPARC_OBJ *pSPARC, double x, double y, double z, double x
  */
 void write_output_init(SPARC_OBJ *pSPARC);
 
+
+void print_orthogonal_warning(SPARC_OBJ *pSPARC, FILE *output_fp);
 
 /**
  * @brief   Calculate k-points and the associated weights.

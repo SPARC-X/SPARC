@@ -222,6 +222,7 @@ typedef struct _SPARC_OBJ{
     int npNdx_kptcomm;  // number of processes in x-dir for creating Cartesian topology in kptcomm 
     int npNdy_kptcomm;  // number of processes in y-dir for creating Cartesian topology in kptcomm 
     int npNdz_kptcomm;  // number of processes in z-dir for creating Cartesian topology in kptcomm
+    int useDefaultParalFlag; // Flag for using default parallelization
     int FixRandSeed;    // flag to fix the random number seeds so that all random numbers generated in parallel 
                         // under MPI are the same as those generated in sequential execution
                         
@@ -346,6 +347,7 @@ typedef struct _SPARC_OBJ{
     int Nd_d_dmcomm;          // total number of grids of distributed domain in each dmcomm process (LOCAL)
     
     ATOM_INFLUENCE_OBJ *Atom_Influence_local; // atom info. for atoms that have local influence on the distributed domain (LOCAL)
+    int isRbOut[3];           // flag for if Rb region is outside domain for Dirichlet BC
     
     /* nonlocal */
     ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc; // atom info. for atoms that have nonlocal influence on the distributed domain (LOCAL)
@@ -447,12 +449,7 @@ typedef struct _SPARC_OBJ{
     double *mixing_hist_Xk;      // residual matrix of Veff_loc, for mixing (LOCAL)
     double *mixing_hist_Fk;      // residual matrix of the residual of Veff_loc (LOCAL)
     double *mixing_hist_Pfk;     // the preconditioned residual distributed in phi-domain (LOCAL)
-
-    int    scf_err_type;        // scf error definition type
-    double t_qe_extra;          // // this is the extra unnecessary time we spent in order to evaluate QE scf error
-    // these two arrays are used only for evaluating QE scf error
-    double *rho_dmcomm_phi_in;  // input electron density distributed in phi-domain (LOCAL)
-    double *phi_dmcomm_phi_in;  // input electrostatic potential distributed in phi-domain (LOCAL)
+    
     double *psdChrgDens;          // pseudocharge density, "b" (LOCAL)
     double *psdChrgDens_ref;      // reference pseudocharge density, "b_ref" (LOCAL)
     double *Vc;                   // difference between reference pseudopotential V_ref and pseudopotential V, Vc = V_ref - V (LOCAL)
@@ -1058,7 +1055,6 @@ typedef struct _SPARC_INPUT_OBJ{
                         // under MPI are the same as those generated in sequential execution
                         // 0 - off (default), 1 - on
     int accuracy_level; // accuracy level, 1 - 'low', 2 - 'medium', 3 - 'high', 4 - 'extreme'
-    int scf_err_type;   // scf error definition type
     int MAXIT_SCF;      // max number of SCF iterations
     int MINIT_SCF;      // min number of SCF iterations
     int MAXIT_POISSON;  // max number of iterations for Poisson solver

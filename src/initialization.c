@@ -44,7 +44,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 175
+#define N_MEMBR 174
 
 
 /**
@@ -584,8 +584,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->Poisson_solver = 0;          // default AAR solver
     /* Iterations: tolerances and max_iters */
     pSPARC_Input->FixRandSeed = 0;            // default flag for fixing random numbers for MPI paralllelization
-    pSPARC_Input->accuracy_level = -1;        // default accuracy level (2 - 'medium', 1e-3 in energy and forces)
-    pSPARC_Input->scf_err_type = 0;           // default scf error definition: relative error in rho or veff
+    pSPARC_Input->accuracy_level = -1;        // default accuracy level (2 - 'medium', 1e-3 in energy and forces)    
     pSPARC_Input->MAXIT_SCF = 100;            // default maximum number of SCF iterations
     pSPARC_Input->MINIT_SCF = 2;              // default minimum number of SCF iterations
     pSPARC_Input->MAXIT_POISSON = 3000;       // default maximum number of iterations for Poisson solver
@@ -1179,7 +1178,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Nchefsi = pSPARC_Input->Nchefsi;
     pSPARC->FixRandSeed = pSPARC_Input->FixRandSeed;
     pSPARC->accuracy_level = pSPARC_Input->accuracy_level;
-    pSPARC->scf_err_type = pSPARC_Input->scf_err_type;
     pSPARC->MAXIT_SCF = pSPARC_Input->MAXIT_SCF;
     pSPARC->MINIT_SCF = pSPARC_Input->MINIT_SCF;
     pSPARC->MAXIT_POISSON = pSPARC_Input->MAXIT_POISSON;
@@ -1502,7 +1500,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         printf("\nChecking existence of (%d) out file(s) took %.3f ms\n", i, (t2-t1)*1000);
 #endif
         if (i >= (int)(MAX_OUTPUT*0.75) && i <= MAX_OUTPUT) {
-            printf("\n#WARNING: There's a limit on total number of output files allowed!\n"
+            printf("\nWARNING: There's a limit on total number of output files allowed!\n"
                      "         After the limit is reached, SPARC will start using  the\n"
                      "         name provided exactly (without attached index) and old\n"
                      "         results will be overwritten! Please move some existing\n"
@@ -1512,7 +1510,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
 
         if (i > MAX_OUTPUT) {
-            printf("\n#WARNING: The limit of total number of output files is reached! \n"
+            printf("\nWARNING: The limit of total number of output files is reached! \n"
                      "         Current output name (without suffix): %s\n\n", pSPARC->filename_out);
         } else if (i > 0) {
             char tempchar[L_STRING];
@@ -1607,6 +1605,22 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                     pSPARC->cell_typ = 1;
                     i = j = 3;
                 }
+            }
+        }
+        if (pSPARC->cell_typ == 0) {
+            // check if axes are aligned with xyz
+            // enforce to triclinic if no aligned with xyz
+            for (j = 0; j < 3; j++) {
+                for (i = 0; i < 3; i++) {
+                    if (i == j) continue;
+                    if (fabs(pSPARC->LatVec[i+3*j]) > TEMP_TOL) {
+                        pSPARC->cell_typ = 17;
+                        i = j = 3;
+                    }
+                }
+            }
+            if (pSPARC->cell_typ > 0 && !rank) {            
+                printf(YEL"\nWARNING: This system is cuboidal. To get the best performance, please align the lattice vectors onto standard cartesian coordinate.\n" RESET);
             }
         }
         if (pSPARC->BC > 0) {
@@ -1964,7 +1978,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->ChebDegree = Mesh2ChebDegree(h_eff);
 #ifdef DEBUG
         if (!rank && h_eff < 0.1) {
-            printf("#WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
+            printf("WARNING: for mesh less than 0.1, the default Chebyshev polynomial degree might not be enought!\n");
         }
         if (!rank) printf("h_eff = %.2f, npl = %d\n", h_eff,pSPARC->ChebDegree);
 #endif
@@ -2220,18 +2234,6 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 // pSPARC->precondcoeff_k             = 0.082856817316465;
             }
         }
-    }
-
-    // scf error type, 0 - default, 1 - QE (conv_thr)
-    if (pSPARC->scf_err_type != 0 && pSPARC->scf_err_type != 1) {
-        if (!rank) printf("Cannot recognize SCF error type!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // for evaluating QE scf error, we need to perform some extra calculations
-    // e.g., an extra Poisson solve, this timer keeps track of the extra time spent
-    if (pSPARC->scf_err_type == 1) {
-        pSPARC->t_qe_extra = 0.0;
     }
 
     // default SCF tolerance based on accuracy_level
@@ -3389,7 +3391,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Oct 31, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Jan 27, 2023)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3413,6 +3415,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"%.15f %.15f %.15f \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
         }
     }
+    print_orthogonal_warning(pSPARC, output_fp);
+    
     if(pSPARC->cell_typ > 20 && pSPARC->cell_typ < 30)
         fprintf(output_fp,"TWIST_ANGLE: %f \n",pSPARC->twist);
     fprintf(output_fp,"FD_GRID: %d %d %d\n",pSPARC->numIntervals_x,pSPARC->numIntervals_y,pSPARC->numIntervals_z);
@@ -3462,7 +3466,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"NSTATES: %d\n",pSPARC->Nstates);
         // this should depend on temperature and preconditoner used
         if (pSPARC->Nstates < (int)(1.2*(pSPARC->Nelectron/2)+5)*pSPARC->Nspinor ) { // with kerker a factor of 1.1 might be needed
-            printf("#WARNING: Number of bands may be insufficient for efficient SCF convergence.\n");
+            printf("WARNING: Number of bands may be insufficient for efficient SCF convergence.\n");
         }
         fprintf(output_fp,"CHEB_DEGREE: %d\n",pSPARC->ChebDegree);
         if (pSPARC->CheFSI_Optmz == 1) {
@@ -3559,17 +3563,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"MAXIT_SCF: %d\n",pSPARC->MAXIT_SCF);
     fprintf(output_fp,"MINIT_SCF: %d\n",pSPARC->MINIT_SCF);
     fprintf(output_fp,"MAXIT_POISSON: %d\n",pSPARC->MAXIT_POISSON);
-    if (pSPARC->scf_err_type == 0) {
-        fprintf(output_fp,"TOL_SCF: %.2E\n",pSPARC->TOL_SCF);
-    } else if (pSPARC->scf_err_type == 1) {
-        fprintf(output_fp,"TOL_SCF_QE: %.2E\n",pSPARC->TOL_SCF);
-        if (pSPARC->spin_typ) {
-            fprintf(output_fp,"#WARNING: TOL_SCF_QE is not appropriatly set up for spin-polarized systems\n");
-        }
-        if (pSPARC->MixingVariable == 1) {
-            fprintf(output_fp,"#WARNING: TOL_SCF_QE is not appropriatly set up for potential mixing\n");
-        }
-    }
+    fprintf(output_fp,"TOL_SCF: %.2E\n",pSPARC->TOL_SCF);
     if (pSPARC->POISSON_SOLVER == 0){
         fprintf(output_fp,"POISSON_SOLVER: AAR\n");
     }else{
@@ -3615,7 +3609,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         L_diag = sqrt(Lx * Lx + Ly * Ly + Lz * Lz);
         if (L_diag > 20.0 && pSPARC->MixingPrecond == 0) {
             fprintf(output_fp,
-                   "#WARNING: the preconditioner for SCF has been turned off, this \n"
+                   "WARNING: the preconditioner for SCF has been turned off, this \n"
                    "#might lead to slow SCF convergence. To specify SCF preconditioner, \n"
                    "#use 'MIXING_PRECOND' in the .inpt file\n");
         }
@@ -3785,6 +3779,9 @@ void write_output_init(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"EIG_PARAL_MAXNP: %d\n",pSPARC->eig_paral_maxnp);
         }
     }
+    if (pSPARC->useDefaultParalFlag == 0) {
+        fprintf(output_fp,"WARNING: Default parallelization not used. This could result in degradation of performance.\n");
+    }
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                             Initialization                                \n");
     fprintf(output_fp,"***************************************************************************\n");
@@ -3851,7 +3848,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"Estimated total memory usage       :  %s\n",mem_str);
     formatBytes(pSPARC->memory_usage/nproc,32,mem_str);
     fprintf(output_fp,"Estimated memory per processor     :  %s\n",mem_str);
-
+    if (pSPARC->isRbOut[0] || pSPARC->isRbOut[1] || pSPARC->isRbOut[2]) {
+        fprintf(output_fp, "WARNING: Atoms are too close to boundary for b calculation.\n");
+    }
+    
     fclose(output_fp);
 
     // write .static file
@@ -3884,6 +3884,16 @@ void write_output_init(SPARC_OBJ *pSPARC) {
 }
 
 
+void print_orthogonal_warning(SPARC_OBJ *pSPARC, FILE *output_fp) 
+{
+    printf("here\ncell_typ %d\n", pSPARC->cell_typ);
+    if (pSPARC->cell_typ == 0 || pSPARC->cell_typ >= 20) return;
+    printf("lapcT %.3e, %.3e, %.3e\n", pSPARC->lapcT[1], pSPARC->lapcT[2], pSPARC->lapcT[5]);
+    if(fabs(pSPARC->lapcT[1]) > TEMP_TOL || fabs(pSPARC->lapcT[2]) > TEMP_TOL || fabs(pSPARC->lapcT[5]) > TEMP_TOL) return;
+    printf("here\n");
+    fprintf(output_fp,"WARNING: This system is cuboidal. To get the best performance, please align the lattice vectors onto standard cartesian coordinate.\n");
+}
+
 
 /**
  * @brief Create MPI struct type SPARC_INPUT_MPI for broadcasting.
@@ -3911,7 +3921,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3948,7 +3958,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, 1, 1, 1,/* int */ 
+                          1, 1, 1, /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
                           L_kpoint, /* double array */
                           1, 1, 1, 1, 1, 
@@ -4012,7 +4022,6 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.Nchefsi, addr + i++);
     MPI_Get_address(&sparc_input_tmp.FixRandSeed, addr + i++);
     MPI_Get_address(&sparc_input_tmp.accuracy_level, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.scf_err_type, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MAXIT_SCF, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MINIT_SCF, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MAXIT_POISSON, addr + i++);
