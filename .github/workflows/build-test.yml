@@ -20,19 +20,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: "3.10"
         activate-environment: sparc-test
-        conda-build-version: ">=3.20"
+        conda-build-version: "24.3.0"
         #mamba-version: "*"
         miniforge-variant: "Mambaforge" # Fix according to https://github.com/nextstrain/cli/commit/4a764976519ca5c540c745463548a9d883eae079
         channels: conda-forge,defaults
         channel-priority: true
     - name: Install boa dependencies
       run: |
-        mamba install -c conda-forge pip "conda-build>=3.20" "colorama=0.4"  "ruamel=1.0" "ruamel.yaml=0.17" "rich=13.6" "mamba=1.5" "jsonschema=4.19"
-        pip install git+https://github.com/mamba-org/boa.git@81dc74a9974ecd02494b300fb97a0a7b2f186afc
+        mamba install -c conda-forge pip "conda-build=24.3.0" "colorama=0.4"  "ruamel=1.0" "ruamel.yaml=0.17" "rich=13.6" "mamba=1.5" "jsonschema=4.19"
+        pip install git+https://github.com/mamba-org/boa.git@00a11ffce59f47c0fc576f93d39baf1f8fc92f32
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
