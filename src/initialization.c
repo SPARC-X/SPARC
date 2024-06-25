@@ -1570,7 +1570,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     // Value of tol used in xc functional
-    pSPARC->xc_rhotol = 1e-10;
+    pSPARC->xc_rhotol = 1e-14;
     pSPARC->xc_magtol = 1e-8;
     pSPARC->xc_sigmatol = 1e-10;
 
@@ -3391,7 +3391,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Jan 27, 2023)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version June 24, 2024)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

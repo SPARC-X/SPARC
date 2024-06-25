@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version Sept 20, 2023)                     *
+*                       SPARC (version June 24, 2024)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Sep 20 14:53:08 2023                  *
+*                   Start time: Mon Jun 24 19:42:22 2024                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -91,21 +91,22 @@ Pseudocharge radii of atom type 2  :  7.91 7.91 7.88 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  75.93 MB
 Estimated memory per processor     :  1.58 MB
+WARNING: Atoms are too close to boundary for b calculation.
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.6213201448E+01        1.472E-01        0.263
+1            -3.6213201448E+01        1.472E-01        0.226
 2            -3.6278679243E+01        6.043E-02        0.077
 3            -3.6283673467E+01        2.718E-02        0.074
 4            -3.6284064405E+01        4.697E-03        0.072
-5            -3.6284095330E+01        2.438E-03        0.069
-6            -3.6284107005E+01        2.943E-04        0.066
+5            -3.6284095330E+01        2.438E-03        0.076
+6            -3.6284107005E+01        2.943E-04        0.064
 7            -3.6284107073E+01        1.720E-04        0.062
 8            -3.6284107119E+01        3.566E-05        0.059
 9            -3.6284107102E+01        1.182E-05        0.060
 10           -3.6284107095E+01        4.525E-06        0.056
-11           -3.6284107112E+01        4.838E-07        0.052
+11           -3.6284107112E+01        4.838E-07        0.051
 Total number of SCF: 11    
 ====================================================================
                     Energy and force calculation                    
@@ -119,14 +120,14 @@ Self and correction energy         : -2.4991761996E+02 (Ha)
 Fermi level                        :  1.4940218839E-01 (Ha)
 RMS force                          :  2.0647294717E-02 (Ha/Bohr)
 Maximum force                      :  2.4111414274E-02 (Ha/Bohr)
-Time for force calculation         :  0.033 (sec)
+Time for force calculation         :  0.031 (sec)
 Pressure                           :  9.1229094873E+00 (GPa)
 Maximum stress                     :  1.3480563539E+01 (GPa)
 Time for stress calculation        :  0.061 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  1.190 sec
+Total walltime                     :  1.220 sec
 ___________________________________________________________________________
 
 ***************************************************************************
