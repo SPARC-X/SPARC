@@ -538,9 +538,8 @@ double ecut_estimate(double hx, double hy, double hz)
     dz2_inv = 1.0/(hz * hz);
     h_eff = sqrt(3.0 / (dx2_inv + dy2_inv + dz2_inv));
     
-    ecut = (M_PI/h_eff) * (M_PI/h_eff) / 2;     // Ecut rho
-    ecut = ecut / 4.0;                          // Ecut wfc
-    ecut = ecut * 0.9;                          // by experience
+    // curve fitting of Ecut2h function
+    ecut = exp(-2*log(h_eff)+0.848379709041268);
     return ecut;
 }
 

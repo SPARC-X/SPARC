@@ -1,16 +1,16 @@
 ***************************************************************************
-*                       SPARC (version Sep 20, 2023)                      *
+*                       SPARC (version June 24, 2024)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Wed Sep 20 19:57:43 2023                  *
+*                   Start time: Mon Jun 24 19:50:51 2024                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
 LATVEC_SCALE: 1 1 1 
 LATVEC:
-5.88590692979539 0 0 
-0 5.88590692979539 0 
-0 0 5.88590692979539 
+5.885906929795390 0.000000000000000 0.000000000000000 
+0.000000000000000 5.885906929795390 0.000000000000000 
+0.000000000000000 0.000000000000000 5.885906929795390 
 FD_GRID: 20 20 20
 FD_ORDER: 12
 BC: P P P
@@ -50,7 +50,7 @@ PRINT_EIGEN: 1
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
 BAND_STRUCTURE: 1
-INPUT_DENS_FILE: CdS.indens 
+INPUT_DENS_FILE: ../densfiles/CdS_standard.indens 
 KPT_PER_LINE: 10
 KPT_PATHS: 9
 0.000000 0.000000 0.000000
@@ -71,7 +71,7 @@ KPT_PATHS: 9
 0.500000 0.500000 0.500000
 0.500000 0.500000 0.500000
 0.375000 0.375000 0.750000
-OUTPUT_FILE: CdS
+OUTPUT_FILE: CdS_bandstruct/temp_run/CdS_bandstruct
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -85,58 +85,59 @@ Density: 7.0855255767E-01 (amu/Bohr^3), 7.9399500196E+00 (g/cc)
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
-NP_KPOINT_PARAL: 2
-NP_BAND_PARAL: 4
+NP_KPOINT_PARAL: 48
+NP_BAND_PARAL: 1
 NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 2 2 2
+NP_DOMAIN_PHI_PARAL: 3 3 3
 EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  8
+Number of processors               :  48
 Mesh spacing                       :  0.294295 (Bohr)
 Number of symmetry adapted k-points:  90
-Output printed to                  :  CdS.out
-Final eigenvalues printed to       :  CdS.eigen
+Output printed to                  :  CdS_bandstruct/temp_run/CdS_bandstruct.out
+Final eigenvalues printed to       :  CdS_bandstruct/temp_run/CdS_bandstruct.eigen
 Total number of atom types         :  2
 Total number of atoms              :  2
 Total number of electrons          :  26
 Atom type 1  (valence electrons)   :  Cd 20
-Pseudopotential                    :  ../../../psps/48_Cd_20_2.2_2.3_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/48_Cd_20_2.2_2.3_pbe_n_v1.0.psp8
 Atomic mass                        :  112.414
 Pseudocharge radii of atom type 1  :  7.95 7.95 7.95 (x, y, z dir)
 Number of atoms of type 1          :  1
 Atom type 2  (valence electrons)   :  S 6
-Pseudopotential                    :  ../../../psps/16_S_6_1.8_1.9_pbe_n_v1.0.psp8
+Pseudopotential                    :  ../psps/16_S_6_1.8_1.9_pbe_n_v1.0.psp8
 Atomic mass                        :  32.0675
 Pseudocharge radii of atom type 2  :  7.95 7.95 7.95 (x, y, z dir)
 Number of atoms of type 2          :  1
-Estimated total memory usage       :  273.13 MB
-Estimated memory per processor     :  34.14 MB
+Estimated total memory usage       :  565.85 MB
+Estimated memory per processor     :  11.79 MB
+WARNING: Atoms are too close to boundary for b calculation.
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -8.8867518454E+01        1.038E-02        55.420
+1            -8.8867518467E+01        1.038E-02        4.363
 Total number of SCF: 1     
 WARNING: SCF#1 did not converge to desired accuracy!
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -8.8867518454E+01 (Ha/atom)
-Total free energy                  : -1.7773503691E+02 (Ha)
-Band structure energy              : -2.0019558158E+01 (Ha)
+Free energy per atom               : -8.8867518467E+01 (Ha/atom)
+Total free energy                  : -1.7773503693E+02 (Ha)
+Band structure energy              : -2.0019558219E+01 (Ha)
 Exchange correlation energy        : -2.5269251882E+01 (Ha)
 Self and correction energy         : -2.2142441770E+02 (Ha)
--Entropy*kb*T                      : -4.8879887433E-05 (Ha)
-Fermi level                        :  4.2911791764E-01 (Ha)
-RMS force                          :  2.1295386361E+00 (Ha/Bohr)
-Maximum force                      :  2.1295386361E+00 (Ha/Bohr)
-Time for force calculation         :  0.225 (sec)
+-Entropy*kb*T                      : -4.8879871941E-05 (Ha)
+Fermi level                        :  4.2911791711E-01 (Ha)
+RMS force                          :  2.1295386221E+00 (Ha/Bohr)
+Maximum force                      :  2.1295386221E+00 (Ha/Bohr)
+Time for force calculation         :  0.043 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  55.722 sec
+Total walltime                     :  4.626 sec
 ___________________________________________________________________________
 
 ***************************************************************************
