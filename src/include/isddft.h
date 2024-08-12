@@ -22,6 +22,7 @@
 #include <mpi.h>
 #include <complex.h>
 #include "dssq.h"
+#include "mlff_types.h"
 
 // max length of pseudopotential path
 #define L_PSD 4096
@@ -601,6 +602,45 @@ typedef struct _SPARC_OBJ{
     int npl_min;
     int npl_max;
     int Nchefsi;           // Number of ChefSi for each scf step
+
+    /* MLFF */
+    MLFF_Obj *mlff_str;
+    double condK_min;
+    double factor_multiply_sigma_tol;
+    int if_sparsify_before_train;
+
+    int begin_train_steps;
+    int if_atom_data_available;
+    // int if_merge_mlff;
+    // int n_merge_mlff;
+    // char fname_merge_prefix[120];
+    int N_max_SOAP;
+    int L_max_SOAP;
+    int n_str_max_mlff;
+    int n_train_max_mlff;
+    int mlff_flag;
+    int last_train_MD_iter;
+    int kernel_typ_MLFF;
+    int descriptor_typ_MLFF;
+    int N_rgrid_MLFF;
+    int print_mlff_flag;
+    int mlff_internal_energy_flag;
+    int mlff_pressure_train_flag;
+    // gmp
+    double radial_min;
+    double radial_max;
+    //
+    double rcut_SOAP;
+    double sigma_atom_SOAP;
+    double beta_2_SOAP;
+    double beta_3_SOAP;
+    double xi_3_SOAP;
+    double F_tol_SOAP;
+    double F_rel_scale;
+    char hnl_file_name[L_STRING];
+    char mlff_data_folder[L_STRING];
+    double stress_rel_scale[6];
+    int MLFF_DFT_fq;
     
     /* Energies */
     double Esc;            // self + correction energy, Esc = Eself + Ec
@@ -1002,6 +1042,40 @@ typedef struct _SPARC_OBJ{
  *
  */
 typedef struct _SPARC_INPUT_OBJ{ 
+
+    /* MLFF */
+    
+    int if_sparsify_before_train;
+    int begin_train_steps;
+    int if_atom_data_available;
+    int N_max_SOAP;
+    int L_max_SOAP;
+    int n_str_max_mlff;
+    int n_train_max_mlff;
+    int mlff_flag;
+    int kernel_typ_MLFF;
+    int descriptor_typ_MLFF;
+    int print_mlff_flag;
+    int mlff_internal_energy_flag;
+    int mlff_pressure_train_flag;
+    int N_rgrid_MLFF;
+    // gmp
+    double radial_min;
+    double radial_max;
+    //
+    double condK_min;
+    double factor_multiply_sigma_tol;
+    double rcut_SOAP;
+    double sigma_atom_SOAP;
+    double beta_3_SOAP;
+    double xi_3_SOAP;
+    double F_tol_SOAP;
+    double F_rel_scale;
+    double stress_rel_scale[6];
+    char hnl_file_name[L_STRING];
+    char mlff_data_folder[L_STRING];
+    int MLFF_DFT_fq;
+    
     /* Parallelizing parameters */
     int num_node;       // number of processor nodes
     int num_cpu_per_node; // number of cpu per node

@@ -1,0 +1,729 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{MLFF}
+
+\begin{center}
+\Huge \textbf{MLFF}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{MLFF\_FLAG}} \label{MLFF_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to turn on MLFF in SPARC. There are three options currently available. (1) MLFF\_FLAG: 1 to perform on-the-fly MD with no existing model, (2) MLFF\_FLAG: 21 to perform only predictions from an existing model, and (3) MLFF\_FLAG: 22 to perform on-the-fly MD building on top of an existing model
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_RCUT\_SOAP}}} \label{MLFF_RCUT_SOAP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+10.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_RCUT\_SOAP}: 8.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The cutoff radius used to calculate the SOAP descriptor. 
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_SIGMA\_ATOM\_SOAP}}} \label{MLFF_SIGMA_ATOM_SOAP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_SIGMA\_ATOM\_SOAP}: 1.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The width of Gaussians in SOAP descriptor. 
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_RADIAL\_BASIS}}} \label{MLFF_RADIAL_BASIS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+8
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_RADIAL\_BASIS}: 7
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The number of radial basis functions used in SOAP descriptors.
+\end{block}
+
+\begin{block}{Remark}
+8-10 radial basis functions should be sufficient for most applications.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_ANGULAR\_BASIS}}} \label{MLFF_ANGULAR_BASIS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+6
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_ANGULAR\_BASIS}: 7
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The maximum angular momentum quantum number (L) of spherical harmonics used in the SOAP descriptor.
+\end{block}
+
+\begin{block}{Remark}
+6-8 for SOAP works well for most applications.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_INITIAL\_STEPS\_TRAIN}}} \label{MLFF_INITIAL_STEPS_TRAIN}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+10
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_INITIAL\_STEPS\_TRAIN}: 20
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The number of DFT steps performed in the beginning of on-the-fly MLFF simulation.
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_MODEL\_FOLDER}}} \label{MLFF_MODEL_FOLDER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+No default
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_MODEL\_FOLDER}: ././
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The location of folder where the trained model file is located.
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_IF\_ATOM\_DATA\_AVAILABLE}}} \label{MLFF_IF_ATOM_DATA_AVAILABLE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_IF\_ATOM\_DATA\_AVAILABLE}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ Flag to indicate if an pretrained MLFF model is available. 
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_REGUL\_MIN}}} \label{MLFF_REGUL_MIN}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1e-14
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_REGUL\_MIN}: 1e-10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The mimimum value of inverse of condition number of $K^TK + \lambda I$ matrix which appear in MLFF calculation.
+\end{block}
+
+\begin{block}{Remark}
+The $K^TK + \lambda I$ matrix needs to be inverted during the training of MLFF. The matrix $K^TK$ is in general ill-conditioned so regularization is used to improve the conditioning. Any number in the range of 1E-10-1E-14 should work. A larger value should result in lesser DFT calls, but also lesser accuracy of MLFF model.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_MAX\_STR\_STORE}}} \label{MLFF_MAX_STR_STORE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+500
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_MAX\_STR\_STORE}: 1000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ Maximum number of DFT calls that can be made during the on-the-fly simulation. 
+\end{block}
+
+\begin{block}{Remark}
+A larger number requires larger memory allocation.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_MAX\_CONFIG\_STORE}}} \label{MLFF_MAX_CONFIG_STORE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+5000
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_MAX\_CONFIG\_STORE}: 1000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ Maximum number of atomic descriptors per element type that will be used in training.
+\end{block}
+
+\begin{block}{Remark}
+A larger number requires larger memory allocation.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL}}} \label{MLFF_FACTOR_MULTIPLY_SIGMATOL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.01
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL}: 1.001
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ A prefactor multiplied with maximum of Bayesian errors while updating the $\sigma_{\rm tol}$. It has to be greater than 1.
+\end{block}
+
+\begin{block}{Remark}
+A larger value will result lesser DFT calls hence might reduce the accuracy. Use any number in (1.0001-1.01) range.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_IF\_SPARSIFY\_BEFORE\_TRAIN}}} \label{MLFF_IF_SPARSIFY_BEFORE_TRAIN}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_IF\_SPARSIFY\_BEFORE\_TRAIN}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ Flag to turn on the sparsification before each of the training steps.
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_EXPONENT\_SOAP}}} \label{MLFF_EXPONENT_SOAP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+4.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_EXPONENT\_SOAP}: 4.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The exponent in the polynomial kernel used in Bayesian linear regression.
+\end{block}
+
+\begin{block}{Remark}
+In principle, any number greater than 1 could be used. The code has been tested most for the exponent of 4.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_TOL\_FORCE}}} \label{MLFF_TOL_FORCE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+5e-10
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_TOL\_FORCE}: 1e-10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The initial value of $\sigma_{\rm tol}$.
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_SCALE\_FORCE}}} \label{MLFF_SCALE_FORCE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_SCALE\_FORCE}: 10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The scaling of force terms in the loss function during the training.
+\end{block}
+
+\begin{block}{Remark}
+A larger number can result in better accuracy of MLFF forces.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_MLFF\_SPLINE\_NGRID\_FLAG}}} \label{MLFF_MLFF_SPLINE_NGRID_FLAG_FORCE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+100
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_MLFF\_SPLINE\_NGRID\_FLAG}: 100
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ Number of grid points to use for spline interpolation of hnl.
+\end{block}
+
+\begin{block}{Remark}
+A larger number can result in better accuracy of MLFF forces.
+\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_SCALE\_STRESS}}} \label{MLFF_SCALE_STRESS}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+1.0 1.0 1.0 1.0 1.0 1.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_SCALE\_STRESS}: 10 1 1 10 1 10
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+ The scaling of stress tensor terms in the loss function during the training.
+\end{block}
+
+%\begin{block}{Remark}
+%
+%\end{block}
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_PRINT\_FLAG}}} \label{MLFF_PRINT_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+1
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_PRINT\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to turn on the printing of MLFF related log in a file named 'mlff.log' during runtime.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_INTERNAL\_ENERGY\_FLAG}}} \label{MLFF_INTERNAL_ENERGY_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_INTERNAL\_ENERGY\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to turn on the training of internal energy model based on linear regression.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_PRESSURE\_TRAIN\_FLAG}}} \label{MLFF_PRESSURE_TRAIN_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_PRESSURE\_TRAIN\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to turn on the training with only pressure and not all of the stress tensor components.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_DFT\_FQ}}} \label{MLFF_DFT_FQ}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+100000000
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_DFT\_FQ}: 100
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Input variable to set the frequency at which DFT must be performed during on-the-fly MD.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

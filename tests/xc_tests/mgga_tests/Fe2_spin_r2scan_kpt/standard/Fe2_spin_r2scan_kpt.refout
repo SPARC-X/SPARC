@@ -1,0 +1,138 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sun Aug 11 19:33:26 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 2.840052 2.840052 2.840052 
+LATVEC:
+1.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 1.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 1.000000000000000 
+FD_GRID: 17 17 17
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 3 2 2
+KPOINT_SHIFT: 0 0.5 0.5
+SPIN_TYP: 1
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001000000336
+EXCHANGE_CORRELATION: R2SCAN
+NSTATES: 24
+CHEB_DEGREE: 39
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: potential
+MIXING_PRECOND: kerker
+MIXING_PRECOND_MAG: none
+TOL_PRECOND: 2.79E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_PARAMETER_MAG: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: xc_tests/mgga_tests/Fe2_spin_r2scan_kpt/temp_run/Fe2_spin_r2scan_kpt
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+2.840052000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 2.840052000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 2.840052000000000 
+Volume: 2.2907562257E+01 (Bohr^3)
+Density: 4.8756824820E+00 (amu/Bohr^3), 5.4636278988E+01 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 2
+NP_KPOINT_PARAL: 6
+NP_BAND_PARAL: 4
+NP_DOMAIN_PARAL: 1 1 1
+NP_DOMAIN_PHI_PARAL: 2 2 2
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.167062 (Bohr)
+Number of symmetry adapted k-points:  6
+Output printed to                  :  xc_tests/mgga_tests/Fe2_spin_r2scan_kpt/temp_run/Fe2_spin_r2scan_kpt.out
+Total number of atom types         :  1
+Total number of atoms              :  2
+Total number of electrons          :  32
+Atom type 1  (valence electrons)   :  Fe 16
+Pseudopotential                    :  xc_tests/mgga_tests/Fe2_spin_r2scan_kpt/Fe_LDA.psp8
+Atomic mass                        :  55.845
+Pseudocharge radii of atom type 1  :  7.02 7.02 7.02 (x, y, z dir)
+Number of atoms of type 1          :  2
+Estimated total memory usage       :  156.53 MB
+Estimated memory per processor     :  3.26 MB
+========================================================================================
+                    Self Consistent Field (SCF#1)                     
+========================================================================================
+Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
+1            -1.1577668002E+02         6.6667E-01        1.023E-01        0.604
+2            -1.1409867325E+02         6.6495E-01        4.915E-02        0.274
+3            -1.1408221008E+02         6.6658E-01        2.448E-02        0.271
+4            -1.1408328679E+02         6.6667E-01        3.218E-03        0.271
+5            -1.1408784822E+02         6.6667E-01        8.610E-04        0.271
+6            -1.1408780990E+02         6.6667E-01        4.165E-04        0.270
+7            -1.1408782633E+02         6.6667E-01        5.143E-05        0.271
+8            -1.1408781748E+02         6.6667E-01        2.274E-05        0.270
+9            -1.1408782049E+02         6.6667E-01        7.743E-06        0.270
+10           -1.1408782170E+02         6.6667E-01        2.057E-06        0.269
+11           -1.1408782157E+02         6.6667E-01        6.859E-07        0.269
+Total number of SCF: 11    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -1.1408782157E+02 (Ha/atom)
+Total free energy                  : -2.2817564313E+02 (Ha)
+Band structure energy              :  2.6626279759E+00 (Ha)
+Exchange correlation energy        : -3.1069087304E+01 (Ha)
+Self and correction energy         : -2.4219100039E+02 (Ha)
+-Entropy*kb*T                      : -5.6822361872E-05 (Ha)
+Fermi level                        :  1.8503638375E+00 (Ha)
+RMS force                          :  6.6888284865E-01 (Ha/Bohr)
+Maximum force                      :  6.6888284865E-01 (Ha/Bohr)
+Time for force calculation         :  0.042 (sec)
+Pressure                           :  2.2698853929E+04 (GPa)
+Maximum stress                     :  2.2777374352E+04 (GPa)
+Time for stress calculation        :  0.196 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  3.713 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

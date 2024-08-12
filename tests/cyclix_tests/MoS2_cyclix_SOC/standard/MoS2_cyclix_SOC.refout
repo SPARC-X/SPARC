@@ -1,0 +1,149 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sun Aug 11 19:46:21 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 29.9138161344 0.628318530717959 1.19631069102724 
+TWIST_ANGLE: 0.055786 
+FD_GRID: 85 149 25
+FD_ORDER: 12
+BC: D C H
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.001
+EXCHANGE_CORRELATION: GGA_PBE
+NSTATES: 40
+CHEB_DEGREE: 70
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 5.29E-08
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 1
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: cyclix_tests/MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Volume :  9.3925335922E+02 (Bohr^3)
+Density: 1.7043857063E-01 (amu/Bohr^3), 1.9099129874E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 8
+NP_DOMAIN_PARAL: 2 3 1
+NP_DOMAIN_PHI_PARAL: 6 8 1
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing in x-direction        :  0.351927 (Bohr)
+Mesh spacing in y-direction        :  0.0042169 (Bohr)
+Mesh spacing in z-direction        :  0.0478524 (Bohr)
+Output printed to                  :  cyclix_tests/MoS2_cyclix_SOC/temp_run/MoS2_cyclix_SOC.out
+Total number of atom types         :  2
+Total number of atoms              :  3
+Total number of electrons          :  26
+Atom type 1  (valence electrons)   :  Mo 14
+Pseudopotential                    :  cyclix_tests/MoS2_cyclix_SOC/Mo_fr.psp8
+Atomic mass                        :  95.95
+Pseudocharge radii of atom type 1  :  8.09 0.38 7.61 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  S 6
+Pseudopotential                    :  cyclix_tests/MoS2_cyclix_SOC/S_fr.psp8
+Atomic mass                        :  32.0675
+Pseudocharge radii of atom type 2  :  7.39 0.38 7.37 (x, y, z dir)
+Number of atoms of type 2          :  2
+Estimated total memory usage       :  1.44 GB
+Estimated memory per processor     :  30.70 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -3.0560203103E+01        1.259E-01        19.794
+2            -3.0859118974E+01        8.782E-02        6.411
+3            -3.0896446645E+01        4.895E-02        6.459
+4            -3.0900447385E+01        2.275E-02        6.490
+5            -3.0901093201E+01        9.127E-03        6.394
+6            -3.0901194780E+01        4.836E-03        6.445
+7            -3.0901126828E+01        2.149E-03        6.624
+8            -3.0901106012E+01        1.578E-03        6.523
+9            -3.0901049440E+01        1.001E-03        6.496
+10           -3.0901047494E+01        7.233E-04        6.549
+11           -3.0901040648E+01        4.837E-04        6.615
+12           -3.0901049541E+01        3.303E-04        6.567
+13           -3.0901056283E+01        1.930E-04        6.530
+14           -3.0901063815E+01        1.019E-04        6.533
+15           -3.0901063006E+01        7.747E-05        6.556
+16           -3.0901068632E+01        3.372E-05        6.451
+17           -3.0901067830E+01        2.364E-05        6.439
+18           -3.0901068534E+01        1.491E-05        6.277
+19           -3.0901068682E+01        8.939E-06        5.376
+20           -3.0901068874E+01        7.088E-06        5.318
+21           -3.0901068918E+01        4.714E-06        5.827
+22           -3.0901068849E+01        3.014E-06        5.526
+23           -3.0901068848E+01        1.861E-06        5.009
+24           -3.0901068899E+01        1.177E-06        5.107
+25           -3.0901068936E+01        6.935E-07        5.056
+Total number of SCF: 25    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.0901068936E+01 (Ha/atom)
+Total free energy                  : -9.2703206808E+01 (Ha)
+Band structure energy              : -2.3354331992E+01 (Ha)
+Exchange correlation energy        : -1.7653180206E+01 (Ha)
+Self and correction energy         : -1.6423044860E+02 (Ha)
+-Entropy*kb*T                      : -5.1479746402E-10 (Ha)
+Fermi level                        : -1.6774235806E-01 (Ha)
+RMS force                          :  1.3452941286E-01 (Ha/Bohr)
+Maximum force                      :  1.7277330869E-01 (Ha/Bohr)
+Time for force calculation         :  0.880 (sec)
+Maximum stress                     :  8.2517298442E+00 (Ha/Bohr**2)
+Maximum stress equiv. to periodic  :  8.1157907830E+03 (GPa)
+Time for stress calculation        :  1.050 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  173.032 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

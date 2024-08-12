@@ -38,13 +38,14 @@
 #include "sqInitialization.h"
 #include "sqParallelization.h"
 #include "cyclix_tools.h"
+#include "sparc_mlff_interface.h"
 
 #define TEMP_TOL 1e-12
 
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 174
+#define N_MEMBR 202
 
 
 /**
@@ -781,6 +782,40 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     /* Default parameter for cyclix */
     pSPARC_Input->twist = 0.0;
+
+    /* MLFF */
+    pSPARC_Input->condK_min=1e-14;
+    pSPARC_Input->factor_multiply_sigma_tol=1.01;
+    pSPARC_Input->if_sparsify_before_train=1;
+    pSPARC_Input->begin_train_steps=10;
+    pSPARC_Input->if_atom_data_available=0;
+    pSPARC_Input->N_max_SOAP=10;
+    pSPARC_Input->radial_min=0.5;
+    pSPARC_Input->radial_max=3.0;
+    pSPARC_Input->L_max_SOAP=6;
+    pSPARC_Input->n_str_max_mlff=500;
+    pSPARC_Input->n_train_max_mlff=5000;
+    pSPARC_Input->mlff_flag=0;
+    pSPARC_Input->rcut_SOAP=10.0;
+    pSPARC_Input->sigma_atom_SOAP=1.0;
+    pSPARC_Input->kernel_typ_MLFF=0;
+    pSPARC_Input->descriptor_typ_MLFF=0;
+    pSPARC_Input->print_mlff_flag=1;
+    pSPARC_Input->beta_3_SOAP=1.0;
+    pSPARC_Input->xi_3_SOAP=4.0;
+    pSPARC_Input->F_tol_SOAP=5e-10;
+    pSPARC_Input->F_rel_scale=1.0;
+    pSPARC_Input->stress_rel_scale[0]=1.0;
+    pSPARC_Input->stress_rel_scale[1]=1.0;
+    pSPARC_Input->stress_rel_scale[2]=1.0;
+    pSPARC_Input->stress_rel_scale[3]=1.0;
+    pSPARC_Input->stress_rel_scale[4]=1.0;
+    pSPARC_Input->stress_rel_scale[5]=1.0;
+    pSPARC_Input->MLFF_DFT_fq=100000000;
+    pSPARC_Input->mlff_internal_energy_flag  = 0;
+    pSPARC_Input->mlff_pressure_train_flag  = 0;
+    pSPARC_Input->N_rgrid_MLFF  = 100;
+
 }
 
 
@@ -1141,6 +1176,44 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     /* copy input values from input struct */
     // int type values
+
+    // MLFF
+    pSPARC->mlff_flag = pSPARC_Input->mlff_flag;
+    pSPARC->condK_min = pSPARC_Input->condK_min;
+    pSPARC->factor_multiply_sigma_tol = pSPARC_Input->factor_multiply_sigma_tol;
+    pSPARC->if_sparsify_before_train = pSPARC_Input->if_sparsify_before_train;
+    pSPARC->begin_train_steps = pSPARC_Input->begin_train_steps;
+    pSPARC->if_atom_data_available = pSPARC_Input->if_atom_data_available;
+    pSPARC->N_max_SOAP = pSPARC_Input->N_max_SOAP;
+    pSPARC->radial_min = pSPARC_Input->radial_min;
+    pSPARC->radial_max = pSPARC_Input->radial_max;
+    pSPARC->L_max_SOAP = pSPARC_Input->L_max_SOAP;
+    pSPARC->n_str_max_mlff = pSPARC_Input->n_str_max_mlff;
+    pSPARC->n_train_max_mlff = pSPARC_Input->n_train_max_mlff;
+    pSPARC->rcut_SOAP = pSPARC_Input->rcut_SOAP;
+    pSPARC->sigma_atom_SOAP = pSPARC_Input->sigma_atom_SOAP;
+    pSPARC->kernel_typ_MLFF = pSPARC_Input->kernel_typ_MLFF;
+    pSPARC->descriptor_typ_MLFF = pSPARC_Input->descriptor_typ_MLFF;
+    pSPARC->print_mlff_flag = pSPARC_Input->print_mlff_flag;
+    pSPARC->mlff_internal_energy_flag = pSPARC_Input->mlff_internal_energy_flag;
+    pSPARC->mlff_pressure_train_flag = pSPARC_Input->mlff_pressure_train_flag;
+    pSPARC->N_rgrid_MLFF = pSPARC_Input->N_rgrid_MLFF;
+    pSPARC->beta_2_SOAP = 1-pSPARC_Input->beta_3_SOAP;
+    pSPARC->beta_3_SOAP = pSPARC_Input->beta_3_SOAP;
+    pSPARC->xi_3_SOAP = pSPARC_Input->xi_3_SOAP;
+    pSPARC->F_tol_SOAP = pSPARC_Input->F_tol_SOAP;
+    pSPARC->F_rel_scale = pSPARC_Input->F_rel_scale;
+    strncpy(pSPARC->hnl_file_name, pSPARC_Input->hnl_file_name,sizeof(pSPARC->hnl_file_name));
+     strncpy(pSPARC->mlff_data_folder, pSPARC_Input->mlff_data_folder,sizeof(pSPARC->mlff_data_folder));
+    pSPARC->stress_rel_scale[0] = pSPARC_Input->stress_rel_scale[0];
+    pSPARC->stress_rel_scale[1] = pSPARC_Input->stress_rel_scale[1];
+    pSPARC->stress_rel_scale[2] = pSPARC_Input->stress_rel_scale[2];
+    pSPARC->stress_rel_scale[3] = pSPARC_Input->stress_rel_scale[3];
+    pSPARC->stress_rel_scale[4] = pSPARC_Input->stress_rel_scale[4];
+    pSPARC->stress_rel_scale[5] = pSPARC_Input->stress_rel_scale[5];
+    pSPARC->MLFF_DFT_fq = pSPARC_Input->MLFF_DFT_fq;
+    // MLFF end
+
     pSPARC->num_node = pSPARC_Input->num_node;
     pSPARC->num_cpu_per_node = pSPARC_Input->num_cpu_per_node;
     pSPARC->num_acc_per_node = pSPARC_Input->num_acc_per_node;
@@ -3391,7 +3464,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version June 24, 2024)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version August 11, 2024)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3658,6 +3731,45 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"FIX_RAND: %d\n",pSPARC->FixRandSeed);
     if (pSPARC->StandardEigenFlag == 1)
         fprintf(output_fp,"STANDARD_EIGEN: %d\n",pSPARC->StandardEigenFlag);
+
+    if (pSPARC->mlff_flag>0){
+        fprintf(output_fp, "MLFF_FLAG: %d\n", pSPARC->mlff_flag);
+        fprintf(output_fp, "MLFF_INITIAL_STEPS_TRAIN: %d\n", pSPARC->begin_train_steps);
+        
+        // fprintf(output_fp, "MLFF_hnl_FILE: %s\n", pSPARC->hnl_file_name);
+        if (pSPARC->mlff_flag>1){
+            fprintf(output_fp, "MLFF_IF_ATOM_DATA_AVAILABLE: %d\n", pSPARC->if_atom_data_available);
+            fprintf(output_fp, "MLFF_MODEL_FOLDER: %s\n", pSPARC->mlff_data_folder);
+        }
+        
+        // fprintf(output_fp, "MLFF_DESCRIPTOR_TYPE: %d\n", pSPARC->descriptor_typ_MLFF);
+        fprintf(output_fp, "MLFF_PRINT_FLAG: %d\n", pSPARC->print_mlff_flag);
+        fprintf(output_fp, "MLFF_PRESSURE_TRAIN_FLAG: %d\n", pSPARC->mlff_pressure_train_flag);
+        fprintf(output_fp, "MLFF_INTERNAL_ENERGY_FLAG: %d\n", pSPARC->mlff_internal_energy_flag);
+        fprintf(output_fp, "MLFF_SPLINE_NGRID_FLAG: %d\n", pSPARC->N_rgrid_MLFF);
+
+        fprintf(output_fp, "MLFF_RADIAL_BASIS: %d\n", pSPARC->N_max_SOAP);
+        // fprintf(output_fp, "MLFF_RADIAL_MIN: %lf\n", pSPARC->radial_min);
+        // fprintf(output_fp, "MLFF_RADIAL_MAX: %lf\n", pSPARC->radial_max);
+        fprintf(output_fp, "MLFF_ANGULAR_BASIS: %d\n", pSPARC->L_max_SOAP);
+        fprintf(output_fp, "MLFF_MAX_STR_STORE: %d\n", pSPARC->n_str_max_mlff);
+        fprintf(output_fp, "MLFF_MAX_CONFIG_STORE: %d\n", pSPARC->n_train_max_mlff);
+        fprintf(output_fp, "MLFF_RCUT_SOAP: %lf\n", pSPARC->rcut_SOAP);
+        fprintf(output_fp, "MLFF_SIGMA_ATOM_SOAP: %lf\n", pSPARC->sigma_atom_SOAP);
+        // fprintf(output_fp, "MLFF_KERNEL_TYPE: %d\n", pSPARC->kernel_typ_MLFF);
+        // fprintf(output_fp, "MLFF_WT_THREE_BODY_SOAP: %lf\n", pSPARC->beta_3_SOAP);
+        fprintf(output_fp, "MLFF_REGUL_MIN: %.2E\n", pSPARC->condK_min);
+        fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL: %lf\n", pSPARC->factor_multiply_sigma_tol);
+        fprintf(output_fp, "MLFF_IF_SPARSIFY_BEFORE_TRAIN: %d\n", pSPARC->if_sparsify_before_train);
+        fprintf(output_fp, "MLFF_EXPONENT_SOAP: %lf\n", pSPARC->xi_3_SOAP);
+        // fprintf(output_fp, "MLFF_TOL_FORCE: %.2E\n", pSPARC->F_tol_SOAP);
+        fprintf(output_fp, "MLFF_SCALE_FORCE: %lf\n", pSPARC->F_rel_scale);
+        fprintf(output_fp, "MLFF_SCALE_STRESS: %lf %lf %lf %lf %lf %lf\n", pSPARC->stress_rel_scale[0], 
+                pSPARC->stress_rel_scale[1], pSPARC->stress_rel_scale[2], pSPARC->stress_rel_scale[3],
+                pSPARC->stress_rel_scale[4], pSPARC->stress_rel_scale[5]);
+        fprintf(output_fp, "MLFF_DFT_FQ: %d\n", pSPARC->MLFF_DFT_fq);
+    }
+
     fprintf(output_fp,"VERBOSITY: %d\n",pSPARC->Verbosity);
     fprintf(output_fp,"PRINT_FORCES: %d\n",pSPARC->PrintForceFlag);
     fprintf(output_fp,"PRINT_ATOMS: %d\n",pSPARC->PrintAtomPosFlag);
@@ -3921,9 +4033,13 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT, 
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT,     /* int array */
+
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                         MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -3935,9 +4051,12 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
+                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
+                                         MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -3958,9 +4077,12 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, 1, 1, /* int */ 
+                          1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1,
+                          1, 1, 1,/* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
-                          L_kpoint, /* double array */
+                          L_kpoint, 6, /* double array */
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
@@ -3972,9 +4094,12 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
+                          1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1,
                           1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
-                          L_STRING, L_STRING, L_STRING, L_STRING};
+                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING,
+                          L_STRING};
 
     // calculating offsets in an architecture independent manner
     MPI_Aint addr[N_MEMBR],disps[N_MEMBR], base;
@@ -4083,6 +4208,23 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.BandStructFlag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.kpt_per_line, addr + i++);
     MPI_Get_address(&sparc_input_tmp.densfilecount, addr + i++);
+
+    MPI_Get_address(&sparc_input_tmp.if_sparsify_before_train, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.begin_train_steps, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.if_atom_data_available, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.N_max_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.L_max_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.n_str_max_mlff, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.n_train_max_mlff, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mlff_flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.kernel_typ_MLFF, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.descriptor_typ_MLFF, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.print_mlff_flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mlff_internal_energy_flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mlff_pressure_train_flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.N_rgrid_MLFF, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.MLFF_DFT_fq, addr + i++);
+
     // double array type
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
     MPI_Get_address(&sparc_input_tmp.kptshift, addr + i++);
@@ -4090,6 +4232,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.kredx, addr + i++);
     MPI_Get_address(&sparc_input_tmp.kredy, addr + i++);
     MPI_Get_address(&sparc_input_tmp.kredz, addr + i++);
+
+    MPI_Get_address(&sparc_input_tmp.stress_rel_scale, addr + i++);
     // double type
     MPI_Get_address(&sparc_input_tmp.range_x, addr + i++);
     MPI_Get_address(&sparc_input_tmp.range_y, addr + i++);
@@ -4149,6 +4293,19 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.SQ_rcut, addr + i++);
     MPI_Get_address(&sparc_input_tmp.SQ_tol_occ, addr + i++);
     MPI_Get_address(&sparc_input_tmp.twist, addr + i++);
+
+    MPI_Get_address(&sparc_input_tmp.radial_min, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.radial_max, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.condK_min, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.factor_multiply_sigma_tol, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.rcut_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.sigma_atom_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.beta_3_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.xi_3_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.F_tol_SOAP, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.F_rel_scale, addr + i++);
+    
+
     // char type
     MPI_Get_address(&sparc_input_tmp.MDMeth, addr + i++);
     MPI_Get_address(&sparc_input_tmp.RelaxMeth, addr + i++);
@@ -4159,6 +4316,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.InDensTCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.InDensUCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.InDensDCubFilename, addr + i++);
+
+    MPI_Get_address(&sparc_input_tmp.hnl_file_name, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mlff_data_folder, addr + i++);
     for (i = 0; i < N_MEMBR; i++) {
         disps[i] = addr[i] - base;
     }

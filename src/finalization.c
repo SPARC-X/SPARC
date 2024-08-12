@@ -26,6 +26,7 @@
 #include "mGGAfinalization.h"
 #include "sqFinalization.h"
 #include "cyclix_tools.h"
+#include "sparc_mlff_interface.h"
 
 /* ScaLAPACK routines */
 #ifdef USE_MKL
@@ -50,9 +51,9 @@ void Finalize(SPARC_OBJ *pSPARC)
     Free_basic(pSPARC);
     if (pSPARC->SQFlag == 1) {
         Free_SQ(pSPARC);
-    } else {
+    } else if (pSPARC->mlff_flag != 21) {
         Free_SPARC(pSPARC);
-    }
+    } 
 
     FILE *output_fp;
     int rank;
@@ -228,6 +229,11 @@ void Free_basic(SPARC_OBJ *pSPARC) {
     if (pSPARC->MixingPrecond == 2 || pSPARC->MixingPrecond == 3) {
         free(pSPARC->precondcoeff_a);
         free(pSPARC->precondcoeff_lambda_sqr);
+    }
+
+    if (pSPARC->mlff_flag > 1){
+        free_MLFF(pSPARC->mlff_str);
+        free(pSPARC->mlff_str);
     }
 }
 

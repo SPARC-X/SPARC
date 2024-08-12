@@ -2,7 +2,7 @@
 *                       SPARC (version June 24, 2024)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Mon Jun 24 19:50:51 2024                  *
+*                   Start time: Sun Aug 11 19:49:38 2024                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -50,7 +50,7 @@ PRINT_EIGEN: 1
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
 BAND_STRUCTURE: 1
-INPUT_DENS_FILE: ../densfiles/CdS_standard.indens 
+INPUT_DENS_FILE: ../densfiles/CdS_standard.indens 
 KPT_PER_LINE: 10
 KPT_PATHS: 9
 0.000000 0.000000 0.000000
@@ -113,39 +113,3 @@ Pseudocharge radii of atom type 2  :  7.95 7.95 7.95 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  565.85 MB
 Estimated memory per processor     :  11.79 MB
-WARNING: Atoms are too close to boundary for b calculation.
-===================================================================
-                    Self Consistent Field (SCF#1)                     
-===================================================================
-Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -8.8867518467E+01        1.038E-02        4.363
-Total number of SCF: 1     
-WARNING: SCF#1 did not converge to desired accuracy!
-====================================================================
-                    Energy and force calculation                    
-====================================================================
-Free energy per atom               : -8.8867518467E+01 (Ha/atom)
-Total free energy                  : -1.7773503693E+02 (Ha)
-Band structure energy              : -2.0019558219E+01 (Ha)
-Exchange correlation energy        : -2.5269251882E+01 (Ha)
-Self and correction energy         : -2.2142441770E+02 (Ha)
--Entropy*kb*T                      : -4.8879871941E-05 (Ha)
-Fermi level                        :  4.2911791711E-01 (Ha)
-RMS force                          :  2.1295386221E+00 (Ha/Bohr)
-Maximum force                      :  2.1295386221E+00 (Ha/Bohr)
-Time for force calculation         :  0.043 (sec)
-***************************************************************************
-                               Timing info                                 
-***************************************************************************
-Total walltime                     :  4.626 sec
-___________________________________________________________________________
-
-***************************************************************************
-*             Material Physics & Mechanics Group, Georgia Tech            *
-*                       PI: Phanish Suryanarayana                         *
-*               List of contributors: See the documentation               *
-*         Citation: See README.md or the documentation for details        *
-*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
-*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
-***************************************************************************
-                                                                           
