@@ -26,6 +26,7 @@
 #include "readfiles.h"
 #include "eigenSolver.h" // Mesh2ChebDegree
 #include "readfiles.h"
+#include "sparc_mlff_interface.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 
@@ -71,9 +72,15 @@ void main_MD(SPARC_OBJ *pSPARC) {
 	    }
 	}
 
-	// Initialize the MD for the very first step only
-	Calculate_electronicGroundState(pSPARC);
-	Initialize_MD(pSPARC);
+	
+
+	// Initialize the MD and MLFF for the very first step only
+	if (pSPARC->mlff_flag==0){
+		Calculate_electronicGroundState(pSPARC);
+		Initialize_MD(pSPARC);
+	} else {	
+		MLFF_main(pSPARC);
+	}
 
 	pSPARC->MD_maxStep = pSPARC->restartCount + pSPARC->MD_Nstep;
 
@@ -496,8 +503,12 @@ void NVT_NH(SPARC_OBJ *pSPARC) {
 	elecDensExtrapolation(pSPARC);
 	// Check position of atom near the boundary and apply wraparound in case of PBC, otherwise show error if the atom is too close to the boundary for bounded domain
 	Check_atomlocation(pSPARC);
-	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
-	Calculate_electronicGroundState(pSPARC);
+	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem or MLFF
+	if (pSPARC->mlff_flag == 0){
+		Calculate_electronicGroundState(pSPARC);
+	} else {
+		MLFF_call(pSPARC);
+	}
 	pSPARC->elecgs_Count++;
 	// Second step velocity Verlet
 	VVerlet2(pSPARC);
@@ -637,8 +648,12 @@ void NVE(SPARC_OBJ *pSPARC) {
 	elecDensExtrapolation(pSPARC);
 	// Check position of atom near the boundary and apply wraparound in case of PBC, otherwise show error if the atom is too close to the boundary for bounded domain
 	Check_atomlocation(pSPARC);
-	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
-	Calculate_electronicGroundState(pSPARC);
+	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem or MLFF
+	if (pSPARC->mlff_flag == 0){
+		Calculate_electronicGroundState(pSPARC);
+	} else {
+		MLFF_call(pSPARC);
+	}
 	pSPARC->elecgs_Count++;
 	// Leapfrog step (part-2)
 	Leapfrog_part2(pSPARC);
@@ -713,8 +728,12 @@ void NVK_G(SPARC_OBJ *pSPARC) {
 	// Check position of atom near the boundary and apply wraparound in case of PBC, otherwise show error if the atom is too close to the boundary for bounded domain
 	Check_atomlocation(pSPARC);
 
-	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
-	Calculate_electronicGroundState(pSPARC);
+	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem or MLFF
+	if (pSPARC->mlff_flag == 0){
+		Calculate_electronicGroundState(pSPARC);
+	} else {
+		MLFF_call(pSPARC);
+	}
 	pSPARC->elecgs_Count++;
 
 	// Calculate velocity at next full time step
@@ -872,8 +891,12 @@ void NPT_NH (SPARC_OBJ *pSPARC) {
 	elecDensExtrapolation(pSPARC);
 	// Check position of atom near the boundary and apply wraparound in case of PBC, otherwise show error if the atom is too close to the boundary for bounded domain
 	Check_atomlocation(pSPARC);
-	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
-	Calculate_electronicGroundState(pSPARC);
+	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem or MLFF
+	if (pSPARC->mlff_flag == 0){
+		Calculate_electronicGroundState(pSPARC);
+	} else {
+		MLFF_call(pSPARC);
+	}
 	pSPARC->elecgs_Count++;
     #ifdef DEBUG
         // Calculate Hamiltonian of the system.
@@ -1337,8 +1360,12 @@ void NPT_NP (SPARC_OBJ *pSPARC) {
 	elecDensExtrapolation(pSPARC);
 	// Check position of atom near the boundary and apply wraparound in case of PBC, otherwise show error if the atom is too close to the boundary for bounded domain
 	Check_atomlocation(pSPARC);
-	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
-	Calculate_electronicGroundState(pSPARC);
+	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem or MLFF
+	if (pSPARC->mlff_flag == 0){
+		Calculate_electronicGroundState(pSPARC);
+	} else {
+		MLFF_call(pSPARC);
+	}
 	pSPARC->elecgs_Count++;
 	#ifdef DEBUG
 		if (!rank) printf("\nend NPT_NP timestep %d\n", pSPARC->MDCount + 1);

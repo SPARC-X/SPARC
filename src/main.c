@@ -49,7 +49,9 @@ int main(int argc, char *argv[]) {
     else
         Calculate_electronicGroundState(&SPARC);
     
+    
     Finalize(&SPARC);
+
 
     MPI_Barrier(MPI_COMM_WORLD);
     // end timer

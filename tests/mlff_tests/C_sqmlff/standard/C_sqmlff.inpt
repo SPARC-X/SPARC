@@ -1,0 +1,67 @@
+CELL: 5.124791866499891 5.124791866499891 5.124791866499891
+MESH_SPACING: 0.15
+FD_ORDER: 12
+BC: P P P
+
+ELEC_TEMP_TYPE: Fermi-Dirac
+ELEC_TEMP: 1000000
+
+
+EXCHANGE_CORRELATION: LDA_PZ
+
+TOL_LANCZOS: 1.00E-6
+
+TOL_SCF: 5.00E-04
+
+#TOL_PRECOND: 1.00E-6
+#TOL_PSEUDOCHARGE: 1.00E-14
+#TOL_POISSON: 1.00E-8
+
+#SQ_EIGSHIFT_FLAG: 1
+#SQ_EIGSHIFT: 5
+
+ 
+SQ_FLAG: 1                 # 1= SQ, 0= no SQ (default)
+#SQ_NPL_C: 120               # Quadrature order Clenshaw-Curtis (Usually SQ_NPL_C = 2*SQ_NPL_G)
+SQ_NPL_G: 40                # Gauss quadrature order
+SQ_RCUT: 1.20                # truncation radius ; also called localization radius
+REFERENCE_CUTOFF: 0.30       #2 times mesh_size
+
+MD_FLAG: 1                  # 1= MD, 0= no MD (default)
+ION_TEMP: 1000000                 # kelvin
+ION_TEMP_END: 1000000            # kelvin: vary temp linearly from ION_TEMP to ION_TEMP_END
+      
+MD_METHOD: NVK_G              # NVE, NVT_NH (Nose-Hoover), NVK_G (Gaussian)
+
+MD_TIMESTEP: 0.05              # fs
+MD_NSTEP: 20                  # run MD_NSTEP steps or TWTIME minutes, whichever comes first
+
+ION_VEL_DSTR: 1               # initial velocity distrib: 1= uniform, 2= Maxwell-Boltzmann (default)
+ION_VEL_DSTR_RAND: 0          # initial velocity distrib seed: 0= fixed (default), 1= random
+PRINT_RESTART: 1              # output .restart files for restarting
+PRINT_RESTART_FQ: 20           # .restart files output every PRINT_RESTART_FQ steps
+
+CALC_STRESS: 1
+CALC_PRES: 1
+PRINT_ATOMS: 1
+PRINT_VELS: 1
+PRINT_FORCES: 1
+PRINT_EIGEN: 0                # print eigenvalues and occupations to .eigen file (not with SQ)
+PRINT_DENSITY: 0
+PRINT_MDOUT: 1
+
+ # MLFF parameters
+MLFF_FLAG: 1
+MLFF_ANGULAR_BASIS: 6   # Lmax (maximum order of spherical harmonics in SOAP)
+MLFF_RADIAL_BASIS: 8   # N_R (Number of raddial basis functions in SOAP)
+MLFF_RCUT_SOAP: 10      # (Cutoff radius for the SOAP descriptor)
+MLFF_hnl_FILE: ../hnl_N_8.txt   # (name of hnl file which has h_nl and d h_nl/ dr) - (Lmax, N_R and RCUT_SOAP has to be consistent with this file)
+MLFF_MODEL_FOLDER: ./
+MLFF_INITIAL_STEPS_TRAIN: 8   # Initial number of MD steps where DFT calculation is imposed
+MLFF_MAX_STR_STORE: 500   # This is the maximum number of structure for which memory is allocated to store MLFF data
+MLFF_MAX_CONFIG_STORE: 5000  # THis is the maximum number of atomic descriptors per element type that is stored 
+MLFF_SCALE_FORCE: 1.0   # Scaling of force relative to energy
+MLFF_SCALE_STRESS: 1.0 1.0 1.0 1.0 1.0 1.0   # Scaling of stress relative to energy
+MLFF_REGUL_MIN: 1.00E-10 # regularization hyperparameters are chosen such that condition number of matrix to be inverted is less than 1/REGUL_MIN_MLFF
+MLFF_FACTOR_MULTIPLY_SIGMATOL: 1.001   # Parameter to control sigma_tol (always use >1) closer to  will result in more DFT calulations
+MLFF_IF_SPARSIFY_BEFORE_TRAIN: 1   # choose 0 if there is no sparsification just before training

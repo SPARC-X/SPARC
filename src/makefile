@@ -33,7 +33,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include -Icyclix/include
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include -Icyclix/include -Icyclix/cylix_mlff -IhighT/mlff_highT -Imlff/
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -100,6 +100,10 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         highT/sqProperties.o highT/sqtool.o   \
         cyclix/cyclix_tools.o cyclix/cyclix_forces.o cyclix/cyclix_gradVec.o cyclix/cyclix_lapVec.o \
         cyclix/cyclix_stress.o \
+        mlff/covariance_matrix.o mlff/regression.o mlff/spherical_harmonics.o mlff/soap_descriptor.o mlff/sparc_mlff_interface.o \
+        mlff/bessel_NR.o mlff/nrutils.o mlff/sparsification.o mlff/tools_mlff.o mlff/mlff_read_write.o \
+        mlff/descriptor.o mlff/ddbp_tools.o highT/mlff_highT/internal_energy_model.o cyclix/cylix_mlff/cyclix_mlff_tools.o \
+        mlff/hnl_soap.o
 
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci

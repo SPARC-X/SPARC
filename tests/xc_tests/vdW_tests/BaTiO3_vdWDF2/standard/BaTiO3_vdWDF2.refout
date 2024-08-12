@@ -1,0 +1,151 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sun Aug 11 19:41:16 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 7.63 7.63 7.63 
+LATVEC:
+1.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 1.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 1.000000000000000 
+FD_GRID: 29 29 29
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: vdWDF2
+NSTATES: 29
+CHEB_DEGREE: 28
+CHEFSI_BOUND_FLAG: 0
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 6.92E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 1
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: xc_tests/vdW_tests/BaTiO3_vdWDF2/temp_run/BaTiO3_vdWDF2
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+7.630000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 7.630000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 7.630000000000000 
+Volume: 4.4419494700E+02 (Bohr^3)
+Density: 5.2497715603E-01 (amu/Bohr^3), 5.8828273714E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 1
+NP_BAND_PARAL: 6
+NP_DOMAIN_PARAL: 2 2 2
+NP_DOMAIN_PHI_PARAL: 3 4 4
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.263103 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  xc_tests/vdW_tests/BaTiO3_vdWDF2/temp_run/BaTiO3_vdWDF2.out
+Total number of atom types         :  3
+Total number of atoms              :  5
+Total number of electrons          :  40
+Atom type 1  (valence electrons)   :  Ba 10
+Pseudopotential                    :  ../psps/56_Ba_10_2.8_2.8_pbe_n_v1.0.psp8
+Atomic mass                        :  137.327
+Pseudocharge radii of atom type 1  :  7.63 7.63 7.63 (x, y, z dir)
+Number of atoms of type 1          :  1
+Atom type 2  (valence electrons)   :  Ti 12
+Pseudopotential                    :  ../psps/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
+Atomic mass                        :  47.867
+Pseudocharge radii of atom type 2  :  7.63 7.63 7.63 (x, y, z dir)
+Number of atoms of type 2          :  1
+Atom type 3  (valence electrons)   :  O 6
+Pseudopotential                    :  ../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+Atomic mass                        :  15.9994
+Pseudocharge radii of atom type 3  :  7.63 7.63 7.63 (x, y, z dir)
+Number of atoms of type 3          :  3
+Estimated total memory usage       :  44.48 MB
+Estimated memory per processor     :  948.97 kB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.7545123318E+01        1.644E-01        0.204
+2            -2.7489404167E+01        5.930E-02        0.050
+3            -2.7484360884E+01        4.251E-02        0.051
+4            -2.7485247437E+01        3.894E-02        0.057
+5            -2.7482397633E+01        1.006E-02        0.058
+6            -2.7482265287E+01        5.863E-03        0.050
+7            -2.7482207956E+01        1.753E-03        0.048
+8            -2.7482206215E+01        1.515E-03        0.049
+9            -2.7482203417E+01        2.549E-04        0.047
+10           -2.7482203436E+01        1.489E-04        0.048
+11           -2.7482203422E+01        2.730E-05        0.047
+12           -2.7482203435E+01        1.516E-05        0.047
+13           -2.7482203431E+01        4.066E-06        0.047
+14           -2.7482203434E+01        1.252E-06        0.046
+15           -2.7482203423E+01        5.443E-07        0.046
+Total number of SCF: 15    
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.7482203423E+01 (Ha/atom)
+Total free energy                  : -1.3741101711E+02 (Ha)
+Band structure energy              : -1.0924679587E+01 (Ha)
+Exchange correlation energy        : -2.9059464113E+01 (Ha)
+Self and correction energy         : -1.8458661271E+02 (Ha)
+-Entropy*kb*T                      : -1.8228676397E-13 (Ha)
+Fermi level                        :  2.9234286298E-01 (Ha)
+vdWDF energy                       :  2.8203486663E-01 (Ha)
+RMS force                          :  1.1102547991E-01 (Ha/Bohr)
+Maximum force                      :  2.4073934555E-01 (Ha/Bohr)
+Time for force calculation         :  0.036 (sec)
+Pressure                           :  4.8940536986E+01 (GPa)
+Maximum stress                     :  5.7369573859E+01 (GPa)
+Time for stress calculation        :  0.067 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  1.206 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

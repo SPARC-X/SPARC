@@ -14,7 +14,7 @@ import math
 # Other parameters to run the test (can be changed by the user)
 nprocs_tests = 24  # In default tests are run with 24 processors per node
 nnodes_tests = 2  # In default tests are run with 1 node
-npbs = 2  # By default (number of script files the tests are distributed to)
+npbs = 6  # By default (number of script files the tests are distributed to)
 launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .sbatch
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
 MPI_command = "srun"  # MPI command to run the executable on the given cluster
@@ -38,360 +38,479 @@ tols = {"F_tol": 1e-5, # Ha/Bohr
 # -----------------   SYSTEMS INFO   ------------------------#
 ################################################################################################################
 SYSTEMS = { "systemname": ['BaTiO3_valgrind'],
+		"directory": ["./"],
 	    "Tags": [['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'memcheck', 'gamma', 'orth', 'smear_gauss']],
 	    "Tols": [[5e-5, 1e-4, 1e-1]], # E_tol(Ha/atom), F_tol, stress_tol(%)
 	    }
 
 ################################################################################################################
 SYSTEMS["systemname"].append('CuSi7')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'gamma', 'orth', 'smear_gauss','ECUT'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker',  'gamma', 'orth', 'smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Fe_spin')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'kpt', 'spin','orth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 ################################################################################################################
 SYSTEMS["systemname"].append('H2O_sheet')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['surface', 'gga', 'potmix','orth','smear_fd','orient'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('H2O_wire')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['wire', 'gga', 'denmix', 'kerker', 'orth','smear_fd','orient'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('O2_spin')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'denmix', 'kerker', 'orth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_atom_geopt')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'denmix', 'kerker', 'relax_atom_lbfgs','gamma','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_cell_geopt')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_cell','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_full_geopt')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_total_lbfgs','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_kpt_valgrind')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'kpt', 'lda', 'potmix', 'memcheck','nonorth','smear_fd'])
 SYSTEMS["Tols"].append([5e-5, 1e-4, 5.0]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_kpt')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'kpt', 'gga', 'potmix','nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('SiH4')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['molecule', 'gga', 'denmix', 'kerker', 'orth','smear_gauss','bandgap'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Au_fcc211')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Cu_FCC')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Mg_hcp')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'nonorth','smear_fd', 'kpt'])
 SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MnAlCu2')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth','smear_fd', 'gamma'])
 SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MgO')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk','gga','potmix','nonorth','smear_gauss','nlcc','orient'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('MoS2')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['surface','gga','potmix','nonorth','smear_fd','orient'])
 SYSTEMS["Tols"].append([tols["E_tol"], 5e-6, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('He16_NVKG')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk','gga','potmix','orth','smear_fd','md_nvkg','gamma'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('He16_NVTNH')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk','lda','potmix','orth','smear_fd','md_nvtnh','gamma'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('LiF_NVKG')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk','gga','potmix','orth','smear_fd','md_nvkg','gamma'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('O2_spin_spinparal_NVKG')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'denmix', 'kerker', 'orth','smear_fd','paral','md_nvkg'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si2_kpt_paral')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','kpt','smear_fd', 'paral'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si2_domain_paral')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','kpt','smear_fd', 'paral'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('TiNi_monoclinic')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','gamma','smear_fd','nlcc'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('P_triclinic')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'potmix', 'nonorth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_quick')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'lda', 'denmix', 'orth','gamma','smear_gauss'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('H2O_sheet_quick')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['surface', 'gga', 'potmix', 'orth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################						
 SYSTEMS["systemname"].append('H2O_wire_quick')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['wire', 'gga', 'denmix', 'orth','gamma','smear_fd'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################### 
 SYSTEMS["systemname"].append('SiH4_quick')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['molecule', 'gga', 'denmix', 'orth','gamma','smear_gauss'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Al18Si18_NPTNH')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Al16Si16_NPTNH_restart')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Al18Si18_NPTNH_lat23')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Al18Si18_NPTNP')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Al16Si16_NPTNP_restart')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Al18C2_NPTNP_aeqb_c')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Al18C2_NPTNP_onlyc')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Au_wire_d3')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['wire', 'gga','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_vdWDF1')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_vdWDF2')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('C_HSE_aux')
+SYSTEMS["directory"].append("./xc_tests/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'HSE','gamma' 'nonorth','smear_fd','potmix'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_gamma_ortho_vdWDF1')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_kpt_nonOrtho_vdWDF2')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'nonorth', 'kpt','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_surface_d3')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['surface', 'gga','d3','nonorth'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('NaCl_PBE0')
+SYSTEMS["directory"].append("./xc_tests/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'PBE0','gamma' 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('O2_spin_HSE')
+SYSTEMS["directory"].append("./xc_tests/exx_tests/")
 SYSTEMS["Tags"].append(['molecule', 'spin', 'HSE', 'denmix', 'kerker', 'orth','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('PtAu_SOC')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'SOC','kpt' 'nonorth','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si2_kpt_PBE0')
+SYSTEMS["directory"].append("./xc_tests/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'PBE0','kpt' 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_vdWDF1')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_vdWDF2')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_atom_geopt_d3')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'denmix', 'kerker', 'relax_atom_lbfgs','gamma','smear_gauss','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_cell_geopt_d3')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_cell','gamma','smear_fd','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('SnO_bulk_d3')
+SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, 5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('AlSi_orthogonal_quick_scf')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','orth','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('AlSi_primitive_quick_relax')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','nonorth','relax_atom_lbfgs','kpt','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BN_primitive_quick_md')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'lda','nonorth','md_nve','kpt','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('LiNbO2_primitive_quick_scf')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'lda','nonorth','kpt','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('SiC_orthogonal_quick_relax')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'lda','orth','relax_atom_lbfgs','gamma','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('TiO2_orthogonal_quick_md')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','orth','md_nve','gamma','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_scan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_rscan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan','fast'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_r2scan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan','fast'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_scan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_rscan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_r2scan')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_gamma')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'nonorth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_kpt')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_rscan_kpt')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_r2scan_kpt')
+SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_Al')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_B4C_MD')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda','md_nvkg'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_BN')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'gga'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_H')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_MgSiO3_valgrind')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda','memcheck'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_O8')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_Si8')
+SYSTEMS["directory"].append("./highT_tests/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('WSe2_cyclix')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['bulk', 'cyclix','kpt','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('HfSe2_cyclix')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['bulk', 'cyclix','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('FeCl2_cyclix_spin')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['cyclix','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('NiCl2_cyclix_spin')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['cyclix','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('WS2_cyclix_SOC')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['cyclix','SOC'])
 SYSTEMS["Tols"].append([tols["E_tol"], 2e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
+SYSTEMS["directory"].append("./cyclix_tests/")
 SYSTEMS["Tags"].append(['cyclix','SOC'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe3_noncollinear')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['molecule', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('FePt_noncollinear')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MnAu_noncollinear')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('CdS_bandstruct')
+SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth', 'smear_fd', 'bandstruct'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+##################################################################################################################
+SYSTEMS["systemname"].append('AlSi_mlffflag1')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff1', 'md_nvkg'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%) 
+##################################################################################################################
+SYSTEMS["systemname"].append('AlSi_mlffflag21')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff21', 'md_nvkg'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%) 
+##################################################################################################################
+SYSTEMS["systemname"].append('AlSi_mlffflag22')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk',  'gga', 'orth', 'mlff22', 'md_nvkg'])
+SYSTEMS["Tols"].append([5e-5, 5e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('C_sqmlff')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk', 'highT', 'lda', 'orth', 'mlff1', 'md_nvkg'])
+SYSTEMS["Tols"].append([5e-5, 5e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('AlSi_NPTNH_mlff')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff1', 'md_npt'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('AlSi_mlff_nonorth')
+SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
 # SYSTEMS["systemname"].append('??type the system name??')
@@ -429,6 +548,8 @@ inplace_file_content = """
    ...
 }
 """
+
+
 home_directory=subprocess.check_output("pwd").strip()
 
 if os.path.exists('./../lib/sparc'):
@@ -458,14 +579,17 @@ def findsystems(tags_systems):
 	systems=[]
 	tags_export=[]
 	tols_export = []
+	dirs_export = []
 
 	s_all = SYSTEMS["systemname"]
 	tag_all = SYSTEMS["Tags"]
 	tol_all = SYSTEMS["Tols"]
+	dirs_all = SYSTEMS["directory"]
 	for i in range(len(s_all)):
 		sys_name = s_all[i]
 		tags_sys = tag_all[i]
 		tol_sys = tol_all[i]
+		dirs_sys = dirs_all[i]
 		iftagsmatch = True
 		for tag_temp in tags_systems:
 			iftagsmatch = iftagsmatch and (tag_temp in tags_sys)
@@ -473,79 +597,65 @@ def findsystems(tags_systems):
 			systems.append(sys_name)
 			tags_export.append(tags_sys)
 			tols_export.append(tol_sys)
+			dirs_export.append(dirs_sys)
 
-
-	# for keys in SYSTEMS:
-	# 	sys_name = keys
-	# 	tags_sys = SYSTEMS[keys]
-	# 	iftagsmatch = True
-	# 	for tag_temp in tags_systems:
-	# 		iftagsmatch = iftagsmatch and (tag_temp in tags_sys)
-	# 	if iftagsmatch == True:
-	# 		systems.append(sys_name)
-	# 		tags_export.append(tags_sys)
-
-	data = [systems, tags_export, tols_export]
+	data = [systems, tags_export, tols_export, dirs_export]
 	return(data)
 
 
-def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isorient, isserial):
+def launchsystems(systems, dirs_sys, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isorient, isserial, ismlff_copy):
+
+	home_tests_directory = os.getcwd()
 	#""" Launches the systems with memcheck, specified number of processors and with valgrid """
 	with open("samplescript_cluster",'r') as f_samplePBS:
 		samplePBS_content_orj = [ line.strip() for line in f_samplePBS]
 
-	for lines in samplePBS_content_orj:
-		if re.findall(r'nodes',lines) == ['nodes']:
-			nodes_ppn = re.findall(r'\d+',lines)
-			nodes_samplepbs = int(nodes_ppn[0])
-			procs_samplepbs = int(nodes_ppn[1])
-			if (nodes_samplepbs != nnodes_tests):
-				 sys.exit("Number of nodes entered is not correct either in samplepbs file or on the top of test.py file\n")
-
-			if (procs_samplepbs != nprocs_tests):
-				 sys.exit("Number of processors entered is not correct either in samplepbs file or on the top of test.py file\n")
-			break
 
 	jobID=[]
-	for i in range(len(systems)):
-		if  memcheck[i] == True:
-			os.chdir(systems[i])
-			f_inplace = open("inplace_reduce.supp","w")
-			f_inplace.write(inplace_file_content)
-			f_inplace.close()
-			os.chdir("./..")
+
 	countx=0 
 	for syst in systems:
+		os.chdir(dirs_sys[countx])
 		os.chdir(syst)
 		if isorient[countx] == False:
 			if os.path.isdir("temp_run"):
 				files = glob.glob("temp_run/*")
 				for f in files:
 					os.remove(f)
+
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					# os.system("cp *.psp8 temp_run")
+					if ismlff_copy[countx] == True:
+						os.system("cp ./high_accuracy/MLFF* ./temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./standard/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./standard/*.inpt ./temp_run")
 					os.system("cp ./standard/*.ion ./temp_run")
 					# os.system("cp *.psp8 temp_run")
+					if ismlff_copy[countx] == True:
+						os.system("cp ./standard/MLFF* ./temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./standard/*.restart ./temp_run")
 			else:
 				os.mkdir("temp_run")
+				
 				if ifVHQ == True:
 					os.system("cp ./high_accuracy/*.inpt ./temp_run")
 					os.system("cp ./high_accuracy/*.ion ./temp_run")
 					# os.system("cp *.psp8 temp_run")
+					if ismlff_copy[countx] == True:
+						os.system("cp ./high_accuracy/MLFF* ./temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./standard/*.restart ./temp_run")
 				if ifVHQ == False:
 					os.system("cp ./standard/*.inpt ./temp_run")
 					os.system("cp ./standard/*.ion ./temp_run")
 					# os.system("cp *.psp8 temp_run")
+					if ismlff_copy[countx] == True:
+						os.system("cp ./standard/MLFF* ./temp_run")
 					if syst == "Al16Si16_NPTNH_restart" or syst == "Al16Si16_NPTNP_restart":
 						os.system("cp ./standard/*.restart ./temp_run")
 		else:
@@ -618,115 +728,11 @@ def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isori
 					os.system("cp ./standard_orientation3/*.ion ./temp_run3")
 					# os.system("cp *.psp8 temp_run3")
 		countx=countx+1
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 
 	if ismempbs == True:
-		count = 0
-		for syst in systems:
-			os.chdir(syst)
-			# nprocs = procs_sys[count]
-			# nnodes = int(math.ceil(nprocs/24.0))
-			nprocs = procs_nodes_cluster[0] * procs_nodes_cluster[1]
-			nnodes = procs_nodes_cluster[1]
-			
-			samplePBS_content = []
-			for lines in samplePBS_content_orj:
-				samplePBS_content.append(lines)
-			if memcheck[count] == True:
-				samplePBS_content.append("module purge")
-				samplePBS_content.append("module load gcc/8.3.0")
-				samplePBS_content.append("module load mvapich2/2.3.2")
-				samplePBS_content.append("module load mkl/19.0.5")
-				samplePBS_content.append("module load valgrind/3.16.1")
-				# samplePBS_content.append("module load valgrind")
-				#samplePBS_content.append("export MV2_USE_RDMA_CM=1")
-			index=0
-			for lines in samplePBS_content:
-				# if re.findall(r'nodes',lines) == ['nodes']:
-				# 	if nprocs == 1:
-				# 		samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(1)
-				# 	else:
-				# 		samplePBS_content[index] = "#PBS -l nodes="+str(nnodes)+":ppn="+str(24)
-				# if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
-				# 	if nprocs == 1:
-				# 		samplePBS_content[index] = "#PBS -l mem=10gb"
-				# 	else:
-				# 		samplePBS_content[index] = "#PBS -l pmem=7gb"
-				if re.findall(r'mpirun',lines) == ['mpirun']:
-					samplePBS_content.remove(lines)
-				if re.findall(r'srun',lines) == ['srun']:
-					samplePBS_content.remove(lines)
-				index = index+1
-
-			if memcheck[count] == True:
-				samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./../inplace_reduce.supp --log-file=valgrind_out ./../../sparc -name "+syst+" -log_summary > "+syst+".log")
-			else:
-				samplePBS_content.append(MPI_command+" "+" ./../../sparc"+ " -name ./"+syst+" -log_summary > "+syst+".log")
-			if isorient[count] == False:
-				os.chdir("temp_run")
-				f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
-				for lines in samplePBS_content:
-						f_pbs.write(lines+"\n")
-				f_pbs.close()
-				temp = "launch_"+syst+launch_cluster_extension
-				p = subprocess.check_output([command_launch_extension, temp])
-				# p = str(p)
-				# q = p.split(".")
-				# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-				# jobID.append(int(q1.group(2)))
-			else:
-				if True:
-					# os.chdir("./..")
-					# os.system("pwd")
-					# print(syst)
-					# print(systems)
-					# print(isorient)
-					# print(count)
-					os.chdir("temp_run1")
-					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
-					for lines in samplePBS_content:
-						f_pbs.write(lines+"\n")
-					f_pbs.close()
-					temp = "launch_"+syst+launch_cluster_extension
-					p = subprocess.check_output(["qsub", temp])
-					# p = str(p)
-					# q = p.split(".")
-					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					# jobID.append(int(q1.group(2)))
-					os.chdir("./..")
-					os.chdir("temp_run2")
-					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
-					for lines in samplePBS_content:
-						f_pbs.write(lines+"\n")
-					f_pbs.close()
-					temp = "launch_"+syst+launch_cluster_extension
-					p = subprocess.check_output(["qsub", temp])
-					# p = str(p)
-					# q = p.split(".")
-					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					# jobID.append(int(q1.group(2)))
-					os.chdir("./..")
-					os.chdir("temp_run3")
-					f_pbs = open("launch_"+syst+launch_cluster_extension,"w")
-					for lines in samplePBS_content:
-						f_pbs.write(lines+"\n")
-					f_pbs.close()
-					temp = "launch_"+syst+launch_cluster_extension
-					p = subprocess.check_output(["qsub", temp])
-					# p = str(p)
-					# q = p.split(".")
-					# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-					# jobID.append(int(q1.group(2)))
-
-			# temp = "launch_"+syst+".pbs"
-			# p = subprocess.check_output(["qsub", temp])
-			# p = str(p)
-			# q = p.split(".")
-			# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-			# jobID.append(int(q1.group(2)))
-			#print(jobID)
-			count=count+1
-			os.chdir("./../..")
+		print('This option is no longer supported!\n')
+		exit()
 	else:
 		count = 0
 		countpbs = 1
@@ -747,61 +753,33 @@ def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isori
 			nprocs_grp = []
 			nnodes_grp= []
 			sys_grp =[]
+			dirs_grp=[]
 			memcheck_grp = []
 			samplePBS_content = []
 			orient_grp=[]
 			for lines in samplePBS_content_orj:
 				samplePBS_content.append(lines)
 			if len(systems)-count > count_sys_pbs:
-				#nprocs_grp = []
-				#nnodes_grp= []
-				#sys_grp =[]
-				#memcheck_grp = []
 				for cc in range(count_sys_pbs):
-					
-					# nprocs_grp.append(procs_sys[count+cc])
-					# nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
 					nprocs_grp.append(procs_nodes_cluster[0] * procs_nodes_cluster[1])
 					nnodes_grp.append(procs_nodes_cluster[1])
 					sys_grp.append(systems[count+cc])
+					dirs_grp.append(dirs_sys[count+cc])
 					memcheck_grp.append(memcheck[count+cc])
 					orient_grp.append(isorient[count+cc])
 				count = count+count_sys_pbs
 			else:
-				#nprocs_grp = []
-				#nnodes_grp= []
-				#sys_grp =[]
-				#memcheck_grp = []
 				for cc in range(len(systems) - count):
-					# nprocs_grp.append(procs_sys[count+cc])
-					# nnodes_grp.append(int(math.ceil(nprocs_grp[cc]/24.0)))
 					nprocs_grp.append(procs_nodes_cluster[0] * procs_nodes_cluster[1])
 					nnodes_grp.append(procs_nodes_cluster[1])
 					sys_grp.append(systems[count+cc])
+					dirs_grp.append(dirs_sys[count+cc])
 					memcheck_grp.append(memcheck[count+cc])
 					orient_grp.append(isorient[count+cc])
 				count = count+count_sys_pbs
 
-
-			
-			# if True in memcheck_grp:
-			# 	samplePBS_content.append("module purge")
-			# 	samplePBS_content.append("module load gcc/8.3.0")
-			# 	samplePBS_content.append("module load mvapich2/2.3.2")
-			# 	samplePBS_content.append("module load mkl/19.0.5")
-			# 	samplePBS_content.append("module load valgrind/3.16.1")
 			index1=0
 			for lines in samplePBS_content:
-				# if re.findall(r'nodes',lines) == ['nodes']:
-				# 	if max(nprocs_grp) == 1:
-				# 		samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(1)
-				# 	else:
-				# 		samplePBS_content[index1] = "#PBS -l nodes="+str(max(nnodes_grp))+":ppn="+str(24)
-				# if re.findall(r'mem',lines) == ['mem'] or re.findall(r'pmem',lines) == ['pmem']:
-				# 	if max(nprocs_grp) == 1:
-				# 		samplePBS_content[index1] = "#PBS -l mem=10gb"
-				# 	else:
-				# 		samplePBS_content[index1] = "#PBS -l pmem=7gb"
 				if re.findall(r'mpirun',lines) == ['mpirun']:
 					samplePBS_content.remove(lines)
 				if re.findall(r'srun',lines) == ['srun']:
@@ -812,26 +790,26 @@ def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isori
 				if memcheck_grp[ll] == False:
 					#text_temp = "mpirun -env MV2_ENABLE_AFFINITY=1 -env MV2_CPU_BINDING_POLICY=bunch -np "+str(nprocs_grp[ll])+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > "+sys_grp[ll]+".log"+"\n"
 					if orient_grp[ll] == False:
-						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 					else:
-						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" ./sparc"+ " -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 				else:
 					if orient_grp[ll] == False:
 						#text_temp = "mpirun -env MV2_ENABLE_AFFINITY=1 -env MV2_CPU_BINDING_POLICY=bunch -np "+str(nprocs_grp[ll])+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/temp_run/inplace_reduce.supp --log-file=valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > "+sys_grp[ll]+".log"+"\n"
-						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --show-reachable=yes --error-limit=no  --suppressions=./minimal.supp --gen-suppressions=all --log-file="+dirs_grp[ll]+sys_grp[ll]+"/temp_run/valgrind_out.log.%p ./sparc -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 					else:
-						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run1/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --show-reachable=yes --error-limit=no  --suppressions=./minimal.supp --gen-suppressions=all --log-file="+dirs_grp[ll]+sys_grp[ll]+"/temp_run1/valgrind_out.log.%p ./sparc -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run1/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run2/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --show-reachable=yes --error-limit=no  --suppressions=./minimal.supp --gen-suppressions=all --log-file="+dirs_grp[ll]+sys_grp[ll]+"/temp_run2/valgrind_out.log.%p ./sparc -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run2/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
-						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --track-origins=yes --suppressions=./"+sys_grp[ll]+"/inplace_reduce.supp --log-file="+sys_grp[ll]+"/temp_run3/valgrind_out ./sparc -name ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
+						samplePBS_content.append(MPI_command+" "+" valgrind --leak-check=full --show-reachable=yes --error-limit=no  --suppressions=./minimal.supp --gen-suppressions=all --log-file="+dirs_grp[ll]+sys_grp[ll]+"/temp_run3/valgrind_out.log.%p ./sparc -name ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+" -log_summary > ./"+dirs_grp[ll]+sys_grp[ll]+"/temp_run3/"+sys_grp[ll]+".log")
 						samplePBS_content.append("\n")
 			f_pbs = open("launch_"+str(countpbs)+launch_cluster_extension,"w")
 			for lines in samplePBS_content:
@@ -839,19 +817,14 @@ def launchsystems(systems, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isori
 			f_pbs.close()
 			temp = "launch_"+str(countpbs)+launch_cluster_extension
 			p = subprocess.check_output([command_launch_extension, temp])
-			# p = str(p)
-			# q = p.split(".")
-			# q1 = re.search(r'([a-z]?\'?)(\d+)',q[0])
-			# jobID.append(int(q1.group(2)))
-			#print(jobID)
 			countpbs = countpbs+1
-	# return jobID
 
-def isfinished(syst, isorientsys):
+def isfinished(syst, dirs_sys, isorientsys):
+	home_tests_directory = os.getcwd()
 	#""" Returns true if the "syst" has finished running """
 	if isorientsys == False:
-		if os.path.isfile("./"+syst+"/temp_run/"+syst+".out"):
-			with open("./"+syst+"/temp_run/"+syst+".out",'r') as f_out:
+		if os.path.isfile(dirs_sys+syst+"/temp_run/"+syst+".out"):
+			with open(dirs_sys+"./"+syst+"/temp_run/"+syst+".out",'r') as f_out:
 				f_out_content = [ line.strip() for line in f_out ]
 			if "Timing info" in f_out_content:
 				return True
@@ -861,12 +834,12 @@ def isfinished(syst, isorientsys):
 		else:
 			return False
 	else:
-		if os.path.isfile("./"+syst+"/temp_run1/"+syst+".out") and os.path.isfile("./"+syst+"/temp_run2/"+syst+".out") and os.path.isfile("./"+syst+"/temp_run3/"+syst+".out"):
-			with open("./"+syst+"/temp_run1/"+syst+".out",'r') as f_out1:
+		if os.path.isfile(dirs_sys+"./"+syst+"/temp_run1/"+syst+".out") and os.path.isfile(dirs_sys+"./"+syst+"/temp_run2/"+syst+".out") and os.path.isfile(dirs_sys+"./"+syst+"/temp_run3/"+syst+".out"):
+			with open(dirs_sys+"./"+syst+"/temp_run1/"+syst+".out",'r') as f_out1:
 				f_out_content1 = [ line.strip() for line in f_out1 ]
-			with open("./"+syst+"/temp_run2/"+syst+".out",'r') as f_out2:
+			with open(dirs_sys+"./"+syst+"/temp_run2/"+syst+".out",'r') as f_out2:
 				f_out_content2 = [ line.strip() for line in f_out2 ]
-			with open("./"+syst+"/temp_run3/"+syst+".out",'r') as f_out3:
+			with open(dirs_sys+"./"+syst+"/temp_run3/"+syst+".out",'r') as f_out3:
 				f_out_content3 = [ line.strip() for line in f_out3 ]
 			if ("Timing info" in f_out_content1) and ("Timing info" in f_out_content2) and ("Timing info" in f_out_content3):
 				return True
@@ -876,22 +849,7 @@ def isfinished(syst, isorientsys):
 		else:
 			return False
 
-def isfinishedJobsID(JobID):
-	# ''' If jobs are done running on the cluster ''' #
-	status = []
-	for i in range(len(JobID)):
-		Id = jobID[i]
-		p=subprocess.check_output(["qstat",str(Id)])
-		p = str(p)
-		q = re.findall(r'\b[RQC]\b',p)
-		if q == ['C']:
-			status.append(True)
-		else:
-			status.append(False)	
-	if False in status:
-		return False
-	else:
-		return True
+
 
 
 def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
@@ -983,7 +941,6 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 				if re.findall(r'Total number of SCF',lines) == ['Total number of SCF']:
 					temp_spin = re.findall(r'\b[+-]?\d+\.\d+E[+-]\d+\b',f_out_content[index-1])
 					magnetization=float(temp_spin[1])
-
 		index=index+1
 	if isMD == None and geopt_typ ==  None:
 		SCF_no = 0
@@ -1219,7 +1176,7 @@ def ReadAimdFile(filepath, info_out):
 				velocity.append(V_tempMD)
 
 		if info_out["isPrintStress"]:
-			if lines == ':STRESS:':
+			if lines == ':STRIO:':
 				st_tempMD = []
 				for bb in range(3):
 					line_temp = f_aimd_content[index+bb+1]
@@ -1229,7 +1186,7 @@ def ReadAimdFile(filepath, info_out):
 					st_tempMD.append(st_atom_temp)
 				ionic_stress.append(st_tempMD)
 		if info_out["isPrintStress"]:
-			if lines == ':STRIO:':
+			if lines == ':STRESS:':
 				st_tempMD = []
 				for bb in range(3):
 					line_temp = f_aimd_content[index+bb+1]
@@ -1314,147 +1271,146 @@ def ReadEigenFile_molecule(filepath, info_out):
 	return(bandgap)
 
 
-def ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ):
-	memused =0
-	if isorientsys == False:
-		memused =0
-		ismemused=False
-		if ismempbs == True:
-			ismemused=True
-			if ifref == False:
-				with open("./temp_run/output.sparc",'r') as f_sparc:
-					f_sparc_content = [ line.strip() for line in f_sparc ]
-			else:
-				if ifVHQ == True:
-					with open("./high_accuracy/output.sparc",'r') as f_sparc:
-						f_sparc_content = [ line.strip() for line in f_sparc ]
-				else:
-					with open("./standard/output.sparc",'r') as f_sparc:
-						f_sparc_content = [ line.strip() for line in f_sparc ]
-			for lines in f_sparc_content:
-				line_str=re.findall(r'Rsrc Used:',lines)
-				if line_str == ['Rsrc Used:']:
-					temp1=re.findall(r'\d+',lines)
-					memused = float(temp1[-2])
-					break
-	else:
-		memused =[]
-		ismemused=False
-		if ismempbs == True:
-			ismemused=True
-			if ifref == False:
-				with open("./temp_run1/output.sparc",'r') as f_sparc1:
-					f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
-				with open("./temp_run2/output.sparc",'r') as f_sparc2:
-					f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
-				with open("./temp_run3/output.sparc",'r') as f_sparc3:
-					f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
-			else:
-				if ifVHQ == True:
-					with open("./high_accuracy_orientation1/output.sparc",'r') as f_sparc1:
-						f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
-					with open("./high_accuracy_orientation2/output.sparc",'r') as f_sparc2:
-						f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
-					with open("./high_accuracy_orientation3/output.sparc",'r') as f_sparc3:
-						f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
-				else:
-					with open("./standard_orientation1/output.sparc",'r') as f_sparc1:
-						f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
-					with open("./standard_orientation1/output.sparc",'r') as f_sparc2:
-						f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
-					with open("./standard_orientation1/output.sparc",'r') as f_sparc3:
-						f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
-			for lines in f_sparc_content1:
-				line_str=re.findall(r'Rsrc Used:',lines)
-				if line_str == ['Rsrc Used:']:
-					temp1=re.findall(r'\d+',lines)
-					memused.append(float(temp1[-2]))
-					break
-			for lines in f_sparc_content2:
-				line_str=re.findall(r'Rsrc Used:',lines)
-				if line_str == ['Rsrc Used:']:
-					temp1=re.findall(r'\d+',lines)
-					memused.append(float(temp1[-2]))
-					break
-			for lines in f_sparc_content3:
-				line_str=re.findall(r'Rsrc Used:',lines)
-				if line_str == ['Rsrc Used:']:
-					temp1=re.findall(r'\d+',lines)
-					memused.append(float(temp1[-2]))
-					break
-			if ifref == True:
-				memused=memused[0]
-	return ismemused,memused
+# def ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ):
+# 	memused =0
+# 	if isorientsys == False:
+# 		memused =0
+# 		ismemused=False
+# 		if ismempbs == True:
+# 			ismemused=True
+# 			if ifref == False:
+# 				with open("./temp_run/output.sparc",'r') as f_sparc:
+# 					f_sparc_content = [ line.strip() for line in f_sparc ]
+# 			else:
+# 				if ifVHQ == True:
+# 					with open("./high_accuracy/output.sparc",'r') as f_sparc:
+# 						f_sparc_content = [ line.strip() for line in f_sparc ]
+# 				else:
+# 					with open("./standard/output.sparc",'r') as f_sparc:
+# 						f_sparc_content = [ line.strip() for line in f_sparc ]
+# 			for lines in f_sparc_content:
+# 				line_str=re.findall(r'Rsrc Used:',lines)
+# 				if line_str == ['Rsrc Used:']:
+# 					temp1=re.findall(r'\d+',lines)
+# 					memused = float(temp1[-2])
+# 					break
+# 	else:
+# 		memused =[]
+# 		ismemused=False
+# 		if ismempbs == True:
+# 			ismemused=True
+# 			if ifref == False:
+# 				with open("./temp_run1/output.sparc",'r') as f_sparc1:
+# 					f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
+# 				with open("./temp_run2/output.sparc",'r') as f_sparc2:
+# 					f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
+# 				with open("./temp_run3/output.sparc",'r') as f_sparc3:
+# 					f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
+# 			else:
+# 				if ifVHQ == True:
+# 					with open("./high_accuracy_orientation1/output.sparc",'r') as f_sparc1:
+# 						f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
+# 					with open("./high_accuracy_orientation2/output.sparc",'r') as f_sparc2:
+# 						f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
+# 					with open("./high_accuracy_orientation3/output.sparc",'r') as f_sparc3:
+# 						f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
+# 				else:
+# 					with open("./standard_orientation1/output.sparc",'r') as f_sparc1:
+# 						f_sparc_content1 = [ line.strip() for line in f_sparc1 ]
+# 					with open("./standard_orientation1/output.sparc",'r') as f_sparc2:
+# 						f_sparc_content2 = [ line.strip() for line in f_sparc2 ]
+# 					with open("./standard_orientation1/output.sparc",'r') as f_sparc3:
+# 						f_sparc_content3 = [ line.strip() for line in f_sparc3 ]
+# 			for lines in f_sparc_content1:
+# 				line_str=re.findall(r'Rsrc Used:',lines)
+# 				if line_str == ['Rsrc Used:']:
+# 					temp1=re.findall(r'\d+',lines)
+# 					memused.append(float(temp1[-2]))
+# 					break
+# 			for lines in f_sparc_content2:
+# 				line_str=re.findall(r'Rsrc Used:',lines)
+# 				if line_str == ['Rsrc Used:']:
+# 					temp1=re.findall(r'\d+',lines)
+# 					memused.append(float(temp1[-2]))
+# 					break
+# 			for lines in f_sparc_content3:
+# 				line_str=re.findall(r'Rsrc Used:',lines)
+# 				if line_str == ['Rsrc Used:']:
+# 					temp1=re.findall(r'\d+',lines)
+# 					memused.append(float(temp1[-2]))
+# 					break
+# 			if ifref == True:
+# 				memused=memused[0]
+# 	return ismemused,memused
 
 
-def Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ):
+def Readvalgridout(isorientsys, ismemch, ifref, ifVHQ):
 	memlost=0
+
+
 	if isorientsys == False:
+		all_files = os.listdir('./temp_run')
+		valgrind_files = []
+		for files in all_files:
+			if re.findall('valgrind',files) == ['valgrind']:
+				valgrind_files.append(files)
 		memlost=0
-		ismemch = False
-		if ((memcheck==True) and (ifref == False)):
+		# ismemch = False
+		if ((ismemch==True) and (ifref == False)):
 			ismemch = True
-			with open("./temp_run/valgrind_out",'r') as f_valg:
-				f_valg_content = [ line.strip() for line in f_valg ]
-		#else:
-			#with open("valgrind_refout",'r') as f_valg:
-				#f_valg_content = [ line.strip() for line in f_valg ]
-			for lines in f_valg_content:
-				lost_str = re.findall(r'\bdefinitely lost\b',lines)
-				if lost_str ==['definitely lost']:
-					m = re.findall(r'\d+[,]?[\d+]*',lines)
-					memlost = float(m[1].replace(',',''))
-					break
+			for files in valgrind_files:
+				with open("./temp_run/"+files,'r') as f_valg:
+					f_valg_content = [ line.strip() for line in f_valg ]
+				line_count = 0
+				for lines in f_valg_content:
+					lost_str = re.findall(r'\bLEAK SUMMARY\b',lines)
+					if lost_str ==['LEAK SUMMARY']:
+						m = re.findall(r'\d+[,]?[\d+]*',f_valg_content[line_count+1])
+						memlost = memlost+float(m[1].replace(',',''))
+						break
+					line_count = line_count+1
 	else:
-		memlost=[]
-		ismemch = False
-		if ((memcheck==True) and (ifref == False)):
+		all_files = os.listdir('./temp_run1')
+		valgrind_files = []
+		for files in all_files:
+			if re.findall('valgrind',files) == ['valgrind']:
+				valgrind_files.append(files)
+		memlost=0
+		# ismemch = False
+		if ((ismemch==True) and (ifref == False)):
 			ismemch = True
-			with open("./temp_run1/valgrind_out",'r') as f_valg1:
-				f_valg_content1 = [ line.strip() for line in f_valg1 ]
-			with open("./temp_run2/valgrind_out",'r') as f_valg2:
-				f_valg_content2 = [ line.strip() for line in f_valg2 ]
-			with open("./temp_run3/valgrind_out",'r') as f_valg3:
-				f_valg_content3 = [ line.strip() for line in f_valg3 ]
-		#else:
-			#with open("valgrind_refout",'r') as f_valg:
-				#f_valg_content = [ line.strip() for line in f_valg ]
-			for lines in f_valg_content1:
-				lost_str = re.findall(r'\bdefinitely lost\b',lines)
-				if lost_str ==['definitely lost']:
-					m = re.findall(r'\d+[,]?[\d+]*',lines)
-					memlost.append(float(m[1].replace(',','')))
-					break
-			for lines in f_valg_content2:
-				lost_str = re.findall(r'\bdefinitely lost\b',lines)
-				if lost_str ==['definitely lost']:
-					m = re.findall(r'\d+[,]?[\d+]*',lines)
-					memlost.append(float(m[1].replace(',','')))
-					break
-			for lines in f_valg_content3:
-				lost_str = re.findall(r'\bdefinitely lost\b',lines)
-				if lost_str ==['definitely lost']:
-					m = re.findall(r'\d+[,]?[\d+]*',lines)
-					memlost.append(float(m[1].replace(',','')))
-					break
+			for files in valgrind_files:
+				with open("./temp_run1/"+files,'r') as f_valg:
+					f_valg_content = [ line.strip() for line in f_valg ]
+				line_count = 0
+				for lines in f_valg_content:
+					lost_str = re.findall(r'\bLEAK SUMMARY\b',lines)
+					if lost_str ==['LEAK SUMMARY']:
+						m = re.findall(r'\d+[,]?[\d+]*',f_valg_content[line_count+1])
+						memlost = memlost+float(m[1].replace(',',''))
+						break
+					line_count = line_count+1
+
 	return ismemch, memlost
 
 
-def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorientsys, tolerance):
+def getInfo(syst, sys_dir, singlept, Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorientsys, tolerance):
 	#""" Reads from the output files (.out, .static, .aimd, .geopt, valgrind_out) of SPARC and returns the E, F, Stress, positions in a dictionary """
+	home_tests_directory = os.getcwd()
+	os.chdir(sys_dir+syst)
 
-	os.chdir(syst)
 
 	
+
 	if (singlept == True):
 		# Extract energy, forces, stress, no of scf iteration, walltime, 
 		#------------------------ Memecheck from valgrind ----------------------------#
-		ismemch, memlost=Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ)
-		
+		ismemch, memlost=Readvalgridout(isorientsys, memcheck, ifref, ifVHQ)
+
 		#------------------------ Memecheck from valgrind ----------------------------#
 
 		#------------------------ Memory from output.sparc ----------------------------#
-		ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
+		# ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
 		
 		
 		if ifref == False:
@@ -1464,6 +1420,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 				#------------------------ Bandgap ----------------------------#
 				bandgap = ReadEigenFile_molecule("./temp_run/"+syst+".eigen", infout)
 				#------------------------ Bandgap ----------------------------#
+				
 			else:
 				infout1 = ReadOutFile("./temp_run1/"+syst+".out", None, None, isspin)
 				infstatic1 = ReadStaticFile("./temp_run1/"+syst+".static", infout1)
@@ -1481,12 +1438,15 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 					infstatic = ReadStaticFile("./high_accuracy/"+syst+".refstatic", infout)
 					#------------------------ Bandgap ----------------------------#
 					bandgap = ReadEigenFile_molecule("./high_accuracy/"+syst+".refeigen", infout)
+					
 					#------------------------ Bandgap ----------------------------#
 				else:
+
 					infout = ReadOutFile("./standard/"+syst+".refout", None, None, isspin)
 					infstatic = ReadStaticFile("./standard/"+syst+".refstatic", infout)
 					#------------------------ Bandgap ----------------------------#
 					bandgap = ReadEigenFile_molecule("./standard/"+syst+".refeigen", infout)
+
 					#------------------------ Bandgap ----------------------------#
 			else:
 				if ifVHQ == True:
@@ -1503,6 +1463,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 					#------------------------ Bandgap ----------------------------#
 
 		if isorientsys == False or ifref == True:
+
 			E = infout["E"]
 			walltime = infout["walltime"]
 			SCF_no = infout["SCF_no"]
@@ -1518,6 +1479,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 				pressure = infout["pressure"]
 			no_atoms = infout["no_atoms"]
 			isbandgap = infout["isbandgap"]
+
 		else:
 			E=[ infout1["E"], infout2["E"], infout3["E"]]
 			SCF_no = infout1["SCF_no"]
@@ -1538,7 +1500,6 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 		Info = {"Type": "singlept",
 			"isspin": isspin,
 			"ismemcheck": ismemch,
-			"ismemused": ismemused,
 			"isbandgap": isbandgap,
 			"bandgap": bandgap,
 			"energy": E,
@@ -1546,7 +1507,6 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"stress": stress,
 			"walltime": walltime,
 			"memlost": memlost,
-			"memused": memused,
 			"magnetization": magnetization,
 			"pressure": pressure,
 			"no_atoms": no_atoms,
@@ -1554,19 +1514,18 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"tolerance": tolerance,
 			"SCF_no": SCF_no,
 			"bandgap": bandgap}
-
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 		return(Info)
 
 	elif ((singlept == False) and (Type == "relax_atom")):
 		
 		#------------------------ Memecheck from valgrind ----------------------------#
-		ismemch, memlost=Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ)
+		ismemch, memlost=Readvalgridout(isorientsys, memcheck, ifref, ifVHQ)
 		
 		#------------------------ Memecheck from valgrind ----------------------------#
 
 		#------------------------ Memory from output.sparc ----------------------------#
-		ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
+		# ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
 		
 		#------------------------ Memory from output.sparc ----------------------------#
 		if ifref == False:
@@ -1621,13 +1580,12 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 		Info = {"Type": "relax_atom",
 			"isspin": isspin,
 			"ismemcheck": ismemch,
-			"ismemused": ismemused,
 			"energy": E,
 			"walltime": walltime,
 			"force": force,
 			"scfpos": scfpos,
 			"memlost": memlost,
-			"memused": memused,
+			# "memused": memused,
 			"magnetization": magnetization,
 			"pressure": pressure,
 			"no_atoms": no_atoms,
@@ -1635,17 +1593,17 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"tolerance": tolerance,
 			"SCF_no": SCF_no}
 
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 		return(Info)
 
 	elif ((singlept == False) and (Type == "relax_cell")):
 		#------------------------ Memecheck from valgrind ----------------------------#
-		ismemch, memlost=Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ)
+		ismemch, memlost=Readvalgridout(isorientsys, memcheck, ifref, ifVHQ)
 		
 		#------------------------ Memecheck from valgrind ----------------------------#
 
 		#------------------------ Memory from output.sparc ----------------------------#
-		ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
+		# ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
 		
 		#------------------------ Memory from output.sparc ----------------------------#
 		if ifref == False:
@@ -1707,12 +1665,12 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 		Info = {"Type": "relax_cell",
 			"isspin": isspin,
 			"ismemcheck": ismemch,
-			"ismemused": ismemused,
+			# "ismemused": ismemused,
 			"energy": E,
 			"walltime": walltime,
 			"cell": cell,
 			"memlost": memlost,
-			"memused": memused,
+			# "memused": memused,
 			"magnetization": magnetization,
 			"pressure": pressure,
 			"no_atoms": no_atoms,
@@ -1723,17 +1681,17 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 
 
 
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 		return(Info)
 
 	elif ((singlept == False) and (Type == "relax_total")):
 		#------------------------ Memecheck from valgrind ----------------------------#
-		ismemch, memlost=Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ)
+		ismemch, memlost=Readvalgridout(isorientsys, memcheck, ifref, ifVHQ)
 		
 		#------------------------ Memecheck from valgrind ----------------------------#
 
 		#------------------------ Memory from output.sparc ----------------------------#
-		ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
+		# ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
 		
 		#------------------------ Memory from output.sparc ----------------------------#
 		if ifref == False:
@@ -1797,13 +1755,13 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 		Info = {"Type": "relax_total",
 			"isspin": isspin,
 			"ismemcheck": ismemch,
-			"ismemused": ismemused,
+			# "ismemused": ismemused,
 			"energy": E,
 			"stress": stress,
 			"walltime": walltime,
 			"cell": cell,
 			"memlost": memlost,
-			"memused": memused,
+			# "memused": memused,
 			"magnetization": magnetization,
 			"pressure": pressure,
 			"no_atoms": no_atoms,
@@ -1813,17 +1771,17 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"SCF_no": SCF_no}
 
 
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 		return(Info)
 
 	elif ((singlept == False) and (Type == "MD")):
 		#------------------------ Memecheck from valgrind ----------------------------#
-		ismemch, memlost=Readvalgridout(isorientsys, ismempbs, ifref, ifVHQ)
+		ismemch, memlost=Readvalgridout(isorientsys, memcheck, ifref, ifVHQ)
 		
 		#------------------------ Memecheck from valgrind ----------------------------#
 
 		#------------------------ Memory from output.sparc ----------------------------#
-		ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
+		# ismemused,memused = ReadmemoutputFile(isorientsys, ismempbs, ifref, ifVHQ)
 		
 		#------------------------ Memory from output.sparc ----------------------------#
 		if ifref == False:
@@ -1900,13 +1858,13 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"stress": stress,
 			"ionic_stress": ionic_stress,
 			"velocity": velocity,
-			"ismemused": ismemused,
+			# "ismemused": ismemused,
 			"energy": E,
 			"walltime": walltime,
 			"scfpos": scfpos,
 			"KEN": KEN,
 			"memlost": memlost,
-			"memused": memused,
+			# "memused": memused,
 			"magnetization": magnetization,
 			"no_atoms": no_atoms,
 			"isorient": isorientsys,
@@ -1914,7 +1872,7 @@ def getInfo(syst,singlept,Type, ifref,memcheck, ismempbs, isspin, ifVHQ, isorien
 			"SCF_no": SCF_no}
 			
 
-		os.chdir("./..")
+		os.chdir(home_tests_directory)
 		return(Info)
 def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 
@@ -1976,38 +1934,11 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = abs(magnetization_run - magnetization_abinit)
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
 				else:
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					errspin = max([abs(magnetization_run[0] - magnetization_ref),abs(magnetization_run[1] - magnetization_ref),abs(magnetization_run[2] - magnetization_ref)])
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
-
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = max([abs(magnetization_run[0] - magnetization_abinit),abs(magnetization_run[1] - magnetization_abinit),abs(magnetization_run[2] - magnetization_abinit)])
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
-
-			if info_run["ismemused"] == True:
-				if info_run["isorient"] == False:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = (memused_run - memused_ref)/memused_ref *100
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-				else:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = max([(memused_run[0] - memused_ref)/memused_ref *100,(memused_run[1] - memused_ref)/memused_ref *100,(memused_run[2] - memused_ref)/memused_ref *100])
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
 
 			if info_run["ismemcheck"]==True:
 				if info_run["isorient"] == False:
@@ -2021,11 +1952,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				E_sys_err = abs(info_run["energy"][0]-info_ref["energy"][0])
 			else:
 				E_sys_err = max([abs(info_run["energy"][0][0]-info_ref["energy"][0]),abs(info_run["energy"][1][0]-info_ref["energy"][0]),abs(info_run["energy"][2][0]-info_ref["energy"][0])])
-			if isabinit == True:
-				if info_run["isorient"] == False:
-					E_abinit_err = abs(info_run["energy"][0]-(info_abinit["energy"][0]))
-				else:
-					E_abinit_err = max([abs(info_run["energy"][0][0]-(info_abinit["energy"][0])),abs(info_run["energy"][0][1]-(info_abinit["energy"][0])),abs(info_run["energy"][0][2]-(info_abinit["energy"][0]))])
 			Ener_error.append(E_sys_err)
 			F_ref = info_ref["force"]
 			F_run = info_run["force"]
@@ -2040,13 +1966,9 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref)+") than the reference"
 				
 
-			if isabinit == True:
-				F_abinit = info_run["force"]
+
 			force_error=[]
 			stress_error=[]
-			if isabinit == True:
-				force_error_abinit=[]
-				stress_error_abinit=[]
 			for j in range(len(F_ref)):
 				force_error.append([abs(F_ref[j][0]-F_run[j][0]),abs(F_ref[j][1]-F_run[j][1]),abs(F_ref[j][2]-F_run[j][2])])
 			if len(sum(force_error,[]))>0:
@@ -2054,15 +1976,10 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			else:
 				force_error = 0
 
-			if isabinit == True:
-				for j in range(len(F_ref)):
-					force_error_abinit.append([abs(F_abinit[j][0]-F_run[j][0]),abs(F_abinit[j][1]-F_run[j][1]),abs(F_abinit[j][2]-F_run[j][2])])
-				force_error_abinit = max(sum(force_error_abinit,[]))
 
 			stress_run = info_run["stress"]
 			stress_ref = info_ref["stress"]
-			if isabinit == True:
-				stress_abinit = info_abinit["stress"]
+
 
 			for j in range(len(stress_run)):
 				temp =[]
@@ -2077,21 +1994,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				stress_error = max(sum(stress_error,[]))
 			else:
 				stress_error = 0
-			if isabinit == True:
-				stress_error_abinit=[]
-				for j in range(len(stress_run)):
-					temp =[]
-					for jj in range(len(stress_run[j])):
-						if abs(stress_abinit[j][jj]) > 0.01:
-							temp.append((abs(stress_abinit[j][jj]-stress_run[j][jj]))*100/abs(stress_ref[j][jj]))
-						else:
-							temp.append(0)
-					stress_error_abinit.append(temp)
-				# stress_error_abinit.append(temp)
-				#stress_error_abinit.append([100*(abs(stress_abinit[j][0]-stress_run[j][0]))/abs(stress_abinit[j][0]),100*(abs(stress_abinit[j][1]-stress_run[j][1]))/abs(stress_abinit[j][1]),100*(abs(stress_abinit[j][2]-stress_run[j][2]))/abs(stress_abinit[j][2])])
-				stress_error_abinit = max(sum(stress_error_abinit,[]))
-			#maxF_err=max(sum(force_error,[]))
-			#maxSt_err = max(sum(stress_error,[]))
 
 			walltime_error = (info_run["walltime"][0]-info_ref["walltime"][0])/info_ref["walltime"][0] *100
 
@@ -2117,15 +2019,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			if info_run["isbandgap"] == True:
 				text = text+"Bandgap error (Ha): "+'{0:1.2e}'.format(err_bandgap)+"\n"
 			#text = text+"Error in number of SCF iterations for convergence: "+str(scfno_error)+"\n"
-			if isabinit == True:
-				text = text+"Error from ABINIT reference: \n"+"Energy error (Ha/atom): "+ '{0:1.2e}'.format(E_abinit_err)+"\n"
-				text = text+"Force error (Ha/Bohr): "+ '{0:1.2e}'.format(force_error_abinit)+"\n"
-				#for j in range(no_atoms):
-					#text = text+'{0:1.2e}'.format(force_error_abinit[j][0])+" "+'{0:1.2e}'.format(force_error_abinit[j][1])+" "+'{0:1.2e}'.format(force_error_abinit[j][2])+"\n"
-				text = text+"Stress error  (%): " +'{0:1.2e}'.format(stress_error_abinit)+ "\n"
-				#for j in range(3):
-					#text = text+'{0:1.2e}'.format(stress_error_abinit[j][0])+" "+'{0:1.2e}'.format(stress_error_abinit[j][1])+" "+'{0:1.2e}'.format(stress_error_abinit[j][2])+"\n"
-			
+
 			text=text+text1+text2+text3
 			Failure_text=""
 			if (err_bandgap <= 0.001 and Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol and force_error <= F_tol and stress_error <= stress_tol  and memlost == 0):
@@ -2177,38 +2071,12 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = abs(magnetization_run - magnetization_abinit)
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
 				else:
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					errspin = max([abs(magnetization_run[0] - magnetization_ref),abs(magnetization_run[1] - magnetization_ref),abs(magnetization_run[2] - magnetization_ref)])
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = max([abs(magnetization_run[0] - magnetization_abinit),abs(magnetization_run[1] - magnetization_abinit),abs(magnetization_run[2] - magnetization_abinit)])
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
-
-			if info_run["ismemused"] == True:
-				if info_run["isorient"] == False:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = (memused_run - memused_ref)/memused_ref *100
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-				else:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = max([(memused_run[0] - memused_ref)/memused_ref *100,(memused_run[1] - memused_ref)/memused_ref *100,(memused_run[2] - memused_ref)/memused_ref *100])
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
 			
 			if info_run["ismemcheck"]==True:
 				if info_run["isorient"] == False:
@@ -2241,13 +2109,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 				
 
-			if isabinit == True:
-				E_abinit =  info_abinit["energy"]
-				scfpos_abinit = info_abinit["scfpos"]
-				if info_run["isorient"] == False:
-					E_err_abinit = abs(E_run[-1]-(E_abinit[-1])/no_atoms)
-				else:
-					E_err_abinit = max([abs(E_run[0][-1]-(E_abinit[-1])/no_atoms),abs(E_run[1][-1]-(E_abinit[-1])/no_atoms),abs(E_run[2][-1]-(E_abinit[-1])/no_atoms)])
 			if info_run["isorient"] == False:
 				E_err=abs(E_ref[-1]-E_run[-1])
 			else:
@@ -2261,17 +2122,14 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			#F_error = []
 			#F_error_relax=[]
 			temp_scfpos=[]
-			temp_scfpos_abinit = []
+
 			#temp= []
 			for k in range(len(scfpos_run[0])):
 				temp_scfpos.append([abs(scfpos_run[-1][k][0]-scfpos_ref[-1][k][0]), abs(scfpos_run[-1][k][1]-scfpos_ref[-1][k][1]), abs(scfpos_run[-1][k][2]-scfpos_ref[-1][k][2])])
-				if isabinit == True:
-					temp_scfpos_abinit.append([abs(scfpos_run[-1][k][0]-scfpos_abinit[-1][k][0]), abs(scfpos_run[-1][k][1]-scfpos_abinit[-1][k][1]), abs(scfpos_run[-1][k][2]-scfpos_abinit[-1][k][2])])
+
 			temp_scfpos = sum(temp_scfpos,[])
 			scfpos_err = max(temp_scfpos)
-			if isabinit == True:
-				temp_scfpos_abinit = sum(temp_scfpos_abinit,[])
-				scfpos_err_abinit = max(temp_scfpos_abinit)
+
 
 			# scfno_run = info_run["scfno"]
 			# scfno_ref = info_ref["scfno"]
@@ -2296,9 +2154,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			text = text+"Number of SCF iteration error: "+ str(Error_SCF_no)+"\n"
 			if isparallel == True and info_run["ismemcheck"] == False:
 				text = text+"walltime error (%): "+'{0:1.2e}'.format(walltime_error)+"\n"
-			if isabinit == True:
-				text = text+"Corresponding error from ABINIT reference: \n"+"Energy error (Ha/atom): "+ '{0:1.2e}'.format(E_err_abinit)+"\n"
-				text = text+"Atom position error (Bohr): "+'{0:1.2e}'.format(scfpos_err_abinit) +"  \n"
+
 			text = text+text1+text2+text3
 			Failure_text=""
 			if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol and scfpos_err <= scfpos_tol  and memlost == 0):
@@ -2322,8 +2178,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text="Test Result: Failed\n"+text
 			if walltime_error > wall_tol:
 				text = text + "Warning: walltime exceeded"
-			if err_memused > memused_tol:
-				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
 			Warning_message_global.append(warning_message)
 
@@ -2343,37 +2197,12 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					# if isabinit == True:
-					# 	magnetization_abinit = info_abinit["magnetization"]
-					# 	errspinabinit = abs(magnetization_run - magnetization_abinit)
-					# 	text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
 				else:
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					errspin = max([abs(magnetization_run[0] - magnetization_ref),abs(magnetization_run[1] - magnetization_ref),abs(magnetization_run[2] - magnetization_ref)])
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					# if isabinit == True:
-					# 	magnetization_abinit = info_abinit["magnetization"]
-					# 	errspinabinit = max([abs(magnetization_run[0] - magnetization_abinit),abs(magnetization_run[1] - magnetization_abinit),abs(magnetization_run[2] - magnetization_abinit)])
-					# 	text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
-			if info_run["ismemused"] == True:
-				if info_run["isorient"] == False:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = (memused_run - memused_ref)/memused_ref *100
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-				else:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = max([(memused_run[0] - memused_ref)/memused_ref *100,(memused_run[1] - memused_ref)/memused_ref *100,(memused_run[2] - memused_ref)/memused_ref *100])
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
 			
 			if info_run["ismemcheck"]==True:
 				if info_run["isorient"] == False:
@@ -2416,22 +2245,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				E_sys_err = max([abs(E_ref[-1]-E_run[0][-1]),abs(E_ref[-1]-E_run[1][-1]),abs(E_ref[-1]-E_run[2][-1])])
 			Ener_error.append(E_sys_err)
 
-			# stress_run = info_run["stress"]
-			# stress_ref = info_ref["stress"]
-			#relax_steps = len(stress_run)
-			# stress_error = []
-			# #for j in range(relax_steps):
-			# temp= []
-			# for k in range(len(stress_run[0])):
-			# 	temp.append([100*(abs(stress_run[-1][k][0]-stress_ref[-1][k][0]))/abs(stress_ref[-1][k][0]),100*(abs(stress_run[-1][k][1]-stress_ref[-1][k][1]))/abs(stress_ref[-1][k][1]), 100*(abs(stress_run[-1][k][2]-stress_ref[-1][k][2]))/abs(stress_ref[-1][k][2])])
-			# 	stress_error.append(temp)
-			# stress_error = sum(stress_error,[])
-			# stress_error=max(stress_error)
-			# print("yes")
-			# print(info_run)
-			# print(info_ref)
-			#print(systems[i])
-			# print("no")
 			cell_run = info_run["cell"]
 			cell_ref = info_ref["cell"]
 			cell_error= []
@@ -2439,13 +2252,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				cell_error.append(abs(cell_run[-1][k]-cell_ref[-1][k]))
 			cell_error=max(cell_error)
 			
-
-			# scfno_run = info_run["scfno"]
-			# scfno_ref = info_ref["scfno"]
-			# scfno_error = []
-			# for j in range(len(scfno_run)):
-			# 	scfno_error.append(abs(scfno_run[j]-scfno_ref[j]))
-			# scfno_error = scfno_error[-1]
 
 			walltime_error = (info_run["walltime"][0]-info_ref["walltime"][0])/info_ref["walltime"][0] *100
 			if isparallel == False or info_run["ismemcheck"] == True:
@@ -2488,8 +2294,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text="Test Result: Failed \n"+text
 			if walltime_error > wall_tol:
 				text = text + "Warning: walltime exceeded"
-			if err_memused > memused_tol:
-				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
 			Warning_message_global.append(warning_message)
 
@@ -2511,39 +2315,11 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					magnetization_run = info_run["magnetization"]
 					errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
-
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = abs(magnetization_run - magnetization_abinit)
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
 				else:
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					errspin = max([abs(magnetization_run[0] - magnetization_ref),abs(magnetization_run[1] - magnetization_ref),abs(magnetization_run[2] - magnetization_ref)])
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
-
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = max([abs(magnetization_run[0] - magnetization_abinit),abs(magnetization_run[1] - magnetization_abinit),abs(magnetization_run[2] - magnetization_abinit)])
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
-
-			if info_run["ismemused"] == True:
-				if info_run["isorient"] == False:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = (memused_run - memused_ref)/memused_ref *100
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-				else:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = max([(memused_run[0] - memused_ref)/memused_ref *100,(memused_run[1] - memused_ref)/memused_ref *100,(memused_run[2] - memused_ref)/memused_ref *100])
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
 			
 			if info_run["ismemcheck"]==True:
 				if info_run["isorient"] == False:
@@ -2562,15 +2338,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				E_err= abs(E_ref[-1]-E_run[-1])
 			else:
 				E_err= max([abs(E_ref[-1]-E_run[0][-1]),abs(E_ref[-1]-E_run[1][-1]),abs(E_ref[-1]-E_run[2][-1])])
-			if isabinit == True:
-				E_abinit = info_abinit["energy"]
-				scfpos_abinit = info_abinit["scfpos"]
-				stress_abinit = info_abinit["stress"]
-				cell_abinit = info_abinit["cell"]
-				if info_run["isorient"] == False:
-					E_err_abinit = abs(E_abinit[-1]/no_atoms-E_run[-1])
-				else:
-					E_err_abinit = max([abs(E_abinit[-1]/no_atoms-E_run[0][-1]),abs(E_abinit[-1]/no_atoms-E_run[1][-1]),abs(E_abinit[-1]/no_atoms-E_run[2][-1])])
+
 			E_sys_err = E_err
 			Ener_error.append(E_sys_err)
 			SCF_no_ref = info_ref["SCF_no"]
@@ -2589,62 +2357,25 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				elif Error_SCF_no > 0:
 					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 				
-			# F_run = info_run["force"]
-			# F_ref = info_ref["force"]
-			# relax_steps = len(F_run)
-			# F_error = []
-			# F_error_relax=[]
-			# print("yes")
-			# print(info_run)
-			# print(info_ref)
-			# print("no")
 			scfpos_run = info_run["scfpos"]
 			scfpos_ref = info_ref["scfpos"]
 			scfpos_err = []
-			scfpos_err_abinit = []
+
 
 			#for j in range(relax_steps):
 			for k in range(len(scfpos_run[0])):
 				scfpos_err.append([abs(scfpos_run[-1][k][0]-scfpos_ref[-1][k][0]), abs(scfpos_run[-1][k][1]-scfpos_ref[-1][k][1]), abs(scfpos_run[-1][k][2]-scfpos_ref[-1][k][2])])
-				if isabinit == True:
-					scfpos_err_abinit.append([abs(scfpos_run[-1][k][0]-scfpos_abinit[-1][k][0]), abs(scfpos_run[-1][k][1]-scfpos_abinit[-1][k][1]), abs(scfpos_run[-1][k][2]-scfpos_abinit[-1][k][2])])
 			scfpos_err=max(sum(scfpos_err,[]))
-			if isabinit == True:
-				scfpos_err_abinit=max(sum(scfpos_err_abinit,[]))
-
-			# stress_run = info_run["stress"]
-			# stress_ref = info_ref["stress"]
-			# stress_error = []
-			# stress_error_abinit = []
-			# print(systems[i])
-			# print(stress_run)
-			# print(stress_ref)
-			# for k in range(3):
-			# 	stress_error.append([abs(stress_run[-1][k][0]-stress_ref[-1][k][0]), abs(stress_run[-1][k][1]-stress_ref[-1][k][1]), abs(stress_run[-1][k][2]-stress_ref[-1][k][2])])
-			# 	if isabinit == True:
-			# 		stress_error_abinit.append([abs(stress_run[-1][k][0]-stress_abinit[-1][k][0]), abs(stress_run[-1][k][1]-stress_abinit[-1][k][1]), abs(stress_run[-1][k][2]-stress_abinit[-1][k][2])])
-			# stress_error=max(sum(stress_error,[]))
-			# if isabinit == True:
-			# 	stress_error_abinit=max(sum(stress_error_abinit,[]))
 
 			cell_run = info_run["cell"]
 			cell_ref = info_ref["cell"]
 			cell_error = []
-			cell_error_abinit =[]
+
 			for k in range(len(cell_run[0])):
 				cell_error.append(abs(cell_run[-1][k]-cell_ref[-1][k]))
-				if isabinit == True:
-					cell_error_abinit.append(abs(cell_run[-1][k]-cell_abinit[-1][k]))
-			cell_error =max(cell_error)
-			if isabinit == True:
-				cell_error_abinit =max(cell_error_abinit)
 
-			# scfno_run = info_run["scfno"]
-			# scfno_ref = info_ref["scfno"]
-			# scfno_error = []
-			# for j in range(len(scfno_run)):
-			# 	scfno_error.append(abs(scfno_run[j]-scfno_ref[j]))
-			# scfno_error = scfno_error[-1]
+			cell_error =max(cell_error)
+
 
 			walltime_error = (info_run["walltime"][0]-info_ref["walltime"][0])/info_ref["walltime"][0] *100
 			if isparallel == False or info_run["ismemcheck"] == True:
@@ -2661,10 +2392,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			text = text+ "Error in the final relaxed Cell (Bohr): "+ '{0:1.2e}'.format(cell_error) +"  \n"
 			text = text+ "Error in the final relaxed atom position (Bohr): "+ '{0:1.2e}'.format(scfpos_err) +"  \n"
 			text = text+"Number of SCF iteration) error: "+ str(Error_SCF_no)+"\n"
-			if isabinit == True:
-				text = text+"Corresponding error from ABINIT reference: \n"+"Energy error (Ha/atom): "+ str(E_err_abinit)+"\n"
-				text = text+"Atom position error (Bohr): "+'{0:1.2e}'.format(scfpos_err_abinit) +"  \n"
-				text = text+ "Cell error (Bohr): "+ '{0:1.2e}'.format(cell_error_abinit) +"  \n"
+
 			if isparallel == True and info_run["ismemcheck"] == False:
 				text = text+"walltime error (%): "+'{0:1.2e}'.format(walltime_error)+"\n"
 			#text = text+"Error in number of SCF iterations for convergence: "+str(scfno_error)+"\n"
@@ -2693,8 +2421,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				text="Test Result: Failed \n"+text
 			if walltime_error > wall_tol:
 				text = text + "Warning: walltime exceeded"
-			if err_memused > memused_tol:
-				text = text + "Warning: Memory used exceeded"
 			texttoprint.append(text)
 			Warning_message_global.append(warning_message)
 
@@ -2711,7 +2437,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 			
 			if info_run["isspin"] == True:
 				if info_run["isorient"] == False:
-					# print(systems[i])
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					if (type(magnetization_ref) == list):
@@ -2723,39 +2448,12 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 						errspin = abs(magnetization_run - magnetization_ref)
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = abs(magnetization_run - magnetization_abinit)
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
 				else:
 					magnetization_ref = info_ref["magnetization"]
 					magnetization_run = info_run["magnetization"]
 					errspin = max([abs(magnetization_run[0] - magnetization_ref),abs(magnetization_run[1] - magnetization_ref),abs(magnetization_run[2] - magnetization_ref)])
 					text3 = "Spin polarized calculation: \n"+"Error in net magnetization: " + str(errspin)+"\n"
 
-					if isabinit == True:
-						magnetization_abinit = info_abinit["magnetization"]
-						errspinabinit = max([abs(magnetization_run[0] - magnetization_abinit),abs(magnetization_run[1] - magnetization_abinit),abs(magnetization_run[2] - magnetization_abinit)])
-						text3 = text3+"Error in net magnetization from abinit: " + str(errspinabinit)+"\n"
-
-			if info_run["ismemused"] == True:
-				if info_run["isorient"] == False:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = (memused_run - memused_ref)/memused_ref *100
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-				else:
-					memused_ref = info_ref["memused"]
-					memused_run = info_run["memused"]
-					if memused_ref > 0:
-						err_memused = max([(memused_run[0] - memused_ref)/memused_ref *100,(memused_run[1] - memused_ref)/memused_ref *100,(memused_run[2] - memused_ref)/memused_ref *100])
-					else:
-						err_memused = 0
-					text2 = "Actual Memory used in cluster: "+"\n"+"Total memory used error (%): "+str(err_memused)+" \n"
-			
 			if info_run["ismemcheck"]==True:
 				if info_run["isorient"] == False:
 					memlost = info_run["memlost"]
@@ -2782,8 +2480,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					warning_message=warning_message+ " Number of SCF iterations are smaller (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
 				elif Error_SCF_no > 0:
 					warning_message=warning_message+ " Number of SCF iterations are larger (" +str(Error_SCF_no)+"/"+str(SCF_no_ref[Error_SCF_no1.index(Error_SCF_no)])+") than the reference"
-				if isabinit == True:
-					E_abinit = info_abinit["energy"]
+
 				E_err_relax=[]
 				
 
@@ -2792,35 +2489,21 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 						E_err_relax.append(abs(E_ref[j]-E_run[j]))
 					else:
 						E_err_relax.append(max([abs(E_ref[j]-E_run[0][j]),abs(E_ref[j]-E_run[1][j]),abs(E_ref[j]-E_run[2][j])]))
-				if isabinit == True:
-					E_err_abinit = []
-					for j in range(len(info_abinit["energy"])):
-						if info_run["isorient"] == False:
-							E_err_abinit.append(abs(E_abinit[j]/no_atoms-E_run[j]))
-						else:
-							E_err_abinit.append(max([abs(E_abinit[j]/no_atoms-E_run[0][j]),abs(E_abinit[j]/no_atoms-E_run[1][j]),abs(E_abinit[j]/no_atoms-E_run[2][j])]))
-				
+
 				E_sys_err = max(E_err_relax)
 				Ener_error.append(E_sys_err)
 				
 				ken_ref = info_ref["KEN"]
 				ken_run = info_run["KEN"]
 
-				
 
-
-				if isabinit == True:
-					ken_abinit = info_abinit["KEN"]
 				MD_iter = len(ken_run)
 
 				ken_error = []
 				
 				for j in range(MD_iter):
 					ken_error.append(abs(ken_ref[j]-ken_run[j]))
-				if isabinit == True:
-					ken_error_abinit=[]
-					for j in range(MD_iter):
-						ken_error_abinit.append(abs(ken_abinit[j]/no_atoms-ken_ref[j]))
+
 				max_KENerror = max(ken_error)
 
 				velocity_run = info_run["velocity"]
@@ -2866,24 +2549,10 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 						F_error_relax.append(max(temp))
 					maxF_err = max(F_error_relax)
 
-
-					if isabinit == True:
-						F_abinit = info_abinit["force"]
-						F_error_abinit = []
-						F_error_relax_abinit=[]
-						for j in range(MD_iter):
-							temp= []
-							for k in range(no_atoms):
-								temp.append([abs(F_run[j][k][0]-F_abinit[j][k][0]), abs(F_run[j][k][1]-F_abinit[j][k][1]), abs(F_run[j][k][2]-F_abinit[j][k][2])])
-							F_error_abinit.append(temp)
-						for j in range(MD_iter):
-							temp = F_error_abinit[j]
-							temp = sum(temp,[])
-							F_error_relax_abinit.append(max(temp))
 				else:
 					F_error_relax = [0 for md in range(MD_iter)] 
 					maxF_err = 0
-					F_error_relax_abinit = [0 for md in range(MD_iter)] 
+
 
 
 
@@ -2937,39 +2606,11 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 						temp = sum(temp,[])
 						stress_error_relax.append(max(temp))
 					max_stress_error = max(stress_error_relax)
-
-					if isabinit == True:
-						stress_abinit = info_abinit["stress"]
-						stress_error_abinit = []
-						stress_error_relax_abinit=[]
-						for j in range(MD_iter):
-							temp= []
-							for k in range(len(stress_run[0])):
-								temp1 =[]
-								for jj in range(len(stress_run[0][k])):
-									if abs(stress_run[j][k][jj]) > 0.01:
-										temp1.append(100*(abs(stress_run[j][k][jj]-stress_abinit[j][k][jj]))/abs(stress_abinit[j][k][jj]))
-									else:
-										temp1.append(0)
-								temp.append(temp1)
-								#temp.append([100*(abs(stress_run[j][k][0]-stress_abinit[j][k][0]))/abs(stress_abinit[j][k][0]), 100*(abs(stress_run[j][k][1]-stress_abinit[j][k][1]))/abs(stress_abinit[j][k][1]), 100*(abs(stress_run[j][k][2]-stress_abinit[j][k][2]))/abs(stress_abinit[j][k][2])])
-							stress_error_abinit.append(temp)
-						for j in range(MD_iter):
-							temp = stress_error_abinit[j]
-							temp = sum(temp,[])
-							stress_error_relax_abinit.append(max(temp))
 				else:
 					stress_error_relax = [0 for md in range(MD_iter)] 
-					stress_error_relax_abinit = [0 for md in range(MD_iter)]
 					max_stress_error= 0 
 
 
-				# scfno_run = info_run["scfno"]
-				# scfno_ref = info_ref["scfno"]+
-				# scfno_error = []
-				# for j in range(len(scfno_run)):
-				# 	scfno_error.append(abs(scfno_run[j]-scfno_ref[j]))
-				# scfno_error = max(scfno_error)
 				walltime_error = (info_run["walltime"][0]-info_ref["walltime"][0])/info_ref["walltime"][0] *100
 				if isparallel == False or info_run["ismemcheck"] == True:
 					walltime_error = 0
@@ -2987,11 +2628,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 				if isparallel == True and info_run["ismemcheck"] == False:
 					text = text+"walltime error (%): "+str(walltime_error)+"\n"
 				#text = text+"Error in number of SCF iterations for convergence: "+str(scfno_error)+"\n"
-				if isabinit == True:
-					text = text+"Error from ABINIT reference: \n"
-					text = text+"MD step     Energy Error (Ha/atom)	"+"Ionic KE error (Ha/atom) \n"
-					for j in range(MD_iter):
-						text = text+str(j)+"   	     "+'{0:1.2e}'.format(E_err_abinit[j])+"   	     "+'{0:1.2e}'.format(ken_error_abinit[j])+"\n"
 				text = text+text1+text2+text3
 				Failure_text=""
 				if (Error_SCF_no <=  scfno_tol and errspin <= spin_tol  and E_sys_err <= E_tol   and max_KENerror <= KEN_tol and memlost == 0 and maxF_err <= F_tol and maxvelocity_err <= F_tol and max_ionic_stress_error <= stress_tol and max_stress_error <= stress_tol):
@@ -3016,8 +2652,6 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
 					text="Test Result: Failed \n"+text
 				if walltime_error > wall_tol:
 					text = text + "Warning: walltime exceeded"
-				if err_memused > memused_tol:
-					text = text + "Warning: Memory used exceeded"
 				texttoprint.append(text)
 				Warning_message_global.append(warning_message)
 
@@ -3035,7 +2669,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 25 jan 2023)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 11 August 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
@@ -3094,10 +2728,23 @@ if __name__ == '__main__':
 	systems_valgrind = systemstags[0]
 	tags_sys_valgrind = systemstags[1]
 	tols_sys_valgrind = systemstags[2]
+	dirs_sys_valgrind = systemstags[3]
+
+	systemstags1 = findsystems(['ddbp'])
+	systems_dddp = systemstags1[0]
+	tags_sys_dddp = systemstags1[1]
+	tols_sys_dddp = systemstags1[2]
+	dirs_sys_dddp = systemstags1[3]
+
+
+
+
 	systems_all  = SYSTEMS['systemname']
 	tags_sys_all = SYSTEMS['Tags']
 	tols_sys_all = SYSTEMS['Tols']
-	
+	dirs_sys_all = SYSTEMS['directory']
+
+	home_tests_directory = os.getcwd()
 
 	index_memcheck_systems = []
 	for i in range(len(systems_valgrind)):
@@ -3106,6 +2753,24 @@ if __name__ == '__main__':
 		del systems_all[index_temp]
 		del tags_sys_all[index_temp]
 		del tols_sys_all[index_temp]
+		del dirs_sys_all[index_temp]
+
+	if 'ddbp' in args:
+		systems = systems_dddp
+		tags_sys = tags_sys_dddp
+		tols_sys = tols_sys_dddp
+		dirs_sys = dirs_sys_dddp
+		args.remove('ddbp')
+	else:
+		for i in range(len(systems_dddp)):
+			index_temp = systems_all.index(systems_dddp[i])
+			del systems_all[index_temp]
+			del tags_sys_all[index_temp]
+			del tols_sys_all[index_temp]
+			del dirs_sys_all[index_temp]
+
+
+
 
 	if 'only_compare' in args:
 		temp_result =  True 
@@ -3116,8 +2781,6 @@ if __name__ == '__main__':
 		args.remove('update_reference')
 
 
-
-
 	if len(args) == 1 and re.findall(r'run_local',args[0]) == ['run_local']:
 		# systems=SYSTEMS['systemname']
 		# tags_sys=SYSTEMS['Tags']
@@ -3125,6 +2788,7 @@ if __name__ == '__main__':
 		systems = systems_all
 		tags_sys = tags_sys_all
 		tols_sys = tols_sys_all
+		dirs_sys = dirs_sys_all
 		isAuto =  True
 		ifVHQ = False
 		isparallel = False
@@ -3136,26 +2800,30 @@ if __name__ == '__main__':
 		systems = systems_all
 		tags_sys = tags_sys_all
 		tols_sys = tols_sys_all
+		dirs_sys = dirs_sys_all
 		count=0
 		for s in systems:
+			os.chdir(dirs_sys[count])
 			os.chdir(s)
 			if 'orient' in tags_sys[count]:
 				os.system("rm -r temp_run1 temp_run2 temp_run3")
 			else:
 				os.system("rm -r temp_run")
 			count=count+1
-			os.chdir("./..")
+			os.chdir(home_tests_directory)
 		sys.exit("Deleted the temp files")
 
 	if len(args) == 1 and re.findall(r'quick_run',args[0]) == ['quick_run']:
 		systems=['BaTiO3_quick','H2O_sheet_quick','H2O_wire_quick','SiH4_quick']
 		tags_sys = []
 		tols_sys = []
+		dirs_sys = []
 		for i in range(len(systems)):
 			for j in range(len(SYSTEMS["systemname"])):
 				if systems[i] == SYSTEMS["systemname"][j]:
 					tags_sys.append(SYSTEMS["Tags"][j])
 					tols_sys.append(SYSTEMS["Tols"][j])
+					dirs_sys.append(SYSTEMS["directory"][j])
 		isAuto =  True
 		ifVHQ = False
 		isparallel = False
@@ -3173,20 +2841,25 @@ if __name__ == '__main__':
 			systems1 = systems_all
 			tags_sys1 = tags_sys_all
 			tols_sys1 = tols_sys_all
+			dirs_sys1 = dirs_sys_all
+
 			tags_sys2 = [ tags_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
 			tols_sys2 = [ tols_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
+			dirs_sys2 = [ dirs_sys1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
 			systems2 = [ systems1[i] for i in range(len(systems1)) if systems1[i] not in ['Fe_spin','He16_NVKG','MgO','Si8_kpt_valgrind','MoS2','SiH4','BaTiO3_valgrind']]
 			no_systems = len(systems2)
 
 			systems = systems2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
 			tols_sys = tols_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
 			tags_sys = tags_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
+			dirs_sys = dirs_sys2[(indx_test-1)*int(no_systems/no_concurrency):(indx_test-1)*int(no_systems/no_concurrency)+int(no_systems/no_concurrency)]
 			remain_systems = no_systems - no_concurrency * int(no_systems/no_concurrency);
 
 			if indx_test < remain_systems:
 				systems.append(systems2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
 				tols_sys.append(tols_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
 				tags_sys.append(tags_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
+				dirs_sys.append(dirs_sys2[indx_test+no_concurrency * int(no_systems/no_concurrency)])
 
 	# if len(args) == 1:
 	# 	if args[0] == "autosys":
@@ -3216,11 +2889,13 @@ if __name__ == '__main__':
 				systems = systems_all
 				tags_sys = tags_sys_all
 				tols_sys = tols_sys_all
+				dirs_sys = dirs_sys_all
 			elif tags == ['valgrind_include']:
 				is_valgrind_include = True
 				systems = systems_valgrind
 				tags_sys = tags_sys_valgrind
 				tols_sys = tols_sys_valgrind
+				dirs_sys = dirs_sys_valgrind
 				# systems=SYSTEMS['systemname']
 				# tags_sys=SYSTEMS['Tags']
 				# tols_sys=SYSTEMS['Tols']
@@ -3229,6 +2904,7 @@ if __name__ == '__main__':
 				systems = systems_valgrind
 				tags_sys = tags_sys_valgrind
 				tols_sys = tols_sys_valgrind
+				dirs_sys = dirs_sys_valgrind
 				ifVHQ = True
 			elif tags == ['valgrind_all']:
 				is_valgrind_all = True
@@ -3238,6 +2914,7 @@ if __name__ == '__main__':
 				systems = systems_all
 				tags_sys = tags_sys_all
 				tols_sys = tols_sys_all
+				dirs_sys = dirs_sys_all
 
 			elif tags == ['serial','memused']:
 				isparallel = False
@@ -3250,6 +2927,7 @@ if __name__ == '__main__':
 				systems = systems_all
 				tags_sys = tags_sys_all
 				tols_sys = tols_sys_all
+				dirs_sys = dirs_sys_all
 			elif tags ==['serial']:
 				isparallel = False
 				tags.remove('serial')
@@ -3259,6 +2937,7 @@ if __name__ == '__main__':
 				systems = systems_all
 				tags_sys = tags_sys_all
 				tols_sys = tols_sys_all
+				dirs_sys = dirs_sys_all
 			elif tags == ['memused']:
 				ismempbs = True
 				tags.remove('memused')
@@ -3268,6 +2947,7 @@ if __name__ == '__main__':
 				systems = systems_all
 				tags_sys = tags_sys_all
 				tols_sys = tols_sys_all
+				dirs_sys = dirs_sys_all
 			else:
 				if "serial" in tags:
 					isparallel = False
@@ -3293,11 +2973,13 @@ if __name__ == '__main__':
 					systems = systems_all
 					tags_sys = tags_sys_all
 					tols_sys = tols_sys_all
+					dirs_sys = dirs_sys_all
 				else:
 					systemstags = findsystems(tags)
 					systems = systemstags[0]
 					tags_sys = systemstags[1]
 					tols_sys = systemstags[2]
+					dirs_sys = systemstags[3]
 		if args[0] == "-systems":
 			if ('memused' in  args[1:]):
 				ismempbs = True
@@ -3309,11 +2991,13 @@ if __name__ == '__main__':
 				systems.remove('VHQ')
 				tags_sys = []
 				tols_sys = []
+				dirs_sys = []
 				for i in range(len(systems)):
 					for j in range(len(SYSTEMS["systemname"])):
 						if systems[i] == SYSTEMS["systemname"][j]:
 							tags_sys.append(SYSTEMS["Tags"][j])
 							tols_sys.append(SYSTEMS["Tols"][j])
+							dirs_sys.append(SYSTEMS["directory"][j])
 
 			elif ('serial' in  args[1:]):
 				isparallel = False
@@ -3322,11 +3006,13 @@ if __name__ == '__main__':
 				systems.remove('serial')
 				tags_sys = []
 				tols_sys = []
+				dirs_sys = []
 				for i in range(len(systems)):
 					for j in range(len(SYSTEMS["systemname"])):
 						if systems[i] == SYSTEMS["systemname"][j]:
 							tags_sys.append(SYSTEMS["Tags"][j])
 							tols_sys.append(SYSTEMS["Tols"][j])
+							dirs_sys.append(SYSTEMS["directory"][j])
 
 			elif ('valgrind_all' in  args[1:]):
 				is_valgrind_all = True;
@@ -3334,11 +3020,13 @@ if __name__ == '__main__':
 				systems.remove('valgrind_all')
 				tags_sys = []
 				tols_sys = []
+				dirs_sys = []
 				for i in range(len(systems)):
 					for j in range(len(SYSTEMS["systemname"])):
 						if systems[i] == SYSTEMS["systemname"][j]:
 							tags_sys.append(SYSTEMS["Tags"][j])
 							tols_sys.append(SYSTEMS["Tols"][j])
+							dirs_sys.append(SYSTEMS["directory"][j])
 
 			elif 'run_local' in  args[1:]:
 				isAuto =  True
@@ -3348,21 +3036,25 @@ if __name__ == '__main__':
 				systems.remove('run_local')
 				tags_sys = []
 				tols_sys = []
+				dirs_sys = []
 				for i in range(len(systems)):
 					for j in range(len(SYSTEMS["systemname"])):
 						if systems[i] == SYSTEMS["systemname"][j]:
 							tags_sys.append(SYSTEMS["Tags"][j])
 							tols_sys.append(SYSTEMS["Tols"][j])
+							dirs_sys.append(SYSTEMS["directory"][j])
 
 			else:
 				systems = args[1:]
 				tags_sys = []
 				tols_sys = []
+				dirs_sys = []
 				for i in range(len(systems)):
 					for j in range(len(SYSTEMS["systemname"])):
 						if systems[i] == SYSTEMS["systemname"][j]:
 							tags_sys.append(SYSTEMS["Tags"][j])
 							tols_sys.append(SYSTEMS["Tols"][j])
+							dirs_sys.append(SYSTEMS["directory"][j])
 				
 	if len(args) == 0:
 		# systems=SYSTEMS['systemname']
@@ -3371,6 +3063,7 @@ if __name__ == '__main__':
 		systems = systems_all
 		tags_sys = tags_sys_all
 		tols_sys = tols_sys_all
+		dirs_sys = dirs_sys_all
 
 	######################## Classifying further for memcheck, MD, relax ###########################################
 
@@ -3379,11 +3072,16 @@ if __name__ == '__main__':
 	memcheck=[]
 	isspin=[]
 	isorient=[]
+	ismlff_copy = []
 	for i in range(len(systems)):
 		if ("orient" in tags_sys[i]):
 			isorient.append(True)
 		else:
 			isorient.append(False)
+		if ("mlff21" in tags_sys[i]) or ("mlff22" in tags_sys[i]):
+			ismlff_copy.append(True)
+		else:
+			ismlff_copy.append(False)
 		if ("spin" in tags_sys[i]):
 			isspin.append(True)
 		else:
@@ -3432,6 +3130,7 @@ if __name__ == '__main__':
 		
 		index_count=0
 		for systs in systems:
+			os.chdir(dirs_sys[index_count])
 			os.chdir(systs)
 			if 'orient' in tags_sys[index_count]:
 				if Type[index_count] == "None":
@@ -3466,7 +3165,7 @@ if __name__ == '__main__':
 					os.system("cp temp_run/"+systs+".out "+accuracy_text+"/"+systs+".refout")
 					os.system("cp temp_run/"+systs+".geopt "+accuracy_text+"/"+systs+".refgeopt")
 			index_count = index_count + 1
-			os.chdir("./..")
+			os.chdir(home_tests_directory)
 		sys.exit("Reference files have been updated\n")
 
 	### Reading number of processors from the input file if isparallel == True
@@ -3480,14 +3179,16 @@ if __name__ == '__main__':
 	# launch in a batch of 5 systems in a single pbs file in case of "mempbscheck == False" and in a batch of 1 otherwise
 	# Input to the launch function should be  - (i) systems (ii) ifmempbs (iii) numberofprocs
 	if isAuto == False and temp_result == False:
-		jobID = launchsystems(systems,memcheck,procs_nodes_cluster,ismempbs, ifVHQ, isorient, not isparallel)
+		jobID = launchsystems(systems, dirs_sys, memcheck, procs_nodes_cluster, ismempbs, ifVHQ, isorient, not isparallel, ismlff_copy)
 
 	############################### Monitoring #########################################################################
 		syst_temp = []
+		dirs_temp =[]
 		isorient_temp=[]
 		for i in range(len(systems)):
 			syst_temp.append(systems[i])
 			isorient_temp.append(isorient[i])
+			dirs_temp.append(dirs_sys[i])
 
 		for i in range_with_status(len(systems)):
 			temp = True
@@ -3499,15 +3200,16 @@ if __name__ == '__main__':
 					# 	del isorient_temp[j]
 					# 	temp = False
 					# 	break
-					if isfinished(syst_temp[j], isorient_temp[j]) == True:
+					if isfinished(syst_temp[j], dirs_temp[j], isorient_temp[j]) == True:
 						del syst_temp[j]
 						del isorient_temp[j]
+						del dirs_temp[j]
 						# syst_temp.remove(syst_temp[j])
 						# isorient_temp.remove(isorient_temp[j])
 						temp = False
 						break
-						time.sleep(0.3)
-				time.sleep(10)
+						time.sleep(0.1)
+				time.sleep(0.1)
 
 		print('\n')
 	elif isAuto == True and temp_result == False:
@@ -3585,8 +3287,8 @@ if __name__ == '__main__':
 	sys_which_ran_idx=[]
 	try:
 		os.chdir(home_directory)
-		temp=getInfo(systems[0],singlept[0],Type[0],False,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
-		temp1=getInfo(systems[0],singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
+		temp=getInfo(systems[0], dirs_sys[0],  singlept[0],Type[0],False,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
+		temp1=getInfo(systems[0], dirs_sys[0] ,singlept[0],Type[0],True,memcheck[0],ismempbs,isspin[0],ifVHQ,isorient[0],tols_sys[0])
 		data_info[count_run] = {'a': temp, 'b': temp1}
 		sys_which_ran_idx.append(count_run)
 		count_run=count_run+1
@@ -3603,8 +3305,8 @@ if __name__ == '__main__':
 		if i>0:
 			try:
 				os.chdir(home_directory)
-				temp=getInfo(systems[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
-				temp1=getInfo(systems[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
+				temp=getInfo(systems[i], dirs_sys[i],singlept[i],Type[i],False,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])				
+				temp1=getInfo(systems[i], dirs_sys[i],singlept[i],Type[i],True,memcheck[i],ismempbs,isspin[i],ifVHQ,isorient[i],tols_sys[i])
 				temp_dict = {'a': temp, 'b': temp1}
 				data_info[count_run] = temp_dict
 				sys_which_ran_idx.append(i)
@@ -3673,3 +3375,4 @@ if __name__ == '__main__':
 	if isAuto == True:
 		if failtests > 0:
 			raise Exception(str(failtests) + " out of "+str(passtests+failtests) +" failed")
+

@@ -1,0 +1,129 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sun Aug 11 19:33:33 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 7.78 7.78 7.78 
+LATVEC:
+1.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 1.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 1.000000000000000 
+FD_GRID: 15 15 15
+FD_ORDER: 12
+BC: P P P
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Fermi-Dirac
+SMEARING: 0.3166811563
+EXCHANGE_CORRELATION: LDA_PW
+SQ_FLAG: 1
+SQ_RCUT: 4
+SQ_NPL_G: 40
+SQ_GAUSS_MEM: LOW
+SQ_TOL_OCC: 1.00E-06
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-06
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-09
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 2.69E-04
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: highT_tests/highT_Al/temp_run/highT_Al
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+7.780000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 7.780000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 7.780000000000000 
+Volume: 4.7091095200E+02 (Bohr^3)
+Density: 2.2918590774E-01 (amu/Bohr^3), 2.5682281899E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_DOMAIN_SQ_PARAL: 3 4 4
+NP_DOMAIN_PHI_PARAL: 2 2 2
+WARNING: Default parallelization not used. This could result in degradation of performance.
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.518667 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  highT_tests/highT_Al/temp_run/highT_Al.out
+Total number of atom types         :  1
+Total number of atoms              :  4
+Total number of electrons          :  12
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  ../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
+Atomic mass                        :  26.9815385
+Pseudocharge radii of atom type 1  :  9.34 9.34 9.34 (x, y, z dir)
+Number of atoms of type 1          :  4
+Estimated total memory usage       :  367.71 MB
+Estimated memory per processor     :  7.66 MB
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -3.7675352256E+00        3.563E-02        0.754
+2            -3.7675034088E+00        2.714E-02        0.380
+3            -3.7674536570E+00        2.540E-03        0.375
+4            -3.7674534873E+00        1.909E-04        0.377
+5            -3.7674534908E+00        1.185E-04        0.377
+6            -3.7674534905E+00        1.291E-05        0.376
+7            -3.7674534913E+00        8.666E-07        0.376
+Total number of SCF: 7     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -3.7674534913E+00 (Ha/atom)
+Total free energy                  : -1.5069813965E+01 (Ha)
+Band structure energy              :  3.9816781298E+00 (Ha)
+Exchange correlation energy        : -4.3638277886E+00 (Ha)
+Self and correction energy         : -1.2498608400E+01 (Ha)
+-Entropy*kb*T                      : -9.7269711802E+00 (Ha)
+Fermi level                        : -1.0552823792E-01 (Ha)
+RMS force                          :  7.9250668711E-02 (Ha/Bohr)
+Maximum force                      :  9.7518632463E-02 (Ha/Bohr)
+Time for force calculation         :  0.424 (sec)
+Pressure                           :  1.5858633137E+02 (GPa)
+Maximum stress                     :  1.6128673898E+02 (GPa)
+Time for stress calculation        :  0.078 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  3.587 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

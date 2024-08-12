@@ -634,6 +634,92 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"PRINT_ENERGY_DENSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PrintEnergyDensFlag);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_FLAG:") == 0) {
+            // pSPARC->mlff_flag == 1 means on-the-fly MD from scratch, pSPARC->mlff_flag == 21 means only prediction using a known model, pSPARC->mlff_flag == 22 on-the-fly MD starting from a known model
+            fscanf(input_fp,"%d",&pSPARC_Input->mlff_flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_INITIAL_STEPS_TRAIN:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->begin_train_steps);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_IF_ATOM_DATA_AVAILABLE:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->if_atom_data_available);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MLFF_hnl_FILE:") == 0) {
+            fscanf(input_fp,"%s",pSPARC_Input->hnl_file_name);  
+            fscanf(input_fp, "%*[^\n]\n");
+         } else if (strcmpi(str,"MLFF_MODEL_FOLDER:") == 0) {    // MLFF start
+            fscanf(input_fp,"%s",pSPARC_Input->mlff_data_folder);  
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_DESCRIPTOR_TYPE:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->descriptor_typ_MLFF);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_PRINT_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->print_mlff_flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_INTERNAL_ENERGY_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->mlff_internal_energy_flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_PRESSURE_TRAIN_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->mlff_pressure_train_flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_SPLINE_NGRID_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->N_rgrid_MLFF);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_RADIAL_BASIS:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->N_max_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str, "MLFF_RADIAL_MIN:") == 0) {
+            fscanf(input_fp, "%lf", &pSPARC_Input->radial_min);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str, "MLFF_RADIAL_MAX:") == 0) {
+            fscanf(input_fp, "%lf", &pSPARC_Input->radial_max);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_ANGULAR_BASIS:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->L_max_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_MAX_STR_STORE:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->n_str_max_mlff);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_MAX_CONFIG_STORE:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->n_train_max_mlff);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_RCUT_SOAP:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->rcut_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_SIGMA_ATOM_SOAP:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->sigma_atom_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_KERNEL_TYPE:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->kernel_typ_MLFF);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_WT_THREE_BODY_SOAP:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->beta_3_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_REGUL_MIN:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->condK_min);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_FACTOR_MULTIPLY_SIGMATOL:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->factor_multiply_sigma_tol);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_IF_SPARSIFY_BEFORE_TRAIN:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->if_sparsify_before_train);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_EXPONENT_SOAP:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->xi_3_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_TOL_FORCE:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->F_tol_SOAP);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"MLFF_SCALE_FORCE:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->F_rel_scale);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MLFF_SCALE_STRESS:") == 0) {
+            fscanf(input_fp,"%lf %lf %lf %lf %lf %lf", &pSPARC_Input->stress_rel_scale[0], &pSPARC_Input->stress_rel_scale[1], &pSPARC_Input->stress_rel_scale[2],
+                                                       &pSPARC_Input->stress_rel_scale[3], &pSPARC_Input->stress_rel_scale[4], &pSPARC_Input->stress_rel_scale[5]);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MLFF_DFT_FQ:") == 0) {    // MLFF end
+            fscanf(input_fp,"%d", &pSPARC_Input->MLFF_DFT_fq);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");

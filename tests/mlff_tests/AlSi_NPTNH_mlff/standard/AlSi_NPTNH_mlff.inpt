@@ -1,0 +1,37 @@
+
+# Test: Si (4*2*2) #
+CELL: 22.948314201 22.948314201 22.948314201
+MESH_SPACING: 0.55
+BC: P P P
+EXCHANGE_CORRELATION: GGA_PBE
+CALC_STRESS: 1
+
+MD_FLAG: 1
+ION_TEMP: 1500
+MD_METHOD: NPT_NH
+TARGET_PRESSURE: 5 GPa
+NPT_NH_QMASS: 4 40000 40000 40000 40000
+NPT_NH_BMASS: 2500000
+MD_NSTEP: 10
+MD_TIMESTEP: 2.0
+#RESTART_FLAG: 1
+
+
+
+
+
+ # MLFF parameters
+MLFF_FLAG: 1
+MLFF_ANGULAR_BASIS: 6   # Lmax (maximum order of spherical harmonics in SOAP)
+MLFF_RADIAL_BASIS: 8   # N_R (Number of raddial basis functions in SOAP)
+MLFF_RCUT_SOAP: 10      # (Cutoff radius for the SOAP descriptor)
+MLFF_hnl_FILE: ../hnl_N_8.txt   # (name of hnl file which has h_nl and d h_nl/ dr) - (Lmax, N_R and RCUT_SOAP has to be consistent with this file)
+MLFF_MODEL_FOLDER: ./
+MLFF_INITIAL_STEPS_TRAIN: 3   # Initial number of MD steps where DFT calculation is imposed
+MLFF_MAX_STR_STORE: 500   # This is the maximum number of structure for which memory is allocated to store MLFF data
+MLFF_MAX_CONFIG_STORE: 5000  # THis is the maximum number of atomic descriptors per element type that is stored 
+MLFF_SCALE_FORCE: 1.0   # Scaling of force relative to energy
+MLFF_SCALE_STRESS: 1.0 1.0 1.0 1.0 1.0 1.0   # Scaling of stress relative to energy
+MLFF_REGUL_MIN: 1.00E-10 # regularization hyperparameters are chosen such that condition number of matrix to be inverted is less than 1/REGUL_MIN_MLFF
+MLFF_FACTOR_MULTIPLY_SIGMATOL: 1.001   # Parameter to control sigma_tol (always use >1) closer to  will result in more DFT calulations
+MLFF_IF_SPARSIFY_BEFORE_TRAIN: 1   # choose 0 if there is no sparsification just before training
