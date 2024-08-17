@@ -500,6 +500,7 @@ typedef struct _SPARC_OBJ{
     double *Mp_s;                 // whole projected mass matrix Mp redistributed for solving eigenproblem (GLOBAL)
     #ifdef ACCEL
     int useACCEL;                 // SPARCX_ACCEL_NOTE Flag needed to trigger GPU Acceleration
+    int useHIP;                   // Flag to hook in HIP
     #endif
     int useLAPACK;                // flag for using LAPACK_dsygv to solve subspace eigenproblem
     int eig_serial_maxns;// maximum Nstates for using LAPACK to solve the subspace eigenproblem by default,

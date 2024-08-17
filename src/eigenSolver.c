@@ -382,7 +382,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     // if eigvals are calculated in root process, then bcast the eigvals
     // SPARCX_ACCEL_NOTE Need to add this to propagate GPU calculated eigenvalues back to the other MPI tasks
     #ifdef SPARCX_ACCEL
-    if (pSPARC->useACCEL == 1 && nproc_kptcomm > 1) 
+    if (pSPARC->useACCEL == 1 && nproc_kptcomm > 1 && (!pSPARC->useHIP || pSPARC->useLAPACK == 1)) 
         MPI_Bcast(pSPARC->lambda, pSPARC->Nstates * pSPARC->Nspin_spincomm, MPI_DOUBLE, 0, pSPARC->kptcomm); 
     #else
     if (pSPARC->useLAPACK == 1 && nproc_kptcomm > 1) {
@@ -477,7 +477,7 @@ void Solve_standard_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
     #endif
     
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE
-    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20) {
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && !pSPARC->useHIP) {
 		int info = 0;
 		t1 = MPI_Wtime();
 		if (!pSPARC->bandcomm_index) {
@@ -1265,7 +1265,7 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
     if (DP_CheFSI == NULL) return;
     
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE -- ADDS GPU Eigensolver
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && !pSPARC->useHIP)
 	{
 		int Ns_dp = DP_CheFSI->Ns_dp;
 		int rank_kpt = DP_CheFSI->rank_kpt;
@@ -1687,7 +1687,7 @@ void Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int k, int spn_i)
     #endif
 
     #ifdef SPARCX_ACCEL // SPARCX_ACCEL_NOTE
-    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20) {
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && !pSPARC->useHIP) {
 		int info = 0;
 		t1 = MPI_Wtime();
 		if (!pSPARC->bandcomm_index) {

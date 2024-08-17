@@ -1818,7 +1818,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
         }
         
         // Check the scientific notation of floating point number 
-        char notation = '\0';
+       /* char notation = '\0';
         int num = 0;
         do {
             fscanf(psd_fp,"%s",str);
@@ -1829,7 +1829,7 @@ void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC)
                    "       Please run sed -i -e 's/%c-/E-/g' -e 's/%c+/E+/g' *.psp8 in the\n"
                    "       pseudopotential directory to convert to a compatible scientific notation\n"RESET, notation, notation);
             exit(EXIT_FAILURE);
-        }
+        }*/
         
         // reset file pointer to the start of the file
         fseek(psd_fp, 0L, SEEK_SET);  // returns 0 if succeeded, can use to check status
