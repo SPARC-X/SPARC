@@ -346,6 +346,12 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
 
 #ifdef SPARCX_ACCEL // Activating flag for using hardware acceleration at compile time.
     pSPARC->useACCEL = 1;
+	#ifdef HIP
+    	pSPARC->useHIP = 1;
+    #else
+        pSPARC->useHIP = 0;
+    #endif
+
     if (rank == 0) 
     {	
     	 char *hwaccel[2] = { "DISABLED", "ENABLED" };
@@ -3464,7 +3470,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version August 11, 2024)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version August 16, 2024)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
