@@ -5,17 +5,18 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 
 * Applicable to isolated systems such as molecules as well as extended systems such as crystals, surfaces, and wires.
 * Local, semilocal, and nonlocal (including hybrid) exchange-correlation functionals.
-* Standard ONCV pseudopotentials, including nonlinear core corrections.
+* Standard ONCV pseudopotentials, including nonlinear core corrections (NLCCs).
 * Calculation of ground state energy, atomic forces, and stress tensor.
 * Structural relaxation and ab initio molecular dynamics (NVE, NVT, and NPT).
 * Spin polarized and unpolarized calculations.
-* Spin-orbit coupling.
+* Spin-orbit coupling (SOC).
 * Noncollinear spin.
 * Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
-* Symmetry-adaption for cyclic and/or helical symmetries.
-* Linear-scaling Spectral Quadrature (SQ) method.
+* Symmetry-adaption for cyclic and/or helical symmetries (Cyclix-DFT).
+* O(N) Spectral Quadrature (SQ) method.
+* On-the-fly machine-learned force field (MLFF) molecular dynamics (MD) simulations. 
 
-SPARC is straightforward to install, use, and modify, with minimal external library dependencies. It has shown to be an order of magnitude faster than state-of-the-art planewave codes, with a range of exchange-correlation functionals, and with increasing advantages as the number of processors is increased. In particular, SPARC efficiently scales to thousands of processors in regular operation, bringing solution times down to about a minute for systems with O(500-1000) atoms, and a few seconds for O(100-500) atoms. Future versions will target similar solution times for larger systems containing many thousands of atoms, and the efficient solution of systems containing a hundred thousand atoms and more.
+SPARC is straightforward to install, use, and modify, with minimal external library dependencies. It has shown to be an order of magnitude faster than state-of-the-art planewave codes, with a range of exchange-correlation functionals, and with increasing advantages as the number of processors is increased. In particular, SPARC efficiently scales to thousands of processors in regular operation, bringing solution times down to about a minute for systems with O(500-1000) atoms, and a few seconds for O(100-500) atoms. Using the O(N) SQ method, SPARC has been scaled to system sizes of over a million atoms (https://doi.org/10.1088/1361-651X/acdf06). 
 
 ### (2) Installation:
 
@@ -184,15 +185,16 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 ### (6) Citation:
 
 If you publish work using/regarding SPARC, please cite some of the following articles, particularly those that are most relevant to your work:
-* **General**: https://doi.org/10.1016/j.softx.2021.100709, https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
+* **General**: https://doi.org/10.1016/j.simpa.2024.100649 (v2), https://doi.org/10.1016/j.softx.2021.100709 (v1), https://doi.org/10.1016/j.cpc.2016.09.020 (initial developments, isolated systems), https://doi.org/10.1016/j.cpc.2017.02.019 (initial developments, extended systems)
 * **Non-orthogonal systems**: https://doi.org/10.1016/j.cplett.2018.04.018
 * **Linear solvers**: https://doi.org/10.1016/j.cpc.2018.07.007, https://doi.org/10.1016/j.jcp.2015.11.018
 * **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
-* **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020, https://doi.org/10.1016/j.cpc.2017.02.019
-* **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029, https://doi.org/10.1016/j.cplett.2019.136983 
+* **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020 (isolated systems), https://doi.org/10.1016/j.cpc.2017.02.019 (extended systems)
+* **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029 (restarting), https://doi.org/10.1016/j.cplett.2019.136983 (preconditioning)
 * **SPMS pseudopotentials**: https://doi.org/10.1016/j.cpc.2022.108594
-* **Cyclic and/or helical symmetry**: https://doi.org/10.1103/PhysRevB.103.035101, https://doi.org/10.1103/PhysRevB.100.125143
-* **O(N) Spectral Quadrature method**: https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cplett.2013.08.035, https://doi.org/10.1007/978-3-031-22340-2_12
+* **Cyclic and/or helical symmetry**: https://doi.org/10.1103/PhysRevB.103.035101, https://doi.org/10.1103/PhysRevB.100.125143 (initial developments, extended systems), https://doi.org/10.1016/j.jmps.2016.08.007 (initial developments, isolated systems)
+* **O(N) Spectral Quadrature method**: https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cpc.2015.11.005 (initial implementation), https://doi.org/10.1016/j.cplett.2013.08.035 (formulation), https://doi.org/10.1007/978-3-031-22340-2_12 (detailed mathematical formulation)
+* **On-the-fly MLFF**: https://doi.org/10.1063/5.0180541, https://doi.org/10.1063/5.0204229 (SQ), https://doi.org/10.48550/arXiv.2408.07554 (Cyclix), https://doi.org/10.48550/arXiv.2407.15290 (internal energy) 
 
 
 ### (7) Acknowledgement:
