@@ -28,6 +28,8 @@
 #include "electronDensity.h"
 #include "parallelization.h"
 #include "readfiles.h"
+#include "initialization.h"
+#include "md.h"
 #define max(x,y) ((x)>(y)?(x):(y))
 
 
@@ -205,47 +207,93 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
  */
 // TODO: Check if the FtF matrix is singular and if it is then decide on how to do extrapolation or not to do at all
 void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
-	// processors that are not in the dmcomm_phi will remain idle
+    // processors that are not in the dmcomm_phi will remain idle
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
         return; 
     }
     int nd, ii, matrank, count = 0, atm;
-    double alpha, beta;
+    double alpha, beta, *coord_temp1, *coord_temp2;
     for (nd = 0; nd < pSPARC->Nd_d; nd++){
         pSPARC->delectronDens_2dt[nd] = pSPARC->delectronDens_1dt[nd];
         pSPARC->delectronDens_1dt[nd] = pSPARC->delectronDens_0dt[nd];
-        pSPARC->delectronDens_0dt[nd] = pSPARC->electronDens[nd] - pSPARC->electronDens_at[nd];
+        double *electronDens = pSPARC->electronDens;        
+        pSPARC->delectronDens_0dt[nd] = electronDens[nd] - pSPARC->electronDens_at[nd];
     }
     if(pSPARC->MDFlag == 1){
-	    for(atm = 0; atm < pSPARC->n_atom; atm++){
-	    	if(pSPARC->MDCount == 1){
-	    		pSPARC->atom_pos_nm[count * 3] = pSPARC->atom_pos[count * 3];
-		    	pSPARC->atom_pos_nm[count * 3 + 1] = pSPARC->atom_pos[count * 3 + 1];
-			    pSPARC->atom_pos_nm[count * 3 + 2] = pSPARC->atom_pos[count * 3 + 2];
-		    	count ++;
-		    } else{
-			    pSPARC->atom_pos_nm[count * 3] += pSPARC->MD_dt * pSPARC->ion_vel[count * 3];
-			    pSPARC->atom_pos_nm[count * 3 + 1] += pSPARC->MD_dt * pSPARC->ion_vel[count * 3 + 1];
-			    pSPARC->atom_pos_nm[count * 3 + 2] += pSPARC->MD_dt * pSPARC->ion_vel[count * 3 + 2];
-			    count ++;
-		    }         
-	    }
-    } else if(pSPARC->RelaxFlag == 1){
-        for(atm = 0; atm < pSPARC->n_atom; atm++){
-		    if((pSPARC->elecgs_Count - pSPARC->StressCount) == 1){
-			    pSPARC->atom_pos_nm[count * 3] = pSPARC->atom_pos[count * 3];
-			    pSPARC->atom_pos_nm[count * 3 + 1] = pSPARC->atom_pos[count * 3 + 1];
-			    pSPARC->atom_pos_nm[count * 3 + 2] = pSPARC->atom_pos[count * 3 + 2];
+        if(pSPARC->MDCount == 1) {
+            for(atm = 0; atm < pSPARC->n_atom; atm++){
+                pSPARC->atom_pos_nm[count * 3] = pSPARC->atom_pos[count * 3];
+                pSPARC->atom_pos_nm[count * 3 + 1] = pSPARC->atom_pos[count * 3 + 1];
+                pSPARC->atom_pos_nm[count * 3 + 2] = pSPARC->atom_pos[count * 3 + 2];
                 count ++;
-		    } else{
-			    pSPARC->atom_pos_nm[count * 3] += pSPARC->Relax_fac * pSPARC->d[count * 3] * pSPARC->mvAtmConstraint[count * 3];
-			    pSPARC->atom_pos_nm[count * 3 + 1] += pSPARC->Relax_fac * pSPARC->d[count * 3 + 1] * pSPARC->mvAtmConstraint[count * 3 + 1];
-			    pSPARC->atom_pos_nm[count * 3 + 2] += pSPARC->Relax_fac * pSPARC->d[count * 3 + 2] * pSPARC->mvAtmConstraint[count * 3 + 2];
-			    count ++;
-		    }
-	    }
+            }   
+        } else{
+            coord_temp1 = (double *) malloc(3*pSPARC->n_atom*sizeof(double));
+            coord_temp2 = (double *) malloc(3*pSPARC->n_atom*sizeof(double));
+
+            for(atm = 0; atm < 3*pSPARC->n_atom; atm++){
+                coord_temp1[atm] = pSPARC->atom_pos_nm[atm];
+                coord_temp2[atm] = pSPARC->atom_pos[atm];
+            }
+            wraparound_dynamics(pSPARC, coord_temp1, 0);
+            if(pSPARC->cell_typ != 0){
+                for(atm = 0; atm < pSPARC->n_atom; atm++){
+                    Cart2nonCart_coord(pSPARC, coord_temp2+3*atm, coord_temp2+3*atm+1, coord_temp2+3*atm+2);
+                    Cart2nonCart_coord(pSPARC, pSPARC->atom_pos_nm+3*atm, pSPARC->atom_pos_nm+3*atm+1, pSPARC->atom_pos_nm+3*atm+2);
+                }
+            }
+            for(atm = 0; atm < 3*pSPARC->n_atom; atm++){
+                pSPARC->atom_pos_nm[atm] += coord_temp2[atm] - coord_temp1[atm];
+            }
+
+            
+
+            if(pSPARC->cell_typ != 0){
+                for(atm = 0; atm < pSPARC->n_atom; atm++){
+                    nonCart2Cart_coord(pSPARC, pSPARC->atom_pos_nm+3*atm, pSPARC->atom_pos_nm+3*atm+1, pSPARC->atom_pos_nm+3*atm+2);
+                }
+            }
+
+            free(coord_temp1);
+            free(coord_temp2);
+        }   
+    } else if(pSPARC->RelaxFlag == 1){
+        if((pSPARC->elecgs_Count - pSPARC->StressCount) == 1) {
+            for(atm = 0; atm < pSPARC->n_atom; atm++){
+                pSPARC->atom_pos_nm[count * 3] = pSPARC->atom_pos[count * 3];
+                pSPARC->atom_pos_nm[count * 3 + 1] = pSPARC->atom_pos[count * 3 + 1];
+                pSPARC->atom_pos_nm[count * 3 + 2] = pSPARC->atom_pos[count * 3 + 2];
+                count ++;
+            }
+        } else{
+            coord_temp1 = (double *) malloc(3*pSPARC->n_atom*sizeof(double));
+            coord_temp2 = (double *) malloc(3*pSPARC->n_atom*sizeof(double));
+
+            for(atm = 0; atm < 3*pSPARC->n_atom; atm++){
+                coord_temp1[atm] = pSPARC->atom_pos_nm[atm];
+                coord_temp2[atm] = pSPARC->atom_pos[atm];
+            }
+            wraparound_dynamics(pSPARC, coord_temp1, 0);
+            if(pSPARC->cell_typ != 0){
+                for(atm = 0; atm < pSPARC->n_atom; atm++){
+                    Cart2nonCart_coord(pSPARC, coord_temp2+3*atm, coord_temp2+3*atm+1, coord_temp2+3*atm+2);
+                    Cart2nonCart_coord(pSPARC, pSPARC->atom_pos_nm+3*atm, pSPARC->atom_pos_nm+3*atm+1, pSPARC->atom_pos_nm+3*atm+2);
+                }
+            }
+            for(atm = 0; atm < 3*pSPARC->n_atom; atm++){
+                pSPARC->atom_pos_nm[atm] += coord_temp2[atm] - coord_temp1[atm];
+            }
+
+            if(pSPARC->cell_typ != 0){
+                for(atm = 0; atm < pSPARC->n_atom; atm++)
+                    nonCart2Cart_coord(pSPARC, pSPARC->atom_pos_nm+3*atm, pSPARC->atom_pos_nm+3*atm+1, pSPARC->atom_pos_nm+3*atm+2);
+            }
+
+            free(coord_temp1);
+            free(coord_temp2);
+        }   
     }
-	if((pSPARC->elecgs_Count - pSPARC->StressCount) >= 3){ 
+    if((pSPARC->elecgs_Count - pSPARC->StressCount) >= 3){ 
        double *FtF, *Ftf, *s, temp1, temp2, temp3; // 2x2 matrix and 2x1 vectors in (FtF)*(svec) = Ftf
         FtF = (double *)calloc( 4 , sizeof(double) );
         Ftf = (double *)calloc( 2 , sizeof(double) );
@@ -278,7 +326,6 @@ void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
         pSPARC->atom_pos_0dt[ii] = pSPARC->atom_pos_nm[ii];
     }
 }
-
 
 /**
  * @brief   initialize Kohn-Sham orbitals.

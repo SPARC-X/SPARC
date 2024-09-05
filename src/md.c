@@ -1768,7 +1768,7 @@ void Cart2nonCart(double *gradT, double *carCoord, double *nonCarCoord) {
 }
 
 /*
- @ brief: function to wrap around atom positions that lie outside main domain in case of PBC and check if the atoms are too close to the boundary in case of bounded domain
+* @ brief: function to check if the atoms are too close to the boundary in case of bounded domain or to each other in general
 */
 void Check_atomlocation(SPARC_OBJ *pSPARC) {
     int rank, ityp, i, atm, atm2, count, dir = 0, maxdir = 3, BC;
@@ -1813,10 +1813,22 @@ void Check_atomlocation(SPARC_OBJ *pSPARC) {
 	}
 	free(rc);
 
+	wraparound_dynamics(pSPARC, pSPARC->atom_pos, 1);
+}
+
+/*
+* @ brief: function to wraparound atom positions for PBC
+*/
+void wraparound_dynamics(SPARC_OBJ *pSPARC, double *coord, int opt) {
+
+	int rank, atm, dir = 0, maxdir = 3, BC;
+	double length, coord_temp;// Change tol according to the situation
+	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
 	// Convert Cart to nonCart coordinates for non orthogonal cell
     if(pSPARC->cell_typ != 0){
         for(atm = 0; atm < pSPARC->n_atom; atm++)
-	        Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*atm], &pSPARC->atom_pos[3*atm+1], &pSPARC->atom_pos[3*atm+2]);
+	        Cart2nonCart_coord(pSPARC, coord+3*atm, coord+3*atm+1, coord+3*atm+2);
     }
 
 	while(dir < maxdir){
@@ -1834,25 +1846,62 @@ void Check_atomlocation(SPARC_OBJ *pSPARC) {
 		}
 		if(BC == 1){
 			if (!((pSPARC->CyclixFlag) && (dir == 0))) { // if it is in cyclix coordinate and in x (radial) direction, we will not check it
-				for(atm = 0; atm < pSPARC->n_atom; atm++){
-					if(pSPARC->atom_pos[atm * 3 + dir] >= length || pSPARC->atom_pos[atm * 3 + dir] < 0){
-						if(!rank)
-							printf("ERROR: Atom number %d has crossed the boundary in %d direction",atm, dir);
-						exit(EXIT_FAILURE);
+                for(atm = 0; atm < pSPARC->n_atom; atm++){
+                    if(coord[atm * 3 + dir] >= length || coord[atm * 3 + dir] < 0){
+                        if(!rank)
+                            printf("ERROR: Atom number %d has crossed the boundary in %d direction",atm, dir);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+            }
+		} else if(BC == 0){
+			for(atm = 0; atm < pSPARC->n_atom; atm++){
+				coord_temp = *(coord+3*atm+dir);
+            	if (coord_temp < 0.0 || coord_temp >= length)
+            	{
+                	coord_temp = fmod(coord_temp,length);
+					double new_coord = coord_temp + (coord_temp<0.0)*length;
+					double shift = new_coord - *(coord+3*atm+dir);
+					*(coord+3*atm+dir) = new_coord;
+					if (pSPARC->CyclixFlag && opt == 1){
+						wraparound_velocity(pSPARC, shift, dir, 3*atm);
 					}
 				}
-			}
-		}else if(BC == 0){
-		// TODO: Assumed that atom moves less than one cell length, generalize in future
-			for(atm = 0; atm < pSPARC->n_atom; atm++){
-				if(pSPARC->atom_pos[atm * 3 + dir] >= length)
-					pSPARC->atom_pos[atm * 3 + dir] -= length;
-				else if(pSPARC->atom_pos[atm * 3 + dir] < 0)
-					pSPARC->atom_pos[atm * 3 + dir] += length;
 			}
 		}
 		dir ++;
 	}
+}
+
+/*
+* @ brief: function to wraparound velocities in MD and displacement vectors in relaxation for PBC
+*/
+void wraparound_velocity(SPARC_OBJ *pSPARC, double shift, int dir, int loc) {
+
+	if (dir == 1){
+		if (pSPARC->MDFlag == 1){
+			double vx = pSPARC->ion_vel[loc]; double vy = pSPARC->ion_vel[loc+1];
+			pSPARC->ion_vel[loc] = cos(shift) * vx -sin(shift) * vy;
+			pSPARC->ion_vel[loc+1] = sin(shift) * vx + cos(shift) * vy;
+		}
+		else if (pSPARC->RelaxFlag == 1){
+			double vx = pSPARC->d[loc]; double vy = pSPARC->d[loc+1];
+			pSPARC->d[loc] = cos(shift) * vx -sin(shift) * vy;
+			pSPARC->d[loc+1] = sin(shift) * vx + cos(shift) * vy;
+		}	
+	} else if (dir == 2){
+		if (pSPARC->MDFlag == 1){
+			double vx = pSPARC->ion_vel[loc]; double vy = pSPARC->ion_vel[loc+1];
+			pSPARC->ion_vel[loc] = cos(pSPARC->twist*shift) * vx -sin(pSPARC->twist*shift) * vy;
+			pSPARC->ion_vel[loc+1] = sin(pSPARC->twist*shift) * vx + cos(pSPARC->twist*shift) * vy;
+		}
+		else if (pSPARC->RelaxFlag == 1){
+			double vx = pSPARC->d[loc]; double vy = pSPARC->d[loc+1];
+			pSPARC->d[loc] = cos(pSPARC->twist*shift) * vx -sin(pSPARC->twist*shift) * vy;
+			pSPARC->d[loc+1] = sin(pSPARC->twist*shift) * vx + cos(pSPARC->twist*shift) * vy;
+		}	
+	}
+		
 }
 
 /*

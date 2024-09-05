@@ -73,9 +73,19 @@ void Calc_vel1_G(SPARC_OBJ *pSPARC);
 void Calc_vel2_G(SPARC_OBJ *pSPARC); 
 
 /*
-* @ brief: function to wrap around atom positions that lie outside main domain in case of PBC and check if the atoms are too close to the boundary in case of bounded domain
+* @ brief: function to check if the atoms are too close to the boundary in case of bounded domain or to each other in general
 */
 void Check_atomlocation(SPARC_OBJ *pSPARC);
+
+/*
+* @ brief: function to wraparound atom positions for PBC
+*/
+void wraparound_dynamics(SPARC_OBJ *pSPARC, double *coord, int opt);
+
+/*
+* @ brief: function to wraparound velocities in MD and displacement vectors in relaxation for PBC
+*/
+void wraparound_velocity(SPARC_OBJ *pSPARC, double shift, int dir, int loc);
 
 /*
  @ brief: function to write all relevant DFT quantities generated during MD simulation

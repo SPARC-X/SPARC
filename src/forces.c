@@ -112,24 +112,6 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
 
     // Apply constraint on motion of atoms for Relaxation\MD
     if(pSPARC->RelaxFlag == 1 || pSPARC->MDFlag == 1) {
-        if (pSPARC->CyclixFlag) {
-            double fx, fy;
-            double ty, tz;
-            if (pSPARC->elecgs_Count > 0) {
-                for(i = 0; i < pSPARC->n_atom; i++){
-                    Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos_nm[3*i], &pSPARC->atom_pos_nm[3*i+1], &pSPARC->atom_pos_nm[3*i+2]);
-                    
-                    ty = (pSPARC->atom_pos_nm[3*i+1] - pSPARC->atom_pos[3*i+1])/pSPARC->range_y;
-                    tz = (pSPARC->atom_pos_nm[3*i+2] - pSPARC->atom_pos[3*i+2])/pSPARC->range_z;
-                    RotMat_cyclix(pSPARC, ty, tz);
-                    fx = pSPARC->forces[3*i]; fy = pSPARC->forces[3*i+1];
-                    pSPARC->forces[3*i] = pSPARC->RotM_cyclix[0] * fx + pSPARC->RotM_cyclix[1] * fy;
-                    pSPARC->forces[3*i+1] = pSPARC->RotM_cyclix[3] * fx + pSPARC->RotM_cyclix[4] * fy;
-
-                    nonCart2Cart_coord(pSPARC, &pSPARC->atom_pos_nm[3*i], &pSPARC->atom_pos_nm[3*i+1], &pSPARC->atom_pos_nm[3*i+2]);
-                }
-            }
-        }
         for(i = 0; i < 3*pSPARC->n_atom; i++)
             pSPARC->forces[i] *= pSPARC->mvAtmConstraint[i];
     }
@@ -1419,7 +1401,7 @@ void Symmetrize_forces(SPARC_OBJ *pSPARC)
     shift_fy /= n_atom;
     shift_fz /= n_atom;
     
-    if (pSPARC->CyclixFlag) {
+    if (pSPARC->CyclixFlag && pSPARC->range_y < 2.0*M_PI) {
         // Do not symmetrize forces in x-y plane for cyclix systems (TODO: But do symmetrize if all the atoms are taken into account)
         shift_fx = 0.0;
         shift_fy = 0.0;
