@@ -12,6 +12,7 @@
     \item Symmetry-adaption for cyclic and/or helical symmetries.
     \item Linear-scaling Spectral Quadrature (SQ) method.
     \item Soft and transferable table of SPMS pseudopotentials.
+    \item On-the-fly machine-learned force field (MLFF) molecular dynamics (MD) simulations.
   \end{itemize}
   % Additional details regarding the formulation and implementation of SPARC can be found in the accompanying paper. Please direct any questions and report any bugs to Prof.~Phanish Suryanarayana.
   
@@ -30,7 +31,7 @@
         \item \textbf{Xin Jing}: Code infrastructure, Hybrid functionals, SOC \\  
  	    \item \textbf{Abhiraj Sharma}: Code infrastructure, k-points, PBE, Stress, Non-orthogonal, Relaxation, NLCC \\   
  	    \item \textbf{Boqin Zhang}: vdW-DF, DFT-D3, meta-GGA (SCAN) \\  
- 	    \item \textbf{Shashikant Kumar}: Testing framework, NLCC \\  
+ 	    \item \textbf{Shashikant Kumar}: Testing framework, NLCC, MLFF \\  
             \item \textbf{Mostafa Faghih Shojaei}: SPMS table of pseudopotentials \\ 
             \item \textbf{Swarnava Ghosh}: Preliminary development \\
             \item \textbf{Deepa Phanish}: Initial development
@@ -54,20 +55,23 @@
 \begin{frame}[allowframebreaks]{\textbf{Citation}} \label{Citation}
 If you publish work using/regarding SPARC, please cite some of the following articles, particularly those that are most relevant to your work:
 \begin{itemize}
-    \item General: \url{https://doi.org/10.1016/j.softx.2021.100709}, \url{https://doi.org/10.1016/j.cpc.2016.09.020}, \url{https://doi.org/10.1016/j.cpc.2017.02.019}
+    \item General: \url{https://doi.org/10.1016/j.simpa.2024.100649} (v2), \url{https://doi.org/10.1016/j.softx.2021.100709} (v1), \url{https://doi.org/10.1016/j.cpc.2016.09.020} (initial developments, isolated systems), \url{https://doi.org/10.1016/j.cpc.2017.02.019} (initial developments, extended systems)
     \item Non-orthogonal systems: \url{https://doi.org/10.1016/j.cplett.2018.04.018}
-    \item Linear solvers: \url{https://doi.org/10.1016/j.cpc.2018.07.007},    \url{https://doi.org/10.1016/j.jcp.2015.11.018}
+    \item Linear solvers: \url{https://doi.org/10.1016/j.cpc.2018.07.007}, \url{https://doi.org/10.1016/j.jcp.2015.11.018}
     \item Stress tensor/pressure: \url{https://doi.org/10.1063/1.5057355}
-    \item Atomic forces: \url{https://doi.org/10.1016/j.cpc.2016.09.020}, \url{https://doi.org/10.1016/j.cpc.2017.02.019}
-    \item Mixing: \url{https://doi.org/10.1016/j.cplett.2016.01.033}, \url{https://doi.org/10.1016/j.cplett.2015.06.029}, \url{https://doi.org/10.1016/j.cplett.2019.136983}
+    \item Atomic forces: \url{https://doi.org/10.1016/j.cpc.2016.09.020} (isolated systems), \url{https://doi.org/10.1016/j.cpc.2017.02.019} (extended systems)
+    \item Mixing: \url{https://doi.org/10.1016/j.cplett.2016.01.033}, \url{https://doi.org/10.1016/j.cplett.2015.06.029} (restarting), \url{https://doi.org/10.1016/j.cplett.2019.136983} (preconditioning)
     \item SPMS pseudopotentials: \url{https://doi.org/10.1016/j.cpc.2022.108594}
     \item Cyclic and/or helical symmetry:
     \url{https://doi.org/10.1103/PhysRevB.103.035101},
-    \url{https://doi.org/10.1103/PhysRevB.100.125143}
+    \url{https://doi.org/10.1103/PhysRevB.100.125143} (initial developments, extended systems),
+    \url{https://doi.org/10.1016/j.jmps.2016.08.007} (initial developments, isolated systems)
     \item O(N) Spectral Quadrature method:
-    \url{https://doi.org/10.1016/j.cpc.2015.11.005},
-    \url{https://doi.org/10.1016/j.cplett.2013.08.035},
-    \url{https://doi.org/10.1007/978-3-031-22340-2_12}
+    \url{https://doi.org/10.1016/j.cpc.2015.11.005} (initial implementation),
+    \url{https://doi.org/10.1016/j.cplett.2013.08.035} (formulation),
+    \url{https://doi.org/10.1007/978-3-031-22340-2_12} (detailed mathematical formulation)
+    \item On-the-fly MLFF:
+    \url{https://doi.org/10.1063/5.0180541}, \url{https://doi.org/10.1063/5.0204229} (SQ), \url{https://doi.org/10.48550/arXiv.2408.07554} (Cyclix), \url{https://doi.org/10.48550/arXiv.2407.15290} (internal energy)
 \end{itemize}
 \end{frame}
   
