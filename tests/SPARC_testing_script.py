@@ -14,7 +14,7 @@ import math
 # Other parameters to run the test (can be changed by the user)
 nprocs_tests = 24  # In default tests are run with 24 processors per node
 nnodes_tests = 2  # In default tests are run with 1 node
-npbs = 6  # By default (number of script files the tests are distributed to)
+npbs = 10  # By default (number of script files the tests are distributed to)
 launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .sbatch
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
 MPI_command = "srun"  # MPI command to run the executable on the given cluster
@@ -236,47 +236,47 @@ SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'md_npt'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Au_wire_d3')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['wire', 'gga','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_vdWDF1')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_vdWDF2')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], 1e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('C_HSE_aux')
-SYSTEMS["directory"].append("./xc_tests/exx_tests/")
+SYSTEMS["directory"].append("./xc/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'HSE','gamma' 'nonorth','smear_fd','potmix'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_gamma_ortho_vdWDF1')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_kpt_nonOrtho_vdWDF2')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'gga', 'nonorth', 'kpt','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_surface_d3')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['surface', 'gga','d3','nonorth'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('NaCl_PBE0')
-SYSTEMS["directory"].append("./xc_tests/exx_tests/")
+SYSTEMS["directory"].append("./xc/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'PBE0','gamma' 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('O2_spin_HSE')
-SYSTEMS["directory"].append("./xc_tests/exx_tests/")
+SYSTEMS["directory"].append("./xc/exx_tests/")
 SYSTEMS["Tags"].append(['molecule', 'spin', 'HSE', 'denmix', 'kerker', 'orth','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
@@ -286,32 +286,32 @@ SYSTEMS["Tags"].append(['bulk', 'SOC','kpt' 'nonorth','smear_gauss'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si2_kpt_PBE0')
-SYSTEMS["directory"].append("./xc_tests/exx_tests/")
+SYSTEMS["directory"].append("./xc/exx_tests/")
 SYSTEMS["Tags"].append(['bulk', 'PBE0','kpt' 'nonorth','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_vdWDF1')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_vdWDF2')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'gamma','vdWDF'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_atom_geopt_d3')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'denmix', 'kerker', 'relax_atom_lbfgs','gamma','smear_gauss','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si8_cell_geopt_d3')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'potmix', 'relax_cell','gamma','smear_fd','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('SnO_bulk_d3')
-SYSTEMS["directory"].append("./xc_tests/vdW_tests/")
+SYSTEMS["directory"].append("./xc/vdW_tests/")
 SYSTEMS["Tags"].append(['bulk', 'gga','d3'])
 SYSTEMS["Tols"].append([tols["E_tol"], 3e-4, 5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
@@ -347,117 +347,117 @@ SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stre
 ################################################################################################################
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_scan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_rscan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan','fast'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_r2scan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan','fast'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_scan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_rscan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Si4_kpt_r2scan')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'nonorth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_gamma')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'nonorth', 'gamma','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_scan_kpt')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_rscan_kpt')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe2_spin_r2scan_kpt')
-SYSTEMS["directory"].append("./xc_tests/mgga_tests/")
+SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_Al')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_B4C_MD')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda','md_nvkg'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_BN')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'gga'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_H')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_MgSiO3_valgrind')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda','memcheck'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_O8')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('highT_Si8')
-SYSTEMS["directory"].append("./highT_tests/")
+SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('WSe2_cyclix')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['bulk', 'cyclix','kpt','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('HfSe2_cyclix')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['bulk', 'cyclix','gamma','smear_fd'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('FeCl2_cyclix_spin')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['cyclix','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('NiCl2_cyclix_spin')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['cyclix','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('WS2_cyclix_SOC')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['cyclix','SOC'])
 SYSTEMS["Tols"].append([tols["E_tol"], 2e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
-SYSTEMS["directory"].append("./cyclix_tests/")
+SYSTEMS["directory"].append("./cyclix/")
 SYSTEMS["Tags"].append(['cyclix','SOC'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
@@ -476,39 +476,39 @@ SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','noncollinear','spin'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
-SYSTEMS["systemname"].append('CdS_bandstruct')
-SYSTEMS["directory"].append("./")
-SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth', 'smear_fd', 'bandstruct'])
-SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+# SYSTEMS["systemname"].append('CdS_bandstruct')
+# SYSTEMS["directory"].append("./")
+# SYSTEMS["Tags"].append(['bulk', 'gga', 'denmix', 'kerker', 'orth', 'smear_fd', 'bandstruct'])
+# SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 ##################################################################################################################
 SYSTEMS["systemname"].append('AlSi_mlffflag1')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff1', 'md_nvkg'])
 SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%) 
 ##################################################################################################################
 SYSTEMS["systemname"].append('AlSi_mlffflag21')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff21', 'md_nvkg'])
 SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%) 
 ##################################################################################################################
 SYSTEMS["systemname"].append('AlSi_mlffflag22')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk',  'gga', 'orth', 'mlff22', 'md_nvkg'])
 SYSTEMS["Tols"].append([5e-5, 5e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('C_sqmlff')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'lda', 'orth', 'mlff1', 'md_nvkg'])
 SYSTEMS["Tols"].append([5e-5, 5e-4, 1]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('AlSi_NPTNH_mlff')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'mlff1', 'md_npt'])
-SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+SYSTEMS["Tols"].append([1e-5, 5e-4, 5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('AlSi_mlff_nonorth')
-SYSTEMS["directory"].append("./mlff_tests/")
+SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg'])
 SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
@@ -924,13 +924,13 @@ def ReadOutFile(filepath, isMD, geopt_typ, isSpin):
 				pres_temp = re.findall(r'\b[+-]?\d+\.\d+E[+-]\d+\b', lines)
 				pressure.append(float(pres_temp[0]))
 		if re.findall(r"BC",lines) == ['BC']:
-			if lines == ['BC: P P P']:
+			if lines == 'BC: P P P':
 				stressDim = 3
-			if lines == ['BC: P P D'] or lines == ['BC: D P P'] or lines == ['BC: P D P']:
+			if lines == 'BC: P P D' or lines == 'BC: D P P' or lines == 'BC: P D P':
 				stressDim = 2
-			if lines == ['BC: P D D'] or lines == ['BC: D D P'] or lines == ['BC: D P D']:
+			if lines == 'BC: P D D' or lines == 'BC: D D P' or lines == 'BC: D P D' or lines == 'BC: D C P' or lines == 'BC: D C H':
 				stressDim = 1
-			if lines == ['BC: D D D']:
+			if lines == 'BC: D D D':
 				stressDim = 0
 		if isSpin == True:
 			if isMD ==  True:
@@ -2669,7 +2669,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 11 August 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 19 August 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")

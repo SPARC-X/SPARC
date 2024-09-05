@@ -7,9 +7,13 @@
 #SBATCH -t1:00:00
 cd $SLURM_SUBMIT_DIR
 
-module reset
-module load intel
+module purge
+module load gcc
+module load mvapich2
+module load intel-oneapi-mkl/2023.1.0
+
 echo $PWD 
+
 
 
 
