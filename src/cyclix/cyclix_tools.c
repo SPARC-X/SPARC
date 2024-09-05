@@ -211,6 +211,8 @@ void Cart2nonCart_coord_cyclix(const SPARC_OBJ *pSPARC, double *x, double *y, do
     double x1, x2, x3;
     x1 = sqrt((*x) * (*x) + (*y) * (*y));
     x2 = atan2(*y,*x) - pSPARC->twist * (*z);
+    if (*y < 0.0)
+        x2 += 2*M_PI;
     x3 = (*z);
     *x = x1; *y = x2; *z = x3;
 }
