@@ -1,0 +1,56 @@
+*************************************************************************** 
+*                   MD analysis (Version 05 Sept 2024)                    *
+*                      Date:  09/09/2024, 07:07:25                        * 
+*************************************************************************** 
+Inputs:
+
+SYSTEM_NAME: carbon						# Name of the system. This will determine the names of the file (e.g. C2.out, C2.aimd, C2.out_01 etc)
+N_FOLDERS: 1 						# Number of folders used to run the simulation (Each folder will be considered a MD trajectory with an indepedent starting point)
+FOLDER_PATH_SIMULATIONS: ./				# Location of the folders
+N_SIMULATIONS_FOLDER: 1 					# Number of simulation run within each folder (If it has 3 simulations, C2.out, C2.out_01, C2.out_02 files are expected.)
+
+
+N_EQUIL: 10				# Number of MD steps for equilibriation
+
+
+PCF_FLAG: 1 						# Flag to do a pair correlation function calculation
+RANGE_PCF: 10 						# Maximum radial distance to be  considered 
+SIZE_HIST_PCF: 100 				# Total number of spherical shells to be considered
+
+SELF_DIFFUSION_FLAG: 1 				# Flag to do self-diffusion coefficient calculation using integration of VACF
+BLOCK_LENGTH_SELF_DIFFUSION: 100 	# Block length 
+
+
+INTER_DIFFUSION_FLAG: 0 			# Flag to do inter-diffusion coefficient calculation using integration of VACF
+BLOCK_LENGTH_INTER_DIFFUSION: 100	# Block length
+
+VISCOSITY_FLAG: 1 					# Flag to do shear viscosity calculation using integration of VACF
+BLOCK_LENGTH_VISCOSITY: 100 		# Block length
+
+INTERNAL_ENERGY_FLAG: 1 			# Flag to get the mean and error bar of total internal energy (ha/atom)
+PRESSURE_FLAG: 1 					# Flag to get the mean and error bar of total pressure (GPa)
+
+
+*************************************************************************** 
+Internal energy (UEN + KENIG):
+Mean of internal energy [ha/atom]: -5.879440854E+01
+Error bar of internal energy [ha/atom]: 2.536E-01
+*************************************************************************** 
+Pressure (PRES + PRESIG):
+Mean of pressure [GPa]: 3.293282311E+04
+Error bar of pressure [GPa]: 4.689E+01
+*************************************************************************** 
+Self diffusion coefficient:
+Self diffusion coefficients [cm^2/s]: 
+1.8689E-02, 
+Self diffusion coefficients error bar[cm^2/s]: 
+1.3756E-04, 
+*************************************************************************** 
+Shear viscosity:
+Viscosity [Pa-s]: 
+1.3834E-02, 
+Viscosity error bar[Pa-s]: 
+3.6206E-03, 
+*************************************************************************** 
+Pair correlation function:
+Pair correlation function written!!
