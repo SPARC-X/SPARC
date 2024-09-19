@@ -3214,6 +3214,16 @@ if __name__ == '__main__':
 		print('\n')
 	elif isAuto == True and temp_result == False:
 		countrun=0
+		try:
+			subprocess.run(
+				'squeue',
+				stdout=subprocess.DEVNULL,
+				stderr=subprocess.DEVNULL,
+				check=True
+			)
+			cmd = 'srun '
+		except FileNotFoundError:
+			cmd = 'mpirun '
 		for systs in systems:
 			print(str(countrun)+": "+systs+" started running")
 			os.chdir(systs)
@@ -3230,7 +3240,7 @@ if __name__ == '__main__':
 					os.system("cp standard/*.ion ./temp_run/")
 					# os.system("cp ./*.psp8 ./temp_run/")
 				os.chdir("temp_run")
-				os.system("./../../sparc -name "+systs+" > log")
+				os.system(cmd+"./../../sparc -name "+systs+" > log")
 			else:
 				if os.path.exists("temp_run1"):
 					os.system("rm -r temp_run1")
@@ -3244,7 +3254,7 @@ if __name__ == '__main__':
 					os.system("cp standard_orientation1/*.ion ./temp_run1/")
 					# os.system("cp ./*.psp8 ./temp_run1/")
 				os.chdir("temp_run1")
-				os.system("./../../sparc -name "+systs+" > log")
+				os.system(cmd+"./../../sparc -name "+systs+" > log")
 
 				os.chdir("./..")
 				if os.path.exists("temp_run2"):
@@ -3260,7 +3270,7 @@ if __name__ == '__main__':
 					# os.system("cp ./*.psp8 ./temp_run2/")
 
 				os.chdir("temp_run2")
-				os.system("./../../sparc -name "+systs+" > log")
+				os.system(cmd+"./../../sparc -name "+systs+" > log")
 				os.chdir("./..")
 				if os.path.exists("temp_run3"):
 					os.system("rm -r temp_run3")
@@ -3274,7 +3284,7 @@ if __name__ == '__main__':
 					os.system("cp standard_orientation3/*.ion ./temp_run3/")
 					# os.system("cp ./*.psp8 ./temp_run3/")
 				os.chdir("temp_run3")
-				os.system("./../../sparc -name "+systs+" > log")
+				os.system(cmd+"./../../sparc -name "+systs+" > log")
 			countrun=countrun+1
 			print(str(countrun)+": "+systs+" has finished running")
 			os.chdir("./../..")
