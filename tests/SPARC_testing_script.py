@@ -3221,9 +3221,9 @@ if __name__ == '__main__':
 				stderr=subprocess.DEVNULL,
 				check=True
 			)
-			cmd = 'srun '
+			cmd = 'srun -n 2 '
 		except FileNotFoundError:
-			cmd = 'mpirun '
+			cmd = 'mpirun -np 2 '
 		for systs in systems:
 			print(str(countrun)+": "+systs+" started running")
 			os.chdir(systs)
