@@ -1,0 +1,127 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Mon Jun 24 15:45:01 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 16 24 32 
+LATVEC:
+1.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 1.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 1.000000000000000 
+FD_GRID: 80 120 160
+FD_ORDER: 6
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: LDA_PZ
+OFDFT_FLAG: 1
+TOL_OFDFT: 1.00E-03
+OFDFT_LAMBDA: 0.2
+CALC_STRESS: 0
+CALC_PRES: 0
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 2.16E-04
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-08
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 4.00E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: Al96_OFDFT/temp_run/Al96_OFDFT
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+16.000000000000000 0.000000000000000 0.000000000000000 
+0.000000000000000 24.000000000000000 0.000000000000000 
+0.000000000000000 0.000000000000000 32.000000000000000 
+Volume: 1.2288000000E+04 (Bohr^3)
+Density: 2.1079326953E-01 (amu/Bohr^3), 2.3621226209E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_DOMAIN_PHI_PARAL: 3 4 8
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  96
+Mesh spacing                       :  0.2 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  Al96_OFDFT/temp_run/Al96_OFDFT.out
+Total number of atom types         :  1
+Total number of atoms              :  96
+Total number of electrons          :  288
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  Al96_OFDFT/Al_goodwin.psp8
+Atomic mass                        :  26.9815385
+Pseudocharge radii of atom type 1  :  9.80 9.80 9.80 (x, y, z dir)
+Number of atoms of type 1          :  96
+Estimated total memory usage       :  2.58 GB
+Estimated memory per processor     :  27.56 MB
+===================================================================
+               Orbital Free DFT NLCG (OFDFT-NLCG#1)                
+===================================================================
+Iteration    Free Energy (Ha/atom)   NLCG Error        Timing (sec)
+1            -2.2098138457E+00       2.639E-02         0.903
+2            -2.2107354832E+00       1.702E-02         0.484
+3            -2.2116169331E+00       1.588E-02         0.402
+4            -2.2120969675E+00       1.261E-02         0.480
+5            -2.2126227479E+00       1.327E-02         0.433
+6            -2.2129355954E+00       6.915E-03         0.535
+7            -2.2130100752E+00       3.988E-03         0.467
+8            -2.2130439153E+00       2.781E-03         0.463
+9            -2.2130582865E+00       1.669E-03         0.812
+10           -2.2130652866E+00       1.745E-03         0.332
+11           -2.2130736451E+00       1.429E-03         0.341
+12           -2.2130772327E+00       8.697E-04         0.370
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.2130772355E+00 (Ha/atom)
+Total free energy                  : -2.1245541460E+02 (Ha)
+Kinetic energy                     :  7.9289516603E+01 (Ha)
+Exchange correlation energy        : -7.5490942812E+01 (Ha)
+Self and correction energy         : -3.9370020080E+02 (Ha)
+RMS force                          :  1.9436671610E-07 (Ha/Bohr)
+Maximum force                      :  3.2231457604E-07 (Ha/Bohr)
+Time for force calculation         :  0.066 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  6.318 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

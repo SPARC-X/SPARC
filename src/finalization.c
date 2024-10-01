@@ -20,12 +20,14 @@
 #include "tools.h"
 #include "eigenSolver.h"     // free_GTM_CheFSI()
 #include "eigenSolverKpt.h"  // free_GTM_CheFSI_kpt()
+#include "sqFinalization.h"
+#include "ofdft.h"
 #include "exactExchangeFinalization.h"
 #include "d3finalization.h"
 #include "vdWDFfinalization.h"
 #include "mGGAfinalization.h"
-#include "sqFinalization.h"
 #include "cyclix_tools.h"
+#include "electrostatics.h"
 #include "sparc_mlff_interface.h"
 
 /* ScaLAPACK routines */
@@ -47,13 +49,17 @@
  * @param pSPARC    The pointer that points to SPARC_OBJ type structure SPARC.
  */
 void Finalize(SPARC_OBJ *pSPARC)
-{
+{   
     Free_basic(pSPARC);
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         Free_SQ(pSPARC);
-    } else if (pSPARC->mlff_flag != 21) {
-        Free_SPARC(pSPARC);
-    } 
+    } else if (pSPARC->OFDFTFlag == 1) {
+        Free_OFDFT(pSPARC);
+    } else {
+        if (pSPARC->mlff_flag != 21){
+            Free_SPARC(pSPARC);
+        }
+    }
 
     FILE *output_fp;
     int rank;
@@ -168,6 +174,8 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free(pSPARC->electronDens_at);
         free(pSPARC->electronDens_core);
         free(pSPARC->electronDens);
+        if (pSPARC->usefock > 0) 
+            free(pSPARC->electronDens_pbe);
         if (pSPARC->spin_typ > 0) {
             free(pSPARC->mag);
             free(pSPARC->mag_at);
@@ -201,6 +209,9 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         }
     }
 
+    // No mixing in OFDFT
+    if (pSPARC->OFDFTFlag == 1) return;
+
     // mixing variables
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         free(pSPARC->mixing_hist_xk);
@@ -223,6 +234,12 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         }
         
         free(pSPARC->mixing_hist_Pfk);
+
+        // multipole expansion
+        if (pSPARC->BC == 1) {
+            free_multipole_expansion(pSPARC->MpExp, pSPARC->dmcomm_phi);
+            free(pSPARC->MpExp);
+        }
     }
 
     // free preconditioner coeff arrays
@@ -283,14 +300,6 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     free(pSPARC->IP_displ);
     if (pSPARC->SOC_Flag) 
         free(pSPARC->IP_displ_SOC); 
-
-    if (pSPARC->usefock > 0) {
-        free_exx(pSPARC);
-    }
-
-    if (pSPARC->CyclixFlag) {
-        free_cyclix(pSPARC);
-    }
     
     if (pSPARC->Nkpts >= 1 && pSPARC->kptcomm_index != -1) {
         free(pSPARC->kptWts_loc); 
@@ -303,7 +312,7 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
 		free(pSPARC->Veff_loc_dmcomm);
 	}
     free(pSPARC->Veff_loc_kptcomm_topo);
-    
+
     // free D2D targets between phi comm and psi comm
     Free_D2D_Target(&pSPARC->d2d_dmcomm_phi, &pSPARC->d2d_dmcomm, pSPARC->dmcomm_phi, 
                    (pSPARC->spincomm_index == 0 && pSPARC->kptcomm_index == 0 && pSPARC->bandcomm_index == 0) ? 
@@ -322,11 +331,20 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->d3Flag == 1) {
         free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
     }
+
     if (pSPARC->ixc[3] != 0){
         vdWDF_free(pSPARC);
     }
     if (pSPARC->ixc[2] == 1) {
         free_MGGA(pSPARC);
+    }
+
+    if (pSPARC->usefock > 0) {
+        free_exx(pSPARC);
+    }
+
+    if (pSPARC->CyclixFlag) {
+        free_cyclix(pSPARC);
     }
     
     // free communicators 

@@ -47,6 +47,18 @@
 #include "parallelization.h"
 #include "electronicGroundState.h"
 #include "exchangeCorrelation.h"
+#include "exactExchangeInitialization.h"
+#include "electrostatics.h"
+#include "sqHighTDensity.h"
+#include "sqParallelization.h"
+#include "sqHighTExactExchange.h"
+#include "kroneckerLaplacian.h"
+
+#ifdef ACCELGT
+#include "accel.h"
+#include "cuda_exactexchange.h"
+#include "cuda_linearAlgebra.h"
+#endif
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -59,25 +71,47 @@
  * @brief   Outer loop of SCF using Vexx (exact exchange potential)
  */
 void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
-    int i, rank, blacs_size, kpt_size;
+    int i, rank;
     double t1, t2, ACE_time = 0.0;
     FILE *output_fp;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int DMnd = pSPARC->Nd_d;
 
     /************************ Exact exchange potential parameters ************************/
     int count_xx = 0;
     double Eexx_pre = pSPARC->Eexx, err_Exx = pSPARC->TOL_FOCK + 1;
-    pSPARC->Exxtime = pSPARC->ACEtime = 0.0;
-    
-    // blacscomm contains all processes with the same rank_dmcomm
-    MPI_Comm_size(pSPARC->blacscomm, &blacs_size);
-    MPI_Comm_size(pSPARC->kpt_bridge_comm, &kpt_size);
+    pSPARC->Exxtime = pSPARC->ACEtime = pSPARC->Exxtime_comm = 0.0;
+    pSPARC->Exxtime_solver = pSPARC->Exxtime_memload = pSPARC->Exxtime_cyc = 0;
+    pSPARC->Exxtime_rhs = pSPARC->Exxtime_move = 0;
 
     /************************* Update Veff copied from SCF code **************************/
     #ifdef DEBUG
     if(!rank) 
-        printf("\nStart evaluating Exact Exchange potential!\n");
+        printf("\nStart evaluating Exact Exchange !\n");
+    fflush(stdout);
     #endif  
+
+    // update pbe density
+    memcpy(pSPARC->electronDens_pbe, pSPARC->electronDens, DMnd * pSPARC->Nspdentd * sizeof(double));
+
+    // initialize the history variables of Anderson mixing
+    if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
+        memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+        memset(pSPARC->mixing_hist_Fk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+    }
+
+    // for the first outer loop with SQ.
+    if (pSPARC->sqHighTFlag) {
+        t1 = MPI_Wtime();
+        pSPARC->usefock--;
+        calculate_density_matrix_SQ_highT(pSPARC);
+        pSPARC->usefock++;
+        t2 = MPI_Wtime();
+        #ifdef DEBUG
+        if(!rank) 
+            printf("rank = %d, calculating density matrix took %.3f ms\n",rank,(t2-t1)*1e3); 
+        #endif 
+    }
 
     // calculate xc potential (LDA), "Vxc"
     t1 = MPI_Wtime(); 
@@ -86,23 +120,27 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     #ifdef DEBUG
     if (rank == 0) printf("rank = %d, XC calculation took %.3f ms\n", rank, (t2-t1)*1e3); 
     #endif 
-
+    
+    t1 = MPI_Wtime();
     // calculate Veff_loc_dmcomm_phi = phi + Vxc in "phi-domain"
     Calculate_Veff_loc_dmcomm_phi(pSPARC);
 
     // initialize mixing_hist_xk (and mixing_hist_xkm1)
     Update_mixing_hist_xk(pSPARC);
 
-    // transfer Veff_loc from "phi-domain" to "psi-domain"
-    t1 = MPI_Wtime();
-    for (i = 0; i < pSPARC->Nspin; i++)
-        Transfer_Veff_loc(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*pSPARC->Nd_d, pSPARC->Veff_loc_dmcomm + i*pSPARC->Nd_d_dmcomm);
-    t2 = MPI_Wtime();
+    if (pSPARC->sqHighTFlag == 1) {
+        for (i = 0; i < pSPARC->Nspden; i++)
+            TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->pSQ->Veff_loc_SQ + i * pSPARC->pSQ->DMnd_SQ);
+    } else {
+        // transfer Veff_loc from "phi-domain" to "psi-domain"
+        for (i = 0; i < pSPARC->Nspden; i++)
+            Transfer_Veff_loc(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->Veff_loc_dmcomm + i*pSPARC->Nd_d_dmcomm);
+    }
 
+    t2 = MPI_Wtime();
     #ifdef DEBUG
     if(!rank) 
-        printf("rank = %d, Transfering Veff from phi-domain to psi-domain took %.3f ms\n", 
-               rank, (t2 - t1) * 1e3);
+        printf("rank = %d, Veff calculation and Bcast (non-blocking) took %.3f ms\n",rank,(t2-t1)*1e3); 
     #endif 
 
     /******************************* Hartre-Fock outer loop ******************************/
@@ -110,69 +148,73 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     #ifdef DEBUG
     if(!rank) 
         printf("\nHartree-Fock Outer Loop: %d \n",count_xx + 1);
+    fflush(stdout);
     #endif  
 
-        if (count_xx > 0) {
-            // transfer Veff_loc from "phi-domain" to "psi-domain"
+        if (pSPARC->sqHighTFlag) {
             t1 = MPI_Wtime();
-            for (i = 0; i < pSPARC->Nspin; i++)
-                Transfer_Veff_loc(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*pSPARC->Nd_d, pSPARC->Veff_loc_dmcomm + i*pSPARC->Nd_d_dmcomm);
+            collect_col_of_Density_matrix(pSPARC);
+            if (pSPARC->ExxAcc == 1 && pSPARC->SQ_highT_hybrid_gauss_mem == 1) {
+                compute_exx_potential_SQ(pSPARC);
+            }
             t2 = MPI_Wtime();
-
             #ifdef DEBUG
-            if(!rank) 
-                printf("rank = %d, Transfering Veff from phi-domain to psi-domain took %.3f ms\n", 
-                    rank, (t2 - t1) * 1e3);
+            if (pSPARC->ExxAcc == 1 && pSPARC->SQ_highT_hybrid_gauss_mem == 1) {
+                if(!rank) printf("\nCollecting columns of density matrix and calculating exx potential for SQ hybrid took : %.3f ms\n", (t2-t1)*1e3);
+            } else {
+                if(!rank) printf("\nCollecting columns of density matrix for SQ hybrid took : %.3f ms\n", (t2-t1)*1e3);
+            }
             #endif 
-        }
-
-        if (pSPARC->ACEFlag == 0) {
-            if (pSPARC->isGammaPoint == 1) {
-                // Gathering all outer orbitals into each band comm
-                t1 = MPI_Wtime();
-                gather_psi_occ_outer(pSPARC, pSPARC->psi_outer, pSPARC->occ_outer);
-                t2 = MPI_Wtime();
-                #ifdef DEBUG
-                if(!rank) 
-                    printf("\nGathering all bands of psi_outer to each dmcomm took : %.3f ms\n", (t2-t1)*1e3);
-                #endif 
-            } else {
-                // Gathering all outer orbitals and outer occ
-                t1 = MPI_Wtime();
-                gather_psi_occ_outer_kpt(pSPARC, pSPARC->psi_outer_kpt, pSPARC->occ_outer);
-                t2 = MPI_Wtime();
-                #ifdef DEBUG
-                if(!rank) 
-                    printf("\nGathering all bands and all kpoints of psi_outer and occupations to each dmcomm took : %.3f ms\n", (t2-t1)*1e3);
-                #endif 
-            }
-        } else {
-            #ifdef DEBUG
-            if(!rank) printf("\nStart to create ACE operator!\n");
-            #endif  
-            t1 = MPI_Wtime();
-            // create ACE operator 
-            if (pSPARC->isGammaPoint == 1) {
-                allocate_ACE(pSPARC);                
-                ACE_operator(pSPARC, pSPARC->Xorb, pSPARC->occ, pSPARC->Xi);
-            } else {
-                gather_psi_occ_outer_kpt(pSPARC, pSPARC->psi_outer_kpt, pSPARC->occ_outer);
-                allocate_ACE_kpt(pSPARC);                
-                ACE_operator_kpt(pSPARC, pSPARC->Xorb_kpt, pSPARC->occ_outer, pSPARC->Xi_kpt);
-            }
-            t2 = MPI_Wtime();
             pSPARC->ACEtime += (t2 - t1);
             ACE_time = (t2 - t1);
-            #ifdef DEBUG
-            if(!rank) printf("\nCreating ACE operator took %.3f ms!\n", (t2 - t1)*1e3);
-            #endif  
+        } else {
+            if (pSPARC->ExxAcc == 0) {
+                if (pSPARC->isGammaPoint == 1) {
+                    // Gathering all outer orbitals into each band comm
+                    t1 = MPI_Wtime();
+                    gather_psi_occ_outer(pSPARC, pSPARC->psi_outer, pSPARC->occ_outer);
+                    t2 = MPI_Wtime();
+                    #ifdef DEBUG
+                    if(!rank) 
+                        printf("\nGathering all bands of psi_outer to each dmcomm took : %.3f ms\n", (t2-t1)*1e3);
+                    #endif 
+                } else {
+                    // Gathering all outer orbitals and outer occ
+                    t1 = MPI_Wtime();
+                    gather_psi_occ_outer_kpt(pSPARC, pSPARC->psi_outer_kpt, pSPARC->occ_outer);
+                    t2 = MPI_Wtime();
+                    #ifdef DEBUG
+                    if(!rank) 
+                        printf("\nGathering all bands and all kpoints of psi_outer and occupations to each dmcomm took : %.3f ms\n", (t2-t1)*1e3);
+                    #endif 
+                }
+            } else if (pSPARC->ExxAcc == 1) {
+                #ifdef DEBUG
+                if(!rank) printf("\nStart to create ACE operator!\n");
+                #endif  
+                t1 = MPI_Wtime();
+                // create ACE operator 
+                if (pSPARC->isGammaPoint == 1) {
+                    allocate_ACE(pSPARC);                
+                    ACE_operator(pSPARC, pSPARC->Xorb, pSPARC->occ, pSPARC->Xi);
+                } else {
+                    gather_psi_occ_outer_kpt(pSPARC, pSPARC->psi_outer_kpt, pSPARC->occ_outer);
+                    allocate_ACE_kpt(pSPARC);                
+                    ACE_operator_kpt(pSPARC, pSPARC->Xorb_kpt, pSPARC->occ_outer, pSPARC->Xi_kpt);
+                }
+                t2 = MPI_Wtime();
+                pSPARC->ACEtime += (t2 - t1);
+                ACE_time = (t2 - t1);
+                #ifdef DEBUG
+                if(!rank) printf("\nCreating ACE operator took %.3f ms!\n", (t2 - t1)*1e3);
+                #endif
+            }
         }
 
         // transfer psi_outer from "psi-domain" to "phi-domain" in No-ACE case 
         // transfer Xi from "psi-domain" to "phi-domain" in ACE case 
         t1 = MPI_Wtime();
-        
-        if (pSPARC->ACEFlag == 0) {
+        if (!pSPARC->sqHighTFlag && pSPARC->ExxAcc == 0) {
             if (pSPARC->isGammaPoint == 1) {
                 Transfer_dmcomm_to_kptcomm_topo(pSPARC, pSPARC->Nspinor_spincomm, pSPARC->Nstates, pSPARC->psi_outer, pSPARC->psi_outer_kptcomm_topo, sizeof(double));    
             } else {
@@ -184,7 +226,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
             if(!rank) 
                 printf("\nTransfering all bands of psi_outer to kptcomm_topo took : %.3f ms\n", (t2-t1)*1e3);
             #endif  
-        } else {
+        } else if (!pSPARC->sqHighTFlag && pSPARC->ExxAcc == 1) {
             if (pSPARC->isGammaPoint == 1) {
                 Transfer_dmcomm_to_kptcomm_topo(pSPARC, pSPARC->Nspinor_spincomm, pSPARC->Nstates_occ, pSPARC->Xi, pSPARC->Xi_kptcomm_topo, sizeof(double));
             } else {
@@ -200,34 +242,39 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
 
         // compute exact exchange energy estimation with psi_outer
         // Eexx saves negative exact exchange energy without hybrid mixing
-        if (pSPARC->isGammaPoint == 1)
-            evaluate_exact_exchange_energy(pSPARC);
-        else
-            evaluate_exact_exchange_energy_kpt(pSPARC);
+        if (pSPARC->sqHighTFlag == 1) {
+            exact_exchange_energy_SQ(pSPARC);
+        } else {
+            exact_exchange_energy(pSPARC);
+        }
 
         if(!rank) {
             // write to .out file
             output_fp = fopen(pSPARC->OutFilename,"a");
-            if (pSPARC->ACEFlag == 0)
+            if (pSPARC->sqHighTFlag == 1) {
+                fprintf(output_fp,"\nNo.%d Exx outer loop. Basis timing: %.3f (sec)\n", count_xx + 1, ACE_time);
+            } else if (pSPARC->ExxAcc == 0) {
                 fprintf(output_fp,"\nNo.%d Exx outer loop. \n", count_xx + 1);
-            else 
+            } else {
                 fprintf(output_fp,"\nNo.%d Exx outer loop. ACE timing: %.3f (sec)\n", count_xx + 1, ACE_time);
+            }
             fclose(output_fp);
         }
 
-        scf_loop(pSPARC);
+        scf_loop(pSPARC);        
 
         Eexx_pre = pSPARC->Eexx;
         // update the final exact exchange energy
         pSPARC->Exc -= pSPARC->Eexx;
         pSPARC->Etot += 2 * pSPARC->Eexx;
 
-        // compute exact exchange energy with psi        
-        if (pSPARC->isGammaPoint == 1)
-            evaluate_exact_exchange_energy(pSPARC);
-        else
-            evaluate_exact_exchange_energy_kpt(pSPARC);
-        
+        // compute exact exchange energy
+        if (pSPARC->sqHighTFlag == 1) {
+            calculate_density_matrix_SQ_highT(pSPARC);
+            exact_exchange_energy_SQ(pSPARC);
+        } else {
+            exact_exchange_energy(pSPARC);
+        }
         pSPARC->Exc += pSPARC->Eexx;
         pSPARC->Etot -= 2*pSPARC->Eexx;
 
@@ -241,7 +288,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
             fclose(output_fp);
         }
         if (err_Exx < pSPARC->TOL_FOCK && (count_xx+1) >= pSPARC->MINIT_FOCK) break;        
-        
+        pSPARC->fock_err = err_Exx;
         count_xx ++;
     }
 
@@ -261,11 +308,20 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
     }
 
     #ifdef DEBUG
-    if(!rank && pSPARC->ACEFlag == 1) {
-        printf("\n== Exact exchange Timing: creating ACE: %.3f ms\tapply ACE: %.3f ms\n",
-            pSPARC->ACEtime*1e3, pSPARC->Exxtime*1e3);
+    if(!rank && pSPARC->sqHighTFlag && pSPARC->ExxAcc == 0) {
+        printf("\n== Exact exchange Timing in SQ (Hsub routine) takes   %.3f ms\n", pSPARC->Exxtime*1e3);
     }
-    if(!rank && pSPARC->ACEFlag == 0) {
+    if(!rank && pSPARC->sqHighTFlag && pSPARC->ExxAcc == 1) {
+        printf("\n== Exact exchange Timing in SQ (Hsub routine) takes %.3f ms\tcalculating potential takes %.3f ms\n", pSPARC->Exxtime*1e3, pSPARC->ACEtime*1e3);
+    }
+    if(!rank && !pSPARC->sqHighTFlag && pSPARC->ExxAcc == 1) {
+        printf("\n== Exact exchange Timing: creating ACE: %.3f ms\tapply ACE: %.3f ms\t Alltoallv takes %.3f ms\n",
+            pSPARC->ACEtime*1e3, pSPARC->Exxtime*1e3, pSPARC->Exxtime_comm*1e3);
+        printf(  "                          serial solver takes %.3f ms, cyc communication: %.3f ms, gpu loaded %.3f ms\n", 
+            pSPARC->Exxtime_solver*1e3, pSPARC->Exxtime_cyc*1e3, pSPARC->Exxtime_memload*1e3);
+        printf(  "                          creating rhs takes %.3f ms, rhs formating takes %.3f ms\n", pSPARC->Exxtime_rhs*1e3, pSPARC->Exxtime_move*1e3);
+    }
+    if(!rank && !pSPARC->sqHighTFlag && pSPARC->ExxAcc == 0) {
         printf("\n== Exact exchange Timing: apply Vx takes    %.3f ms\n", pSPARC->Exxtime*1e3);
     }
     #endif  
@@ -279,7 +335,7 @@ void Exact_Exchange_loop(SPARC_OBJ *pSPARC) {
  */
 void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, int DMnd, double *Hx, int ldhx, int spin, MPI_Comm comm) 
 {
-    int rank, Lanczos_flag, dims[3];
+    int rank, Lanczos_flag;
     double *Xi, t1, t2, *occ;
     
     MPI_Comm_rank(comm, &rank);
@@ -290,15 +346,10 @@ void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, i
     int occ_outer_shift = pSPARC->Nstates;
 
     t1 = MPI_Wtime();
-    if (pSPARC->ACEFlag == 0) {
-        if (Lanczos_flag == 0) {
-            dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
-        } else {
-            dims[0] = pSPARC->npNdx_kptcomm; dims[1] = pSPARC->npNdy_kptcomm; dims[2] = pSPARC->npNdz_kptcomm;
-        }
+    if (pSPARC->ExxAcc == 0) {
         occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spin * occ_outer_shift) : pSPARC->occ_outer;
         double *psi_outer = (Lanczos_flag == 0) ? pSPARC->psi_outer + spin* DMnd : pSPARC->psi_outer_kptcomm_topo + spin* DMnd;
-        evaluate_exact_exchange_potential(pSPARC, X, ldx, ncol, DMnd, dims, occ, psi_outer, DMndsp, Hx, ldhx, comm);
+        evaluate_exact_exchange_potential(pSPARC, X, ldx, ncol, DMnd, occ, psi_outer, DMndsp, Hx, ldhx, comm);
     } else {
         Xi = (Lanczos_flag == 0) ? pSPARC->Xi + spin * DMnd : pSPARC->Xi_kptcomm_topo + spin * DMnd;
         evaluate_exact_exchange_potential_ACE(pSPARC, X, ldx, ncol, DMnd, Xi, DMndsp, Hx, ldhx, comm);
@@ -315,18 +366,17 @@ void exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, i
  * @param X               The vectors premultiplied by the Fock operator
  * @param ncol            Number of columns of vector X
  * @param DMnd            Number of FD nodes in comm
- * @param dims            3 dimensions of comm processes grid
  * @param occ_outer       Full set of occ_outer occupations
  * @param psi_outer       Full set of psi_outer orbitals
  * @param Hx              Result of Hx plus fock operator times X 
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
-void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, int DMnd, int *dims, 
+void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, int ncol, int DMnd, 
                                     double *occ_outer, double *psi_outer, int ldpo, double *Hx, int ldhx, MPI_Comm comm)
 {
     int i, j, k, rank, Ns, num_rhs, *rhs_list_i, *rhs_list_j;
     int size, batch_num_rhs, NL, base, loop;
-    double occ, *rhs, *Vi, exx_frac, occ_alpha;
+    double occ, *rhs, *sol, exx_frac, occ_alpha;
 
     Ns = pSPARC->Nstates;
     exx_frac = pSPARC->exx_frac;
@@ -357,12 +407,12 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, in
         return;
     }
 
-    batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                        num_rhs : pSPARC->EXXMem_batch * size;
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                        num_rhs : pSPARC->ExxMemBatch * size;
     NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required                        
     rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
-    Vi = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
-    assert(rhs != NULL && Vi != NULL);
+    sol = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
+    assert(rhs != NULL && sol != NULL);
 
     /*************** Solve all Poisson's equation and apply to X ****************/    
     for (loop = 0; loop < NL; loop ++) {
@@ -376,7 +426,7 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, in
         }
 
         // Solve all Poisson's equation 
-        poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const, count-base, DMnd, dims, Vi, comm);
+        poissonSolve(pSPARC, rhs, pSPARC->pois_const, count-base, DMnd, sol, comm);
 
         // Apply exact exchange potential to vector X
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
@@ -385,14 +435,14 @@ void evaluate_exact_exchange_potential(SPARC_OBJ *pSPARC, double *X, int ldx, in
             occ = occ_outer[j];
             occ_alpha = occ * exx_frac;
             for (k = 0; k < DMnd; k++) {
-                Hx[k + i*ldhx] -= occ_alpha * psi_outer[k + j*ldpo] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
+                Hx[k + i*ldhx] -= occ_alpha * psi_outer[k + j*ldpo] * sol[k + (count-base)*DMnd] / pSPARC->dV;
             }
         }
     }
 
     
     free(rhs);
-    free(Vi);
+    free(sol);
     free(rhs_list_i);
     free(rhs_list_j);
 }
@@ -415,7 +465,7 @@ void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC, double *X, int ldx
 {
     int rank, size, Nstates_occ;
     Nstates_occ = pSPARC->Nstates_occ;
-    double *Xi_times_psi = (double *) calloc(Nstates_occ * ncol, sizeof(double));
+    double *Xi_times_psi = (double *) malloc(Nstates_occ * ncol * sizeof(double));
     assert(Xi_times_psi != NULL);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -450,6 +500,27 @@ void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC, double *X, int ldx
 }
 
 
+void exact_exchange_energy(SPARC_OBJ *pSPARC)
+{
+#ifdef DEBUG
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    double t1, t2;
+    t1 = MPI_Wtime();
+#endif
+
+    if (pSPARC->isGammaPoint == 1) {
+        evaluate_exact_exchange_energy(pSPARC);
+    } else {
+        evaluate_exact_exchange_energy_kpt(pSPARC);
+    }
+
+#ifdef DEBUG
+    t2 = MPI_Wtime();
+if(!rank) 
+    printf("\nEvaluating Exact exchange energy took: %.3f ms\nExact exchange energy %.6f.\n", (t2-t1)*1e3, pSPARC->Eexx);
+#endif  
+}
 
 /**
  * @brief   Evaluate Exact Exchange Energy
@@ -457,13 +528,9 @@ void evaluate_exact_exchange_potential_ACE(SPARC_OBJ *pSPARC, double *X, int ldx
 void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, grank, rank, size;
-    int Ns, ncol, DMnd, DMndsp, dims[3], num_rhs, batch_num_rhs, NL, loop, base;
-    double occ_i, occ_j, *rhs, *Vi, *psi_outer, temp, *occ_outer, *psi;
+    int Ns, ncol, DMnd, DMndsp, num_rhs, batch_num_rhs, NL, loop, base;
+    double occ_i, occ_j, *rhs, *sol, *psi_outer, temp, *occ_outer, *psi;
     MPI_Comm comm;
-
-#ifdef DEBUG
-    double t1, t2;
-#endif
 
     DMnd = pSPARC->Nd_d_dmcomm;
     DMndsp = DMnd * pSPARC->Nspinor_spincomm;
@@ -477,14 +544,7 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    #ifdef DEBUG
-    t1 = MPI_Wtime();
-    #endif
-    if (pSPARC->ACEFlag == 0) {
-        dims[0] = pSPARC->npNdx; 
-        dims[1] = pSPARC->npNdy; 
-        dims[2] = pSPARC->npNdz;
-
+    if (pSPARC->ExxAcc == 0) {
         int *rhs_list_i, *rhs_list_j;
         rhs_list_i = (int*) calloc(ncol * Ns, sizeof(int)); 
         rhs_list_j = (int*) calloc(ncol * Ns, sizeof(int)); 
@@ -510,13 +570,13 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
             num_rhs = count;
             if (num_rhs == 0) continue;            
 
-            batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                            num_rhs : pSPARC->EXXMem_batch * size;
+            batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                            num_rhs : pSPARC->ExxMemBatch * size;
         
             NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
             rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
-            Vi = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
-            assert(rhs != NULL && Vi != NULL);
+            sol = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
+            assert(rhs != NULL && sol != NULL);
 
             for (loop = 0; loop < NL; loop ++) {
                 base = batch_num_rhs*loop;
@@ -529,7 +589,7 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
                 }
 
                 // Solve all Poisson's equation 
-                poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const, count-base, DMnd, dims, Vi, comm);
+                poissonSolve(pSPARC, rhs, pSPARC->pois_const, count-base, DMnd, sol, comm);
 
                 for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
                     i = rhs_list_i[count];
@@ -541,7 +601,7 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
                     // TODO: use a temp array to reduce the MPI_Allreduce time to 1
                     temp = 0.0;
                     for (k = 0; k < DMnd; k++){
-                        temp += rhs[k + (count-base)*DMnd] * Vi[k + (count-base)*DMnd];
+                        temp += rhs[k + (count-base)*DMnd] * sol[k + (count-base)*DMnd];
                     }
                     if (size > 1)
                         MPI_Allreduce(MPI_IN_PLACE, &temp, 1,  MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
@@ -550,7 +610,7 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
             }
 
             free(rhs);
-            free(Vi);
+            free(sol);
         }
         free(rhs_list_i);
         free(rhs_list_j);
@@ -566,11 +626,20 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
             double *occ = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
             double *Xi_times_psi = (double *) calloc(Nband_bandcomm_M * Nstates_occ, sizeof(double));
             assert(Xi_times_psi != NULL);
-
-            // perform matrix multiplication psi' * X using ScaLAPACK routines
-            cblas_dgemm( CblasColMajor, CblasTrans, CblasNoTrans, Nband_bandcomm_M, Nstates_occ, DMnd,
-                        1.0, pSPARC->Xorb + spinor * DMnd, DMndsp, pSPARC->Xi + spinor * DMnd, 
-                        DMndsp, 0.0, Xi_times_psi, Nband_bandcomm_M);
+        
+            #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                ACCEL_DGEMM( CblasColMajor, CblasTrans, CblasNoTrans, Nband_bandcomm_M, Nstates_occ, DMnd,
+                            1.0, pSPARC->Xorb + spinor * DMnd, DMndsp, pSPARC->Xi + spinor * DMnd, 
+                            DMndsp, 0.0, Xi_times_psi, Nband_bandcomm_M);
+            } else
+            #endif // ACCELGT
+            {
+                // perform matrix multiplication psi' * X using ScaLAPACK routines
+                cblas_dgemm( CblasColMajor, CblasTrans, CblasNoTrans, Nband_bandcomm_M, Nstates_occ, DMnd,
+                            1.0, pSPARC->Xorb + spinor * DMnd, DMndsp, pSPARC->Xi + spinor * DMnd, 
+                            DMndsp, 0.0, Xi_times_psi, Nband_bandcomm_M);
+            }
 
             if (size > 1) {
                 // sum over all processors in dmcomm
@@ -601,480 +670,283 @@ void evaluate_exact_exchange_energy(SPARC_OBJ *pSPARC) {
 
     pSPARC->Eexx /= (pSPARC->Nspin + 0.0);
     pSPARC->Eexx *= -pSPARC->exx_frac;
-
-#ifdef DEBUG
-    t2 = MPI_Wtime();
-if(!grank) 
-    printf("\nEvaluating Exact exchange energy took: %.3f ms\nExact exchange energy %.6f.\n", (t2-t1)*1e3, pSPARC->Eexx);
-#endif  
 }
 
 
 
 /**
- * @brief   Solving Poisson's equation using FFT or CG
+ * @brief   Solving Poisson's equation using FFT or KRON
  *          
  *          This function only works for solving Poisson's equation with real right hand side
+ *          option: 0 - solve poissons equation,       1 - solve with pois_const_stress
+ *                  2 - solve with pois_const_stress2, 3 - solve with pois_const_press
  */
-void poissonSolve(SPARC_OBJ *pSPARC, double *rhs, double *pois_FFT_const, 
-                    int ncol, int DMnd, int *dims, double *Vi, MPI_Comm comm) 
-{
-    int i, k, lsize, lrank, ncolp;
-    int *sendcounts, *sdispls, *recvcounts, *rdispls, **DMVertices, *ncolpp;
-    int coord_comm[3], gridsizes[3], DNx, DNy, DNz, Nd, Nx, Ny, Nz;
-    double *rhs_loc, *Vi_loc, *rhs_loc_order, *Vi_loc_order, *f;
-    sendcounts = sdispls = recvcounts = rdispls = ncolpp = NULL;
-    rhs_loc = Vi_loc = rhs_loc_order = Vi_loc_order = f = NULL;
-    DMVertices = NULL;
+void poissonSolve(SPARC_OBJ *pSPARC, double *rhs, double *pois_const, 
+                int ncol, int DMnd, double *sol, MPI_Comm comm) 
+{    
+    int size, rank;
+    int *sendcounts, *sdispls, *recvcounts, *rdispls;
+    double *rhs_loc, *sol_loc, *rhs_loc_order, *sol_loc_order;
+    sendcounts = sdispls = recvcounts = rdispls = NULL;
+    rhs_loc = sol_loc = rhs_loc_order = sol_loc_order = NULL;    
+    int (*DMVertices)[6] = NULL;
 
-    MPI_Comm_size(comm, &lsize);
-    MPI_Comm_rank(comm, &lrank);    
-    Nd = pSPARC->Nd;
-    Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz;     
-    ncolp = ncol / lsize + ((lrank < ncol % lsize) ? 1 : 0);
+    MPI_Comm_size(comm, &size);
+    MPI_Comm_rank(comm, &rank);    
+    int Nd = pSPARC->Nd;
+    int Nx = pSPARC->Nx; 
+    int Ny = pSPARC->Ny; 
+    int Nz = pSPARC->Nz;
+    int gridsizes[3] = {Nx, Ny, Nz};
+    int ncolp = ncol / size + ((rank < ncol % size) ? 1 : 0);
     /********************************************************************/
 
-    if (lsize > 1){
+#ifdef DEBUG
+	double t1, t2;
+#endif  
+
+    if (size > 1){
         // variables for RHS storage
         rhs_loc = (double*) malloc(sizeof(double) * ncolp * Nd);
         rhs_loc_order = (double*) malloc(sizeof(double) * Nd * ncolp);
-
-        // number of columns per proc
-        ncolpp = (int*) malloc(sizeof(int) * lsize);
+        DMVertices = (int (*)[6]) malloc(sizeof(int[6])*size);
 
         // variables for alltoallv
-        sendcounts = (int*) malloc(sizeof(int)*lsize);
-        sdispls = (int*) malloc(sizeof(int)*lsize);
-        recvcounts = (int*) malloc(sizeof(int)*lsize);
-        rdispls = (int*) malloc(sizeof(int)*lsize);
-        DMVertices = (int**) malloc(sizeof(int*)*lsize);
-        assert(rhs_loc != NULL && rhs_loc_order != NULL && ncolpp != NULL && 
-               sendcounts != NULL && sdispls != NULL && recvcounts != NULL && 
-               rdispls != NULL && DMVertices!= NULL);
-
-        for (k = 0; k < lsize; k++) {
-            DMVertices[k] = (int*) malloc(sizeof(int)*6);
-            assert(DMVertices[k] != NULL);
-        }
-        /********************************************************************/
-        
-        // separate equations to different processes in the dmcomm or kptcomm_topo                 
-        for (i = 0; i < lsize; i++) {
-            ncolpp[i] = ncol / lsize + ((i < ncol % lsize) ? 1 : 0);
-        }
-
-        // this part of codes copied from parallelization.c
-        gridsizes[0] = Nx; gridsizes[1] = Ny; gridsizes[2] = Nz;
-        // compute variables required by gatherv and scatterv
-        for (i = 0; i < lsize; i++) {
-            MPI_Cart_coords(comm, i, 3, coord_comm);
-            // find size of distributed domain over comm
-            DNx = block_decompose(gridsizes[0], dims[0], coord_comm[0]);
-            DNy = block_decompose(gridsizes[1], dims[1], coord_comm[1]);
-            DNz = block_decompose(gridsizes[2], dims[2], coord_comm[2]);
-            // Here DMVertices [1][3][5] is not the same as they are in parallelization
-            DMVertices[i][0] = block_decompose_nstart(gridsizes[0], dims[0], coord_comm[0]);
-            DMVertices[i][1] = DNx;                                                                                     // stores number of nodes instead of coordinates of end nodes
-            DMVertices[i][2] = block_decompose_nstart(gridsizes[1], dims[1], coord_comm[1]);
-            DMVertices[i][3] = DNy;                                                                                     // stores number of nodes instead of coordinates of end nodes
-            DMVertices[i][4] = block_decompose_nstart(gridsizes[2], dims[2], coord_comm[2]);
-            DMVertices[i][5] = DNz;                                                                                     // stores number of nodes instead of coordinates of end nodes
-        }
-
-        sdispls[0] = 0;
-        rdispls[0] = 0;
-        for (i = 0; i < lsize; i++) {
-            sendcounts[i] = ncolpp[i] * DMnd;
-            recvcounts[i] = ncolp * DMVertices[i][1] * DMVertices[i][3] * DMVertices[i][5];
-            if (i < lsize - 1) {
-                sdispls[i+1] = sdispls[i] + sendcounts[i];
-                rdispls[i+1] = rdispls[i] + recvcounts[i];
-            }
-        }
+        sendcounts = (int*) malloc(sizeof(int)*size);
+        sdispls = (int*) malloc(sizeof(int)*size);
+        recvcounts = (int*) malloc(sizeof(int)*size);
+        rdispls = (int*) malloc(sizeof(int)*size);
+        assert(rhs_loc != NULL && rhs_loc_order != NULL && 
+               sendcounts != NULL && sdispls != NULL && recvcounts != NULL && rdispls != NULL);
+                
+        parallel_info_dp2bp(gridsizes, DMnd, ncol, DMVertices, sendcounts, sdispls, recvcounts, rdispls, NULL, 1, comm);
         /********************************************************************/
 
+#ifdef DEBUG
+	t1 = MPI_Wtime();
+#endif  
         MPI_Alltoallv(rhs, sendcounts, sdispls, MPI_DOUBLE, 
                         rhs_loc, recvcounts, rdispls, MPI_DOUBLE, comm);
 
+#ifdef DEBUG
+	t2 = MPI_Wtime();
+    pSPARC->Exxtime_comm += (t2-t1);
+#endif  
+
         // rhs_full needs rearrangement
-        block_dp_to_cart((void *) rhs_loc, ncolp, DMVertices, rdispls, lsize, 
+        block_dp_to_cart((void *) rhs_loc, ncolp, DMVertices, rdispls, size, 
                         Nx, Ny, Nd, (void *) rhs_loc_order, sizeof(double));
 
         free(rhs_loc);
-        // variable for local result Vi
-        Vi_loc = (double*) malloc(sizeof(double)* Nd * ncolp);
-        assert(Vi_loc != NULL);
+        // variable for local result sol
+        sol_loc = (double*) malloc(sizeof(double)* Nd * ncolp);
+        assert(sol_loc != NULL);
     } else {
         // if the size of comm is 1, there is no need to scatter and rearrange the results
         rhs_loc_order = rhs;
-        Vi_loc = Vi;
+        sol_loc = sol;
     }   
 
-    if (pSPARC->EXXMeth_Flag == 0) {                                                // Solve in Fourier Space
-        pois_fft(pSPARC, rhs_loc_order, pois_FFT_const, ncolp, Vi_loc);
+#ifdef DEBUG
+	t1 = MPI_Wtime();
+#endif 
+    if (pSPARC->ExxMethod == 0) {
+        // solve by fft
+        pois_fft(pSPARC, rhs_loc_order, pois_const, ncolp, sol_loc);
     } else {
-        f = malloc(sizeof(double) * ncolp * Nd);
-        assert(f != NULL);
-        poisson_RHS_local(pSPARC, rhs_loc_order, f, Nd, ncolp);
-        pois_linearsolver(pSPARC, f, ncolp, Vi_loc);                                // Solve in Real Space
-        free(f);
+        // solve by kron
+        pois_kron(pSPARC, rhs_loc_order, pois_const, ncolp, sol_loc);
     }
-    
-    if (lsize > 1)  
+
+#ifdef DEBUG
+	t2 = MPI_Wtime();
+    pSPARC->Exxtime_solver += (t2-t1);
+#endif  
+
+    if (size > 1)  
         free(rhs_loc_order);
 
-    if (lsize > 1) {
-        Vi_loc_order = (double*) malloc(sizeof(double)* Nd * ncolp);
-        assert(Vi_loc_order != NULL);
+    if (size > 1) {
+        sol_loc_order = (double*) malloc(sizeof(double)* Nd * ncolp);
+        assert(sol_loc_order != NULL);
 
-        // Vi_loc needs rearrangement
-        cart_to_block_dp((void *) Vi_loc, ncolp, DMVertices, lsize, 
-                        Nx, Ny, Nd, (void *) Vi_loc_order, sizeof(double));
+        // sol_loc needs rearrangement
+        cart_to_block_dp((void *) sol_loc, ncolp, DMVertices, size, 
+                        Nx, Ny, Nd, (void *) sol_loc_order, sizeof(double));
 
-        MPI_Alltoallv(Vi_loc_order, recvcounts, rdispls, MPI_DOUBLE, 
-                    Vi, sendcounts, sdispls, MPI_DOUBLE, comm);
+#ifdef DEBUG
+	t1 = MPI_Wtime();
+#endif  
+        MPI_Alltoallv(sol_loc_order, recvcounts, rdispls, MPI_DOUBLE, 
+                    sol, sendcounts, sdispls, MPI_DOUBLE, comm);
 
-        free(Vi_loc_order);
+#ifdef DEBUG
+	t2 = MPI_Wtime();
+    pSPARC->Exxtime_comm += (t2-t1);
+#endif  
+        free(sol_loc_order);
     }
 
     /********************************************************************/
-    if (lsize > 1){
-        free(Vi_loc);
-        free(ncolpp);
+    if (size > 1){
+        free(sol_loc);        
         free(sendcounts);
         free(sdispls);
         free(recvcounts);
         free(rdispls);
-        for (k = 0; k < lsize; k++) 
-            free(DMVertices[k]);
         free(DMVertices);
     }
 }
 
-/**
- * @brief   preprocessing RHS of Poisson's equation depends on the method for Exact Exchange
- */
-void poisson_RHS_local(SPARC_OBJ *pSPARC, double *rhs, double *f, int Nd, int ncolp) {
-    if (ncolp == 0) return;
-    int i;
-    double *d_cor;
+
+void parallel_info_dp2bp(int gridsizes[3], int DMnd, int ncol, 
+    int (*DMVertices)[6], int *sendcounts, int *sdispls, int *recvcounts, int *rdispls, int *kq_shift, int sing_size, MPI_Comm cart_comm)
+{
+    int rank, size;
+    MPI_Comm_rank(cart_comm, &rank);
+    MPI_Comm_size(cart_comm, &size);
+    
+    int ncolp = ncol / size + ((rank < ncol % size) ? 1 : 0);
+    int *ncolpp = (int*) malloc(sizeof(int) * size);
     /********************************************************************/
     
-    for (i = 0; i < Nd * ncolp; i++) {
-        f[i] = rhs[i] * (4.0 * M_PI);                                       // linear solver solves equation -Lap x = 4pi * rhs
+    // separate equations to different processes in the dmcomm or kptcomm_topo                 
+    for (int i = 0; i < size; i++) {
+        ncolpp[i] = ncol / size + ((i < ncol % size) ? 1 : 0);
     }
-    d_cor = (double *)malloc( Nd * ncolp * sizeof(double) );
-    assert(d_cor != NULL);
-    MultipoleExpansion_phi_local(pSPARC, f, d_cor, Nd, ncolp);
-    for (i = 0; i < Nd * ncolp; i++) f[i] -= d_cor[i];
-    free(d_cor);
+
+    if (kq_shift) {
+        for (int i = 0; i < rank; i++) *kq_shift += ncolpp[i];
+    }
+
+    // compute variables required by gatherv and scatterv
+    for (int i = 0; i < size; i++) {
+        int dims[3], periods[3], coords[3];
+        MPI_Cart_get(cart_comm, 3, dims, periods, coords);
+        int coord_comm[3];
+        MPI_Cart_coords(cart_comm, i, 3, coord_comm);
+        // find size of distributed domain over comm
+        int DNx = block_decompose(gridsizes[0], dims[0], coord_comm[0]);
+        int DNy = block_decompose(gridsizes[1], dims[1], coord_comm[1]);
+        int DNz = block_decompose(gridsizes[2], dims[2], coord_comm[2]);
+        // Here DMVertices [1][3][5] is not the same as they are in parallelization
+        DMVertices[i][0] = block_decompose_nstart(gridsizes[0], dims[0], coord_comm[0]);
+        DMVertices[i][1] = DNx;                                                                                     // stores number of nodes instead of coordinates of end nodes
+        DMVertices[i][2] = block_decompose_nstart(gridsizes[1], dims[1], coord_comm[1]);
+        DMVertices[i][3] = DNy;                                                                                     // stores number of nodes instead of coordinates of end nodes
+        DMVertices[i][4] = block_decompose_nstart(gridsizes[2], dims[2], coord_comm[2]);
+        DMVertices[i][5] = DNz;                                                                                     // stores number of nodes instead of coordinates of end nodes
+    }
+
+    sdispls[0] = 0;
+    rdispls[0] = 0;
+    for (int i = 0; i < size; i++) {
+        sendcounts[i] = ncolpp[i] * DMnd * sing_size;
+        recvcounts[i] = ncolp * DMVertices[i][1] * DMVertices[i][3] * DMVertices[i][5] * sing_size;
+        if (i < size - 1) {
+            sdispls[i+1] = sdispls[i] + sendcounts[i];
+            rdispls[i+1] = rdispls[i] + recvcounts[i];
+        }
+    }
+
+    free(ncolpp);    
 }
 
 
 /**
  * @brief   Solve Poisson's equation using FFT in Fourier Space
  * 
- * @param rhs_loc_order     complete RHS of poisson's equations without parallelization. 
- * @param pois_FFT_const    constant for solving possion's equations
- * @param ncolp             Number of poisson's equations to be solved.
- * @param Vi_loc            complete solutions of poisson's equations without parallelization. 
+ * @param rhs               complete RHS of poisson's equations without parallelization. 
+ * @param pois_const        constant for solving possion's equations
+ * @param ncol              Number of poisson's equations to be solved.
+ * @param sol               complete solutions of poisson's equations without parallelization. 
  * Note:                    This function is complete localized. 
  */
-void pois_fft(SPARC_OBJ *pSPARC, double *rhs_loc_order, double *pois_FFT_const, int ncolp, double *Vi_loc) {
-    if (ncolp == 0) return;
-    int i, j, Nd, Nx, Ny, Nz, Ndc;
-    double _Complex *rhs_bar;
+void pois_kron(SPARC_OBJ *pSPARC, double *rhs, double *pois_const, int ncol, double *sol)
+{
+    if (ncol == 0) return;
+    int Nd = pSPARC->Nd;
+    KRON_LAP* kron_lap = pSPARC->kron_lap_exx[0];
+    
+    if (pSPARC->BC == 1) {
+        double *rhs_ = (double *) malloc(sizeof(double)*Nd);
+        double *d_cor = (double *) malloc(sizeof(double)*Nd);
+        assert(rhs_ != NULL && d_cor != NULL);
+        int DMVertices[6] = {0, pSPARC->Nx-1, 0, pSPARC->Ny-1, 0, pSPARC->Nz-1};
 
-    Nd = pSPARC->Nd;
-    Nx = pSPARC->Nx; Ny = pSPARC->Ny; Nz = pSPARC->Nz; 
-    Ndc = Nz * Ny * (Nx/2+1);
-    rhs_bar = (double _Complex*) malloc(sizeof(double _Complex) * Ndc * ncolp);
+        for (int n = 0; n < ncol; n++) {
+            for (int i = 0; i < Nd; i++) rhs_[i] = -4*M_PI*rhs[i + n*Nd];
+            apply_multipole_expansion(pSPARC, pSPARC->MpExp_exx, 
+                pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, DMVertices, rhs_, d_cor, MPI_COMM_SELF);
+            for (int i = 0; i < Nd; i++) rhs_[i] -= d_cor[i];
+            LAP_KRON(kron_lap->Nx, kron_lap->Ny, kron_lap->Nz, kron_lap->Vx, kron_lap->Vy, kron_lap->Vz,
+                    rhs_, kron_lap->inv_eig, sol + n*Nd);
+        }
+        free(rhs_);
+        free(d_cor);
+    } else {
+        for (int n = 0; n < ncol; n++) {
+            LAP_KRON(kron_lap->Nx, kron_lap->Ny, kron_lap->Nz, kron_lap->Vx, kron_lap->Vy, kron_lap->Vz,
+                    rhs + n*Nd, pois_const, sol + n*Nd);
+        }
+    }
+}
+
+
+
+/**
+ * @brief   Solve Poisson's equation using FFT in Fourier Space
+ * 
+ * @param rhs               complete RHS of poisson's equations without parallelization. 
+ * @param pois_const    constant for solving possion's equations
+ * @param ncol              Number of poisson's equations to be solved.
+ * @param sol               complete solutions of poisson's equations without parallelization. 
+ * Note:                    This function is complete localized. 
+ */
+void pois_fft(SPARC_OBJ *pSPARC, double *rhs, double *pois_const, int ncol, double *sol) {
+    if (ncol == 0) return;    
+
+    int Nd = pSPARC->Nd;
+    int Nx = pSPARC->Nx, Ny = pSPARC->Ny, Nz = pSPARC->Nz; 
+    int Ndc = Nz * Ny * (Nx/2+1);
+    double _Complex *rhs_bar = (double _Complex*) malloc(sizeof(double _Complex) * Ndc * ncol);
     assert(rhs_bar != NULL);
-    /********************************************************************/
 
-    // FFT
 #if defined(USE_MKL)
     MKL_LONG dim_sizes[3] = {Nz, Ny, Nx};
     MKL_LONG strides_out[4] = {0, Ny*(Nx/2+1), Nx/2+1, 1}; 
-
-    for (i = 0; i < ncolp; i++)
-        MKL_MDFFT_real(rhs_loc_order + i * Nd, dim_sizes, strides_out, rhs_bar + i * Ndc);
 #elif defined(USE_FFTW)
     int dim_sizes[3] = {Nz, Ny, Nx};
-
-    for (i = 0; i < ncolp; i++)
-        FFTW_MDFFT_real(dim_sizes, rhs_loc_order + i * Nd, rhs_bar + i * Ndc);
+    int inembed[3] = {Nz, Ny, Nx};
+    int onembed[3] = {Nz, Ny, (Nx/2+1)};
 #endif
+    /********************************************************************/
+    // FFT
+    #if defined(USE_MKL)
+        MKL_MDFFT_batch_real(rhs, ncol, dim_sizes, Nd, rhs_bar, strides_out, Ndc);
+    #elif defined(USE_FFTW)
+        FFTW_MDFFT_batch_real(dim_sizes, ncol, rhs, inembed, Nd, rhs_bar, onembed, Ndc);
+    #endif
 
-    // multiplied by alpha
-    for (j = 0; j < ncolp; j++) {
-        for (i = 0; i < Ndc; i++) {
-            rhs_bar[i + j*Ndc] = creal(rhs_bar[i + j*Ndc]) * pois_FFT_const[i] 
-                                + (cimag(rhs_bar[i + j*Ndc]) * pois_FFT_const[i]) * I;
+    int cnt = 0;
+    for (int n = 0; n < ncol; n++) {
+        // multiplied by alpha
+        for (int i = 0; i < Ndc; i++) {
+            rhs_bar[cnt] = creal(rhs_bar[cnt]) * pois_const[i] 
+                                + (cimag(rhs_bar[cnt]) * pois_const[i]) * I;
+            cnt++;
         }
     }
-
+    
     // iFFT
-#if defined(USE_MKL)
-    for (i = 0; i < ncolp; i++)
-        MKL_MDiFFT_real(rhs_bar + i * Ndc, dim_sizes, strides_out, Vi_loc + i * Nd);
-#elif defined(USE_FFTW)
-    for (i = 0; i < ncolp; i++)
-        FFTW_MDiFFT_real(dim_sizes, rhs_bar + i * Ndc, Vi_loc + i * Nd);
-#endif
-
+    #if defined(USE_MKL)
+        // MKL_MDiFFT_real(rhs_bar, dim_sizes, strides_out, sol + n * Nd);
+        MKL_MDiFFT_batch_real(rhs_bar, ncol, dim_sizes, Ndc, strides_out, sol, Nd);
+    #elif defined(USE_FFTW)        
+        // FFTW_MDiFFT_real(dim_sizes, rhs_bar, sol + n * Nd);
+        FFTW_MDiFFT_batch_real(dim_sizes, ncol, rhs_bar, onembed, Ndc, sol, inembed, Nd);
+    #endif
     free(rhs_bar);
-}
-
-
-/**
- * @brief   Solve Poisson's equation using linear solver (e.g. CG) in Real Space
- */
-void pois_linearsolver(SPARC_OBJ *pSPARC, double *rhs_loc_order, int ncolp, double *Vi_loc) {
-    if (ncolp == 0) return;
-    int i, Nd;
-    int dims[3] = {1,1,1}, periods[3] = {0,0,0}, DMVertices[6];
-    MPI_Comm self_topo;
-    Nd = pSPARC->Nd;
-    DMVertices[0] = 0;
-    DMVertices[2] = 0;
-    DMVertices[4] = 0;
-    DMVertices[1] = pSPARC->Nx - 1;
-    DMVertices[3] = pSPARC->Ny - 1;
-    DMVertices[5] = pSPARC->Nz - 1;
-    /********************************************************************/
-
-    // Create a communicator for each single processor
-    MPI_Cart_create(MPI_COMM_SELF, 3, dims, periods, 0, &self_topo); // 0 is to reorder rank
-
-    void (*Ax)(const SPARC_OBJ *, const int, const int *, const int, const double, double *, const int, double *, const int, MPI_Comm) = Lap_vec_mult; // Lap_vec_mult is defined in lapVecRoutines.c
-
-    for (i = 0; i < ncolp*Nd; i++) Vi_loc[i] = 0;                    // TODO: use better initial guess
-
-    for (i = 0; i < ncolp; i++) 
-        CG(pSPARC, Ax, Nd, DMVertices, Vi_loc + i*Nd, 
-            rhs_loc_order + i*Nd, 1e-8, pSPARC->MAXIT_POISSON, self_topo);
-
-    MPI_Comm_free(&self_topo);
-}
-
-
-/**
- * @brief   preprocessing RHS of Poisson's equation by multipole expansion on single process
- */
-void MultipoleExpansion_phi_local(SPARC_OBJ *pSPARC, double *f, double *d_cor, int Nd, int ncolp) {
-#define d_cor(i,j,k,n) d_cor[(n)*Nd+(k)*Nx*Ny+(j)*Nx+(i)]
-#define phi(i,j,k,n) phi[(n)*nd_phi+(k)*nx_phi*ny_phi+(j)*nx_phi+(i)]
-    
-    int LMAX = 6, l, m, n, i, j, k, p, count, index, Q_len, Nx, Ny, Nz,
-        FDn, nbr_i, is, ie, js, je,
-        ks, ke, is_phi, ie_phi, js_phi, je_phi,
-        ks_phi, ke_phi, nx_phi, ny_phi, nz_phi, nd_phi, i_phi, j_phi, k_phi,
-        DMCorVert[6][6];
-    double *Qlm, Lx, Ly, Lz, *r_pos_x, *r_pos_y, *r_pos_z, *r_pos_r, *r_pow_l,
-           *Ylm, *phi, x, y, z, r, x2, y2, z2;
-    
-    FDn = pSPARC->order / 2;
-
-    Lx = pSPARC->range_x;
-    Ly = pSPARC->range_y;
-    Lz = pSPARC->range_z;
-    Nx = pSPARC->Nx;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-    /********************************************************************/
-
-    /* find multipole moments Qlm */
-    r_pos_x = (double *)malloc( sizeof(double) * Nd );
-    r_pos_y = (double *)malloc( sizeof(double) * Nd );
-    r_pos_z = (double *)malloc( sizeof(double) * Nd );
-    r_pos_r = (double *)malloc( sizeof(double) * Nd );
-    assert(r_pos_x != NULL && r_pos_y != NULL && 
-           r_pos_z != NULL && r_pos_r != NULL);
-
-    // find distance between the center of the domain and finite-difference grids
-    count = 0; 
-    for (k = 0; k < Nz; k++) {
-        z = k * pSPARC->delta_z - Lz/2.0; 
-        z2 = z * z;
-        for (j = 0; j < Ny; j++) {
-            y = j * pSPARC->delta_y - Ly/2.0; 
-            y2 = y * y;
-            for (i = 0; i < Nx; i++) {
-                x = i * pSPARC->delta_x - Lx/2.0;
-                x2 = x * x; 
-                r_pos_x[count] = x;
-                r_pos_y[count] = y;
-                r_pos_z[count] = z;
-                r_pos_r[count] = sqrt(x2 + y2 + z2);
-                count++;
-            }
-        }
-    }    
-
-    Ylm = (double *)malloc( sizeof(double) * Nd );
-    Q_len = (LMAX+1)*(LMAX+1);
-    Qlm = (double *)calloc( Q_len * ncolp, sizeof(double) );
-    r_pow_l = (double *)malloc( sizeof(double) * Nd );
-    assert(Ylm != NULL && Qlm != NULL && r_pow_l != NULL);
-
-    for (i = 0; i < Nd; i++) r_pow_l[i] = 1.0; // init to 1
-    index = 0;
-    for (l = 0; l <= LMAX; l++) {
-        // find r^l
-        if (l) {
-            for (i = 0; i < Nd; i++) r_pow_l[i] *= r_pos_r[i];
-        }
-        for (m = -l; m <= l; m++) {
-            RealSphericalHarmonic(Nd, r_pos_x, r_pos_y, r_pos_z, r_pos_r, l, m, Ylm);
-            for (j = 0; j < ncolp; j++) {
-                Qlm[index + j * Q_len] = 0.0;
-                for (i = 0; i < Nd; i++) 
-                    Qlm[index + j * Q_len] += r_pow_l[i] * f[i + j * Nd] * Ylm[i];
-                Qlm[index + j * Q_len] *= pSPARC->dV;
-            }
-            index++;
-        }
-    } 
-    free(r_pos_x); free(r_pos_y); free(r_pos_z); free(r_pos_r); free(Ylm); free(r_pow_l);
-
-
-    /* find "charge correction" (boudary correction) */
-    // define the “correction domain” which contributes to the charge correction. i.e. 0 to FDn-1 and
-    // nx-FDn nx-1 in each direction.
-    DMCorVert[0][0]=0;      DMCorVert[0][1]=FDn-1; DMCorVert[0][2]=0;       DMCorVert[0][3]=Ny-1;  DMCorVert[0][4]=0;       DMCorVert[0][5]=Nz-1;
-    DMCorVert[1][0]=Nx-FDn; DMCorVert[1][1]=Nx-1;  DMCorVert[1][2]=0;       DMCorVert[1][3]=Ny-1;  DMCorVert[1][4]=0;       DMCorVert[1][5]=Nz-1;  
-    DMCorVert[2][0]=0;      DMCorVert[2][1]=Nx-1;  DMCorVert[2][2]=0;       DMCorVert[2][3]=FDn-1; DMCorVert[2][4]=0;       DMCorVert[2][5]=Nz-1;
-    DMCorVert[3][0]=0;      DMCorVert[3][1]=Nx-1;  DMCorVert[3][2]=Ny-FDn;  DMCorVert[3][3]=Ny-1;  DMCorVert[3][4]=0;       DMCorVert[3][5]=Nz-1;
-    DMCorVert[4][0]=0;      DMCorVert[4][1]=Nx-1;  DMCorVert[4][2]=0;       DMCorVert[4][3]=Ny-1;  DMCorVert[4][4]=0;       DMCorVert[4][5]=FDn-1;
-    DMCorVert[5][0]=0;      DMCorVert[5][1]=Nx-1;  DMCorVert[5][2]=0;       DMCorVert[5][3]=Ny-1;  DMCorVert[5][4]=Nz-FDn;  DMCorVert[5][5]=Nz-1;
-
-    for (i = 0; i < Nd*ncolp; i++) d_cor[i] = 0.0; // init correction to 0
-       
-    // find correction contribution from each side
-    for (nbr_i = 0; nbr_i < 6; nbr_i++) {
-        is = DMCorVert[nbr_i][0];
-        ie = DMCorVert[nbr_i][1];
-        js = DMCorVert[nbr_i][2];
-        je = DMCorVert[nbr_i][3];
-        ks = DMCorVert[nbr_i][4];
-        ke = DMCorVert[nbr_i][5];
-        
-        // find the region of phi that have contribution to the correction domain
-        is_phi = is; ie_phi = ie;
-        js_phi = js; je_phi = je;
-        ks_phi = ks; ke_phi = ke;
-        switch (nbr_i) {
-            case 0:
-                is_phi = is - FDn; ie_phi = -1; break;
-            case 1:
-                is_phi = Nx; ie_phi = ie + FDn; break;
-            case 2:
-                js_phi = js - FDn; je_phi = -1; break;
-            case 3:
-                js_phi = Ny; je_phi = je + FDn; break;
-            case 4:
-                ks_phi = ks - FDn; ke_phi = -1; break;
-            case 5:
-                ks_phi = Nz; ke_phi = ke + FDn; break; 
-        }
-        
-        nx_phi = ie_phi - is_phi + 1;
-        ny_phi = je_phi - js_phi + 1;
-        nz_phi = ke_phi - ks_phi + 1;
-        nd_phi = nx_phi * ny_phi * nz_phi;
-        
-        // calculate electrostatic potential "phi" inside
-        phi = (double *)calloc( nd_phi * ncolp, sizeof(double) );
-        Ylm = (double *)malloc( sizeof(double) * nd_phi );
-        r_pos_x = (double *)malloc( sizeof(double) * nd_phi );
-        r_pos_y = (double *)malloc( sizeof(double) * nd_phi );
-        r_pos_z = (double *)malloc( sizeof(double) * nd_phi );
-        r_pos_r = (double *)malloc( sizeof(double) * nd_phi );
-        r_pow_l = (double *)malloc( sizeof(double) * nd_phi );
-        assert(phi != NULL && Ylm != NULL && r_pos_x != NULL && r_pos_y != NULL 
-            && r_pos_z != NULL && r_pos_r != NULL && r_pow_l != NULL);
-
-        count = 0;
-        for (k = 0; k < nz_phi; k++) {
-            z = (k + ks_phi) * pSPARC->delta_z - Lz*0.5; 
-            for (j = 0; j < ny_phi; j++) {
-                y = (j + js_phi) * pSPARC->delta_y - Ly*0.5;
-                for (i = 0; i < nx_phi; i++) {
-                    x = (i + is_phi) * pSPARC->delta_x - Lx*0.5;
-                    r = sqrt(x * x + y * y + z * z);
-                    r_pos_x[count] = x;
-                    r_pos_y[count] = y;
-                    r_pos_z[count] = z;
-                    r_pos_r[count] = r;
-                    count++;
-                }
-            }
-        } 
-        
-        for (i = 0; i < nd_phi; i++) r_pow_l[i] = 1.0; // init r_pow_l to 1
-        index = 0;
-        for (l = 0; l <= LMAX; l++) {
-            // find r^(l+1)
-            for (i = 0; i < nd_phi; i++) r_pow_l[i] *= r_pos_r[i];
-            for (m = -l; m <= l; m++) {
-                RealSphericalHarmonic(nd_phi, r_pos_x, r_pos_y, r_pos_z, r_pos_r, l, m, Ylm);
-                for (j = 0; j < ncolp; j++) {
-                    for (i = 0; i < nd_phi; i++) 
-                        phi[i + j* nd_phi] += 1.0 / ((2*l+1) * r_pow_l[i]) * Ylm[i] * Qlm[index + j * Q_len];
-                }
-                index++;
-            }
-        } 
-        free(Ylm); free(r_pos_x); free(r_pos_y); free(r_pos_z); free(r_pos_r); free(r_pow_l);
-
-        // calculate the correction "d_cor"
-        for (n = 0; n < ncolp; n++) {
-            for (k = ks; k <= ke; k++) {
-                k_phi = k - ks_phi;
-                for (j = js; j <= je; j++) {
-                    j_phi = j - js_phi;
-                    for (i = is; i <= ie; i++) {
-                        i_phi = i - is_phi;
-                        for (p = 1; p <= FDn; p++) {
-                            switch (nbr_i) {
-                                case 0:
-                                    if ((i-p) < 0) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_x[p] * phi(i_phi-p,j_phi,k_phi,n);
-                                    break;
-                                case 1:
-                                    if ((i+p) >= Nx) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_x[p] * phi(i_phi+p,j_phi,k_phi,n);
-                                    break;
-                                case 2:
-                                    if ((j-p) < 0) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_y[p] * phi(i_phi,j_phi-p,k_phi,n);
-                                    break;
-                                case 3:
-                                    if ((j+p) >= Ny) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_y[p] * phi(i_phi,j_phi+p,k_phi,n);
-                                    break;
-                                case 4:
-                                    if ((k-p) < 0) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_z[p] * phi(i_phi,j_phi,k_phi-p,n);
-                                    break;
-                                case 5:
-                                    if ((k+p) >= Nz) 
-                                        d_cor(i,j,k,n) -= pSPARC->D2_stencil_coeffs_z[p] * phi(i_phi,j_phi,k_phi+p,n);
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        free(phi);
-    }
-    free(Qlm);
-
-#undef d_cor
-#undef phi
 }
 
 /**
@@ -1104,7 +976,7 @@ void gather_psi_occ_outer(SPARC_OBJ *pSPARC, double *psi_outer, double *occ_oute
     for (i = 0; i < NsNsp; i++) 
         occ_outer[i] = pSPARC->occ[i];
     /********************************************************************/
-    if (pSPARC->flag_kpttopo_dm && pSPARC->ACEFlag == 0) {
+    if (pSPARC->flag_kpttopo_dm && pSPARC->ExxAcc == 0) {
         int rank_kptcomm_topo;
         MPI_Comm_rank(pSPARC->kptcomm_topo, &rank_kptcomm_topo);
         if (pSPARC->flag_kpttopo_dm_type == 1) {
@@ -1176,7 +1048,7 @@ void allocate_ACE(SPARC_OBJ *pSPARC) {
         pSPARC->Nstates_occ_list[spn_i] = Nstates_occ_temp;
         Nstates_occ = max(Nstates_occ, Nstates_occ_temp);
     }
-    Nstates_occ += pSPARC->EXXACEVal_state;
+    Nstates_occ += pSPARC->EeeAceValState;
     Nstates_occ = min(Nstates_occ, pSPARC->Nstates);                      // Ensure Nstates_occ is less or equal to Nstates        
     
     // Note: occupations are only correct in dmcomm.
@@ -1216,45 +1088,7 @@ void allocate_ACE(SPARC_OBJ *pSPARC) {
     else {
         pSPARC->Nband_bandcomm_M = min(pSPARC->Nband_bandcomm, Nstates_occ - pSPARC->band_start_indx);
     }
-
-#if defined(USE_MKL) || defined(USE_SCALAPACK)
-    // create SCALAPACK information for ACE operator
-    int nprow, npcol, myrow, mycol;
-    // get coord of each process in original context
-    Cblacs_gridinfo( pSPARC->ictxt_blacs, &nprow, &npcol, &myrow, &mycol );
-    int ZERO = 0, mb, nb, llda, info;
-        
-    mb = max(1, Nstates_occ);
-    nb = mb;
-    // nb = (pSPARC->Nstates - 1) / pSPARC->npband + 1; // equal to ceil(Nstates/npband), for int only
-    // set up descriptor for storage of orbitals in ictxt_blacs (original)
-    llda = mb;
-    if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
-        descinit_(pSPARC->desc_M, &Nstates_occ, &Nstates_occ,
-                &mb, &nb, &ZERO, &ZERO, &pSPARC->ictxt_blacs, &llda, &info);
-        pSPARC->nrows_M = numroc_( &Nstates_occ, &mb, &myrow, &ZERO, &nprow);
-        pSPARC->ncols_M = numroc_( &Nstates_occ, &nb, &mycol, &ZERO, &npcol);
-    } else {
-        for (i = 0; i < 9; i++)
-            pSPARC->desc_M[i] = -1;
-        pSPARC->nrows_M = pSPARC->ncols_M = 0;
-    }
-
-    // descriptor for Xi 
-    mb = max(1, DMnd);
-    nb = (pSPARC->Nstates - 1) / pSPARC->npband + 1; // equal to ceil(Nstates/npband), for int only
-    // set up descriptor for storage of orbitals in ictxt_blacs (original)
-    llda = max(1, DMndsp);
-    if (pSPARC->bandcomm_index != -1 && pSPARC->dmcomm != MPI_COMM_NULL) {
-        descinit_(pSPARC->desc_Xi, &DMnd, &Nstates_occ,
-                &mb, &nb, &ZERO, &ZERO, &pSPARC->ictxt_blacs, &llda, &info);
-    } else {
-        for (i = 0; i < 9; i++)
-            pSPARC->desc_Xi[i] = -1;
-    }
-#endif
 }
-
 
 
 /**
@@ -1264,36 +1098,71 @@ void allocate_ACE(SPARC_OBJ *pSPARC) {
  *          Due to the symmetry of ACE operator, only half Poisson's 
  *          equations need to be solved.
  */
-void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi) 
+void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi)
 {
-    int i, rank, nproc_dmcomm, Nband_M, DMnd, DMndsp, ONE = 1, Nstates_occ;    
-    double *M, t1, t2, *Xi_, *psi_storage1, *psi_storage2, t_comm;
-    /******************************************************************************/
+#ifdef DEBUG
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    double t1, t2;
+    t1 = MPI_Wtime();
+#endif
 
+#ifdef ACCELGT
+    if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1)
+    {
+        ACCEL_solving_for_Xi(pSPARC, psi, occ, Xi);
+    } else 
+#endif 
+    {
+        solving_for_Xi(pSPARC, psi, occ, Xi);
+    }
+
+#ifdef DEBUG
+    t2 = MPI_Wtime();
+    if(!rank) 
+    printf("solving_for_Xi took: %.3f ms\n", (t2-t1)*1e3);
+    t1 = MPI_Wtime();
+#endif  
+
+    calculate_ACE_operator(pSPARC, psi, Xi);
+
+#ifdef DEBUG
+    t2 = MPI_Wtime();
+    if(!rank) 
+    printf("calculate_ACE_operator took: %.3f ms\n", (t2-t1)*1e3);
+#endif  
+}
+
+
+void solving_for_Xi(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi) 
+{
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
+    int rank, nproc_dmcomm;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(pSPARC->dmcomm, &nproc_dmcomm);
 
-    Nband_M = pSPARC->Nband_bandcomm_M;
-    DMnd = pSPARC->Nd_d_dmcomm;
-    DMndsp = DMnd * pSPARC->Nspinor_spincomm;
-    Nstates_occ = pSPARC->Nstates_occ;    
+    int Nband_M = pSPARC->Nband_bandcomm_M;
+    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    int Nstates_occ = pSPARC->Nstates_occ;    
 
     memset(Xi, 0, sizeof(double) * Nstates_occ*DMndsp);
     // if Nband==0 here, Xi_ won't be used anyway
-    Xi_ = Xi + pSPARC->band_start_indx * DMndsp;
+    double *Xi_ = Xi + pSPARC->band_start_indx * DMndsp;
 
     int nproc_blacscomm = pSPARC->npband;
     int reps = (nproc_blacscomm == 1) ? 0 : ((nproc_blacscomm - 2) / 2 + 1); // ceil((nproc_blacscomm-1)/2)
     int Nband_max = (pSPARC->Nstates - 1) / pSPARC->npband + 1;
 
     MPI_Request reqs[2];
+    double *psi_storage1, *psi_storage2;
     psi_storage1 = psi_storage2 = NULL;
     if (reps > 0) {
-        psi_storage1 = (double *) calloc(sizeof(double), DMnd * Nband_max);
-        psi_storage2 = (double *) calloc(sizeof(double), DMnd * Nband_max);
+        psi_storage1 = (double *) malloc(sizeof(double) * DMnd * Nband_max);
+        psi_storage2 = (double *) malloc(sizeof(double) * DMnd * Nband_max);
     }
     
+    double t1, t2, t_comm;
     t_comm = 0;
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
         // in case of hydrogen 
@@ -1318,7 +1187,9 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi)
                 solve_half_local_poissons_equation_apply2Xi(pSPARC, Nband_M, psi + spinor*DMnd, DMndsp, occ_, Xi_ + spinor*DMnd, DMndsp);
             } else {
                 t1 = MPI_Wtime();
-                MPI_Waitall(2, reqs, MPI_STATUSES_IGNORE);
+                int res = MPI_Waitall(2, reqs, MPI_STATUSES_IGNORE);
+                assert(res == MPI_SUCCESS);
+
                 double *sendbuff = (rep%2==1) ? psi_storage1 : psi_storage2;
                 double *recvbuff = (rep%2==1) ? psi_storage2 : psi_storage1;
                 if (rep != reps) {
@@ -1338,6 +1209,7 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi)
     #ifdef DEBUG
         if (!rank) printf("transferring orbitals in rotation wise took %.3f ms\n", t_comm*1e3);
     #endif
+    pSPARC->Exxtime_cyc += t_comm;
 
     if (reps > 0) {
         free(psi_storage1);
@@ -1346,110 +1218,127 @@ void ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *occ, double *Xi)
 
     // Allreduce is unstable in valgrind test
     if (nproc_blacscomm > 1) {
-        MPI_Request req;
-        MPI_Status  sta;
-        MPI_Iallreduce(MPI_IN_PLACE, Xi, DMndsp*Nstates_occ, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm, &req);
-        MPI_Wait(&req, &sta);
+        int res = MPI_Allreduce_overload(MPI_IN_PLACE, Xi, DMndsp*Nstates_occ, MPI_DOUBLE, MPI_SUM, pSPARC->blacscomm);
+        if (res != MPI_SUCCESS) {
+            printf("ERROR: OOM in MPI_Allreduce_overload!\n");
+            exit(EXIT_FAILURE);
+        }
     }
+}
 
-    /******************************************************************************/
-    double alpha = 1.0, beta = 0.0;
-    int nrows_M = pSPARC->nrows_M;
-    int ncols_M = pSPARC->ncols_M;
-    M = (double *) malloc(nrows_M * ncols_M * sizeof(double));
+void calculate_ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *Xi) 
+{
+    if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
+    int rank, rank_dmcomm;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(pSPARC->dmcomm, &rank_dmcomm);
+
+    int DMnd = pSPARC->Nd_d_dmcomm;
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
+    int Nstates_occ = pSPARC->Nstates_occ;
+
+    double *M = (double *) malloc(Nstates_occ*Nstates_occ* sizeof(double));
     assert(M != NULL);
 
-    t1 = MPI_Wtime();
-
+    double t1, t2;
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++ ) {
+        // memset(M, 0, Nstates_occ*Nstates_occ* sizeof(double));
+
         // in case of hydrogen 
         if (pSPARC->Nstates_occ_list[min(spinor, pSPARC->Nspin_spincomm)] == 0) continue;
 
-        #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        // perform matrix multiplication psi' * W using ScaLAPACK routines    
-        pdgemm_("T", "N", &Nstates_occ, &Nstates_occ, &DMnd, &alpha, 
-                psi + spinor*DMnd, &ONE, &ONE, pSPARC->desc_Xi, Xi_ + spinor*DMnd, 
-                &ONE, &ONE, pSPARC->desc_Xi, &beta, M, &ONE, &ONE, 
-                pSPARC->desc_M);
-        #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        // add the implementation without SCALAPACK
-        exit(255);
-        #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
-
-        if (nproc_dmcomm > 1) {
-            // sum over all processors in dmcomm
-            MPI_Allreduce(MPI_IN_PLACE, M, nrows_M*ncols_M,
-                        MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        t1 = MPI_Wtime();
+        #ifdef ACCELGT
+        if (pSPARC->useACCEL == 1) {
+            ACCEL_DGEMM( CblasColMajor, CblasTrans, CblasNoTrans, Nstates_occ, pSPARC->Nband_bandcomm_M, DMnd,
+                        1.0, Xi + spinor*DMnd, DMndsp, psi + spinor*DMnd, DMndsp, 
+                        0.0, M + pSPARC->band_start_indx*Nstates_occ, Nstates_occ);
+        } else
+        #endif // ACCELGT
+        {
+            cblas_dgemm( CblasColMajor, CblasTrans, CblasNoTrans, Nstates_occ, pSPARC->Nband_bandcomm_M, DMnd,
+                        1.0, Xi + spinor*DMnd, DMndsp, psi + spinor*DMnd, DMndsp, 
+                        0.0, M + pSPARC->band_start_indx*Nstates_occ, Nstates_occ);
         }
-        
+
+        if (pSPARC->npNd > 1) {
+            MPI_Allreduce(MPI_IN_PLACE, M + pSPARC->band_start_indx*Nstates_occ, 
+                            Nstates_occ*pSPARC->Nband_bandcomm_M, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        }
+        gather_blacscomm(pSPARC, Nstates_occ, Nstates_occ, M);        
+
         t2 = MPI_Wtime();
-        #ifdef DEBUG
+    #ifdef DEBUG
         if(!rank && !spinor) printf("rank = %2d, finding M = psi'* W took %.3f ms\n",rank,(t2-t1)*1e3); 
-        #endif
+    #endif
 
         // perform Cholesky Factorization on -M
         // M = chol(-M), upper triangular matrix
-        for (i = 0; i < nrows_M*ncols_M; i++) M[i] = -1.0 * M[i];
+        int info = 0;
+        if (rank_dmcomm == 0) {
+            for (int i = 0; i < Nstates_occ*Nstates_occ; i++) M[i] = -1.0 * M[i];
+
+            #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                info = DPOTRF(LAPACK_COL_MAJOR, 'U', Nstates_occ, M, Nstates_occ);                
+            } else
+            #endif // ACCELGT
+            {
+                info = LAPACKE_dpotrf (LAPACK_COL_MAJOR, 'U', Nstates_occ, M, Nstates_occ);
+            }
+        }
+
+        if (pSPARC->npNd > 1) {
+            MPI_Bcast(M, Nstates_occ*Nstates_occ, MPI_DOUBLE, 0, pSPARC->dmcomm);
+        }
 
         t1 = MPI_Wtime();
-        int info = 0;
-        if (nrows_M*ncols_M > 0) {
-            info = LAPACKE_dpotrf (LAPACK_COL_MAJOR, 'U', Nstates_occ, M, Nstates_occ);
-        }
-        
-        t2 = MPI_Wtime();
-        #ifdef DEBUG
+    #ifdef DEBUG
         if (!rank && !spinor) 
             printf("==Cholesky Factorization: "
-                "info = %d, computing Cholesky Factorization using LAPACKE_dpotrf: %.3f ms\n", 
-                info, (t2 - t1)*1e3);
-        #else
-        (void) info; // suppress unused var warning
-        #endif
+                "info = %d, computing Cholesky Factorization using dpotrf: %.3f ms\n", 
+                info, (t1 - t2)*1e3);
+    #endif
 
-        // Xi = WM^(-1)
-        t1 = MPI_Wtime();
-        #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        pdtrsm_("R", "U", "N", "N", &DMnd, &Nstates_occ, &alpha, 
-                    M, &ONE, &ONE, pSPARC->desc_M, 
-                    Xi_ + spinor*DMnd, &ONE, &ONE, pSPARC->desc_Xi);
-        #else // #if defined(USE_MKL) || defined(USE_SCALAPACK)
-        // add the implementation without SCALAPACK
-        exit(255);
-        #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
-
+        #ifdef ACCELGT
+        if (pSPARC->useACCEL == 1) {
+            ACCEL_DTRSM(CblasColMajor, CblasRight, CblasUpper,
+                CblasNoTrans, CblasNonUnit, DMnd, Nstates_occ, 1.0, M, Nstates_occ, Xi + spinor*DMnd, DMndsp);
+            
+        } else
+        #endif // ACCELGT
+        {
+            cblas_dtrsm(CblasColMajor, CblasRight, CblasUpper,
+                CblasNoTrans, CblasNonUnit, DMnd, Nstates_occ, 1.0, M, Nstates_occ, Xi + spinor*DMnd, DMndsp);
+        }
         t2 = MPI_Wtime();
-        #ifdef DEBUG
+    #ifdef DEBUG
         if (!rank && !spinor) 
             printf("==Triangular matrix equation: "
-                "Solving triangular matrix equation using cblas_dtrsm: %.3f ms\n", (t2 - t1)*1e3);
-        #endif
+                "Solving triangular matrix equation using dtrsm: %.3f ms\n", (t2 - t1)*1e3);
+    #endif
     }
-
     free(M);
-
-    // gather all columns of Xi
-    gather_blacscomm(pSPARC, DMndsp, Nstates_occ, Xi);
 }
+
 
 /**
  * @brief   Solve half of poissons equation locally and apply to Xi
  */
 void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, double *psi, int ldp, double *occ, double *Xi, int ldxi)
 {
-    int i, j, k, rank, dims[3], Nband, DMnd;
+    int i, j, k, rank, Nband, DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
-    double occ_i, occ_j, *rhs, *Vi;
+    double occ_i, occ_j, *rhs, *sol;
 
 #ifdef DEBUG
-    double t1, t2;
+    double t1, t2, tt1, tt2;
 #endif
 
     /******************************************************************************/
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    DMnd = pSPARC->Nd_d_dmcomm;    
-    dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
+    DMnd = pSPARC->Nd_d_dmcomm;        
     Nband = pSPARC->Nband_bandcomm;
     if (ncol == 0) return;
 
@@ -1468,61 +1357,81 @@ void solve_half_local_poissons_equation_apply2Xi(SPARC_OBJ *pSPARC, int ncol, do
         }
     }
     num_rhs = count;
+    if (num_rhs == 0) {
+        free(rhs_list_i);
+        free(rhs_list_j);
+        return;
+    }
+
+#ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                    num_rhs : pSPARC->ExxMemBatch * pSPARC->npNd;
+                    
+    NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
+    rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
+    sol = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
+    assert(rhs != NULL && sol != NULL);
+
+    /*************** Solve all Poisson's equation and find M ****************/
+    for (loop = 0; loop < NL; loop ++) {
+    
+    #ifdef DEBUG
+        tt1 = MPI_Wtime();
+    #endif
+        base = batch_num_rhs*loop;
+        for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
+            i = rhs_list_i[count];
+            j = rhs_list_j[count];
+            for (k = 0; k < DMnd; k++) {
+                rhs[k + (count-base)*DMnd] = psi[k + j*ldp] * psi[k + i*ldp];
+            }
+        }
+    #ifdef DEBUG
+        tt2 = MPI_Wtime();
+        pSPARC->Exxtime_rhs += (tt2-tt1);
+    #endif
+
+        poissonSolve(pSPARC, rhs, pSPARC->pois_const, count-base, DMnd, sol, pSPARC->dmcomm);
 
     #ifdef DEBUG
-    t1 = MPI_Wtime();
+        tt1 = MPI_Wtime();
     #endif
-    if (num_rhs > 0) {
-        batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                        num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
-                        
-        NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
-        rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
-        Vi = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
-        assert(rhs != NULL && Vi != NULL);
 
-        /*************** Solve all Poisson's equation and find M ****************/
-        for (loop = 0; loop < NL; loop ++) {
-            base = batch_num_rhs*loop;
-            for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
-                i = rhs_list_i[count];
-                j = rhs_list_j[count];
-                for (k = 0; k < DMnd; k++) {
-                    rhs[k + (count-base)*DMnd] = psi[k + j*ldp] * psi[k + i*ldp];
-                }
+        for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
+            i = rhs_list_i[count];
+            j = rhs_list_j[count];
+            
+            occ_i = occ[i + pSPARC->band_start_indx];
+            occ_j = occ[j + pSPARC->band_start_indx];
+
+            for (k = 0; k < DMnd; k++) {
+                Xi[k + i*ldxi] -= occ_j * psi[k + j*ldp] * sol[k + (count-base)*DMnd] / pSPARC->dV;                
             }
             
-            poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const, count-base, DMnd, dims, Vi, pSPARC->dmcomm);
-
-            for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
-                i = rhs_list_i[count];
-                j = rhs_list_j[count];
-                
-                occ_i = occ[i + pSPARC->band_start_indx];
-                occ_j = occ[j + pSPARC->band_start_indx];
-
+            if (i != j && occ_i > 1e-6) {
                 for (k = 0; k < DMnd; k++) {
-                    Xi[k + i*ldxi] -= occ_j * psi[k + j*ldp] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
-                }
-
-                if (i != j && occ_i > 1e-6) {
-                    for (k = 0; k < DMnd; k++) {
-                        Xi[k + j*ldxi] -= occ_i * psi[k + i*ldp] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
-                    }
+                    Xi[k + j*ldxi] -= occ_i * psi[k + i*ldp] * sol[k + (count-base)*DMnd] / pSPARC->dV;
                 }
             }
         }
-        free(rhs);
-        free(Vi);
+    #ifdef DEBUG
+        tt2 = MPI_Wtime();
+        pSPARC->Exxtime_rhs += (tt2-tt1);
+    #endif
     }
+    free(rhs);
+    free(sol);
 
     free(rhs_list_i);
     free(rhs_list_j);
-    
-    #ifdef DEBUG
+
+#ifdef DEBUG
     t2 = MPI_Wtime();
     if(!rank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",rank,(t2-t1)*1e3); 
-    #endif
+#endif
 }
 
 /**
@@ -1576,12 +1485,12 @@ void solve_allpair_poissons_equation_apply2Xi(
     int reps = (size - 2) / 2 + 1;
     if (size%2 == 0 && rank >= size/2 && shift == reps) return;
 
-    int i, j, k, nproc_dmcomm, Ns, dims[3], DMnd;
+    int i, j, k, nproc_dmcomm, Ns, DMnd;
     int *rhs_list_i, *rhs_list_j, num_rhs, count, loop, batch_num_rhs, NL, base;
-    double occ_i, occ_j, *rhs, *Vi, *Xi_l, *Xi_r;
+    double occ_i, occ_j, *rhs, *sol, *Xi_l, *Xi_r;
 
 #ifdef DEBUG
-    double t1, t2;
+    double t1, t2, tt1, tt2;
 #endif
 
     /******************************************************************************/
@@ -1589,8 +1498,7 @@ void solve_allpair_poissons_equation_apply2Xi(
     if (ncol == 0) return;
     MPI_Comm_size(pSPARC->dmcomm, &nproc_dmcomm);
     DMnd = pSPARC->Nd_d_dmcomm;    
-    Ns = pSPARC->Nstates;
-    dims[0] = pSPARC->npNdx; dims[1] = pSPARC->npNdy; dims[2] = pSPARC->npNdz;
+    Ns = pSPARC->Nstates;    
 
     int source = (rank-shift+size)%size;
     int NB = (Ns - 1) / pSPARC->npband + 1; // this is equal to ceil(Nstates/npband), for int inputs only
@@ -1618,20 +1526,26 @@ void solve_allpair_poissons_equation_apply2Xi(
     Xi_l = Xi + pSPARC->band_start_indx * ldxi;
     Xi_r = Xi + band_start_indx_source * ldxi;
 
-    #ifdef DEBUG
+#ifdef DEBUG
     t1 = MPI_Wtime();
-    #endif
+#endif
+
     if (num_rhs > 0) {
-        batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                        num_rhs : pSPARC->EXXMem_batch * nproc_dmcomm;
+        batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                        num_rhs : pSPARC->ExxMemBatch * nproc_dmcomm;
                         
         NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
         rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
-        Vi = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
-        assert(rhs != NULL && Vi != NULL);
+        sol = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                          // the solution for each rhs
+        assert(rhs != NULL && sol != NULL);
 
         /*************** Solve all Poisson's equation and find M ****************/
         for (loop = 0; loop < NL; loop ++) {
+
+        #ifdef DEBUG
+            tt1 = MPI_Wtime();
+        #endif
+
             base = batch_num_rhs*loop;
             for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
                 i = rhs_list_i[count];
@@ -1640,9 +1554,18 @@ void solve_allpair_poissons_equation_apply2Xi(
                     rhs[k + (count-base)*DMnd] = psi_storage[k + j*ldps] * psi[k + i*ldp];
                 }
             }
+
+        #ifdef DEBUG
+            tt2 = MPI_Wtime();
+            pSPARC->Exxtime_rhs += (tt2-tt1);
+        #endif
+
+            poissonSolve(pSPARC, rhs, pSPARC->pois_const, count-base, DMnd, sol, pSPARC->dmcomm);
             
-            poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const, count-base, DMnd, dims, Vi, pSPARC->dmcomm);
-            
+        #ifdef DEBUG
+            tt1 = MPI_Wtime();
+        #endif
+
             for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
                 i = rhs_list_i[count];
                 j = rhs_list_j[count];
@@ -1652,26 +1575,32 @@ void solve_allpair_poissons_equation_apply2Xi(
 
                 if (occ_j > 1e-6) {
                     for (k = 0; k < DMnd; k++) {
-                        Xi_l[k + i*ldxi] -= occ_j * psi_storage[k + j*ldps] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
+                        Xi_l[k + i*ldxi] -= occ_j * psi_storage[k + j*ldps] * sol[k + (count-base)*DMnd] / pSPARC->dV;
                     }
                 }
 
                 if (occ_i > 1e-6) {
                     for (k = 0; k < DMnd; k++) {
-                        Xi_r[k + j*ldxi] -= occ_i * psi[k + i*ldp] * Vi[k + (count-base)*DMnd] / pSPARC->dV;
+                        Xi_r[k + j*ldxi] -= occ_i * psi[k + i*ldp] * sol[k + (count-base)*DMnd] / pSPARC->dV;
                     }
                 }
             }
+        
+        #ifdef DEBUG
+            tt2 = MPI_Wtime();
+            pSPARC->Exxtime_rhs += (tt2-tt1);
+        #endif
+
         }
         free(rhs);
-        free(Vi);
+        free(sol);
     }
 
     free(rhs_list_i);
     free(rhs_list_j);
     
-    #ifdef DEBUG
+#ifdef DEBUG
     t2 = MPI_Wtime();
     if(!grank) printf("rank = %2d, solving Poisson's equations took %.3f ms\n",grank,(t2-t1)*1e3); 
-    #endif
+#endif
 }

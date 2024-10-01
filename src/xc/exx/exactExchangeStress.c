@@ -24,6 +24,11 @@
 #include "gradVecRoutinesKpt.h"
 #include "stress.h"
 #include "tools.h"
+#include "sqHighTExactExchange.h"
+
+#ifdef ACCELGT
+#include "cuda_exactexchange.h"
+#endif
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -35,7 +40,9 @@
  * @brief   Calculate Exact Exchange stress
  */
 void Calculate_exact_exchange_stress(SPARC_OBJ *pSPARC) {
-    if (pSPARC->isGammaPoint) {
+    if (pSPARC->sqHighTFlag == 1) {
+        Calculate_exact_exchange_stress_SQ(pSPARC);
+    } else if (pSPARC->isGammaPoint) {
         Calculate_exact_exchange_stress_linear(pSPARC);
     } else {
         Calculate_exact_exchange_stress_kpt(pSPARC);
@@ -57,7 +64,7 @@ void Calculate_exact_exchange_stress_linear(SPARC_OBJ *pSPARC)
     int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Ns = pSPARC->Nstates;
     comm = pSPARC->dmcomm;
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     /********************************************************************/
     for (i = 0; i < 7; i++) stress_exx[i] = 0.0;
 
@@ -66,7 +73,7 @@ void Calculate_exact_exchange_stress_linear(SPARC_OBJ *pSPARC)
     MPI_Comm_size(comm, &size);
 
     for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-        if (pSPARC->ACEFlag == 0) {            
+        if (pSPARC->ExxAcc == 0) {            
             psi = pSPARC->Xorb + spinor * DMnd;
             psi_outer = pSPARC->psi_outer + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns) : pSPARC->occ_outer;
@@ -74,7 +81,14 @@ void Calculate_exact_exchange_stress_linear(SPARC_OBJ *pSPARC)
         } else {
             psi = pSPARC->Xorb + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
-            Calculate_exact_exchange_stress_linear_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);
+        #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                CUDA_Calculate_exact_exchange_stress_linear_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);
+            } else
+        #endif // ACCELGT
+            {
+                Calculate_exact_exchange_stress_linear_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);   
+            }
         }
     }
 
@@ -233,8 +247,14 @@ void Calculate_exact_exchange_stress_linear_ACE(SPARC_OBJ *pSPARC,
                 transfer_orbitals_blacscomm(pSPARC, sendbuff, recvbuff, rep, reqs, sizeof(double));
             }
         }
-        solve_allpair_poissons_equation_stress(pSPARC, sendbuff, DMnd, psi, DMndsp, occ, 
-            Nband_source, band_start_indx_source, stress_exx);
+        if (sendbuff == psi) {
+            solve_allpair_poissons_equation_stress(pSPARC, psi, DMndsp, psi, DMndsp, occ, 
+                Nband_source, band_start_indx_source, stress_exx);
+        } else {
+            solve_allpair_poissons_equation_stress(pSPARC, sendbuff, DMnd, psi, DMndsp, occ, 
+                Nband_source, band_start_indx_source, stress_exx);
+        }
+        
     }
 
     if (reps > 0) {
@@ -254,7 +274,7 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
     MPI_Comm blacscomm = pSPARC->blacscomm;
     MPI_Comm comm = pSPARC->dmcomm;
     int i, j, k, grank, rank, size;
-    int Nband, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base, mflag, band_start_indx;
+    int Nband, DMnd, num_rhs, batch_num_rhs, NL, loop, base, mflag, band_start_indx;
     double occ_i, occ_j, *rhs, *phi, *Drhs, *Dphi_1, *Dphi_2;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -263,11 +283,8 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
 
     DMnd = pSPARC->Nd_d_dmcomm;
     Nband = pSPARC->Nband_bandcomm;
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     band_start_indx = pSPARC->band_start_indx;
-    dims[0] = pSPARC->npNdx; 
-    dims[1] = pSPARC->npNdy; 
-    dims[2] = pSPARC->npNdz;
     /********************************************************************/
 
     int *rhs_list_i, *rhs_list_j;
@@ -294,8 +311,8 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
         return;
     }
 
-    batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                    num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                    num_rhs : pSPARC->ExxMemBatch * pSPARC->npNd;
 
     NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
     rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
@@ -322,7 +339,7 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
         }
 
         // Solve all Poisson's equation 
-        poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const_stress, count-base, DMnd, dims, phi, comm);
+        poissonSolve(pSPARC, rhs, pSPARC->pois_const_stress, count-base, DMnd, phi, comm);
         
         // component (1,1)
         Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, count-base, 0.0, rhs, DMnd, Drhs, DMnd, 0, comm);
@@ -416,7 +433,7 @@ void solve_allpair_poissons_equation_stress(SPARC_OBJ *pSPARC,
 
         // additional term for spherical truncation
         if (mflag == 0) {
-            poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const_stress2, count-base, DMnd, dims, phi, comm);
+            poissonSolve(pSPARC, rhs, pSPARC->pois_const_stress2, count-base, DMnd, phi, comm);
             for (count = base; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
                 i = rhs_list_i[count];
                 j = rhs_list_j[count];
@@ -459,12 +476,12 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC)
     DMnd = pSPARC->Nd_d_dmcomm;
     int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Ns = pSPARC->Nstates;
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     /********************************************************************/
     for (i = 0; i < 7; i++) stress_exx[i] = 0.0;
 
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-        if (pSPARC->ACEFlag == 0) {
+        if (pSPARC->ExxAcc == 0) {
             psi_outer = pSPARC->psi_outer_kpt + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns * pSPARC->Nkpts_sym) : pSPARC->occ_outer;
             psi = pSPARC->Xorb_kpt + spinor * DMnd;
@@ -475,7 +492,14 @@ void Calculate_exact_exchange_stress_kpt(SPARC_OBJ *pSPARC)
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * occ_outer_shift) : pSPARC->occ_outer;
             psi = pSPARC->Xorb_kpt + spinor * DMnd;
 
-            Calculate_exact_exchange_stress_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);
+        #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                CUDA_Calculate_exact_exchange_stress_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);                
+            } else
+        #endif // ACCELGT
+            {
+                Calculate_exact_exchange_stress_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, stress_exx);
+            }
         }
     }
 
@@ -593,8 +617,10 @@ void Calculate_exact_exchange_stress_kpt_nonACE(SPARC_OBJ *pSPARC,
         for (count = 0; count < counts; count++) {
             kpt_q = pSPARC->kpthfred2kpthf[k][count+1];
             // solve poisson's equations 
-            solve_allpair_poissons_equation_stress_kpt(pSPARC, psi_outer + k*size_k_, ldpo, 
-                psi, ldp, occ_outer, Ns, 0, kpt_q, stress_exx);
+            for (int kpt_k = 0; kpt_k < pSPARC->Nkpts_kptcomm; kpt_k ++) {
+                solve_allpair_poissons_equation_stress_kpt(pSPARC, psi_outer + k*size_k_, ldpo, 
+                    psi, ldp, occ_outer, Ns, 0, kpt_k, kpt_q, stress_exx);
+            }
         }
     }
 }
@@ -708,8 +734,10 @@ void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC,
                 for (count = 0; count < counts; count++) {
                     kpt_q = pSPARC->kpthfred2kpthf[k_indx][count+1];
                     // solve poisson's equations 
-                    solve_allpair_poissons_equation_stress_kpt(pSPARC, sendbuff_band, DMnd, 
-                        psi, ldp, occ_outer, Nband_source, band_start_indx_source, kpt_q, stress_exx);
+                    for (int kpt_k = 0; kpt_k < pSPARC->Nkpts_kptcomm; kpt_k ++) {
+                        solve_allpair_poissons_equation_stress_kpt(pSPARC, sendbuff_band, DMnd, 
+                            psi, ldp, occ_outer, Nband_source, band_start_indx_source, kpt_k, kpt_q, stress_exx);
+                    }
                 }
             }
         }
@@ -728,11 +756,11 @@ void Calculate_exact_exchange_stress_kpt_ACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange stress
  */
 void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, int ldps, 
-    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *stress_exx)
+    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_k, int kpt_q, double *stress_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, j, k, ll, grank, rank, size, n, kpt_k;
-    int Ns, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base, mflag;
+    int i, j, k, ll, grank, rank, size, n;
+    int Ns, DMnd, num_rhs, batch_num_rhs, NL, loop, base, mflag;
     double occ_i, occ_j, kpt_vec;
     double _Complex *rhs, *phi, *Drhs,*Dphi_1, *Dphi_2;
     MPI_Comm comm = pSPARC->dmcomm;
@@ -743,38 +771,31 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
     int Nkpts_kptcomm = pSPARC->Nkpts_kptcomm;
     ll = pSPARC->kpthf_ind[kpt_q];                  // ll w.r.t. Nkpts_sym, for occ
     int size_k = ldp * Nband;
+    int kpt_k_ = kpt_k + pSPARC->kpt_start_indx;
     /********************************************************************/
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);    
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
-
-    dims[0] = pSPARC->npNdx; 
-    dims[1] = pSPARC->npNdy; 
-    dims[2] = pSPARC->npNdz;
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     
-    int *rhs_list_i, *rhs_list_j, *rhs_list_k, *kpt_k_list, *kpt_q_list;
+    int *rhs_list_i, *rhs_list_j;
     rhs_list_i = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
-    rhs_list_j = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
-    rhs_list_k = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
-    assert(rhs_list_i != NULL && rhs_list_j != NULL && rhs_list_k != NULL);
+    rhs_list_j = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int));     
+    assert(rhs_list_i != NULL && rhs_list_j != NULL);
     
     // Find the number of Poisson's equation required to be solved
     // Using the occupation threshold 1e-6
     int count = 0;
-    for (kpt_k = 0; kpt_k < Nkpts_kptcomm; kpt_k ++) {
-        for (i = 0; i < Nband; i++) {
-            for (j = 0; j < Nband_source; j++) {
-                occ_j = occ[j + band_start_indx_source + ll * Ns];
-                occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
-                
-                if (occ_j > 1e-6 && occ_i > 1e-6) {
-                    rhs_list_i[count] = i;
-                    rhs_list_j[count] = j;
-                    rhs_list_k[count] = kpt_k;
-                    count ++;
-                }
+    for (i = 0; i < Nband; i++) {
+        for (j = 0; j < Nband_source; j++) {
+            occ_j = occ[j + band_start_indx_source + ll * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
+            
+            if (occ_j > 1e-6 && occ_i > 1e-6) {
+                rhs_list_i[count] = i;
+                rhs_list_j[count] = j;
+                count ++;
             }
         }
     }
@@ -783,18 +804,15 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
     if (!num_rhs) {
         free(rhs_list_i);
         free(rhs_list_j);
-        free(rhs_list_k);
         return;
     }
-    batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                    num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                    num_rhs : pSPARC->ExxMemBatch * pSPARC->npNd;
     NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required                        
 
     rhs = (double _Complex *)malloc(sizeof(double _Complex) * DMnd * batch_num_rhs);                            // right hand sides of Poisson's equation
     phi = (double _Complex *)malloc(sizeof(double _Complex) * DMnd * batch_num_rhs);                            // the solution for each rhs
-    kpt_k_list = (int *) calloc (sizeof(int), batch_num_rhs);                                                   // list of k vector 
-    kpt_q_list = (int *) calloc (sizeof(int), batch_num_rhs);                                                   // list of q vector 
-    assert(rhs != NULL && phi != NULL && kpt_k_list != NULL && kpt_q_list != NULL);
+    assert(rhs != NULL && phi != NULL);
 
     // space for gradients of rhs
     Drhs = (double _Complex *)malloc(sizeof(double _Complex) * DMnd * batch_num_rhs);
@@ -809,9 +827,6 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];                      // col indx of Xorb
             j = rhs_list_j[count];                      // band indx of psi_outer
-            kpt_k = rhs_list_k[count];                  // k-point indx of k vector
-            kpt_k_list[count-base] = kpt_k + pSPARC->kpt_start_indx;
-            kpt_q_list[count-base] = kpt_q;
             if (pSPARC->kpthf_pn[kpt_q] == 1) {
                 for (k = 0; k < DMnd; k++) 
                     rhs[k + (count-base)*DMnd] = conj(psi_storage[k + j*ldps]) * psi[k + i*ldp + kpt_k*size_k];
@@ -822,11 +837,11 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         }
         
         // Solve all Poisson's equation 
-        poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_FFT_const_stress, count-base, DMnd, dims, phi, kpt_k_list, kpt_q_list, comm);
+        poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_const_stress, count-base, DMnd, phi, kpt_k_, kpt_q, comm);
 
         // component (1,1)
         for (n = 0; n < count-base; n++) {
-            kpt_vec = pSPARC->k1[kpt_k_list[n]] - pSPARC->k1_hf[kpt_q_list[n]];
+            kpt_vec = pSPARC->k1[kpt_k_] - pSPARC->k1_hf[kpt_q];
             // calculate gradients of rhs
             Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, DMnd, Drhs+n*DMnd, DMnd, 0, &kpt_vec, comm);
             // calculate gradients of phi
@@ -836,9 +851,8 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
             j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_x of rhs, Dphi_1 saves grad_x of phi
@@ -849,17 +863,16 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         
         // component (1,2)
         for (n = 0; n < count-base; n++) {
-            kpt_vec = pSPARC->k2[kpt_k_list[n]] - pSPARC->k2_hf[kpt_q_list[n]];
+            kpt_vec = pSPARC->k2[kpt_k_] - pSPARC->k2_hf[kpt_q];
             // calculate gradients of phi
             Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, DMnd, Dphi_1+n*DMnd, DMnd, 1, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
-            j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
+            j = rhs_list_j[count];            
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_x of rhs, Dphi_1 saves grad_y of phi
@@ -870,17 +883,16 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
 
         // component (1,3)
         for (n = 0; n < count-base; n++) {
-            kpt_vec = pSPARC->k3[kpt_k_list[n]] - pSPARC->k3_hf[kpt_q_list[n]];
+            kpt_vec = pSPARC->k3[kpt_k_] - pSPARC->k3_hf[kpt_q];
             // calculate gradients of phi
             Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, phi+n*DMnd, DMnd, Dphi_2+n*DMnd, DMnd, 2, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
-            j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
+            j = rhs_list_j[count];            
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_x of rhs, Dphi_2 saves grad_z of phi
@@ -891,7 +903,7 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
 
         // component (2,2)
         for (n = 0; n < count-base; n++) {
-            kpt_vec = pSPARC->k2[kpt_k_list[n]] - pSPARC->k2_hf[kpt_q_list[n]];
+            kpt_vec = pSPARC->k2[kpt_k_] - pSPARC->k2_hf[kpt_q];
             // calculate gradients of rhs
             Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, DMnd, Drhs+n*DMnd, DMnd, 1, &kpt_vec, comm);
         }
@@ -899,9 +911,8 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
             j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_y of rhs, Dphi_1 saves grad_y of phi
@@ -914,9 +925,8 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
             j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_y of rhs, Dphi_2 saves grad_z of phi
@@ -927,17 +937,16 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
 
         // component (3,3)
         for (n = 0; n < count-base; n++) {
-            kpt_vec = pSPARC->k3[kpt_k_list[n]] - pSPARC->k3_hf[kpt_q_list[n]];
+            kpt_vec = pSPARC->k3[kpt_k_] - pSPARC->k3_hf[kpt_q];
             // calculate gradients of rhs
             Gradient_vectors_dir_kpt(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, 1, 0.0, rhs+n*DMnd, DMnd, Drhs+n*DMnd, DMnd, 2, &kpt_vec, comm);
         }
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
-            j = rhs_list_j[count];
-            kpt_k = rhs_list_k[count];
+            j = rhs_list_j[count];            
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 // Drhs saves grad_z of rhs, Dphi_2 saves grad_y of phi
@@ -948,12 +957,11 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
 
         // additional term for spherical truncation
         if (mflag == 0) {
-            poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_FFT_const_stress2, count-base, DMnd, dims, phi, kpt_k_list, kpt_q_list, comm);
+            poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_const_stress2, count-base, DMnd, phi, kpt_k_, kpt_q, comm);
             
             for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
                 i = rhs_list_i[count];
                 j = rhs_list_j[count];
-                kpt_k = rhs_list_k[count];
                 occ_j = occ[j + band_start_indx_source + ll * Ns];
                 occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
                 
@@ -966,12 +974,9 @@ void solve_allpair_poissons_equation_stress_kpt(SPARC_OBJ *pSPARC, double _Compl
     }
     free(rhs);
     free(phi);
-    free(kpt_k_list);
-    free(kpt_q_list);
     free(Drhs);
     free(Dphi_1);
     free(Dphi_2);
     free(rhs_list_i);
     free(rhs_list_j);
-    free(rhs_list_k);
 }

@@ -20,4 +20,6 @@
  */
 void free_exx(SPARC_OBJ *pSPARC);
 
+void free_singularity_removal_const(SPARC_OBJ *pSPARC);
+
 #endif // EXACTEXCHANGEFINALIZATION_H 

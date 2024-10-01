@@ -65,6 +65,6 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, int ldps, 
-    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx);
+    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_k, int kpt_q, double *pres_exx);
 
 #endif // EXACTEXCHANGEPRESSURE_H 

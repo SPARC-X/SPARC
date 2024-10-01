@@ -98,7 +98,7 @@ void Update_mixing_hist_xk(SPARC_OBJ *pSPARC);
 /**
  * @brief   shift each column of Veff with mean value
  */
-void shiting_Veff_mean(SPARC_OBJ *pSPARC, double *Veff, int ncol, double *Veff_mean, int option, int dir);
+void shifting_Veff_mean(SPARC_OBJ *pSPARC, double *Veff, int ncol, double *Veff_mean, int option, int dir);
 
 /**
  * @brief   Transfer Veff_loc from phi-domain to psi-domain.

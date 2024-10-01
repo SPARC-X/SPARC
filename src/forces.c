@@ -696,9 +696,11 @@ void Calculate_forces_xc_linear(SPARC_OBJ *pSPARC, double *forces_xc) {
  */
 void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
 {
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->OFDFTFlag == 1) return;    
+
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ == 0)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ == 0 && pSPARC->usefock <=1)
         {
             pSPARC->pSQ->forceFlag = 1;
             double lambda_min, lambda_max;
@@ -709,7 +711,7 @@ void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
         Calculate_nonlocal_forces_SQ(pSPARC);
     } else if (pSPARC->isGammaPoint) {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && (pSPARC->Nd_d_dmcomm == pSPARC->Nd || pSPARC->useACCELGT))
         {
             ACCEL_Calculate_nonlocal_forces_linear(pSPARC);
         } else
@@ -719,7 +721,7 @@ void Calculate_nonlocal_forces(SPARC_OBJ *pSPARC)
         }
     } else {
         #ifdef SPARCX_ACCEL
-            if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+            if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && (pSPARC->Nd_d_dmcomm == pSPARC->Nd || pSPARC->useACCELGT))
             {
                 ACCEL_Calculate_nonlocal_forces_kpt(pSPARC);
             } else

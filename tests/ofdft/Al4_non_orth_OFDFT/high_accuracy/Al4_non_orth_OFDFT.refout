@@ -1,0 +1,131 @@
+***************************************************************************
+*                       SPARC (version June 24, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Mon Jun 24 15:44:21 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 5.65685424949238 5.65685424949238 5.65685424949238 
+LATVEC:
+0.707106781186547 0.707106781186547 0.000000000000000 
+0.000000000000000 0.707106781186547 0.707106781186547 
+0.707106781186547 0.000000000000000 0.707106781186547 
+FD_GRID: 29 29 29
+FD_ORDER: 6
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: LDA_PZ
+OFDFT_FLAG: 1
+TOL_OFDFT: 1.00E-03
+OFDFT_LAMBDA: 0.2
+CALC_STRESS: 0
+CALC_PRES: 0
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 2.16E-04
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-07
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-06
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 3.80E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: Al4_non_orth_OFDFT/temp_run/Al4_non_orth_OFDFT
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+3.999999999999999 3.999999999999999 0.000000000000000 
+0.000000000000000 3.999999999999999 3.999999999999999 
+3.999999999999999 0.000000000000000 3.999999999999999 
+Volume: 1.2800000000E+02 (Bohr^3)
+Density: 2.1079326953E-01 (amu/Bohr^3), 2.3621226209E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_DOMAIN_PHI_PARAL: 4 4 6
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  96
+Mesh spacing                       :  0.195064 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  Al4_non_orth_OFDFT/temp_run/Al4_non_orth_OFDFT.out
+Total number of atom types         :  1
+Total number of atoms              :  1
+Total number of electrons          :  3
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  Al4_non_orth_OFDFT/Al_goodwin.psp8
+Atomic mass                        :  26.9815385
+Pseudocharge radii of atom type 1  :  11.31 11.31 11.31 (x, y, z dir)
+Number of atoms of type 1          :  1
+Estimated total memory usage       :  6.97 MB
+Estimated memory per processor     :  74.39 kB
+===================================================================
+               Orbital Free DFT NLCG (OFDFT-NLCG#1)                
+===================================================================
+Iteration    Free Energy (Ha/atom)   NLCG Error        Timing (sec)
+1            -2.2089189197E+00       3.466E-02         0.171
+2            -2.2100051353E+00       2.432E-02         0.054
+3            -2.2111821624E+00       1.975E-02         0.046
+4            -2.2116048797E+00       1.362E-02         0.047
+5            -2.2120625282E+00       1.808E-02         0.042
+6            -2.2125479421E+00       1.375E-02         0.053
+7            -2.2128236376E+00       1.064E-02         0.056
+8            -2.2129600332E+00       6.364E-03         0.047
+9            -2.2130106970E+00       4.797E-03         0.045
+10           -2.2130410318E+00       3.002E-03         0.046
+11           -2.2130511068E+00       2.030E-03         0.047
+12           -2.2130584989E+00       2.046E-03         0.049
+13           -2.2130646501E+00       1.777E-03         0.050
+14           -2.2130699279E+00       1.649E-03         0.050
+15           -2.2130736103E+00       1.175E-03         0.061
+16           -2.2130749279E+00       8.015E-04         0.054
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.2130749041E+00 (Ha/atom)
+Total free energy                  : -2.2130749041E+00 (Ha)
+Kinetic energy                     :  8.2595708594E-01 (Ha)
+Exchange correlation energy        : -7.8636881062E-01 (Ha)
+Self and correction energy         : -4.1011295095E+00 (Ha)
+RMS force                          :  0.0000000000E+00 (Ha/Bohr)
+Maximum force                      :  0.0000000000E+00 (Ha/Bohr)
+Time for force calculation         :  0.004 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  1.107 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

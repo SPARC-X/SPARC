@@ -18,7 +18,10 @@
 
 #include "exactExchangeInitialization.h"
 #include "tools.h"
-
+#include "electrostatics.h"
+#include "parallelization.h"
+#include "sqInitialization.h"
+#include "kroneckerLaplacian.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -43,7 +46,7 @@ void init_exx(SPARC_OBJ *pSPARC) {
     find_local_kpthf(pSPARC);                                                                           // determine local number kpts for HF
     Ns_full = pSPARC->Nstates * pSPARC->Nkpts_sym * pSPARC->Nspin_spincomm;                           // total length across all kpts.
 
-    if (pSPARC->ACEFlag == 0) {
+    if (pSPARC->ExxAcc == 0) {
         len_full = DMndsp * pSPARC->Nstates * pSPARC->Nkpts_hf_red;                  // total length across all kpts.
         len_full_kpt = pSPARC->Nd_d_kptcomm * pSPARC->Nspinor_spincomm * pSPARC->Nstates * pSPARC->Nkpts_hf_red;
         if (pSPARC->isGammaPoint == 1) {
@@ -78,21 +81,51 @@ void init_exx(SPARC_OBJ *pSPARC) {
     find_k_shift(pSPARC);
     kshift_phasefactor(pSPARC);
 
-    if (pSPARC->EXXMeth_Flag == 0) {
-        if (pSPARC->EXXDiv_Flag == 1) 
-            auxiliary_constant(pSPARC);
+    if (pSPARC->ExxDivFlag == 1) {
+        auxiliary_constant(pSPARC);
+    }
 
-        // compute the constant coefficients for solving Poisson's equation using FFT
-        // For even conjugate space (FFT), only half of the coefficients are needed
-        if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-            if (pSPARC->isGammaPoint == 1) {
-                compute_pois_fft_const(pSPARC);
+    // compute the constant coefficients for solving Poisson's equation using FFT
+    // For even conjugate space (FFT), only half of the coefficients are needed
+    if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
+        allocate_singularity_removal_const(pSPARC);
+
+        if (pSPARC->ExxMethod == 0) {
+            compute_pois_fft_const(pSPARC);
+        } else {
+            // initialization for real space solver
+            pSPARC->kron_lap_exx = (KRON_LAP **) malloc(sizeof(KRON_LAP*) * pSPARC->Nkpts_shift);
+            for (int i = 0; i < pSPARC->Nkpts_shift; i++) {
+                double k1, k2, k3;
+                if (i < pSPARC->Nkpts_shift - 1) { // The last shift is all zeros
+                    k1 = pSPARC->k1_shift[i];
+                    k2 = pSPARC->k2_shift[i];
+                    k3 = pSPARC->k3_shift[i];
+                } else {
+                    k1 = k2 = k3 = 0;
+                }
+                pSPARC->kron_lap_exx[i] = (KRON_LAP *) malloc(sizeof(KRON_LAP));
+                if (pSPARC->BC == 1) {
+                    init_kron_Lap(pSPARC, pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, 
+                        pSPARC->BCx, pSPARC->BCy, pSPARC->BCz, k1, k2, k3, pSPARC->isGammaPoint, pSPARC->kron_lap_exx[i]);
+                } else {
+                    init_kron_Lap(pSPARC, pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, 
+                        0, 0, 0, k1, k2, k3, pSPARC->isGammaPoint, pSPARC->kron_lap_exx[i]);
+                }
+            }
+            if (pSPARC->BC == 1) {
+                // dirichlet BC needs multipole expansion
+                int DMVertices[6] = {0, pSPARC->Nx-1, 0, pSPARC->Ny-1, 0, pSPARC->Nz-1};
+                pSPARC->MpExp_exx = (MPEXP_OBJ *) malloc(sizeof(MPEXP_OBJ));
+                init_multipole_expansion(pSPARC, pSPARC->MpExp_exx, 
+                    pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, DMVertices, MPI_COMM_SELF);
             } else {
-                compute_pois_fft_const_kpt(pSPARC);
+                // periodic BC needs singularity removal
+                compute_pois_kron_cons(pSPARC);
             }
         }
     }
-
+    
     // create kpttopo_dmcomm_inter
     pSPARC->flag_kpttopo_dm = 0;
     create_kpttopo_dmcomm_inter(pSPARC);
@@ -103,184 +136,194 @@ void init_exx(SPARC_OBJ *pSPARC) {
 
 
 /**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
+ * @brief   Allocate singularity removal constants
+ */
+void allocate_singularity_removal_const(SPARC_OBJ *pSPARC)
+{
+    int Nx = pSPARC->Nx;
+    int Nxh = pSPARC->Nx / 2 + 1;
+    int Ny = pSPARC->Ny;
+    int Nz = pSPARC->Nz;
+    int len = ((pSPARC->isGammaPoint == 1) && (pSPARC->ExxMethod == 0)) ? (Nxh*Ny*Nz) : (Nx*Ny*Nz);
+    len *= pSPARC->Nkpts_shift;
+
+    // nothing required here
+    if (pSPARC->ExxMethod == 1 && pSPARC->BC == 1) return;
+
+    pSPARC->pois_const = (double *)malloc(sizeof(double) * len);
+    assert(pSPARC->pois_const != NULL);
+    if (pSPARC->Calc_stress == 1) {
+        pSPARC->pois_const_stress = (double *)malloc(sizeof(double) * len);
+        assert(pSPARC->pois_const_stress != NULL);
+        if (pSPARC->ExxDivFlag == 0) {
+            pSPARC->pois_const_stress2 = (double *)malloc(sizeof(double) * len);
+            assert(pSPARC->pois_const_stress2 != NULL);
+        }
+    } else if (pSPARC->Calc_pres == 1) {
+        if (pSPARC->ExxDivFlag != 0) {
+            pSPARC->pois_const_press = (double *)malloc(sizeof(double) * len);
+            assert(pSPARC->pois_const_press != NULL);
+        }
+    }
+}
+
+
+/**
+ * @brief   singularity removal calculation
  * 
  *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
  *          DOI: 10.1103/PhysRevB.77.193110
  *          Auxiliary function - Method by Gygi and Baldereschi
  *          DOI: 10.1103/PhysRevB.34.4405
  */
-void compute_pois_fft_const(SPARC_OBJ *pSPARC) {
-#define alpha(i,j,k) pSPARC->pois_FFT_const[(k)*Nxy+(j)*Nxh+(i)]
-#define alpha1(i,j,k) pSPARC->pois_FFT_const_stress[(k)*Nxy+(j)*Nxh+(i)]
-#define alpha2(i,j,k) pSPARC->pois_FFT_const_stress2[(k)*Nxy+(j)*Nxh+(i)]
-#define beta(i,j,k) pSPARC->pois_FFT_const_press[(k)*Nxy+(j)*Nxh+(i)]
-    int i, j, k, Nx, Nxh, Ny, Nz, Ndc, Nxy;
-    double L1, L2, L3, V, R_c, G[3], g[3], G2, omega, omega2;
-
-    Nx = pSPARC->Nx;
-    Nxh = pSPARC->Nx / 2 + 1;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-    Ndc = Nz * Ny * Nxh;
-    Nxy = Ny * Nxh;
-
-    // When BC is Dirichelet, one more FD node is incldued.
-    // Real length of each side has to be added by 1 mesh length.
-    L1 = pSPARC->delta_x * Nx;
-    L2 = pSPARC->delta_y * Ny;
-    L3 = pSPARC->delta_z * Nz;
-
-    V =  L1 * L2 * L3 * pSPARC->Jacbdet * pSPARC->Nkpts_hf;       // Nk_hf * unit cell volume
-    R_c = pow(3*V/(4*M_PI),(1.0/3));
-    omega = pSPARC->hyb_range_fock;
-    omega2 = omega * omega;
-
-    pSPARC->pois_FFT_const = (double *)malloc(sizeof(double) * Ndc);
-    assert(pSPARC->pois_FFT_const != NULL);
-    // allocate space for stress
-    if (pSPARC->Calc_stress == 1) {
-        pSPARC->pois_FFT_const_stress = (double *)malloc(sizeof(double) * Ndc);
-        assert(pSPARC->pois_FFT_const_stress != NULL);
-        if (pSPARC->EXXDiv_Flag == 0) {
-            pSPARC->pois_FFT_const_stress2 = (double *)malloc(sizeof(double) * Ndc);
-            assert(pSPARC->pois_FFT_const_stress2 != NULL);
-        }
-    } else if (pSPARC->Calc_pres == 1) {
-        if (pSPARC->EXXDiv_Flag != 0) {
-            pSPARC->pois_FFT_const_press = (double *)malloc(sizeof(double) * Ndc);
-            assert(pSPARC->pois_FFT_const_press != NULL);
-        }
-    }
-    /********************************************************************/
+void singularity_remooval_const(SPARC_OBJ *pSPARC, double G2, double *sr_const, 
+                    double *sr_const_stress, double *sr_const_stress2, double *sr_const_press)
+{
+    double L1 = pSPARC->delta_x * pSPARC->Nx;
+    double L2 = pSPARC->delta_y * pSPARC->Ny;
+    double L3 = pSPARC->delta_z * pSPARC->Nz;
+    double V =  L1 * L2 * L3 * pSPARC->Jacbdet * pSPARC->Nkpts_hf;       // Nk_hf * unit cell volume
+    double R_c = pow(3*V/(4*M_PI),(1.0/3));
+    double omega = pSPARC->hyb_range_fock;
+    double omega2 = omega * omega;
 
     // spherical truncation
-    if (pSPARC->EXXDiv_Flag == 0) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
-                    // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                    g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
-                    G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                    G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = R_c*sqrt(G2);
-                    if (fabs(G2) > 1e-4) {
-                        alpha(i,j,k) = 4*M_PI*(1-cos(x))/G2;
-                        if (pSPARC->Calc_stress == 1) {
-                            double G4 = G2*G2;
-                            alpha1(i,j,k) = 4*M_PI*( 1-cos(x)- x/2*sin(x) )/G4;
-                            alpha2(i,j,k) = 4*M_PI*( x/2*sin(x) )/G2/3;
-                        }
-                    } else {
-                        alpha(i,j,k) = 2*M_PI*(R_c * R_c);
-                        if (pSPARC->Calc_stress == 1) {
-                            alpha1(i,j,k) = 4*M_PI*pow(R_c,4)/24;
-                            alpha2(i,j,k) = 4*M_PI*( R_c*R_c/2 )/3;
-                        }
-                    }
-                }
+    if (pSPARC->ExxDivFlag == 0) {        
+        double G4 = G2*G2;
+        double x = R_c*sqrt(G2);
+        if (fabs(G2) > 1e-4) {
+            *sr_const = 4*M_PI*(1-cos(x))/G2;
+            if (pSPARC->Calc_stress == 1) {
+                *sr_const_stress = 4*M_PI*( 1-cos(x)- x/2*sin(x) )/G4;
+                *sr_const_stress2 = 4*M_PI*( x/2*sin(x) )/G2/3;
+            }
+        } else {
+            *sr_const = 2*M_PI*(R_c * R_c);
+            if (pSPARC->Calc_stress == 1) {
+                *sr_const_stress = 4*M_PI*pow(R_c,4)/24;
+                *sr_const_stress2 = 4*M_PI*( R_c*R_c/2 )/3;
             }
         }
-        return;
-    }
-
     // auxiliary function
-    if (pSPARC->EXXDiv_Flag == 1) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
-                    // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                    g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
-                    G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                    G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = -0.25/omega2*G2;
-                    if (fabs(G2) > 1e-4) {
-                        if (omega > 0) {
-                            alpha(i,j,k) = 4*M_PI/G2 * (1 - exp(x));
-                            if (pSPARC->Calc_stress == 1) {
-                                double G4 = G2*G2;
-                                alpha1(i,j,k) = 4*M_PI*(1 - exp(x)*(1-x))/G4 /4;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 4*M_PI*(1 - exp(x)*(1-x))/G2 /4;
-                            }
-                        } else {
-                            alpha(i,j,k) = 4*M_PI/G2;
-                            if (pSPARC->Calc_stress == 1) {
-                                double G4 = G2*G2;
-                                alpha1(i,j,k) = 4*M_PI/G4 /4;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 4*M_PI/G2 /4;
-                            }
-                        }
-                    } else {
-                        if (omega > 0) {
-                            alpha(i,j,k) = 4*M_PI*(pSPARC->const_aux + 0.25/omega2);
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k) = 0;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 0;
-                            }
-                        } else {
-                            alpha(i,j,k) = 4*M_PI*pSPARC->const_aux;
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k) = 0;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k) = 0;
-                            }
-                        }
-                    }
+    } else if (pSPARC->ExxDivFlag == 1) {        
+        double G4 = G2*G2;
+        double x = -0.25/omega2*G2;
+        if (fabs(G2) > 1e-4) {
+            if (omega > 0) {
+                *sr_const = 4*M_PI/G2 * (1 - exp(x));
+                if (pSPARC->Calc_stress == 1) {
+                    *sr_const_stress = 4*M_PI*(1 - exp(x)*(1-x))/G4 /4;
+                } else if (pSPARC->Calc_pres == 1) {
+                    *sr_const_press = 4*M_PI*(1 - exp(x)*(1-x))/G2 /4;
+                }
+            } else {
+                *sr_const = 4*M_PI/G2;
+                if (pSPARC->Calc_stress == 1) {                        
+                    *sr_const_stress = 4*M_PI/G4 /4;
+                } else if (pSPARC->Calc_pres == 1) {
+                    *sr_const_press = 4*M_PI/G2 /4;
+                }
+            }
+        } else {
+            if (omega > 0) {
+                *sr_const = 4*M_PI*(pSPARC->const_aux + 0.25/omega2);
+                if (pSPARC->Calc_stress == 1) {
+                    *sr_const_stress = 0;
+                } else if (pSPARC->Calc_pres == 1) {
+                    *sr_const_press = 0;
+                }
+            } else {
+                *sr_const = 4*M_PI*pSPARC->const_aux;
+                if (pSPARC->Calc_stress == 1) {
+                    *sr_const_stress = 0;
+                } else if (pSPARC->Calc_pres == 1) {
+                    *sr_const_press = 0;
                 }
             }
         }
-        return;
-    }
-
     // ERFC short ranged screened 
-    if (pSPARC->EXXDiv_Flag == 2) {
-        for (k = 0; k < Nz; k++) {
-            for (j = 0; j < Ny; j++) {
-                for (i = 0; i < Nxh; i++) {
+    } else if (pSPARC->ExxDivFlag == 2) {        
+        double G4 = G2*G2;
+        double x = -0.25/omega2*G2;
+        if (fabs(G2) > 1e-4) {
+            *sr_const = 4*M_PI*(1-exp(x))/G2;;
+            if (pSPARC->Calc_stress == 1) {
+                *sr_const_stress = 4*M_PI*( 1-exp(x)*(1-x) )/G4;
+            } else if (pSPARC->Calc_pres == 1) {
+                *sr_const_press = 4*M_PI*( 1-exp(x)*(1-x) )/G2;
+            }
+        } else {
+            *sr_const = M_PI/omega2;
+            if (pSPARC->Calc_stress == 1) {
+                *sr_const_stress = 0;
+            } else if (pSPARC->Calc_pres == 1) {
+                *sr_const_press = 0;
+            }
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute eigenvalues of Laplacian applied with singularity removal methods
+ */
+void compute_pois_kron_cons(SPARC_OBJ *pSPARC) {    
+    int Nd = pSPARC->Nd;    
+
+    for (int l = 0; l < pSPARC->Nkpts_shift; l++) {
+        KRON_LAP* kron_lap = pSPARC->kron_lap_exx[l];
+        for (int i = 0; i < Nd; i++) {
+            double G2 = -kron_lap->eig[i];
+            singularity_remooval_const(pSPARC, G2, pSPARC->pois_const + i + l*Nd, 
+                        pSPARC->pois_const_stress + i + l*Nd, pSPARC->pois_const_stress2 + i + l*Nd, pSPARC->pois_const_press + i + l*Nd);            
+        }
+    }
+}
+
+
+/**
+ * @brief   Compute constant coefficients for solving Poisson's equation using FFT
+ */
+void compute_pois_fft_const(SPARC_OBJ *pSPARC) {
+    int Nx_len = pSPARC->isGammaPoint ? (pSPARC->Nx/2+1) : pSPARC->Nx;
+    int Nx = pSPARC->Nx;
+    int Ny = pSPARC->Ny;
+    int Nz = pSPARC->Nz;
+    int Nd = pSPARC->Nd;
+    // When BC is Dirichelet, one more FD node is incldued.
+    // Real length of each side has to be added by 1 mesh length.
+    double L1 = pSPARC->delta_x * Nx;
+    double L2 = pSPARC->delta_y * Ny;
+    double L3 = pSPARC->delta_z * Nz;
+
+    double G[3], g[3];
+
+    for (int l = 0; l < pSPARC->Nkpts_shift; l++) {
+        int count = 0;
+        for (int k = 0; k < Nz; k++) {
+            for (int j = 0; j < Ny; j++) {
+                for (int i = 0; i < Nx_len; i++) {
                     // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
                     g[0] = g[1] = g[2] = 0.0;
-                    G[0] = i*2*M_PI/L1;
+                    G[0] = (i < Nx/2+1) ? (i*2*M_PI/L1) : ((i-Nx)*2*M_PI/L1);
                     G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
                     G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                    G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                    double x = -G2/4.0/omega2;
-                    if (fabs(G2) > 1e-4) {
-                        alpha(i,j,k) = 4*M_PI*(1-exp(x))/G2;
-                        if (pSPARC->Calc_stress == 1) {
-                            double G4 = G2*G2;
-                            alpha1(i,j,k) = 4*M_PI*( 1-exp(x)*(1-x) )/G4;
-                        } else if (pSPARC->Calc_pres == 1) {
-                            beta(i,j,k) = 4*M_PI*( 1-exp(x)*(1-x) )/G2;
-                        }
-                    } else {
-                        alpha(i,j,k) = M_PI/omega2;
-                        if (pSPARC->Calc_stress == 1) {
-                            alpha1(i,j,k) = 0;
-                        } else if (pSPARC->Calc_pres == 1) {
-                            beta(i,j,k) = 0;
-                        }
+                    if (l < pSPARC->Nkpts_shift - 1) { // The last shift is all zeros
+                        G[0] += pSPARC->k1_shift[l];
+                        G[1] += pSPARC->k2_shift[l];
+                        G[2] += pSPARC->k3_shift[l];
                     }
+                    matrixTimesVec_3d(pSPARC->lapcT, G, g);
+                    double G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
+                    singularity_remooval_const(pSPARC, G2, pSPARC->pois_const + count + l*Nd, 
+                        pSPARC->pois_const_stress + count + l*Nd, pSPARC->pois_const_stress2 + count + l*Nd, pSPARC->pois_const_press + count + l*Nd);
+                    count ++;
                 }
             }
         }
-        return;
     }
-
-#undef alpha
-#undef alpha1
-#undef alpha2
-#undef beta
 }
+
 
 /**
  * @brief   Compute constant coefficients for solving Poisson's equation using FFT
@@ -309,9 +352,9 @@ void compute_pois_fft_const_FD(SPARC_OBJ *pSPARC)
     w2_y = pSPARC->D2_stencil_coeffs_y;
     w2_z = pSPARC->D2_stencil_coeffs_z;
 
-    pSPARC->pois_FFT_const = (double *)malloc(sizeof(double) * Ndc);
-    assert(pSPARC->pois_FFT_const != NULL);
-    alpha = pSPARC->pois_FFT_const;
+    pSPARC->pois_const = (double *)malloc(sizeof(double) * Ndc);
+    assert(pSPARC->pois_const != NULL);
+    alpha = pSPARC->pois_const;
     /********************************************************************/
 
     for (k = 0; k < Nz; k++) {
@@ -353,7 +396,7 @@ void create_kpttopo_dmcomm_inter(SPARC_OBJ *pSPARC)
     int i, rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->ACEFlag == 0) {
+    if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->ExxAcc == 0) {
         int nproc_kptcomm;
         int nproc_kptcomm_topo = pSPARC->npNdx_kptcomm * pSPARC->npNdy_kptcomm * pSPARC->npNdz_kptcomm;
         MPI_Comm_size(pSPARC->kptcomm, &nproc_kptcomm);
@@ -542,208 +585,6 @@ double ecut_estimate(double hx, double hy, double hz)
     ecut = exp(-2*log(h_eff)+0.848379709041268);
     return ecut;
 }
-
-
-/**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
- * 
- *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
- *          DOI: 10.1103/PhysRevB.77.193110
- */
-void compute_pois_fft_const_kpt(SPARC_OBJ *pSPARC) {
-#define alpha(i,j,k,l) pSPARC->pois_FFT_const[(l)*Nd+(k)*Nxy+(j)*Nx+(i)]
-#define alpha1(i,j,k,l) pSPARC->pois_FFT_const_stress[(l)*Nd+(k)*Nxy+(j)*Nx+(i)]
-#define alpha2(i,j,k,l) pSPARC->pois_FFT_const_stress2[(l)*Nd+(k)*Nxy+(j)*Nx+(i)]
-#define beta(i,j,k,l) pSPARC->pois_FFT_const_press[(l)*Nd+(k)*Nxy+(j)*Nx+(i)]
-    int i, j, k, l, Nx, Ny, Nz, Nd, Nxy, Nkpts_shift;
-    double L1, L2, L3, V, R_c, G[3], g[3], G2, omega, omega2;
-
-    Nx = pSPARC->Nx;
-    Ny = pSPARC->Ny;
-    Nz = pSPARC->Nz;
-
-    // When BC is Dirichelet, one more FD node is incldued.
-    // Real length of each side has to be added by 1 mesh length.
-    // Only happens for  sheet and wire. 
-    L1 = pSPARC->delta_x * Nx;
-    L2 = pSPARC->delta_y * Ny;
-    L3 = pSPARC->delta_z * Nz;
-
-    Nd = pSPARC->Nd;
-    Nxy = Ny * Nx;
-    Nkpts_shift = pSPARC->Nkpts_shift;
-    V =  L1 * L2 * L3 * pSPARC->Jacbdet * pSPARC->Nkpts_hf;       // Nk_hf * unit cell volume
-    R_c = pow(3*V/(4*M_PI),(1.0/3));
-    omega = pSPARC->hyb_range_fock;
-    omega2 = omega * omega;
-
-    pSPARC->pois_FFT_const = (double *)malloc(sizeof(double) * Nd * Nkpts_shift);
-    assert(pSPARC->pois_FFT_const != NULL);
-    // allocate space for stress
-    if (pSPARC->Calc_stress == 1) {
-        pSPARC->pois_FFT_const_stress = (double *)malloc(sizeof(double) * Nd * Nkpts_shift);
-        assert(pSPARC->pois_FFT_const_stress != NULL);
-        if (pSPARC->EXXDiv_Flag == 0) {
-            pSPARC->pois_FFT_const_stress2 = (double *)malloc(sizeof(double) * Nd * Nkpts_shift);
-            assert(pSPARC->pois_FFT_const_stress2 != NULL);
-        }
-    } else if (pSPARC->Calc_pres == 1) {
-        if (pSPARC->EXXDiv_Flag != 0) {
-            pSPARC->pois_FFT_const_press = (double *)malloc(sizeof(double) * Nd * Nkpts_shift);
-            assert(pSPARC->pois_FFT_const_press != NULL);
-        }
-    }
-    /********************************************************************/
-
-    // spherical truncation
-    if (pSPARC->EXXDiv_Flag == 0) {
-        for (l = 0; l < Nkpts_shift; l++) {
-            for (k = 0; k < Nz; k++) {
-                for (j = 0; j < Ny; j++) {
-                    for (i = 0; i < Nx; i++) {
-                        // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                        g[0] = g[1] = g[2] = 0.0;
-                        G[0] = (i < Nx/2+1) ? (i*2*M_PI/L1) : ((i-Nx)*2*M_PI/L1);
-                        G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                        G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                        if (l < Nkpts_shift - 1) {                                                      // The last shift is all zeros
-                            G[0] += pSPARC->k1_shift[l];
-                            G[1] += pSPARC->k2_shift[l];
-                            G[2] += pSPARC->k3_shift[l];
-                        }
-                        matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                        G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                        if (fabs(G2) > 1e-4) {                                              // 1e-4 is the tolerance from ABINIT
-                            alpha(i,j,k,l) = 4*M_PI*(1-cos(R_c*sqrt(G2)))/G2;
-                            if (pSPARC->Calc_stress == 1) {
-                                double x = R_c*sqrt(G2);
-                                double G4 = G2*G2;
-                                alpha1(i,j,k,l) = 4*M_PI*( 1-cos(x)- x/2*sin(x) )/G4;
-                                alpha2(i,j,k,l) = 4*M_PI*( x/2*sin(x) )/G2/3;
-                            }
-                        } else {
-                            alpha(i,j,k,l) = 2*M_PI*(R_c * R_c);
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k,l) = 4*M_PI*pow(R_c,4)/24;
-                                alpha2(i,j,k,l) = 4*M_PI*( R_c*R_c/2 )/3;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    // auxiliary function
-    if (pSPARC->EXXDiv_Flag == 1) {
-        for (l = 0; l < Nkpts_shift; l++) {
-            for (k = 0; k < Nz; k++) {
-                for (j = 0; j < Ny; j++) {
-                    for (i = 0; i < Nx; i++) {
-                        // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                        g[0] = g[1] = g[2] = 0.0;
-                        G[0] = (i < Nx/2+1) ? (i*2*M_PI/L1) : ((i-Nx)*2*M_PI/L1);
-                        G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                        G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                        if (l < Nkpts_shift - 1) {                                                      // The last shift is all zeros
-                            G[0] += pSPARC->k1_shift[l];
-                            G[1] += pSPARC->k2_shift[l];
-                            G[2] += pSPARC->k3_shift[l];
-                        }
-                        matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                        G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                        double x = -0.25/omega2*G2;
-                        if (fabs(G2) > 1e-4) {                                              // 1e-4 is the tolerance from ABINIT
-                            if (omega > 0) {
-                                alpha(i,j,k,l) = 4*M_PI/G2 * (1 - exp(-0.25/omega2*G2));
-                                if (pSPARC->Calc_stress == 1) {
-                                    double G4 = G2*G2;
-                                    alpha1(i,j,k,l) = 4*M_PI*(1 - exp(x)*(1-x))/G4 /4;
-                                } else if (pSPARC->Calc_pres == 1) {
-                                    beta(i,j,k,l) = 4*M_PI*(1 - exp(x)*(1-x))/G2 /4;
-                                }
-                            } else {
-                                alpha(i,j,k,l) = 4*M_PI/G2;
-                                if (pSPARC->Calc_stress == 1) {
-                                    double G4 = G2*G2;
-                                    alpha1(i,j,k,l) = 4*M_PI/G4 /4;
-                                } else if (pSPARC->Calc_pres == 1) {
-                                    beta(i,j,k,l) = 4*M_PI/G2 /4;
-                                }
-                            }
-                        } else {
-                            if (omega > 0) {
-                                alpha(i,j,k,l) = 4*M_PI*(pSPARC->const_aux + 0.25/omega2);
-                                if (pSPARC->Calc_stress == 1) {
-                                    alpha1(i,j,k,l) = 0;                                    
-                                } else if (pSPARC->Calc_pres == 1) {
-                                    beta(i,j,k,l) = 0;
-                                }
-                            } else {
-                                alpha(i,j,k,l) = 4*M_PI*pSPARC->const_aux;
-                                if (pSPARC->Calc_stress == 1) {
-                                    alpha1(i,j,k,l) = 0;                                                                        
-                                } else if (pSPARC->Calc_pres == 1) {
-                                    beta(i,j,k,l) = 0;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    // ERFC short ranged screened 
-    if (pSPARC->EXXDiv_Flag == 2) {
-        for (l = 0; l < Nkpts_shift; l++) {
-            for (k = 0; k < Nz; k++) {
-                for (j = 0; j < Ny; j++) {
-                    for (i = 0; i < Nx; i++) {
-                        // G = [(k1-1)*2*pi/L1, (k2-1)*2*pi/L2, (k3-1)*2*pi/L3];
-                        g[0] = g[1] = g[2] = 0.0;
-                        G[0] = (i < Nx/2+1) ? (i*2*M_PI/L1) : ((i-Nx)*2*M_PI/L1);
-                        G[1] = (j < Ny/2+1) ? (j*2*M_PI/L2) : ((j-Ny)*2*M_PI/L2);
-                        G[2] = (k < Nz/2+1) ? (k*2*M_PI/L3) : ((k-Nz)*2*M_PI/L3);
-                        if (l < Nkpts_shift - 1) {                                                      // The last shift is all zeros
-                            G[0] += pSPARC->k1_shift[l];
-                            G[1] += pSPARC->k2_shift[l];
-                            G[2] += pSPARC->k3_shift[l];
-                        }
-                        matrixTimesVec_3d(pSPARC->lapcT, G, g);
-                        G2 = G[0] * g[0] + G[1] * g[1] + G[2] * g[2];
-                        double x = -G2/4.0/omega2;
-                        if (fabs(G2) > 1e-4) {                                              // 1e-4 is the tolerance from ABINIT
-                            alpha(i,j,k,l) = 4*M_PI*(1-exp(x))/G2;
-                            if (pSPARC->Calc_stress == 1) {
-                                double G4 = G2*G2;
-                                alpha1(i,j,k,l) = 4*M_PI*( 1-exp(x)*(1-x) )/G4;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k,l) = 4*M_PI*( 1-exp(x)*(1-x) )/G2;
-                            }
-                        } else {
-                            alpha(i,j,k,l) = M_PI/omega2;
-                            if (pSPARC->Calc_stress == 1) {
-                                alpha1(i,j,k,l) = 0;
-                            } else if (pSPARC->Calc_pres == 1) {
-                                beta(i,j,k,l) = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-#undef alpha
-#undef alpha1
-#undef alpha2
-#undef beta
-}
-
 
 
 /**
@@ -945,7 +786,7 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
     int type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
     int dmcomm_size = pSPARC->npNd;
 
-    if (pSPARC->ACEFlag == 0) {
+    if (pSPARC->ExxAcc == 0) {
         // storage of psi outer
         int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
         memory_exx += (double) len_full_tot * type_size * 2; 
@@ -954,13 +795,13 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
             // int index
             memory_exx += (double) Ns * Ns * sizeof(int) * 2;
             // for poissons equations
-            int ncol = (pSPARC->EXXMem_batch == 0) ? (Ns * Ns) : pSPARC->EXXMem_batch;
+            int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         } else {
             // int index
             memory_exx += (double) Ns * Ns * sizeof(int) * Nkpts_hf * 3;
             // for poissons equations
-            int ncol = (pSPARC->EXXMem_batch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->EXXMem_batch;
+            int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         }
     } else {
@@ -974,7 +815,7 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
             // int index
             memory_exx += (double) Nband * Ns * 2 * sizeof(int);
             // for poissons equations
-            int ncol = (pSPARC->EXXMem_batch == 0) ? (Nband * Nband) : pSPARC->EXXMem_batch;
+            int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         } else {
             // storage of ACE operator in dmcomm and kptcomm_topo
@@ -987,7 +828,7 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
             // int index
             memory_exx += (double) Ns * Nband * Nkpts_sym * 3 * sizeof(int);
             // for poissons equations
-            int ncol = (pSPARC->EXXMem_batch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->EXXMem_batch;            
+            int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->ExxMemBatch;            
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
 
         }

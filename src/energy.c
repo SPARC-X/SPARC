@@ -13,12 +13,14 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+#include <assert.h>
 
 #include "energy.h"
 #include "exchangeCorrelation.h"
 #include "occupation.h"
 #include "tools.h"
 #include "isddft.h"
+#include "sqProperties.h"
 #include "sqEnergy.h"
 
 #define TEMP_TOL (1e-14)
@@ -45,7 +47,7 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     Calculate_Exc(pSPARC, electronDens);
     
     // band structure energy
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         Eband = Calculate_Eband_SQ(pSPARC);
     } else {
         Eband = Calculate_Eband(pSPARC);
@@ -58,7 +60,7 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     pSPARC->Eband = Eband;
     
     // calculate entropy
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         pSPARC->Entropy = Calculate_electronicEntropy_SQ(pSPARC);
     } else {
         pSPARC->Entropy = Calculate_electronicEntropy(pSPARC);

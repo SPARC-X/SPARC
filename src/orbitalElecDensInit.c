@@ -117,7 +117,7 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
         // for 1st Relax step/ MDstep, set initial electron density
         if( (pSPARC->elecgs_Count - pSPARC->StressCount) == 0){
             // read initial density from file 
-            if (pSPARC->BandStructFlag == 1) {
+            if (pSPARC->BandStructFlag == 1 ||  pSPARC->readInitDens) {
                 char inputDensFnames[3][L_STRING+L_PSD];
                 // set up input density filename
                 if (rank == 0) {
@@ -142,6 +142,8 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
                 
                 // copy initial electron density
                 memcpy(pSPARC->electronDens, pSPARC->electronDens_at, DMnd * sizeof(double));
+                if (pSPARC->usefock)
+                    memcpy(pSPARC->electronDens_pbe, pSPARC->electronDens_at, DMnd * sizeof(double));
                 // get intial magnetization
                 if (pSPARC->spin_typ == 1) {
                     memcpy(pSPARC->mag, pSPARC->mag_at, DMnd * sizeof(double));
@@ -216,7 +218,7 @@ void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
     for (nd = 0; nd < pSPARC->Nd_d; nd++){
         pSPARC->delectronDens_2dt[nd] = pSPARC->delectronDens_1dt[nd];
         pSPARC->delectronDens_1dt[nd] = pSPARC->delectronDens_0dt[nd];
-        double *electronDens = pSPARC->electronDens;        
+        double *electronDens = pSPARC->usefock%2 ? pSPARC->electronDens_pbe : pSPARC->electronDens;        
         pSPARC->delectronDens_0dt[nd] = electronDens[nd] - pSPARC->electronDens_at[nd];
     }
     if(pSPARC->MDFlag == 1){

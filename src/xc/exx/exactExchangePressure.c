@@ -23,6 +23,11 @@
 #include "gradVecRoutines.h"
 #include "gradVecRoutinesKpt.h"
 #include "tools.h"
+#include "sqHighTExactExchange.h"
+
+#ifdef ACCELGT
+#include "cuda_exactexchange.h"
+#endif
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -35,7 +40,9 @@
  * @brief   Calculate Exact Exchange pressure
  */
 void Calculate_exact_exchange_pressure(SPARC_OBJ *pSPARC) {
-    if (pSPARC->isGammaPoint) {
+    if (pSPARC->sqAmbientFlag) {
+        Calculate_exact_exchange_pressure_SQ(pSPARC);
+    } else if (pSPARC->isGammaPoint) {
         Calculate_exact_exchange_pressure_linear(pSPARC);
     } else {
         Calculate_exact_exchange_pressure_kpt(pSPARC);
@@ -60,7 +67,7 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
     DMnd = pSPARC->Nd_d_dmcomm;
     int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Ns = pSPARC->Nstates;
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     /********************************************************************/    
     
     if (mflag == 0) {
@@ -75,7 +82,7 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
 
     pres_exx = 0;
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-        if (pSPARC->ACEFlag == 0) {
+        if (pSPARC->ExxAcc == 0) {
             psi = pSPARC->Xorb + spinor * DMnd;
             psi_outer = pSPARC->psi_outer + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns) : pSPARC->occ_outer;
@@ -83,7 +90,15 @@ void Calculate_exact_exchange_pressure_linear(SPARC_OBJ *pSPARC)
         } else {
             psi = pSPARC->Xorb + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ + spinor * Ns) : pSPARC->occ;
-            Calculate_exact_exchange_pressure_linear_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
+        
+        #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                CUDA_Calculate_exact_exchange_pressure_linear_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);                
+            } else
+        #endif // ACCELGT
+            {
+                Calculate_exact_exchange_pressure_linear_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
+            }
         }
     }
 
@@ -182,8 +197,13 @@ void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC,
                 transfer_orbitals_blacscomm(pSPARC, sendbuff, recvbuff, rep, reqs, sizeof(double));
             }
         }
-        solve_allpair_poissons_equation_pressure(pSPARC, sendbuff, DMnd, psi, DMndsp, occ, 
-            Nband_source, band_start_indx_source, pres_exx);
+        if (psi == sendbuff) {
+            solve_allpair_poissons_equation_pressure(pSPARC, psi, DMndsp, psi, DMndsp, occ, 
+                Nband_source, band_start_indx_source, pres_exx);
+        } else {
+            solve_allpair_poissons_equation_pressure(pSPARC, sendbuff, DMnd, psi, DMndsp, occ, 
+                Nband_source, band_start_indx_source, pres_exx);
+        }
     }
     
     if (reps > 0) {
@@ -201,7 +221,7 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
     int i, j, k, grank;
-    int Nband, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base;
+    int Nband, DMnd, num_rhs, batch_num_rhs, NL, loop, base;
     double occ_i, occ_j, *rhs, *phi;
     MPI_Comm comm;
 
@@ -211,10 +231,6 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);    
     /********************************************************************/    
-    
-    dims[0] = pSPARC->npNdx; 
-    dims[1] = pSPARC->npNdy; 
-    dims[2] = pSPARC->npNdz;
 
     int *rhs_list_i, *rhs_list_j;
     rhs_list_i = (int*) calloc(Nband * Nband_source, sizeof(int)); 
@@ -241,8 +257,8 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
         return;
     }         
 
-    batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                    num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                    num_rhs : pSPARC->ExxMemBatch * pSPARC->npNd;
 
     NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required
     rhs = (double *)malloc(sizeof(double) * DMnd * batch_num_rhs);                         // right hand sides of Poisson's equation
@@ -260,7 +276,7 @@ void solve_allpair_poissons_equation_pressure(SPARC_OBJ *pSPARC,
         }
 
         // Solve all Poisson's equation 
-        poissonSolve(pSPARC, rhs, pSPARC->pois_FFT_const_press, count-base, DMnd, dims, phi, comm);
+        poissonSolve(pSPARC, rhs, pSPARC->pois_const_press, count-base, DMnd, phi, comm);
 
         for (count = base; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];
@@ -300,9 +316,9 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
     DMnd = pSPARC->Nd_d_dmcomm;
     int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     Ns = pSPARC->Nstates; 
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     /********************************************************************/
-    mflag = pSPARC->EXXDiv_Flag;
+    mflag = pSPARC->ExxDivFlag;
     if (mflag == 0) {
         pSPARC->pres_exx = 0;
 #ifdef DEBUG    
@@ -315,7 +331,7 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
 
     pres_exx = 0;
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-        if (pSPARC->ACEFlag == 0) {
+        if (pSPARC->ExxAcc == 0) {
             psi_outer = pSPARC->psi_outer_kpt + spinor * DMnd;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * Ns * pSPARC->Nkpts_sym) : pSPARC->occ_outer;
             psi = pSPARC->Xorb_kpt + spinor * DMnd;
@@ -325,8 +341,15 @@ void Calculate_exact_exchange_pressure_kpt(SPARC_OBJ *pSPARC)
             int occ_outer_shift = Ns * pSPARC->Nkpts_sym;
             occ_outer = (pSPARC->spin_typ == 1) ? (pSPARC->occ_outer + spinor * occ_outer_shift) : pSPARC->occ_outer;
             psi = pSPARC->Xorb_kpt + spinor * DMnd;
-
-            Calculate_exact_exchange_pressure_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
+        
+        #ifdef ACCELGT
+            if (pSPARC->useACCEL == 1) {
+                CUDA_Calculate_exact_exchange_pressure_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
+            } else
+        #endif // ACCELGT
+            {
+                Calculate_exact_exchange_pressure_kpt_ACE(pSPARC, psi, DMndsp, occ_outer, &pres_exx);
+            }
         }
     }
     
@@ -378,9 +401,11 @@ void Calculate_exact_exchange_pressure_kpt_nonACE(SPARC_OBJ *pSPARC,
         int counts = pSPARC->kpthfred2kpthf[k][0];
         for (count = 0; count < counts; count++) {
             kpt_q = pSPARC->kpthfred2kpthf[k][count+1];
-            // solve poisson's equations 
-            solve_allpair_poissons_equation_pressure_kpt(pSPARC, psi_outer + k*size_k_, ldpo, 
-                psi, ldp, occ_outer, Ns, 0, kpt_q, pres_exx);
+            // solve poisson's equations
+            for (int kpt_k = 0; kpt_k < pSPARC->Nkpts_kptcomm; kpt_k ++) { 
+                solve_allpair_poissons_equation_pressure_kpt(pSPARC, psi_outer + k*size_k_, ldpo, 
+                    psi, ldp, occ_outer, Ns, 0, kpt_k, kpt_q, pres_exx);
+            }
         }
     }
 }
@@ -494,8 +519,10 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
                 for (count = 0; count < counts; count++) {
                     kpt_q = pSPARC->kpthfred2kpthf[k_indx][count+1];
                     // solve poisson's equations 
-                    solve_allpair_poissons_equation_pressure_kpt(pSPARC, sendbuff_band, DMnd, 
-                        psi, ldp, occ_outer, Nband_source, band_start_indx_source, kpt_q, pres_exx);
+                    for (int kpt_k = 0; kpt_k < pSPARC->Nkpts_kptcomm; kpt_k ++) { 
+                        solve_allpair_poissons_equation_pressure_kpt(pSPARC, sendbuff_band, DMnd, 
+                            psi, ldp, occ_outer, Nband_source, band_start_indx_source, kpt_k, kpt_q, pres_exx);
+                    }
                 }
             }
         }
@@ -514,11 +541,11 @@ void Calculate_exact_exchange_pressure_kpt_ACE(SPARC_OBJ *pSPARC,
  * @brief   Calculate Exact Exchange pressure
  */
 void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_storage, int ldps, 
-    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_q, double *pres_exx)
+    double _Complex *psi, int ldp, double *occ, int Nband_source, int band_start_indx_source, int kpt_k, int kpt_q, double *pres_exx)
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    int i, j, k, ll, grank, rank, size, kpt_k;
-    int Ns, DMnd, dims[3], num_rhs, batch_num_rhs, NL, loop, base;
+    int i, j, k, ll, grank, rank, size;
+    int Ns, DMnd, num_rhs, batch_num_rhs, NL, loop, base;
     double occ_i, occ_j;
     double _Complex *rhs, *phi;
     MPI_Comm comm = pSPARC->dmcomm;
@@ -529,37 +556,30 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
     int Nkpts_kptcomm = pSPARC->Nkpts_kptcomm;
     ll = pSPARC->kpthf_ind[kpt_q];                  // ll w.r.t. Nkpts_sym, for occ
     int size_k = ldp * Nband;
+    int kpt_k_ = kpt_k + pSPARC->kpt_start_indx;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);    
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
     /********************************************************************/
-
-    dims[0] = pSPARC->npNdx; 
-    dims[1] = pSPARC->npNdy; 
-    dims[2] = pSPARC->npNdz;
     
-    int *rhs_list_i, *rhs_list_j, *rhs_list_k, *kpt_k_list, *kpt_q_list;
+    int *rhs_list_i, *rhs_list_j;
     rhs_list_i = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
     rhs_list_j = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
-    rhs_list_k = (int*) calloc(Nkpts_kptcomm * Nband * Nband_source, sizeof(int)); 
-    assert(rhs_list_i != NULL && rhs_list_j != NULL && rhs_list_k != NULL);
+    assert(rhs_list_i != NULL && rhs_list_j != NULL);
 
     // Find the number of Poisson's equation required to be solved
     // Using the occupation threshold 1e-6
-    int count = 0;
-    for (kpt_k = 0; kpt_k < Nkpts_kptcomm; kpt_k ++) {
-        for (i = 0; i < Nband; i++) {
-            for (j = 0; j < Nband_source; j++) {
-                occ_j = occ[j + band_start_indx_source + ll * Ns];
-                occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
-                
-                if (occ_j > 1e-6 && occ_i > 1e-6) {
-                    rhs_list_i[count] = i;
-                    rhs_list_j[count] = j;
-                    rhs_list_k[count] = kpt_k;
-                    count ++;
-                }
+    int count = 0;    
+    for (i = 0; i < Nband; i++) {
+        for (j = 0; j < Nband_source; j++) {
+            occ_j = occ[j + band_start_indx_source + ll * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
+            
+            if (occ_j > 1e-6 && occ_i > 1e-6) {
+                rhs_list_i[count] = i;
+                rhs_list_j[count] = j;                
+                count ++;
             }
         }
     }
@@ -567,28 +587,22 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
 
     if (count == 0) {
         free(rhs_list_i);
-        free(rhs_list_j);
-        free(rhs_list_k);
+        free(rhs_list_j);        
         return;
     }
-    batch_num_rhs = pSPARC->EXXMem_batch == 0 ? 
-                    num_rhs : pSPARC->EXXMem_batch * pSPARC->npNd;
+    batch_num_rhs = pSPARC->ExxMemBatch == 0 ? 
+                    num_rhs : pSPARC->ExxMemBatch * pSPARC->npNd;
     NL = (num_rhs - 1) / batch_num_rhs + 1;                                                // number of loops required                        
 
     rhs = (double _Complex *)malloc(sizeof(double _Complex) * DMnd * batch_num_rhs);                            // right hand sides of Poisson's equation
     phi = (double _Complex *)malloc(sizeof(double _Complex) * DMnd * batch_num_rhs);                            // the solution for each rhs
-    kpt_k_list = (int *) calloc (sizeof(int), batch_num_rhs);                                                   // list of k vector 
-    kpt_q_list = (int *) calloc (sizeof(int), batch_num_rhs);                                                   // list of q vector 
-    assert(rhs != NULL && phi != NULL && kpt_k_list != NULL && kpt_q_list != NULL);
+    assert(rhs != NULL && phi != NULL);
 
     for (loop = 0; loop < NL; loop ++) {
         base = batch_num_rhs*loop;
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];                      // col indx of Xorb
             j = rhs_list_j[count];                      // band indx of psi_outer
-            kpt_k = rhs_list_k[count];                  // k-point indx of k vector
-            kpt_k_list[count-base] = kpt_k + pSPARC->kpt_start_indx;
-            kpt_q_list[count-base] = kpt_q;
             if (pSPARC->kpthf_pn[kpt_q] == 1) {
                 for (k = 0; k < DMnd; k++) 
                     rhs[k + (count-base)*DMnd] = conj(psi_storage[k + j*ldps]) * psi[k + i*ldp + kpt_k*size_k];
@@ -599,17 +613,14 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
         }
         
         // Solve all Poisson's equation 
-        poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_FFT_const_press, count-base, DMnd, dims, phi, kpt_k_list, kpt_q_list, comm);
+        poissonSolve_kpt(pSPARC, rhs, pSPARC->pois_const_press, count-base, DMnd, phi, kpt_k_, kpt_q, comm);
 
         for (count = batch_num_rhs*loop; count < min(batch_num_rhs*(loop+1),num_rhs); count++) {
             i = rhs_list_i[count];                      // col indx of Xorb
             j = rhs_list_j[count];                      // band indx of psi_outer
-            kpt_k = rhs_list_k[count];                  // k-point indx of k vector
-            kpt_k_list[count-base] = kpt_k + pSPARC->kpt_start_indx;
-            kpt_q_list[count-base] = kpt_q;
             
             occ_j = occ[j + band_start_indx_source + ll * Ns];
-            occ_i = occ[i + pSPARC->band_start_indx + (kpt_k + pSPARC->kpt_start_indx) * Ns];
+            occ_i = occ[i + pSPARC->band_start_indx + kpt_k_ * Ns];
             
             for (k = 0; k < DMnd; k++){
                 *pres_exx += pSPARC->kptWts_hf * pSPARC->kptWts_loc[kpt_k] / pSPARC->Nkpts * occ_i * occ_j * 
@@ -620,9 +631,6 @@ void solve_allpair_poissons_equation_pressure_kpt(SPARC_OBJ *pSPARC, double _Com
 
     free(rhs);
     free(phi);            
-    free(kpt_k_list);
-    free(kpt_q_list);
     free(rhs_list_i);
     free(rhs_list_j);
-    free(rhs_list_k);
 }

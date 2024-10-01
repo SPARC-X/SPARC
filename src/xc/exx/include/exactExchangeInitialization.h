@@ -21,12 +21,28 @@
 void init_exx(SPARC_OBJ *pSPARC);
 
 /**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
+ * @brief   Allocate singularity removal constants
+ */
+void allocate_singularity_removal_const(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   singularity removal calculation
  * 
  *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
  *          DOI: 10.1103/PhysRevB.77.193110
  *          Auxiliary function - Method by Gygi and Baldereschi
  *          DOI: 10.1103/PhysRevB.34.4405
+ */
+void singularity_remooval_const(SPARC_OBJ *pSPARC, double G2, double *sr_const, 
+                    double *sr_const_stress, double *sr_const_stress2, double *sr_const_press);
+
+/**
+ * @brief   Compute eigenvalues of Laplacian applied with singularity removal methods
+ */
+void compute_pois_kron_cons(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   Compute constant coefficients for solving Poisson's equation using FFT
  */
 void compute_pois_fft_const(SPARC_OBJ *pSPARC);
 
@@ -59,15 +75,6 @@ void auxiliary_constant(SPARC_OBJ *pSPARC);
  * @brief   Estimation of Ecut by (pi/h)^2/2
  */
 double ecut_estimate(double hx, double hy, double hz);
-
-
-/**
- * @brief   Compute constant coefficients for solving Poisson's equation using FFT
- * 
- *          Spherical Cutoff - Method by James Spencer and Ali Alavi 
- *          DOI: 10.1103/PhysRevB.77.193110
- */
-void compute_pois_fft_const_kpt(SPARC_OBJ *pSPARC);
 
 /**
  * @brief   Find out the unique Bloch vector shifts (k-q)

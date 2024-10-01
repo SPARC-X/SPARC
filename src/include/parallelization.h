@@ -91,7 +91,7 @@ static inline int block_decompose_rank(const int n, const int p, const int node_
  * @param  ierr         Returns 1 if error occurs, otherwise return 0
  *
  */
-void SPARC_Dims_create(int nproc, int ndims, int *gridsizes, int minsize, int *dims, int *ierr);
+void SPARC_Dims_create(const int nproc, const int ndims, const int *gridsizes, int minsize, int *dims, int *ierr);
 
 
 /**
@@ -355,5 +355,31 @@ void DP2BP(
 );
 
 #endif // "ifdef USE_DP_SUBEIG"
+
+
+void Set_D2Dext_Target(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, 
+    int DMnx, int DMny, int DMnz, int xext, int yext, int zext, 
+    int gridsizes[3], int dims[3], MPI_Comm cart, MPI_Comm *comm_d2dext);
+
+    
+void reorder_counts(const int *counts, const int *layers, const int DMnx, const int DMny, const int DMnz, 
+                    int *x_counts, int *y_counts, int *z_counts);
+
+void free_D2Dext_Target(D2Dext_OBJ *d2dext, MPI_Comm comm_d2dext);
+
+void D2Dext(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, int DMnx, int DMny, int DMnz, 
+    int xext, int yext, int zext, void *sdata, void *rdata, MPI_Comm comm_d2dext, int unit_size);
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int MPI_Allreduce_overload(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PARALLELIZATION_H 
