@@ -25,6 +25,10 @@
 void ACE_operator_kpt(SPARC_OBJ *pSPARC, 
     double _Complex *psi, double *occ_outer, double _Complex *Xi_kpt);
 
+void solving_for_Xi_kpt(SPARC_OBJ *pSPARC, 
+    double _Complex *psi, double *occ_outer, double _Complex *Xi_kpt);
+    
+void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double _Complex *Xi_kpt);
 
 /**
  * @brief   Evaluating Exact Exchange potential in k-point case
@@ -41,7 +45,6 @@ void exact_exchange_potential_kpt(SPARC_OBJ *pSPARC,
  * @param X               The vectors premultiplied by the Fock operator
  * @param ncol            Number of columns of vector X
  * @param DMnd            Number of FD nodes in comm
- * @param dims            3 dimensions of comm processes grid
  * @param occ_outer       Full set of occ_outer occupations
  * @param psi_outer       Full set of psi_outer orbitals
  * @param Hx              Result of Hx plus fock operator times X 
@@ -49,7 +52,7 @@ void exact_exchange_potential_kpt(SPARC_OBJ *pSPARC,
  * @param comm            Communicator where the operation happens. dmcomm or kptcomm_topo
  */
 void evaluate_exact_exchange_potential_kpt(SPARC_OBJ *pSPARC, double _Complex *X, int ldx, 
-        int ncol, int DMnd, int *dims, double *occ_outer, 
+        int ncol, int DMnd, double *occ_outer, 
         double _Complex *psi_outer, int ldpo, double _Complex *Hx, int ldhx, int kpt_k, MPI_Comm comm);
 
 
@@ -82,25 +85,40 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC);
  *          Note: only FFT method is supported in current version. 
  *          TODO: add method in real space. 
  */
-void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_FFT_const, int ncol, int DMnd, 
-                int *dims, double _Complex *Vi, int *kpt_k_list, int *kpt_q_list, MPI_Comm comm);
+void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_const, int ncol, int DMnd, 
+                double _Complex *sol, int kpt_k, int kpt_q, MPI_Comm comm);
 
 
 /**
  * @brief   Solve Poisson's equation using FFT in Fourier Space - in k-point case. 
  * 
- * @param rhs_loc_order     complete RHS of poisson's equations without parallelization. 
- * @param pois_FFT_const    constant for solving possion's equations
- * @param ncolp             Number of poisson's equations to be solved.
- * @param Vi_loc            complete solutions of poisson's equations without parallelization. 
+ * @param rhs               complete RHS of poisson's equations without parallelization. 
+ * @param pois_const        constant for solving possion's equations
+ * @param ncol              Number of poisson's equations to be solved.
+ * @param sol               complete solutions of poisson's equations without parallelization. 
  * @param kpt_k_list        List of global index of k Bloch wave vector
  * @param kpt_q_list        List of global index of q Bloch wave vector
  * Note:                    Assuming the RHS is periodic with Bloch wave vector (k - q). 
  * Note:                    This function is complete localized. 
  */
-void pois_fft_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs_loc_order, double *pois_FFT_const, 
-                    int ncolp, double _Complex *Vi_loc, int *kpt_k_list, int *kpt_q_list);
+void pois_fft_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_const, 
+                    int ncol, double _Complex *sol, int kpt_k, int kpt_q);
 
+
+/**
+ * @brief   Solve Poisson's equation using Kronecker product Lapacian
+ * 
+ * @param rhs               complete RHS of poisson's equations without parallelization. 
+ * @param pois_const        constant for solving possion's equations
+ * @param ncol              Number of poisson's equations to be solved.
+ * @param sol               complete solutions of poisson's equations without parallelization. 
+ * @param kpt_k_list        List of global index of k Bloch wave vector
+ * @param kpt_q_list        List of global index of q Bloch wave vector
+ * Note:                    Assuming the RHS is periodic with Bloch wave vector (k - q). 
+ * Note:                    This function is complete localized. 
+ */
+void pois_kron_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_const, 
+                    int ncol, double _Complex *sol, int kpt_k, int kpt_q);
 
 
 /**
@@ -122,7 +140,7 @@ void gather_psi_occ_outer_kpt(SPARC_OBJ *pSPARC, double _Complex *psi_outer_kpt,
  * @param kpt_q_list    list of global k-point index for q
  * Note:                Assuming the shifts is introduced by wave vector (k - q)
  */
-void apply_phase_factor(SPARC_OBJ *pSPARC, double _Complex *vec, int ncol, char *NorP, int *kpt_k_list, int *kpt_q_list);
+void apply_phase_factor(SPARC_OBJ *pSPARC, double _Complex *vec, int ncol, char *NorP, int kpt_k, int kpt_q);
 
 /**
  * @brief   Allocate memory space for ACE operator and check its size for each outer loop
@@ -139,6 +157,9 @@ void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Complex
  */
 void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Complex *vec);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /**
  * @brief   transfer orbitals in a cyclic rotation way to save memory
  */
@@ -149,6 +170,11 @@ void transfer_orbitals_kptbridgecomm(SPARC_OBJ *pSPARC,
  * @brief   Sovle all pair of poissons equations by remote orbitals and apply to Xi
  */
 void solve_allpair_poissons_equation_apply2Xi_kpt(SPARC_OBJ *pSPARC, 
-    int ncol, double _Complex *psi, int ldp, double _Complex *psi_storage, int ldps, double *occ, double _Complex *Xi_kpt, int ldxi, int kpt_q, int shift);
+    int ncol, double _Complex *psi, int ldp, double _Complex *psi_storage, int ldps, double *occ, double _Complex *Xi_kpt, int ldxi, 
+    int kpt_k, int kpt_q, int shift);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // EXACTEXCHANGEPOTENTIAL_KPT_H 

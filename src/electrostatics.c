@@ -1536,8 +1536,8 @@ void poisson_RHS(SPARC_OBJ *pSPARC, double *rhs) {
 
         // multipole expansion for Dirichlet BC!
         double *d_cor = (double *)malloc( DMnd * sizeof(double) );
-        MultipoleExpansion_phi(pSPARC, rhs, d_cor);
-        
+        apply_multipole_expansion(pSPARC, pSPARC->MpExp, pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, 
+                        pSPARC->Nx_d, pSPARC->Ny_d, pSPARC->Nz_d, pSPARC->DMVertices, rhs, d_cor, pSPARC->dmcomm_phi);
         for (int i = 0; i < DMnd; i++) rhs[i] -= d_cor[i];
         free(d_cor);
 		
@@ -1709,7 +1709,8 @@ void Jacobi_preconditioner(SPARC_OBJ *pSPARC, int N, double c, double *r, double
  *
  *          Note that this is only done in "phi-domain".
  */
-void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
+void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, 
+    int DMnx, int DMny, int DMnz, int *DMVertices, double *f, double *d_cor, MPI_Comm comm)
 {
 #define d_cor(i,j,k) d_cor[(k)*DMnx*DMny+(j)*DMnx+(i)]
 #define phi(i,j,k) phi[(k)*nx_phi*ny_phi+(j)*nx_phi+(i)]
@@ -1718,7 +1719,7 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
-    int LMAX = 6, l, m, i, j, k, p, DMnx, DMny, DMnz, DMnd, count, index, Q_len,
+    int LMAX = 6, l, m, i, j, k, p, DMnd, count, index, Q_len,
         FDn, Nx, Ny, Nz, i_global, j_global, k_global, nbr_i, is, ie, js, je,
         ks, ke, nx_cor, ny_cor, nz_cor, nd_cor, is_phi, ie_phi, js_phi, je_phi,
         ks_phi, ke_phi, nx_phi, ny_phi, nz_phi, nd_phi, i_phi, j_phi, k_phi,
@@ -1728,10 +1729,7 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
     
     FDn = pSPARC->order / 2;
     
-    DMnx = pSPARC->Nx_d;
-    DMny = pSPARC->Ny_d;
-    DMnz = pSPARC->Nz_d;
-    DMnd = pSPARC->Nd_d;
+    DMnd =DMnx * DMny * DMnz;
     Lx = pSPARC->range_x;
     Ly = pSPARC->range_y;
     Lz = pSPARC->range_z;
@@ -1748,15 +1746,15 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
     // find distance between the center of the domain and finite-difference grids
     count = 0; 
     for (k = 0; k < DMnz; k++) {
-        k_global = k + pSPARC->DMVertices[4]; // global coord
+        k_global = k + DMVertices[4]; // global coord
         z = k_global * pSPARC->delta_z - Lz/2.0; 
         z2 = z * z;
         for (j = 0; j < DMny; j++) {
-            j_global = j + pSPARC->DMVertices[2]; // global coord
+            j_global = j + DMVertices[2]; // global coord
             y = j_global * pSPARC->delta_y - Ly/2.0; 
             y2 = y * y;
             for (i = 0; i < DMnx; i++) {
-                i_global = i + pSPARC->DMVertices[0]; // global coord
+                i_global = i + DMVertices[0]; // global coord
                 x = i_global * pSPARC->delta_x - Lx/2.0;
                 x2 = x * x; 
                 r_pos_x[count] = x;
@@ -1791,7 +1789,7 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
     free(r_pos_x); free(r_pos_y); free(r_pos_z); free(r_pos_r); free(Ylm); free(r_pow_l);
 
     // do allreduce to sum over all phi process
-    MPI_Allreduce(MPI_IN_PLACE, Qlm, Q_len, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi); 
+    MPI_Allreduce(MPI_IN_PLACE, Qlm, Q_len, MPI_DOUBLE, MPI_SUM, comm); 
 
     #ifdef DEBUG
     // Calculate dipole moment based on the Qlm values
@@ -1821,12 +1819,12 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
        
     // find correction contribution from each side
     for (nbr_i = 0; nbr_i < 6; nbr_i++) {
-        is = max(DMCorVert[nbr_i][0], pSPARC->DMVertices[0]);
-        ie = min(DMCorVert[nbr_i][1], pSPARC->DMVertices[1]);
-        js = max(DMCorVert[nbr_i][2], pSPARC->DMVertices[2]);
-        je = min(DMCorVert[nbr_i][3], pSPARC->DMVertices[3]);
-        ks = max(DMCorVert[nbr_i][4], pSPARC->DMVertices[4]);
-        ke = min(DMCorVert[nbr_i][5], pSPARC->DMVertices[5]);
+        is = max(DMCorVert[nbr_i][0], DMVertices[0]);
+        ie = min(DMCorVert[nbr_i][1], DMVertices[1]);
+        js = max(DMCorVert[nbr_i][2], DMVertices[2]);
+        je = min(DMCorVert[nbr_i][3], DMVertices[3]);
+        ks = max(DMCorVert[nbr_i][4], DMVertices[4]);
+        ke = min(DMCorVert[nbr_i][5], DMVertices[5]);
         nx_cor = ie - is + 1;
         ny_cor = je - js + 1;
         nz_cor = ke - ks + 1;
@@ -1899,11 +1897,11 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
 
         // calculate the correction "d_cor"
         for (k = ks; k <= ke; k++) {
-            k_phi = k - ks_phi; k_DM = k - pSPARC->DMVertices[4];
+            k_phi = k - ks_phi; k_DM = k - DMVertices[4];
             for (j = js; j <= je; j++) {
-                j_phi = j - js_phi; j_DM = j - pSPARC->DMVertices[2];
+                j_phi = j - js_phi; j_DM = j - DMVertices[2];
                 for (i = is; i <= ie; i++) {
-                    i_phi = i - is_phi; i_DM = i - pSPARC->DMVertices[0];
+                    i_phi = i - is_phi; i_DM = i - DMVertices[0];
                     for (p = 1; p <= FDn; p++) {
                         switch (nbr_i) {
                             case 0:
@@ -1941,7 +1939,6 @@ void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor)
 #undef d_cor
 #undef phi
 }
-
 
 
 /**
@@ -2483,4 +2480,341 @@ void PartrialDipole_wire(SPARC_OBJ *pSPARC, double *f, double *d_cor) {
 #undef d_cor
 #undef phi
 #undef f
+}
+
+
+
+
+
+void init_multipole_expansion(SPARC_OBJ *pSPARC, MPEXP_OBJ *MpExp, 
+        int Nx, int Ny, int Nz, int DMnx, int DMny, int DMnz, int *DMVertices, MPI_Comm comm)
+{
+    if (comm == MPI_COMM_NULL) return;
+    double dx = pSPARC->delta_x;
+    double dy = pSPARC->delta_y; 
+    double dz = pSPARC->delta_z;
+    double Lx = (Nx-1)*dx;
+    double Ly = (Ny-1)*dy;
+    double Lz = (Nz-1)*dz;
+    int DMnd = DMnx * DMny * DMnz;
+    int FDn = pSPARC->order / 2;
+
+    /* find multipole moments Qlm */
+    double *r_pos_x = (double *)malloc(sizeof(double) * DMnd);
+    double *r_pos_y = (double *)malloc(sizeof(double) * DMnd);
+    double *r_pos_z = (double *)malloc(sizeof(double) * DMnd);
+    MpExp->r_pos_r = (double *)malloc(sizeof(double) * DMnd);
+    double *r_pos_r = MpExp->r_pos_r;
+
+    // find distance between the center of the domain and finite-difference grids
+    int count = 0; 
+    for (int k = 0; k < DMnz; k++) {        
+        double z = (k + DMVertices[4]) * dz;
+        for (int j = 0; j < DMny; j++) {            
+            double y = (j + DMVertices[2]) * dy;
+            for (int i = 0; i < DMnx; i++) {
+                double x = (i + DMVertices[0]) * dx;
+                r_pos_x[count] = x - Lx/2.0;
+                r_pos_y[count] = y - Ly/2.0;
+                r_pos_z[count] = z - Lz/2.0;
+                nonCart2Cart_grad(pSPARC, r_pos_x+count, r_pos_y+count, r_pos_z+count);
+                CalculateDistance(pSPARC, x, y, z, Lx/2.0, Ly/2.0, Lz/2.0, r_pos_r+count);
+                count++;
+            }
+        }
+    }
+
+    int LMAX = 6;
+    int sh_len = (LMAX+1)*(LMAX+1);
+    MpExp->Ylm = (double **)malloc(sizeof(double*) * sh_len);
+
+    int index = 0;
+    for (int l = 0; l <= LMAX; l++) {
+        for (int m = -l; m <= l; m++) {
+            MpExp->Ylm[index] = (double *)malloc(sizeof(double) * DMnd);
+            RealSphericalHarmonic(DMnd, r_pos_x, r_pos_y, r_pos_z, r_pos_r, l, m, MpExp->Ylm[index]);
+            index++;
+        }
+    }
+    free(r_pos_x); free(r_pos_y); free(r_pos_z);
+
+    // define the “correction domain” which contributes to the charge correction. i.e. 0 to FDn-1 and
+    // nx-FDn nx-1 in each direction.
+    int DMCorVert[6][6];
+    DMCorVert[0][0]=0;      DMCorVert[0][1]=FDn-1; DMCorVert[0][2]=0;       DMCorVert[0][3]=Ny-1;  DMCorVert[0][4]=0;       DMCorVert[0][5]=Nz-1;
+    DMCorVert[1][0]=Nx-FDn; DMCorVert[1][1]=Nx-1;  DMCorVert[1][2]=0;       DMCorVert[1][3]=Ny-1;  DMCorVert[1][4]=0;       DMCorVert[1][5]=Nz-1;  
+    DMCorVert[2][0]=0;      DMCorVert[2][1]=Nx-1;  DMCorVert[2][2]=0;       DMCorVert[2][3]=FDn-1; DMCorVert[2][4]=0;       DMCorVert[2][5]=Nz-1;
+    DMCorVert[3][0]=0;      DMCorVert[3][1]=Nx-1;  DMCorVert[3][2]=Ny-FDn;  DMCorVert[3][3]=Ny-1;  DMCorVert[3][4]=0;       DMCorVert[3][5]=Nz-1;
+    DMCorVert[4][0]=0;      DMCorVert[4][1]=Nx-1;  DMCorVert[4][2]=0;       DMCorVert[4][3]=Ny-1;  DMCorVert[4][4]=0;       DMCorVert[4][5]=FDn-1;
+    DMCorVert[5][0]=0;      DMCorVert[5][1]=Nx-1;  DMCorVert[5][2]=0;       DMCorVert[5][3]=Ny-1;  DMCorVert[5][4]=Nz-FDn;  DMCorVert[5][5]=Nz-1;    
+
+    MpExp->nd_phi_max = 0;
+    for (int nbr_i = 0; nbr_i < 6; nbr_i++) {
+        int is = max(DMCorVert[nbr_i][0], DMVertices[0]);
+        int ie = min(DMCorVert[nbr_i][1], DMVertices[1]);
+        int js = max(DMCorVert[nbr_i][2], DMVertices[2]);
+        int je = min(DMCorVert[nbr_i][3], DMVertices[3]);
+        int ks = max(DMCorVert[nbr_i][4], DMVertices[4]);
+        int ke = min(DMCorVert[nbr_i][5], DMVertices[5]);
+        int nx_cor = ie - is + 1;
+        int ny_cor = je - js + 1;
+        int nz_cor = ke - ks + 1;
+        int nd_cor = nx_cor * ny_cor * nz_cor;
+        MpExp->nd_cor[nbr_i] = nd_cor;
+        if (nd_cor <= 0) continue;
+        
+        // find the region of phi that have contribution to the correction domain
+        int is_phi = is; int ie_phi = ie;
+        int js_phi = js; int je_phi = je;
+        int ks_phi = ks; int ke_phi = ke;
+        switch (nbr_i) {
+            case 0:
+                is_phi = is - FDn; ie_phi = -1; break;
+            case 1:
+                is_phi = Nx; ie_phi = ie + FDn; break;
+            case 2:
+                js_phi = js - FDn; je_phi = -1; break;
+            case 3:
+                js_phi = Ny; je_phi = je + FDn; break;
+            case 4:
+                ks_phi = ks - FDn; ke_phi = -1; break;
+            case 5:
+                ks_phi = Nz; ke_phi = ke + FDn; break; 
+        }        
+
+        int nx_phi = ie_phi - is_phi + 1;
+        int ny_phi = je_phi - js_phi + 1;
+        int nz_phi = ke_phi - ks_phi + 1;
+        int nd_phi = nx_phi * ny_phi * nz_phi;
+        MpExp->nd_phi[nbr_i] = nd_phi;
+        MpExp->nd_phi_max = max(MpExp->nd_phi_max, nd_phi);
+        
+        // calculate electrostatic potential "phi" inside        
+        MpExp->Ylm_aug[nbr_i] = (double **) malloc(sizeof(double *) * sh_len);
+        double *r_pos_x = (double *)malloc( sizeof(double) * nd_phi );
+        double *r_pos_y = (double *)malloc( sizeof(double) * nd_phi );
+        double *r_pos_z = (double *)malloc( sizeof(double) * nd_phi );
+        MpExp->r_pos_r_aug[nbr_i] = (double *)malloc( sizeof(double) * nd_phi);
+        double *r_pos_r = MpExp->r_pos_r_aug[nbr_i];
+
+        int count = 0;
+        for (int k = 0; k < nz_phi; k++) {
+            double z = (k + ks_phi) * dz; 
+            for (int j = 0; j < ny_phi; j++) {
+                double y = (j + js_phi) * dy;
+                for (int i = 0; i < nx_phi; i++) {
+                    double x = (i + is_phi) * dx;                    
+                    r_pos_x[count] = x - Lx/2.0;
+                    r_pos_y[count] = y - Ly/2.0;
+                    r_pos_z[count] = z - Lz/2.0;
+                    nonCart2Cart_grad(pSPARC, r_pos_x+count, r_pos_y+count, r_pos_z+count);
+                    CalculateDistance(pSPARC, x, y, z, Lx/2.0, Ly/2.0, Lz/2.0, r_pos_r+count);
+                    count++;
+                }
+            }
+        } 
+                
+        int index = 0;
+        for (int l = 0; l <= LMAX; l++) {
+            for (int m = -l; m <= l; m++) {
+                MpExp->Ylm_aug[nbr_i][index] = (double *) malloc(sizeof(double) * nd_phi);                
+                RealSphericalHarmonic(nd_phi, r_pos_x, r_pos_y, r_pos_z, r_pos_r, l, m, MpExp->Ylm_aug[nbr_i][index]);
+                index++;
+            }
+        } 
+        free(r_pos_x); free(r_pos_y); free(r_pos_z);
+    }
+}
+
+void free_multipole_expansion(MPEXP_OBJ *MpExp, MPI_Comm comm)
+{
+    if (comm == MPI_COMM_NULL) return;
+    int LMAX = 6;
+    int sh_len = (LMAX+1)*(LMAX+1);
+
+    free(MpExp->r_pos_r);
+    for (int i = 0; i < sh_len; i++) {
+        free(MpExp->Ylm[i]);
+    }
+    free(MpExp->Ylm);
+
+    for (int nbr_i = 0; nbr_i < 6; nbr_i++) {
+        if (MpExp->nd_cor[nbr_i] <= 0) continue;
+        free(MpExp->r_pos_r_aug[nbr_i]);
+        for (int i = 0; i < sh_len; i++) {
+            free(MpExp->Ylm_aug[nbr_i][i]);
+        }
+        free(MpExp->Ylm_aug[nbr_i]);
+    }
+}
+
+
+void apply_multipole_expansion(SPARC_OBJ *pSPARC, MPEXP_OBJ *MpExp, 
+    int Nx, int Ny, int Nz, int DMnx, int DMny, int DMnz, 
+    int *DMVertices, double *rhs, double *d, MPI_Comm comm)
+{
+#define d(i,j,k) d[(k)*DMnx*DMny+(j)*DMnx+(i)]
+#define phi(i,j,k) phi[(k)*nx_phi*ny_phi+(j)*nx_phi+(i)]
+    if (comm == MPI_COMM_NULL) return;
+
+    int DMnd = DMnx * DMny * DMnz;
+    int LMAX = 6;
+    int sh_len = (LMAX+1)*(LMAX+1);
+
+    double *Qlm = (double *) malloc(sh_len * sizeof(double));
+    double *r_pow_l = (double *)malloc(sizeof(double) * DMnd);
+    for (int i = 0; i < DMnd; i++) r_pow_l[i] = 1.0; // init to 1
+    
+    /* find multipole moments Qlm */
+    double *r_pos_r = MpExp->r_pos_r;
+    int index = 0;
+    for (int l = 0; l <= LMAX; l++) {
+        // find r^l
+        if (l) {
+            for (int i = 0; i < DMnd; i++) r_pow_l[i] *= r_pos_r[i];
+        }
+        for (int m = -l; m <= l; m++) {            
+            Qlm[index] = 0.0;
+            for (int i = 0; i < DMnd; i++) {
+                
+                Qlm[index] += r_pow_l[i] * rhs[i] * MpExp->Ylm[index][i];
+            }
+            Qlm[index] *= pSPARC->dV;
+            index++;
+        }
+    }
+    free(r_pow_l);
+
+    MPI_Allreduce(MPI_IN_PLACE, Qlm, sh_len, MPI_DOUBLE, MPI_SUM, comm); 
+
+    #ifdef DEBUG_DIPOLE
+    // Calculate dipole moment based on the Qlm values
+    // dipole moment vector = (\int {x * rho} dV, \int {y * rho} dV, \int {z * rho} dV)
+    // dipole moment value is defined as the length of the dipole moment vector
+    // Note:
+    //   1. Qlm is defined using the spherical harmonics, which contains a factor of sqrt(3/(4*pi))
+    //   2. Qlm is calculated using f = 4*pi*(rho+b), which includes another factor of 4*pi
+    double dipole_moment = sqrt(Qlm[1] * Qlm[1] + Qlm[2] * Qlm[2] + Qlm[3] * Qlm[3]);
+    const double Debye2eBohr = 0.3934303; // 1 Debye = 0.3934303 e*Bohr
+    const double eBohr2Debye = 1.0 / Debye2eBohr;
+    dipole_moment = dipole_moment / (4.0*M_PI*sqrt(3.0/4.0/M_PI)) * eBohr2Debye;
+    int rank; MPI_Comm_rank(comm, &rank);
+    if (rank == 0) printf("Dipole moment: %.6f (Debye)\n", dipole_moment);
+    #endif
+
+    memset(d, 0, sizeof(double) * DMnd);
+
+    int FDn = pSPARC->order / 2;    
+    // define the “correction domain” which contributes to the charge correction. i.e. 0 to FDn-1 and
+    // nx-FDn nx-1 in each direction.
+    int DMCorVert[6][6];
+    DMCorVert[0][0]=0;      DMCorVert[0][1]=FDn-1; DMCorVert[0][2]=0;       DMCorVert[0][3]=Ny-1;  DMCorVert[0][4]=0;       DMCorVert[0][5]=Nz-1;
+    DMCorVert[1][0]=Nx-FDn; DMCorVert[1][1]=Nx-1;  DMCorVert[1][2]=0;       DMCorVert[1][3]=Ny-1;  DMCorVert[1][4]=0;       DMCorVert[1][5]=Nz-1;  
+    DMCorVert[2][0]=0;      DMCorVert[2][1]=Nx-1;  DMCorVert[2][2]=0;       DMCorVert[2][3]=FDn-1; DMCorVert[2][4]=0;       DMCorVert[2][5]=Nz-1;
+    DMCorVert[3][0]=0;      DMCorVert[3][1]=Nx-1;  DMCorVert[3][2]=Ny-FDn;  DMCorVert[3][3]=Ny-1;  DMCorVert[3][4]=0;       DMCorVert[3][5]=Nz-1;
+    DMCorVert[4][0]=0;      DMCorVert[4][1]=Nx-1;  DMCorVert[4][2]=0;       DMCorVert[4][3]=Ny-1;  DMCorVert[4][4]=0;       DMCorVert[4][5]=FDn-1;
+    DMCorVert[5][0]=0;      DMCorVert[5][1]=Nx-1;  DMCorVert[5][2]=0;       DMCorVert[5][3]=Ny-1;  DMCorVert[5][4]=Nz-FDn;  DMCorVert[5][5]=Nz-1;
+
+    // find correction contribution from each side
+    for (int nbr_i = 0; nbr_i < 6; nbr_i++) {
+        int is = max(DMCorVert[nbr_i][0], DMVertices[0]);
+        int ie = min(DMCorVert[nbr_i][1], DMVertices[1]);
+        int js = max(DMCorVert[nbr_i][2], DMVertices[2]);
+        int je = min(DMCorVert[nbr_i][3], DMVertices[3]);
+        int ks = max(DMCorVert[nbr_i][4], DMVertices[4]);
+        int ke = min(DMCorVert[nbr_i][5], DMVertices[5]);
+        int nx_cor = ie - is + 1;
+        int ny_cor = je - js + 1;
+        int nz_cor = ke - ks + 1;
+        int nd_cor = nx_cor * ny_cor * nz_cor;
+        assert(MpExp->nd_cor[nbr_i] == nd_cor);
+        if (nd_cor <= 0) continue;
+        
+        // find the region of phi that have contribution to the correction domain
+        int is_phi = is; int ie_phi = ie;
+        int js_phi = js; int je_phi = je;
+        int ks_phi = ks; int ke_phi = ke;
+        switch (nbr_i) {
+            case 0:
+                is_phi = is - FDn; ie_phi = -1; break;
+            case 1:
+                is_phi = Nx; ie_phi = ie + FDn; break;
+            case 2:
+                js_phi = js - FDn; je_phi = -1; break;
+            case 3:
+                js_phi = Ny; je_phi = je + FDn; break;
+            case 4:
+                ks_phi = ks - FDn; ke_phi = -1; break;
+            case 5:
+                ks_phi = Nz; ke_phi = ke + FDn; break; 
+        }
+
+        int nx_phi = ie_phi - is_phi + 1;
+        int ny_phi = je_phi - js_phi + 1;
+        int nz_phi = ke_phi - ks_phi + 1;
+        int nd_phi = nx_phi * ny_phi * nz_phi;
+        assert(MpExp->nd_phi[nbr_i] == nd_phi);
+        
+        // calculate electrostatic potential "phi" inside
+        double *phi = (double *)calloc( nd_phi , sizeof(double) );
+        double *r_pow_l = (double *)malloc( sizeof(double) * nd_phi );
+        for (int i = 0; i < nd_phi; i++) r_pow_l[i] = 1.0; // init r_pow_l to 1
+
+        double *r_pos_r = MpExp->r_pos_r_aug[nbr_i];
+        double **Ylm = MpExp->Ylm_aug[nbr_i];
+        int index = 0;
+        for (int l = 0; l <= LMAX; l++) {
+            // find r^(l+1)
+            for (int i = 0; i < nd_phi; i++) r_pow_l[i] *= r_pos_r[i];
+            for (int m = -l; m <= l; m++) {
+                for (int i = 0; i < nd_phi; i++) 
+                    phi[i] += 1.0 / ((2*l+1) * r_pow_l[i]) * Ylm[index][i] * Qlm[index];
+                index++;
+            }
+        }
+
+        // calculate the correction "d"
+        for (int k = ks; k <= ke; k++) {
+            int k_phi = k - ks_phi; int k_DM = k - DMVertices[4];
+            for (int j = js; j <= je; j++) {
+                int j_phi = j - js_phi; int j_DM = j - DMVertices[2];
+                for (int i = is; i <= ie; i++) {
+                    int i_phi = i - is_phi; int i_DM = i - DMVertices[0];
+                    for (int p = 1; p <= FDn; p++) {
+                        switch (nbr_i) {
+                            case 0:
+                                if ((i-p) < 0) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_x[p] * phi(i_phi-p,j_phi,k_phi);
+                                break;
+                            case 1:
+                                if ((i+p) >= Nx) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_x[p] * phi(i_phi+p,j_phi,k_phi);
+                                break;
+                            case 2:
+                                if ((j-p) < 0) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_y[p] * phi(i_phi,j_phi-p,k_phi);
+                                break;
+                            case 3:
+                                if ((j+p) >= Ny) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_y[p] * phi(i_phi,j_phi+p,k_phi);
+                                break;
+                            case 4:
+                                if ((k-p) < 0) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_z[p] * phi(i_phi,j_phi,k_phi-p);
+                                break;
+                            case 5:
+                                if ((k+p) >= Nz) 
+                                    d(i_DM,j_DM,k_DM) -= pSPARC->D2_stencil_coeffs_z[p] * phi(i_phi,j_phi,k_phi+p);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+        free(phi);
+        free(r_pow_l);
+    }
+    free(Qlm);
+#undef d
+#undef phi
 }

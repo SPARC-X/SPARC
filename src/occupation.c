@@ -184,7 +184,7 @@ double Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
 {
 #define EPSILON 1e-16
 #define SIGN(a,b) ((b) > 0.0 ? fabs((a)) : -fabs((a)))
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return 0.0;
     } else {
         if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return 0.0;
@@ -293,7 +293,7 @@ double local_Calculate_FermiLevel(SPARC_OBJ *pSPARC, double x1, double x2, doubl
 {
 #define EPSILON 1e-16
 #define SIGN(a, b) ((b) > 0.0 ? fabs((a)) : -fabs((a)))
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return 0.0;
     } else {
         if (pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return 0.0;

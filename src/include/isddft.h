@@ -21,7 +21,9 @@
 
 #include <mpi.h>
 #include <complex.h>
+#include <stdio.h>
 #include "dssq.h"
+// #include "exactExchange.h"
 #include "mlff_types.h"
 
 // max length of pseudopotential path
@@ -71,12 +73,51 @@
 // amu/Bohr^3 in g/cc
 #define CONST_AMU_BOHR3_GCC 11.2058730627683
 
+
+typedef struct _KRON_LAP {
+    int Nx;
+    int Ny;
+    int Nz;
+    int Nd;
+    double *Vx;
+    double *Vy;
+    double *Vz;
+    double _Complex *Vx_kpt;
+    double _Complex *Vy_kpt;
+    double _Complex *Vz_kpt;
+    double _Complex *VyH_kpt;
+    double _Complex *VzH_kpt;
+    double *eig;
+    double *inv_eig;
+    int isGammaPoint;
+} KRON_LAP;
+
+
+typedef struct _MPEXP_OBJ {
+    double *r_pos_r;    
+    double *r_pos_r_aug[6];    
+    double **Ylm;
+    double **Ylm_aug[6];    
+    int nd_cor[6];    
+    int nd_phi[6];
+    int nd_phi_max;
+} MPEXP_OBJ;
+
 typedef struct _D2D_OBJ {
     int n_target; // number of target processes to communicate with
     int *target_ranks; // target ranks in union communicator
     //int *target_coords; // target coords in target communicator
 } D2D_OBJ; 
 
+typedef struct _D2DEXT_OBJ {
+    int layers[6];
+    int *x_counts;
+    int *y_counts;
+    int *z_counts;
+    int *counts;
+    int *displs; 
+    int n;
+} D2Dext_OBJ; 
 
 
 /**
@@ -382,6 +423,7 @@ typedef struct _SPARC_OBJ{
     double *D1_stencil_coeffs_yz;
     double *D1_stencil_coeffs_zy;
     
+    MPEXP_OBJ *MpExp;
     double MaxEigVal_mhalfLap; // max eigenval of -0.5*Lap with periodic boundary conditions
     
     // NOT USED YET
@@ -430,6 +472,7 @@ typedef struct _SPARC_OBJ{
     int StressCount;    // current stress count used in full relaxation
     
     double REFERENCE_CUTOFF;
+    int REFERENCE_CUTOFF_FAC;
     double *CUTOFF_x;       // pseudocharge cutoff radius in x-direction
     double *CUTOFF_y;       // pseudocharge cutoff radius in y-direction
     double *CUTOFF_z;       // pseudocharge cutoff radius in z-direction
@@ -458,6 +501,7 @@ typedef struct _SPARC_OBJ{
     double *electronDens_at;      // electron density guess by summing atomic charge densities (LOCAL)
     double *electronDens_core;    // model core electron density for Non-Linear Core Correction (NLCC)
     double *electronDens_in;      // initial electron density, "rho" (LOCAL) at each SCF distributed in phi-domain (LOCAL)
+    double *electronDens_pbe; // electron density for pbe, only in hybrid
     double *elecstPotential;      // electrostatic potential, "phi" (LOCAL)
     double *XCPotential;          // exchange-correlation potential, "Vxc" (LOCAL)
     double *XCPotential_nc;       // exchange-correlation potential, "Vxc" (LOCAL), noncollinear 
@@ -501,6 +545,7 @@ typedef struct _SPARC_OBJ{
     #ifdef ACCEL
     int useACCEL;                 // SPARCX_ACCEL_NOTE Flag needed to trigger GPU Acceleration
     int useHIP;                   // Flag to hook in HIP
+    int useACCELGT;                  // Glag to indicate whether exact exchange code is accelerated  
     #endif
     int useLAPACK;                // flag for using LAPACK_dsygv to solve subspace eigenproblem
     int eig_serial_maxns;// maximum Nstates for using LAPACK to solve the subspace eigenproblem by default,
@@ -520,6 +565,9 @@ typedef struct _SPARC_OBJ{
     D2D_OBJ d2d_dmcomm_lanczos;   // D2D structure containing target ranks for D2D transfer (obtained by processes in psi domain for Lanczos)
     D2D_OBJ d2d_kptcomm_topo;     // D2D structure containing target ranks for D2D transfer (obtained by processes in kptcomm_topo domain)
     int is_phi_eq_kpt_topo; // flag indicating if dmcomm_phi have the same group of processes as kptcomm_topo
+    D2Dext_OBJ *d2dext_dmcomm;
+    D2Dext_OBJ *d2dext_dmcomm_ext;
+    MPI_Comm dmcomm_d2dext;
 
     /* Mixing */
     int MixingVariable; // mixing options: 0 - density mixing (default), 1 - potential mixing
@@ -564,6 +612,8 @@ typedef struct _SPARC_OBJ{
     int Nstates;        // number of states
     int Ntypes;         // number of atome types
     int Nelectron;      // total number of electrons, read from ion file
+    double Nelectron_up; // Total number of alpha electrons   
+    double Nelectron_dn; // Total number of beta electrons   
     int NetCharge;      // net charge of the system
     double PosCharge;   // positive charge, found by integrating the pseudocharge density
     double NegCharge;   // negative charge, defined as -1*integarl of electron density
@@ -786,6 +836,9 @@ typedef struct _SPARC_OBJ{
     double max_dilatation;
     double TOL_RELAX_CELL;
 
+    /* EigenValue problem*/
+    int StandardEigenFlag;
+
     // DFT-D3 correction
     double d3Energy[4]; // total d3 energy, e6, e8, e63
     double *d3Grads;   // atomic forces caused by d3 (-grad)
@@ -909,31 +962,38 @@ typedef struct _SPARC_OBJ{
     // tool variables for hybrid calculation
     double ACEtime;                 // Time for creating ace operator
     double Exxtime;                 // Time for applying Vexx operator
-    double *pois_FFT_const;         // Constants for FFT solver in Poisson's equation
-    double *pois_FFT_const_stress;  // Constants for FFT solver in Poisson's equation in stress
-    double *pois_FFT_const_stress2; // Constants for FFT solver in Poisson's equation in stress
-    double *pois_FFT_const_press;   // Constants for FFT solver in Poisson's equation in press
-    int ACEFlag;                    // Flag for ACE operator 
+    double Exxtime_comm;
+    double Exxtime_solver;
+    double Exxtime_memload;
+    double Exxtime_cyc;
+    double Exxtime_rhs;
+    double Exxtime_move;
+    double *pois_const;             // Constants for FFT solver in Poisson's equation
+    double *pois_const_stress;      // Constants for FFT solver in Poisson's equation in stress
+    double *pois_const_stress2;     // Constants for FFT solver in Poisson's equation in stress
+    double *pois_const_press;       // Constants for FFT solver in Poisson's equation in press
+    int ExxAcc;                     // Flag for enable accelerating method for either low-T or high-T
     int Nstates_occ;                // Number of occupied states 
     int Nstates_occ_list[2];        // List of number of occupied states 
-    int EXXMem_batch;               // Option for speed or memory efficiency when using ACE operator
-    int EXXACEVal_state;            // Number of extra unoccupied states in constructing ACE operator
+    int ExxMemBatch;               // Option for speed or memory efficiency when using ACE operator
+    int EeeAceValState;            // Number of extra unoccupied states in constructing ACE operator
     int EXXDownsampling[3];         // Downsampling info
     double const_aux;               // constant for auxlliary function
-    int EXXDiv_Flag;                // Method for integrable singularity 
+    int ExxDivFlag;                // Method for integrable singularity 
     int flag_kpttopo_dm;            // flag of whether the dmcomm and kpttopo are the same
     int flag_kpttopo_dm_type;       // flag for receving or sending the correct occupations
     MPI_Comm kpttopo_dmcomm_inter;  // the extra communicator for occupations transferring 
     // variabels for band parallelization with ACE
-    int desc_M[9];                  // descriptor for matirx M in ACE case
-    int desc_Xi[9];                 // ScaLAPACK descriptor for storage of the orbitals on each blacscomm
-    int nrows_M;                    // local number of row of M matrix
-    int ncols_M;                    // local number of column of M matrix
     int Nband_bandcomm_M;           // number of bands of M assigned to current bandcomm (LOCAL)
+    KRON_LAP** kron_lap_exx;        // structure for kronecker product laplacian
+    MPEXP_OBJ *MpExp_exx;           // structure for multipole expansion
+    int ExxMethod;                  // method for solving poissons equation, kronecker product way or FFT
+    double fock_err;                // Error in outer loop
 
     /* SQ methods */
-    int SQFlag;                     // Flag of SQ method
-    int SQ_gauss_mem;               // Memory option for gauss quadrature 
+    int sqAmbientFlag;                     // Flag of SQ method
+    // int SQ_highT_gauss_mem;               // Memory option for gauss quadrature 
+    int SQ_highT_hybrid_gauss_mem;        // Memory option for gauss quadrature for SQ
     int SQ_npl_g;                   // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
     int SQ_correction;              // Flag for culculating "charge overlap correction".
     double SQ_rcut;                 // Truncation or localization radius    
@@ -946,6 +1006,16 @@ typedef struct _SPARC_OBJ{
     ATOM_NLOC_INFLUENCE_OBJ **Atom_Influence_nloc_SQ;   // atom info. for atoms that have nonlocal influence on the distributed domain (LOCAL)
     NLOC_PROJ_OBJ **nlocProj_SQ;    // nonlocal projectors in psi-domain (LOCAL)
     SQ_OBJ *pSQ;                    // SQ object
+    int sqHighTFlag;
+
+    /* OFDFT */
+    int OFDFTFlag;
+    double OFDFT_tol;
+    double OFDFT_Cf;
+    double OFDFT_lambda;
+    double *OFDFT_u;
+    double OFDFT_Ek;
+    double OFDFT_Eele;
 
     /* cyclix */
     int CyclixFlag;
@@ -1011,11 +1081,7 @@ typedef struct _SPARC_OBJ{
     // Domain parallelization (decomposition) data layout for calculating projected Hamiltonian, 
     // generalized eigen problem, and subspace rotation
     void *DP_CheFSI;     // Pointer to a DP_CheFSI_s data structure for those three procedures w/o Kpt
-    void *DP_CheFSI_kpt; // Pointer to a DP_CheFSI_kpt_s data structure for those three procedures w/ Kpt
-
-    /* EigenValue problem*/
-    int StandardEigenFlag;
-    
+    void *DP_CheFSI_kpt; // Pointer to a DP_CheFSI_kpt_s data structure for those three procedures w/ Kpt    
     /* Band structure plot*/
     int n_kpt_line;
     double kredx[L_kpoint],kredy[L_kpoint],kredz[L_kpoint];
@@ -1026,7 +1092,7 @@ typedef struct _SPARC_OBJ{
     char InDensUCubFilename[L_STRING];
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
-
+    int readInitDens; // flag for reading inital density
 }SPARC_OBJ;
 
 
@@ -1187,6 +1253,9 @@ typedef struct _SPARC_INPUT_OBJ{
     /* Linear solver*/
     int Poisson_solver;
 
+    /* Eigenvalue Problem */
+    int StandardEigenFlag;
+
     /* Domain description */
     double range_x;
     double range_y;
@@ -1223,6 +1292,7 @@ typedef struct _SPARC_INPUT_OBJ{
     double precond_resta_Rs;
 
     double REFERENCE_CUTOFF;
+    int REFERENCE_CUTOFF_FAC;
     
     /* System description */
     double Beta;        // electronic smearing (1/k_B*T) [1/Ha]
@@ -1286,32 +1356,36 @@ typedef struct _SPARC_INPUT_OBJ{
     double TOL_FOCK;        // Exact exchange potential option
     double TOL_SCF_INIT;    // Exact exchange potential option
     int MAXIT_FOCK;         // Maximum number of iterations for Hartree-Fock outer loop
-    int MINIT_FOCK;         // Minimum number of iterations for Hartree-Fock outer loop
-    int EXXMeth_Flag;       // Method to solve Poisson's equation, in Real space or Fourier space
-    int ACEFlag;            // Flag for ACE operator 
-    int EXXMem_batch;       // Option for speed or memory efficiency when using ACE operator
-    int EXXACEVal_state;    // Number of extra unoccupied states in constructing ACE operator
+    int MINIT_FOCK;         // Minimum number of iterations for Hartree-Fock outer loop    
+    int ExxAcc;             // Flag for enable accelerating method for either low-T or high-T
+    int ExxMemBatch;       // Option for speed or memory efficiency when using ACE operator
+    int EeeAceValState;    // Number of extra unoccupied states in constructing ACE operator
     int EXXDownsampling[3]; // Downsampling info 
-    int EXXDiv_Flag;        // Method for integrable singularity 
+    int ExxDivFlag;        // Method for integrable singularity 
     double hyb_range_fock;  // hybrid short range for fock operator 
     double hyb_range_pbe;   // hybrid short range for exchange correlation 
-    double exx_frac;        // hybrid mixing coefficient
+    double exx_frac;        // hybrid mixing coefficient    
+    int ExxMethod;          // method for solving poissons equation, kronecker product way or FFT
 
     /* SQ methods */
-    int SQFlag;             // Flag of SQ method
-    int SQ_gauss_mem;       // Memory option for gauss quadrature 
+    int sqAmbientFlag;             // Flag of SQ method
+    // int SQ_highT_gauss_mem;       // Memory option for gauss quadrature 
+    int SQ_highT_hybrid_gauss_mem;// Memory option for gauss quadrature for SQ
     int SQ_npl_g;           // Degree of polynomial (should be a multiple of 4) for Gauss Quadrature
     double SQ_rcut;         // Truncation or localization radius
     double SQ_tol_occ;      // Tolerance for occupation corresponding to maximum eigenvalue
     int npNdx_SQ;           // number of processes for paral. over domain in x-dir
     int npNdy_SQ;           // number of processes for paral. over domain in y-dir
     int npNdz_SQ;           // number of processes for paral. over domain in z-dir
+    int sqHighTFlag;
+    
+    /* OFDFT */
+    int OFDFTFlag;
+    double OFDFT_tol;
+    double OFDFT_lambda;
 
     /* cyclix */
     double twist;
-
-    /* EigenValue problem*/
-    int StandardEigenFlag;
     
     /* File names */
     char filename[L_STRING]; 
@@ -1329,6 +1403,7 @@ typedef struct _SPARC_INPUT_OBJ{
     char InDensUCubFilename[L_STRING];
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
+    int readInitDens; // flag for reading inital density    
 }SPARC_INPUT_OBJ;
 
 

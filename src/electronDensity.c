@@ -15,6 +15,7 @@
 #include <string.h>
 #include <mpi.h>
 #include <math.h>
+#include <assert.h>
 
 #include "electronicGroundState.h"
 #include "electronDensity.h"
@@ -214,8 +215,7 @@ void Calculate_Magx_Magy_psi(SPARC_OBJ *pSPARC, double *mag)
     Ns = pSPARC->Nstates;
     nstart = pSPARC->band_start_indx;
     nend = pSPARC->band_end_indx;
-    DMnd = pSPARC->Nd_d_dmcomm;
-    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;    
+    DMnd = pSPARC->Nd_d_dmcomm;    
 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

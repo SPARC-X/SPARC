@@ -10,7 +10,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}[allowframebreaks]{\texttt{SQ\_FLAG}} \label{SQ_FLAG}
+\begin{frame}[allowframebreaks]{\texttt{SQ\_AMBIENT\_FLAG}} \label{SQ_AMBIENT_FLAG}
 \vspace*{-12pt}
 \begin{columns}
 \column{0.4\linewidth}
@@ -28,7 +28,7 @@ No unit
 \end{block}
 
 \begin{block}{Example}
-\texttt{SQ\_FLAG}: 1
+\texttt{SQ\_AMBIENT\_FLAG}: 1
 \end{block}
 \end{columns}
 
@@ -38,6 +38,41 @@ Flag to turn on SQ method
 
 \begin{block}{Remark}
 SQ method can not be turned on simultaneously with CS, SQ3, hybrid functionals. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SQ\_HIGHT\_FLAG}} \label{SQ_HIGHT_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SQ\_HIGHT\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to turn on SQ method for High Temperature
+\end{block}
+
+\begin{block}{Remark}
+At High Temperature, spin-polarized calculation is not supported and high memory usage is always enabled.
+To use Low Temperature SQ method, please turn it off by setting SQ\_HIGHT\_FLAG: 0.
 \end{block}
 
 \end{frame}
@@ -112,7 +147,7 @@ Degree of polynomial for Gauss Quadrature.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}[allowframebreaks]{\texttt{SQ\_GAUSS\_MEM}} \label{SQ_GAUSS_MEM}
+\begin{frame}[allowframebreaks]{\texttt{SQ\_HIGHT\_GAUSS\_HYBRID\_MEM}} \label{SQ_HIGHT_GAUSS_HYBRID_MEM}
 \vspace*{-12pt}
 \begin{columns}
 \column{0.4\linewidth}
@@ -130,16 +165,17 @@ No unit
 \end{block}
 
 \begin{block}{Example}
-\texttt{SQ\_GAUSS\_MEM}: HIGH
+\texttt{SQ\_HIGHT\_GAUSS\_HYBRID\_MEM}: HIGH
 \end{block}
 \end{columns}
 
 \begin{block}{Description}
-Flag for memory option when using Gauss quadrature for density matrix. 
+Flag for memory option when using Gauss quadrature at High Temperature for saving the exact exchange potential when using hybrid functionals. 
 \end{block}
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks]{\texttt{SQ\_TOL\_OCC}} \label{SQ_TOL_OCC}

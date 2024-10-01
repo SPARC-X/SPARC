@@ -297,7 +297,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     
     double t1, t2, t3, t_temp;
     int DMnd = pSPARC->Nd_d_dmcomm;
-    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;    
+    int DMndsp = DMnd * pSPARC->Nspinor_spincomm;
     
     // ** Chebyshev filtering ** //
     t1 = MPI_Wtime();
@@ -312,9 +312,9 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     } else {
     #endif
         #ifdef SPARCX_ACCEL
-		if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
-		{
-    		ACCEL_ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*DMnd, DMndsp,
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && ((pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd) || pSPARC->useACCELGT))
+        {            
+            ACCEL_ChebyshevFiltering(pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Xorb + spn_i*DMnd, DMndsp,
                            pSPARC->Yorb + spn_i*DMnd, DMndsp, pSPARC->Nband_bandcomm, 
                            pSPARC->ChebDegree, lambda_cutoff, pSPARC->eigmax[spn_i], pSPARC->eigmin[spn_i], k, spn_i, 
                            pSPARC->dmcomm);
@@ -951,7 +951,7 @@ void DP_Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int l
     double *Veff_loc_sg = pSPARC->Veff_loc_dmcomm + sg * pSPARC->Nd_d_dmcomm;
     st = MPI_Wtime();
     #ifdef SPARCX_ACCEL
-	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+	if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && ((pSPARC->usefock <=1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd) || pSPARC->useACCELGT))
 	{
 	}
 	else
@@ -1271,12 +1271,12 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
 		int rank_kpt = DP_CheFSI->rank_kpt;
 		double *eig_vecs = DP_CheFSI->eig_vecs;
 		double st = MPI_Wtime();
+        int info = 0;
 		if (rank_kpt == 0)
 		{
 			double *Hp_local = DP_CheFSI->Hp_local;
 			double *Mp_local = DP_CheFSI->Mp_local; 
 			double *eig_val  = pSPARC->lambda + spn_i * Ns_dp;
-			int info = 0;
 			if (pSPARC->StandardEigenFlag == 0)
 				info = DSYGV( LAPACK_COL_MAJOR, 1, 'V', 'U', Ns_dp, 
 							Hp_local, Ns_dp, Mp_local, Ns_dp, eig_val);
@@ -1290,9 +1290,9 @@ void DP_Solve_Generalized_EigenProblem(SPARC_OBJ *pSPARC, int spn_i)
 		double et1 = MPI_Wtime();
 		#ifdef DEBUG
 		if (pSPARC->StandardEigenFlag == 0) {
-			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, %s used %.3lf ms\n", 1000.0 * (et1 - st), STR_DSYGV, 1000.0 * (et0 - st));
+			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem, info = %d, rank 0 used %.3lf ms, %s used %.3lf ms\n", info, 1000.0 * (et1 - st), STR_DSYGV, 1000.0 * (et0 - st));
 		} else {
-			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem rank 0 used %.3lf ms, %s used %.3lf ms\n", 1000.0 * (et1 - st), STR_DSYEV, 1000.0 * (et0 - st));
+			if (rank_kpt == 0) printf("DP_Solve_Generalized_EigenProblem, info = %d, rank 0 used %.3lf ms, %s used %.3lf ms\n", info, 1000.0 * (et1 - st), STR_DSYEV, 1000.0 * (et0 - st));
 		}
 		#endif
 	}
@@ -1503,7 +1503,9 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi,
         // distribute orbitals into block cyclic format
         pdgemr2d_(&DMndspe, &pSPARC->Nstates, Y, &ONE, &ONE, pSPARC->desc_orbitals,
                   pSPARC->Yorb_BLCYC, &ONE, &ONE, pSPARC->desc_orb_BLCYC, &pSPARC->ictxt_blacs); 
-    } 
+    } else {
+        pSPARC->Yorb_BLCYC = Y;
+    }
     t2 = MPI_Wtime();  
     #ifdef DEBUG  
     if(!rank && spn_i == 0) 

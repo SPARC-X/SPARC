@@ -1,0 +1,121 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{OFDFT}
+
+\begin{center}
+\Huge \textbf{Orbital Free DFT}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\textbf{Comments}} \label{OFDFT_COMMENTS}
+The code will fail with the following options if OFDFT is activated and the related input options are listed.
+\begin{itemize}
+  \item Polarized calculation: \texttt{SPIN\_TYP}.
+  \item K-point calculation: \texttt{KPOINT\_GRID}, \texttt{KPOINT\_SHIFT}.
+  \item Dirichlet boundary condition in any direction: \texttt{BC}
+  \item Define number of states/orbitals: \texttt{NSTATES}
+  \item Define SCF related variables: \texttt{TOL\_SCF, CHEB\_DEGREE}
+  \item CS and SQ3 method: \texttt{CS\_FLAG, SQ3\_FLAG}
+  \item Hybrid functionals: \texttt{EXCHANGE\_CORRELATION}
+  \item Stress and pressure calculation: \texttt{CALC\_STRESS, CALC\_PRES}
+  \item Print eigenvalues into file: \texttt{PRINT\_EIGEN}
+\end{itemize}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{OFDFT\_FLAG}} \label{OFDFT_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{OFDFT\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for Orbital-free DFT calculation.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{TOL\_OFDFT}} \label{TOL_OFDFT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+$10^{-3}$
+\end{block}
+
+\column{0.45\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{TOL\_OFDFT}: 1E-6
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The tolerance on the normalized residual (l2-norm of residual/sqrt(N), N is number of nodes) for convergence of NLCG. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{OFDFT\_LAMBDA}} \label{OFDFT_LAMBDA}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.2
+\end{block}
+
+\column{0.45\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{OFDFT\_LAMBDA}: 0.3
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+The coefficient in front of Laplacian operator is -lambda/2. 
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

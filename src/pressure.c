@@ -770,11 +770,11 @@ void Calculate_local_pressure(SPARC_OBJ *pSPARC) {
  * @brief    Calculate nonlocal pressure components.
  */
 void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         Calculate_nonlocal_pressure_SQ(pSPARC);
     } else if (pSPARC->isGammaPoint) {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->SQ3Flag == 0 && (pSPARC->Nd_d_dmcomm == pSPARC->Nd || pSPARC->useACCELGT))
         {
             ACCEL_Calculate_nonlocal_pressure_linear(pSPARC);
         } else
@@ -784,7 +784,7 @@ void Calculate_nonlocal_pressure(SPARC_OBJ *pSPARC) {
         }
     } else {
     #ifdef SPARCX_ACCEL
-        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->Nd_d_dmcomm == pSPARC->Nd)
+        if (pSPARC->useACCEL == 1 && pSPARC->cell_typ < 20 && pSPARC->spin_typ <= 1 && pSPARC->SQ3Flag == 0 && (pSPARC->Nd_d_dmcomm == pSPARC->Nd || pSPARC->useACCELGT))
         {
             ACCEL_Calculate_nonlocal_pressure_kpt(pSPARC);
         } else
