@@ -1,0 +1,123 @@
+***************************************************************************
+*                       SPARC (version August 11, 2024)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Sun Aug 11 16:22:18 2024                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+CELL: 5.65685424949238 5.65685424949238 5.65685424949238 
+LATVEC:
+0.707106781186547 0.707106781186547 0.000000000000000 
+0.000000000000000 0.707106781186547 0.707106781186547 
+0.707106781186547 0.000000000000000 0.707106781186547 
+FD_GRID: 15 15 15
+FD_ORDER: 6
+BC: P P P
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0 0 0
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: LDA_PZ
+OFDFT_FLAG: 1
+TOL_OFDFT: 1.00E-03
+OFDFT_LAMBDA: 0.2
+CALC_STRESS: 0
+CALC_PRES: 0
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 2.16E-04
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-07
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-06
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 1.42E-04
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0.1
+MIXING_PARAMETER: 0.3
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_ENERGY_DENSITY: 0
+OUTPUT_FILE: ofdft_tests/Al4_non_orth_OFDFT/temp_run/Al4_non_orth_OFDFT
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+3.999999999999999 3.999999999999999 0.000000000000000 
+0.000000000000000 3.999999999999999 3.999999999999999 
+3.999999999999999 0.000000000000000 3.999999999999999 
+Volume: 1.2800000000E+02 (Bohr^3)
+Density: 2.1079326953E-01 (amu/Bohr^3), 2.3621226209E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_DOMAIN_PHI_PARAL: 3 4 4
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  48
+Mesh spacing                       :  0.377124 (Bohr)
+Number of symmetry adapted k-points:  1
+Output printed to                  :  ofdft_tests/Al4_non_orth_OFDFT/temp_run/Al4_non_orth_OFDFT.out
+Total number of atom types         :  1
+Total number of atoms              :  1
+Total number of electrons          :  3
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  ofdft_tests/Al4_non_orth_OFDFT/Al_goodwin.psp8
+Atomic mass                        :  26.9815385
+Pseudocharge radii of atom type 1  :  11.69 11.69 11.69 (x, y, z dir)
+Number of atoms of type 1          :  1
+Estimated total memory usage       :  986.13 kB
+Estimated memory per processor     :  20.54 kB
+===================================================================
+               Orbital Free DFT NLCG (OFDFT-NLCG#1)                
+===================================================================
+Iteration    Free Energy (Ha/atom)   NLCG Error        Timing (sec)
+1            -2.2106162809E+00       1.569E-02         0.041
+2            -2.2114226041E+00       1.219E-02         0.017
+3            -2.2124679380E+00       9.630E-03         0.027
+4            -2.2128424332E+00       5.864E-03         0.026
+5            -2.2129563678E+00       2.212E-03         0.016
+6            -2.2129768781E+00       1.597E-03         0.013
+7            -2.2129904496E+00       1.073E-03         0.018
+8            -2.2129960775E+00       6.574E-04         0.018
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.2129960809E+00 (Ha/atom)
+Total free energy                  : -2.2129960809E+00 (Ha)
+Kinetic energy                     :  8.2583633828E-01 (Ha)
+Exchange correlation energy        : -7.8633640715E-01 (Ha)
+Self and correction energy         : -4.1036255641E+00 (Ha)
+RMS force                          :  0.0000000000E+00 (Ha/Bohr)
+Maximum force                      :  0.0000000000E+00 (Ha/Bohr)
+Time for force calculation         :  0.003 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  0.280 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

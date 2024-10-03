@@ -9,8 +9,8 @@
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
 
-#ifndef TOOL_H
-#define TOOL_H
+#ifndef TOOLS_H
+#define TOOLS_H
 
 #ifdef USE_MKL
     #define MKL_Complex16 double _Complex
@@ -306,6 +306,21 @@ void VectorScale(double *Vec, const int len, const double c, MPI_Comm comm);
 void SetUnitOnesVector(double *Vec, int n_loc, int n_global, double pert_fac, MPI_Comm comm);
 
 
+/**
+ * @brief Create a random matrix with each entry a random number within given range.
+ *        In order to increase the flexibility of the routine, this routine also
+ *        accepts a shift to the seed, so that the same process can call this routine
+ *        multiple times and get different random arrays.
+ * 
+ * @param Mat Local part of the matrix.
+ * @param m Number of rows of the local copy of the matrix.
+ * @param n Number of columns of the local part of the matrix.
+ * @param rand_min Minimum value of the random entries.
+ * @param rand_max Maximum value of the random entries.
+ * @param seed Random number generator seed, seed >= 1.
+ */
+void SetRandMat_seed(double *Mat, int m, int n, double rand_min, double rand_max, int seed);
+
 
 /**
  * @brief   Create a random matrix with each entry a random number within given range. 
@@ -452,6 +467,15 @@ void c_ndgrid_recursion(int ndims, int ncopy, int nnodes, int *xs, int *xe, int 
 void formatBytes(double bytes, int n, char *size_format);
 
 
+/**
+ * @brief   Find unique elements in an int array.
+ *          Warning: this is a brute force implementation (O(n^2)).
+ *
+ * @param array  Original array, will be overwritten by the results.
+ * @param n      Original length.
+ */
+int unique(int *array, int n);
+
 
 /**
  * @brief   Calculate real spherical harmonics for given positions and given l and m. 
@@ -554,6 +578,14 @@ void MKL_MDiFFT_real(double _Complex *c2r_3dinput, MKL_LONG *dim_sizes, MKL_LONG
  * @brief   MKL multi-dimension iFFT interface, complex to complex. 
  */
 void MKL_MDiFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *strides_out, double _Complex *c2c_3doutput);
+
+void MKL_MDFFT_batch_real(double *r2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *r2c_3doutput, MKL_LONG *strides_out, int out_dist);
+
+void MKL_MDiFFT_batch_real(double _Complex *c2r_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, MKL_LONG *strides_in, double *c2r_3doutput, int out_dist);
+
+void MKL_MDFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *c2c_3doutput, MKL_LONG *strides_out, int out_dist);
+
+void MKL_MDiFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *c2c_3doutput, MKL_LONG *strides_out, int out_dist);
 #endif
 
 #if defined(USE_FFTW)
@@ -576,6 +608,14 @@ void FFTW_MDFFT_real(int *dim_sizes, double *r2c_3dinput, double _Complex *r2c_3
  * @brief   FFTW multi-dimension FFT interface, complex to real. 
  */
 void FFTW_MDiFFT_real(int *dim_sizes, double _Complex *c2r_3dinput, double *c2r_3doutput);
+
+void FFTW_MDFFT_batch(int *dim_sizes, int ncol, double _Complex *c2c_3dinput, int idist, double _Complex *c2c_3doutput, int odist);
+
+void FFTW_MDiFFT_batch(int *dim_sizes, int ncol, double _Complex *c2c_3dinput, int idist, double _Complex *c2c_3doutput, int odist);
+
+void FFTW_MDFFT_batch_real(int *dim_sizes, int ncol, double *r2c_3dinput, int *inembed, int idist, double _Complex *r2c_3doutput, int *onembed, int odist);
+
+void FFTW_MDiFFT_batch_real(int *dim_sizes, int ncol, double _Complex *c2r_3dinput, int *inembed, int idist, double *c2r_3doutput, int *onembed, int odist);
 #endif
 
 /**
@@ -590,7 +630,7 @@ double expint(const int n, const double x);
  *
  *        Note that all the input indices for v_i are relative to the grid owned
  *        by the current process, while the indices for v_o are relative to the
- *        sub-grid in the current process.
+ *        sub-grid.
  *
  * @param v_i              : Input data on the original grid
  * @param v_o (OUT)        : Output data on the sub-grid
@@ -607,16 +647,15 @@ double expint(const int n, const double x);
  *
  */
 void restrict_to_subgrid(
-    const double *v_i,    double *v_o,
+    const void *v_i,      void *v_o,
     const int stride_y_o, const int stride_y_i,
     const int stride_z_o, const int stride_z_i,
     const int x_o_spos,   const int x_o_epos,
     const int y_o_spos,   const int y_o_epos,
     const int z_o_spos,   const int z_o_epos,
     const int x_i_spos,   const int y_i_spos,
-    const int z_i_spos
+    const int z_i_spos,   const int unit_size
 );
-
 
 /**
  * @brief change a = [b c] to a = [b; c] in-place as in Matlab 
@@ -646,7 +685,9 @@ void Col2Row(void *a, const int nrow, const int ncol, const size_t unit_size);
  */
 void print_matrix(double *A, int nrow, int ncol, char ACC);
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /** @ brief   Copy column-major matrix block
  *
  *  @param unit_size  Size of data element in bytes (double == 8, double _Complex == 16)
@@ -662,6 +703,10 @@ void copy_mat_blk(
     const int nrow, const int ncol, void *dst_, const int ldd
 );
 
+#ifdef __cplusplus
+}
+#endif
+
 /**
  * @brief    Reshape into block separation from Cartesian order of a vector in domain parallelization
  *          
@@ -669,7 +714,7 @@ void copy_mat_blk(
  *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
  *          Cartesian order means that the vector is in the order (x,y,z)
  */
-void cart_to_block_dp(void *vec_cart, int ncol, int **DMVertices, int size_comm, 
+void cart_to_block_dp(void *vec_cart, int ncol, int (*DMVertices)[6], int size_comm, 
                     int Nx, int Ny, int Nd, void *vec_bdp, int unit_size);
 
 /**
@@ -679,7 +724,7 @@ void cart_to_block_dp(void *vec_cart, int ncol, int **DMVertices, int size_comm,
  *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
  *          Cartesian order means that the vector is in the order (x,y,z)
  */
-void block_dp_to_cart(void *vec_bdp, int ncol, int **DMVertices, int *displs, int size_comm, 
+void block_dp_to_cart(void *vec_bdp, int ncol, int (*DMVertices)[6], int *displs, int size_comm, 
                     int Nx, int Ny, int Nd, void *vec_cart, int unit_size);
 
 /**

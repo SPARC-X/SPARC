@@ -13,11 +13,21 @@
 #include <mpi.h>
 
 #include "exactExchangeFinalization.h"
+#include "exactExchangeInitialization.h"
+#include "electrostatics.h"
+#include "parallelization.h"
+#include "sqFinalization.h"
+#include "kroneckerLaplacian.h"
 
 /**
  * @brief   Memory free of all variables for exact exchange.
  */
 void free_exx(SPARC_OBJ *pSPARC) {
+    if (pSPARC->sqHighTFlag == 1) {
+        free_exx_SQ(pSPARC);
+        return;
+    }
+
     free(pSPARC->k1_hf);
     free(pSPARC->k2_hf);
     free(pSPARC->k3_hf);
@@ -34,7 +44,7 @@ void free_exx(SPARC_OBJ *pSPARC) {
     free(pSPARC->kpthf_flag_kptcomm);
     free(pSPARC->Nkpts_hf_list);
     free(pSPARC->kpthf_start_indx_list);    
-    if (pSPARC->ACEFlag == 0) {
+    if (pSPARC->ExxAcc == 0) {
         if (pSPARC->isGammaPoint == 1) {
             free(pSPARC->psi_outer);
             free(pSPARC->psi_outer_kptcomm_topo);
@@ -58,17 +68,18 @@ void free_exx(SPARC_OBJ *pSPARC) {
             }
         }
     }
-
-    if (pSPARC->EXXMeth_Flag == 0) {
-        if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
-            free(pSPARC->pois_FFT_const);
-            if (pSPARC->Calc_stress == 1) {
-                free(pSPARC->pois_FFT_const_stress);
-                if (pSPARC->EXXDiv_Flag == 0)
-                    free(pSPARC->pois_FFT_const_stress2);
-            } else if (pSPARC->Calc_pres == 1) {
-                if (pSPARC->EXXDiv_Flag != 0)
-                    free(pSPARC->pois_FFT_const_press);
+    
+    if (pSPARC->dmcomm != MPI_COMM_NULL || pSPARC->kptcomm_topo != MPI_COMM_NULL) {
+        free_singularity_removal_const(pSPARC);
+        if (pSPARC->ExxMethod == 1) {
+            for (int i = 0; i < pSPARC->Nkpts_shift; i++) {
+                free_kron_Lap(pSPARC->kron_lap_exx[i]);
+                free(pSPARC->kron_lap_exx[i]);
+            }
+            free(pSPARC->kron_lap_exx);
+            if (pSPARC->BC == 1) {
+                free_multipole_expansion(pSPARC->MpExp_exx, MPI_COMM_SELF);
+                free(pSPARC->MpExp_exx);
             }
         }
     }
@@ -82,3 +93,18 @@ void free_exx(SPARC_OBJ *pSPARC) {
         MPI_Comm_free(&pSPARC->kpttopo_dmcomm_inter);
 }
 
+
+void free_singularity_removal_const(SPARC_OBJ *pSPARC)
+{
+    if (pSPARC->ExxMethod == 1 && pSPARC->BC == 1) return;
+
+    free(pSPARC->pois_const);
+    if (pSPARC->Calc_stress == 1) {
+        free(pSPARC->pois_const_stress);
+        if (pSPARC->ExxDivFlag == 0)
+            free(pSPARC->pois_const_stress2);
+    } else if (pSPARC->Calc_pres == 1) {
+        if (pSPARC->ExxDivFlag != 0)
+            free(pSPARC->pois_const_press);
+    }
+}

@@ -466,6 +466,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } */else if (strcmpi(str,"REFERENCE_CUTOFF:") == 0) {
             fscanf(input_fp,"%lf",&pSPARC_Input->REFERENCE_CUTOFF);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"REFERENCE_CUTOFF_FAC:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->REFERENCE_CUTOFF_FAC);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"MIXING_VARIABLE:") == 0) {
             fscanf(input_fp,"%s",temp); // read mixing variable
             if (strcmpi(temp,"density") == 0) {
@@ -795,6 +798,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"NPT_NP_BMASS:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->NPT_NP_bmass);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"STANDARD_EIGEN:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->StandardEigenFlag);
+            fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"VERBOSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Verbosity);
             fscanf(input_fp, "%*[^\n]\n");
@@ -826,26 +832,14 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"MAXIT_FOCK:") == 0) {    
             fscanf(input_fp,"%d",&pSPARC_Input->MAXIT_FOCK);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"EXX_METHOD:") == 0) {    
-            fscanf(input_fp,"%s",temp);
-            if (strcmpi(temp,"FOURIER_SPACE") == 0 || strcmpi(temp,"fourier_space") == 0) {
-                pSPARC_Input->EXXMeth_Flag = 0;
-            } else if (strcmpi(temp,"REAL_SPACE") == 0 || strcmpi(temp,"real_space") == 0) {
-                pSPARC_Input->EXXMeth_Flag = 1;
-            } else {
-                printf("\nCannot recognize the method to solve Poisson's equation in Exact Exchange: \"%s\"\n",temp);
-                printf("Please use FOURIER_SPACE or REAL_SPACE.\n");
-                exit(EXIT_FAILURE);
-            }
-            fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"ACE_FLAG:") == 0) {    
-            fscanf(input_fp,"%d",&pSPARC_Input->ACEFlag);
+        } else if (strcmpi(str,"EXX_ACC:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->ExxAcc);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"EXX_MEM:") == 0) {
-            fscanf(input_fp,"%d",&pSPARC_Input->EXXMem_batch);
+            fscanf(input_fp,"%d",&pSPARC_Input->ExxMemBatch);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"EXX_ACE_VALENCE_STATES:") == 0) {
-            fscanf(input_fp,"%d",&pSPARC_Input->EXXACEVal_state);
+            fscanf(input_fp,"%d",&pSPARC_Input->EeeAceValState);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"EXX_DOWNSAMPLING:") == 0) {
             fscanf(input_fp,"%d %d %d",&pSPARC_Input->EXXDownsampling[0],
@@ -854,14 +848,26 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"EXX_DIVERGENCE:") == 0) {    
             fscanf(input_fp,"%s",temp);
             if (strcmpi(temp,"SPHERICAL") == 0 || strcmpi(temp,"spherical") == 0) {
-                pSPARC_Input->EXXDiv_Flag = 0;
+                pSPARC_Input->ExxDivFlag = 0;
             } else if (strcmpi(temp,"AUXILIARY") == 0 || strcmpi(temp,"auxiliary") == 0) {
-                pSPARC_Input->EXXDiv_Flag = 1;
+                pSPARC_Input->ExxDivFlag = 1;
             } else if (strcmpi(temp,"ERFC") == 0 || strcmpi(temp,"erfc") == 0) {
-                pSPARC_Input->EXXDiv_Flag = 2;
+                pSPARC_Input->ExxDivFlag = 2;
             } else {
                 printf("\nCannot recognize the method for singularity in Exact Exchange: \"%s\"\n",temp);
                 printf("Please use SPHERICAL or AUXILIARY.\n");
+                exit(EXIT_FAILURE);
+            }
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"EXX_METHOD:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"FFT") == 0 || strcmpi(temp,"fft") == 0) {
+                pSPARC_Input->ExxMethod = 0;
+            } else if (strcmpi(temp,"KRON") == 0 || strcmpi(temp,"kron") == 0) {
+                pSPARC_Input->ExxMethod = 1;
+            } else {
+                printf("\nCannot recognize the method for solving Poisson equation in Exact Exchange: \"%s\"\n",temp);
+                printf("Please use FFT or KRON.\n");
                 exit(EXIT_FAILURE);
             }
             fscanf(input_fp, "%*[^\n]\n");
@@ -878,20 +884,8 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d",&pSPARC_Input->MINIT_FOCK);
             fscanf(input_fp, "%*[^\n]\n");
         /* SQ input options */
-        } else if (strcmpi(str,"SQ_FLAG:") == 0) {    
-            fscanf(input_fp,"%d",&pSPARC_Input->SQFlag);
-            fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"SQ_GAUSS_MEM:") == 0) {    
-            fscanf(input_fp,"%s",temp);
-            if (strcmpi(temp,"LOW") == 0 || strcmpi(temp,"low") == 0) {
-                pSPARC_Input->SQ_gauss_mem = 0;
-            } else if (strcmpi(temp,"HIGH") == 0 || strcmpi(temp,"high") == 0) {
-                pSPARC_Input->SQ_gauss_mem = 1;
-            } else {
-                printf("Cannot recognize the memory option for Gauss Quadrature in density matrix using SQ method: \"%s\"\n", temp);
-                printf("Please use HIGH (high) for high memory option or LOW (low) for low memory option\n");
-                exit(EXIT_FAILURE);
-            }
+        } else if (strcmpi(str,"SQ_AMBIENT_FLAG:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->sqAmbientFlag);
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"SQ_NPL_G:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->SQ_npl_g);
@@ -906,6 +900,33 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%d", &pSPARC_Input->npNdx_SQ);
             fscanf(input_fp,"%d", &pSPARC_Input->npNdy_SQ);
             fscanf(input_fp,"%d", &pSPARC_Input->npNdz_SQ);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_HIGHT_FLAG:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->sqHighTFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        // } else if (strcmpi(str,"SQ_HIGHT_GAUSS_MEM:") == 0) {    
+        //     fscanf(input_fp,"%s",temp);
+        //     if (strcmpi(temp,"LOW") == 0 || strcmpi(temp,"low") == 0) {
+        //         pSPARC_Input->SQ_highT_gauss_mem = 0;
+        //     } else if (strcmpi(temp,"HIGH") == 0 || strcmpi(temp,"high") == 0) {
+        //         pSPARC_Input->SQ_highT_gauss_mem = 1;
+        //     } else {
+        //         printf("Cannot recognize the memory option for Gauss Quadrature in density matrix using SQ method: \"%s\"\n", temp);
+        //         printf("Please use HIGH (high) for high memory option or LOW (low) for low memory option\n");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ_HIGHT_GAUSS_HYBRID_MEM:") == 0) {    
+            fscanf(input_fp,"%s",temp);
+            if (strcmpi(temp,"LOW") == 0 || strcmpi(temp,"low") == 0) {
+                pSPARC_Input->SQ_highT_hybrid_gauss_mem = 0;
+            } else if (strcmpi(temp,"HIGH") == 0 || strcmpi(temp,"high") == 0) {
+                pSPARC_Input->SQ_highT_hybrid_gauss_mem = 1;
+            } else {
+                printf("Cannot recognize the memory option for Hybrid Gauss Quadrature in density matrix using SQ method: \"%s\"\n", temp);
+                printf("Please use HIGH (high) for high memory option or LOW (low) for low memory option\n");
+                exit(EXIT_FAILURE);
+            }
             fscanf(input_fp, "%*[^\n]\n");
         } else if (strcmpi(str,"BAND_STRUCTURE:") == 0) {
             fscanf(input_fp, "%d", &pSPARC_Input->BandStructFlag);
@@ -978,6 +999,22 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             printf("Dens_up file name: %s\n", pSPARC_Input->InDensUCubFilename);
             printf("Dens_dw file name: %s\n", pSPARC_Input->InDensDCubFilename);
             #endif
+        } else if (strcmpi(str,"READ_INIT_DENS:") == 0) {
+            fscanf(input_fp, "%d", &pSPARC_Input->readInitDens);
+            fscanf(input_fp, "%*[^\n]\n");
+        /* OFDFT input options */
+        } else if (strcmpi(str,"OFDFT_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->OFDFTFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"TOL_OFDFT:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->OFDFT_tol);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"OFDFT_LAMBDA:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->OFDFT_lambda);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"PRINT_ENERGY_DENSITY:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintEnergyDensFlag);
+            fscanf(input_fp, "%*[^\n]\n");
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
@@ -1337,6 +1374,42 @@ int check_lattice(
     return 0;
 }
 
+int check_lattice_cell(
+    const double latvecs_scaled[9], const double latvec[9],
+    const double scalex, const double scaley, const double scalez,
+    double tol)
+{
+    // check lattice vectors
+    double diffx = (latvecs_scaled[0] - scalex * latvec[0])
+                 * (latvecs_scaled[0] - scalex * latvec[0])
+                 + (latvecs_scaled[1] - scalex * latvec[1])
+                 * (latvecs_scaled[1] - scalex * latvec[1])
+                 + (latvecs_scaled[2] - scalex * latvec[2])
+                 * (latvecs_scaled[2] - scalex * latvec[2]);
+    diffx = sqrt(diffx);
+
+    double diffy = (latvecs_scaled[3] - scaley * latvec[3])
+                 * (latvecs_scaled[3] - scaley * latvec[3])
+                 + (latvecs_scaled[4] - scaley * latvec[4])
+                 * (latvecs_scaled[4] - scaley * latvec[4])
+                 + (latvecs_scaled[5] - scaley * latvec[5])
+                 * (latvecs_scaled[5] - scaley * latvec[5]);
+    diffy = sqrt(diffy);
+
+    double diffz = (latvecs_scaled[6] - scalez * latvec[6])
+                 * (latvecs_scaled[6] - scalez * latvec[6])
+                 + (latvecs_scaled[7] - scalez * latvec[7])
+                 * (latvecs_scaled[7] - scalez * latvec[7])
+                 + (latvecs_scaled[8] - scalez * latvec[8])
+                 * (latvecs_scaled[8] - scalez * latvec[8]);
+    diffz = sqrt(diffz);
+
+	if (diffx > tol || diffy > tol || diffz > tol) {
+        return 1;
+    }
+    return 0;
+}
+
 /**
  * @brief Read data from cube file and check if the lattice vectors
  * and the grid sizes match with the input lattice and grid.
@@ -1352,9 +1425,13 @@ double* read_vec_cube(SPARC_OBJ *pSPARC, char *filename) {
 	double *dens = readDens_cube(filename, dens_gridsizes, dens_latvecs);
 
     // check lattice vectors
-    if (check_lattice(dens_latvecs, pSPARC->LatVec,
+    if ((pSPARC->Flag_latvec_scale && check_lattice(dens_latvecs, pSPARC->LatVec,
         pSPARC->latvec_scale_x, pSPARC->latvec_scale_y,
-        pSPARC->latvec_scale_z, 1e-4) == 1)
+        pSPARC->latvec_scale_z, 1e-4) == 1) ||
+        (!pSPARC->Flag_latvec_scale && check_lattice_cell(dens_latvecs, pSPARC->LatUVec,
+        pSPARC->range_x, pSPARC->range_y, pSPARC->range_z, 1e-4
+        ))
+        )
     {
         printf("\n[FATAL] Incorrect CUBE file (%s): inconsistent lattice vectors!\n", filename);
         free(dens);

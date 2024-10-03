@@ -42,6 +42,7 @@
 #include "tools.h"
 #include "isddft.h"
 #include "initialization.h"
+#include "electrostatics.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -1039,6 +1040,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
         // allocate memory for electron density
         pSPARC->electronDens = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
         assert(pSPARC->electronDens != NULL);
+        if (pSPARC->usefock > 0)
+            pSPARC->electronDens_pbe = (double *)malloc( DMnd * pSPARC->Nspdentd * sizeof(double) );
         // allocate memory for magnetization
         if (pSPARC->spin_typ > 0) {
             pSPARC->mag = (double *)malloc( DMnd * pSPARC->Nmag * sizeof(double) );
@@ -1129,6 +1132,12 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
                 assert(pSPARC->Veff_dia_loc_dmcomm_phi != NULL);
             } 
         }
+
+        if (pSPARC->BC == 1) {
+            pSPARC->MpExp = (MPEXP_OBJ *) malloc(sizeof(MPEXP_OBJ));
+            init_multipole_expansion(pSPARC, pSPARC->MpExp, 
+                pSPARC->Nx, pSPARC->Ny, pSPARC->Nz, pSPARC->Nx_d, pSPARC->Ny_d, pSPARC->Nz_d, pSPARC->DMVertices, pSPARC->dmcomm_phi);
+        }
     }
 
     // Set up D2D target objects between phi comm and psi comm
@@ -1214,7 +1223,7 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
  * @brief   Creates a balanced division of processors/subset of processors in a
  *          Cartesian grid according to application size.
  */
-void SPARC_Dims_create(int nproc, int ndims, int *gridsizes, int minsize, int *dims, int *ierr) {
+void SPARC_Dims_create(const int nproc, const int ndims, const int *gridsizes, int minsize, int *dims, int *ierr) {
 #define NPSTRIDE 5
 #define NPSTRIDE3D 2
     *ierr = 0;
@@ -2638,3 +2647,401 @@ void DP2BP(
 }
 
 #endif // "ifdef USE_DP_SUBEIG"
+
+
+void Set_D2Dext_Target(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, 
+    int DMnx, int DMny, int DMnz, int xext, int yext, int zext, 
+    int gridsizes[3], int dims[3], MPI_Comm cart, MPI_Comm *comm_d2dext)
+{
+    if (cart == MPI_COMM_NULL) {
+        *comm_d2dext = MPI_COMM_NULL;
+        return;
+    }
+    int rank, cart_coords[3];
+    MPI_Comm_rank(cart, &rank);
+    MPI_Cart_coords(cart, rank, 3, cart_coords);
+
+    // Estimation of maximum layers communication for SQ comm
+    int max_layer = 1;
+    max_layer *= (2 * (xext / (gridsizes[0] / dims[0]) + 1) + 1);
+    max_layer *= (2 * (yext / (gridsizes[1] / dims[1]) + 1) + 1);
+    max_layer *= (2 * (zext / (gridsizes[2] / dims[2]) + 1) + 1);
+
+    int *sneighs = (int*) calloc(max_layer, sizeof(int));
+    int *rneighs = (int*) calloc(max_layer, sizeof(int));
+    int *scounts = (int*) calloc(max_layer, sizeof(int));
+    int *rcounts = (int*) calloc(max_layer, sizeof(int));
+
+    // count sending 
+    int count = 0;
+    for (int i = 0; i < 3; i++) {                                                    // loop over x, y, z axis
+        int sign = -1;                                                               // sign indicates direction. e.g. left is -1. right is +1         
+        for (int j = 0; j < 2; j++) {                                                    // loop over 2 directions
+            int neigh_coords[3] = {cart_coords[0], cart_coords[1], cart_coords[2]};
+            d2dext_sender->layers[i*2+j] = 0;
+            
+            int ext  = (i == 0 ? xext : (i == 1 ? yext : zext));
+            int N_dir  = (i == 0 ? DMnx : (i == 1 ? DMny : DMnz));
+            
+            while (ext > 0) {
+                neigh_coords[i] = (neigh_coords[i] + sign + dims[i]) % dims[i];     // shift coordinates 
+                int neigh_size = block_decompose(gridsizes[i], dims[i], neigh_coords[i]);
+                d2dext_sender->layers[i*2+j]++;                                 // count the layer
+                scounts[count] = min(ext, N_dir);               // sending counts
+                ext -= neigh_size;                              // remaining counts
+                count++;
+            }
+            sign *= (-1);
+        }
+    }
+
+    // from left to right, bottom to top, different order from above
+    count = 0;
+    for (int k = -d2dext_sender->layers[4]; k <= d2dext_sender->layers[5]; k++) {
+        for (int j = -d2dext_sender->layers[2]; j <= d2dext_sender->layers[3]; j++) {
+            for (int i = -d2dext_sender->layers[0]; i <= d2dext_sender->layers[1]; i++) {
+                int neigh_coords[3] = {cart_coords[0], cart_coords[1], cart_coords[2]};
+                if(i || j || k) {
+                    neigh_coords[0] = (neigh_coords[0] + i + dims[0]) % dims[0];        // shift coordinates 
+                    neigh_coords[1] = (neigh_coords[1] + j + dims[1]) % dims[1];        // shift coordinates 
+                    neigh_coords[2] = (neigh_coords[2] + k + dims[2]) % dims[2];        // shift coordinates 
+                    MPI_Cart_rank(cart, neigh_coords, sneighs + count);   // find neighbor's rank   
+                    count ++;
+                }
+            }
+        }
+    }
+
+    int destinations = (d2dext_sender->layers[0] + d2dext_sender->layers[1] + 1) 
+                     * (d2dext_sender->layers[2] + d2dext_sender->layers[3] + 1) 
+                     * (d2dext_sender->layers[4] + d2dext_sender->layers[5] + 1) - 1;
+
+    // Then receiving elements from others.
+    count = 0;
+    for (int i = 0; i < 3; i++) {
+        int sign = -1;        
+
+        for (int j = 0; j < 2; j++) {
+            int neigh_coords[3] = {cart_coords[0], cart_coords[1], cart_coords[2]};
+            d2dext_recvr->layers[i*2+j] = 0;
+
+            int ext  = (i == 0 ? xext : (i == 1 ? yext : zext));
+            while (ext > 0) {
+                neigh_coords[i] = (neigh_coords[i] + sign + dims[i]) % dims[i];
+                int neigh_size = block_decompose(gridsizes[i], dims[i], neigh_coords[i]);
+                d2dext_recvr->layers[i*2+j]++;                              // count the layer
+                rcounts[count] = min(ext, neigh_size);         // sending counts
+                ext -= rcounts[count];                         // remaining counts
+                count++;
+            }            
+            sign *= (-1);
+        }
+    }
+
+    count = 0;
+    for (int k = d2dext_recvr->layers[5]; k >= -d2dext_recvr->layers[4]; k--) {
+        for (int j = d2dext_recvr->layers[3]; j >= -d2dext_recvr->layers[2]; j--) {
+            for (int i = d2dext_recvr->layers[1]; i >= -d2dext_recvr->layers[0]; i--) {
+                int neigh_coords[3] = {cart_coords[0], cart_coords[1], cart_coords[2]};
+                if(i || j || k) {
+                    neigh_coords[0] = (neigh_coords[0] + i + dims[0]) % dims[0];     // shift coordinates 
+                    neigh_coords[1] = (neigh_coords[1] + j + dims[1]) % dims[1];     // shift coordinates 
+                    neigh_coords[2] = (neigh_coords[2] + k + dims[2]) % dims[2];     // shift coordinates 
+                    MPI_Cart_rank(cart, neigh_coords, rneighs + count);       // find neighbor's rank                                   
+                    count ++;
+                }
+            }
+        }
+    }
+
+    int sources = (d2dext_recvr->layers[0] + d2dext_recvr->layers[1] + 1) 
+                * (d2dext_recvr->layers[2] + d2dext_recvr->layers[3] + 1) 
+                * (d2dext_recvr->layers[4] + d2dext_recvr->layers[5] + 1) - 1;
+    
+    MPI_Dist_graph_create_adjacent(cart, sources, rneighs, (int *)MPI_UNWEIGHTED, 
+        destinations, sneighs, (int *)MPI_UNWEIGHTED, MPI_INFO_NULL, 0, comm_d2dext); 
+
+    d2dext_sender->counts = (int *) calloc(destinations, sizeof(int));
+    d2dext_sender->displs = (int *) calloc(destinations, sizeof(int));
+    assert(d2dext_sender->counts != NULL && d2dext_sender->displs != NULL);
+    d2dext_recvr->counts = (int *) calloc(sources, sizeof(int));
+    d2dext_recvr->displs = (int *) calloc(sources, sizeof(int));
+    assert(d2dext_recvr->counts != NULL && d2dext_recvr->displs != NULL);
+
+    d2dext_sender->x_counts = (int *) calloc(d2dext_sender->layers[0] + d2dext_sender->layers[1] + 1, sizeof(int));
+    d2dext_sender->y_counts = (int *) calloc(d2dext_sender->layers[2] + d2dext_sender->layers[3] + 1, sizeof(int));
+    d2dext_sender->z_counts = (int *) calloc(d2dext_sender->layers[4] + d2dext_sender->layers[5] + 1, sizeof(int));
+    assert(d2dext_sender->x_counts != NULL && d2dext_sender->y_counts != NULL && d2dext_sender->z_counts != NULL);
+
+    d2dext_recvr->x_counts = (int *) calloc(d2dext_recvr->layers[0] + d2dext_recvr->layers[1] + 1, sizeof(int));
+    d2dext_recvr->y_counts = (int *) calloc(d2dext_recvr->layers[2] + d2dext_recvr->layers[3] + 1, sizeof(int));
+    d2dext_recvr->z_counts = (int *) calloc(d2dext_recvr->layers[4] + d2dext_recvr->layers[5] + 1, sizeof(int));
+    assert(d2dext_recvr->x_counts != NULL && d2dext_recvr->y_counts != NULL && d2dext_recvr->z_counts != NULL);
+
+    // change the order of sending and receiving information into left to right
+    reorder_counts(scounts, d2dext_sender->layers, DMnx, DMny, DMnz, d2dext_sender->x_counts, d2dext_sender->y_counts, d2dext_sender->z_counts);
+    reorder_counts(rcounts, d2dext_recvr->layers, DMnx, DMny, DMnz, d2dext_recvr->x_counts, d2dext_recvr->y_counts, d2dext_recvr->z_counts);
+
+    free(sneighs);
+    free(rneighs);
+    free(scounts);
+    free(rcounts);
+
+    d2dext_sender->n = 0;
+    d2dext_recvr->n = 0;
+
+    count = 0;
+    for (int k = 0; k < d2dext_sender->layers[4] + d2dext_sender->layers[5] + 1; k++) {
+        for (int j = 0; j < d2dext_sender->layers[2] + d2dext_sender->layers[3] + 1; j++) {
+            for (int i = 0; i < d2dext_sender->layers[0] + d2dext_sender->layers[1] + 1; i++) {
+                // skip center (self)
+                if (i != d2dext_sender->layers[0] || j != d2dext_sender->layers[2] || k != d2dext_sender->layers[4]) {
+                    d2dext_sender->counts[count] = d2dext_sender->x_counts[i] * d2dext_sender->y_counts[j] * d2dext_sender->z_counts[k];
+
+                    if (count > 0)
+                        d2dext_sender->displs[count] = d2dext_sender->displs[count - 1] + d2dext_sender->counts[count - 1];
+
+                    d2dext_sender->n += d2dext_sender->counts[count];
+                    count ++;
+                }
+            }
+        }
+    }
+
+    count = 0;
+    for (int k = d2dext_recvr->layers[4] + d2dext_recvr->layers[5]; k >= 0; k--) {
+        for (int j = d2dext_recvr->layers[2] + d2dext_recvr->layers[3]; j >= 0; j--) {
+            for (int i = d2dext_recvr->layers[0] + d2dext_recvr->layers[1]; i >= 0; i--) {
+                // skip center (self)
+                if (i != d2dext_recvr->layers[0] || j != d2dext_recvr->layers[2] || k != d2dext_recvr->layers[4]) {
+                    d2dext_recvr->counts[count] = d2dext_recvr->x_counts[i] * d2dext_recvr->y_counts[j] * d2dext_recvr->z_counts[k];
+
+                    if (count > 0)
+                        d2dext_recvr->displs[count] = d2dext_recvr->displs[count - 1] + d2dext_recvr->counts[count - 1];
+
+                    d2dext_recvr->n += d2dext_recvr->counts[count];
+                    count ++;
+                }
+            }
+        }
+    }
+}
+
+
+void reorder_counts(const int *counts, const int *layers, const int DMnx, const int DMny, const int DMnz, 
+                    int *x_counts, int *y_counts, int *z_counts)
+{
+    const int *counts_ = counts;
+    // x -1 dir    
+    for (int i = 0; i < layers[0]; i++) {
+        x_counts[i] = counts_[layers[0] - 1 - i];        
+    }
+    x_counts[layers[0]] = DMnx; // center
+    // x +1 dir
+    for (int i = 0; i < layers[1]; i++) {
+        x_counts[layers[0] + 1 + i] = counts_[layers[0] + i];
+    }
+
+    counts_ += layers[0] + layers[1];
+    // y -1 dir
+    for (int i = 0; i < layers[2]; i++) {
+        y_counts[i] = counts_[layers[2] - 1 - i];
+    }
+    y_counts[layers[2]] = DMny; // center
+    // y +1 dir
+    for (int i = 0; i < layers[3]; i++) {
+        y_counts[layers[2] + 1 + i] = counts_[layers[2] + i];
+    }
+
+    counts_ += layers[2] + layers[3];
+    // z -1 dir
+    for (int i = 0; i < layers[4]; i++) {
+        z_counts[i] = counts_[layers[4] - 1 - i];
+    }
+    z_counts[layers[4]] = DMnz; // center
+    // z +1 dir
+    for (int i = 0; i < layers[5]; i++) {
+        z_counts[layers[4] + 1 + i] = counts_[layers[4] + i];
+    }
+}
+
+
+void free_D2Dext_Target(D2Dext_OBJ *d2dext, MPI_Comm comm_d2dext)
+{
+    if (comm_d2dext == MPI_COMM_NULL) return;
+    free(d2dext->counts);
+    free(d2dext->displs);
+    free(d2dext->x_counts);
+    free(d2dext->y_counts);
+    free(d2dext->z_counts);    
+}
+
+void D2Dext(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, int DMnx, int DMny, int DMnz, 
+    int xext, int yext, int zext, void *sdata, void *rdata, MPI_Comm comm_d2dext, int unit_size)
+{
+#define sdata_(i,j,k) sdata_[(i)+(j)*DMnx+(k)*DMnx*DMny]
+#define rdata_(i,j,k) rdata_[(i)+(j)*DMnx_ext+(k)*DMnx_ext*DMny_ext]
+
+    if (comm_d2dext == MPI_COMM_NULL) return;
+    void *x_in  = calloc(d2dext_recvr->n,  unit_size);
+    void *x_out = calloc(d2dext_sender->n, unit_size);
+    assert(x_in != NULL && x_out != NULL);
+
+    // assemble x_out
+    int count = 0;
+    for (int k = 0; k < d2dext_sender->layers[4] + d2dext_sender->layers[5] + 1; k++) {
+        for (int j = 0; j < d2dext_sender->layers[2] + d2dext_sender->layers[3] + 1; j++) {
+            for (int i = 0; i < d2dext_sender->layers[0] + d2dext_sender->layers[1] + 1; i++) {
+
+                if (i != d2dext_recvr->layers[0] || j != d2dext_recvr->layers[2] || k != d2dext_recvr->layers[4]) {
+                    int start[3] = {0, 0 , 0};                                              // range of elements to be sent out
+                    int end[3]   = {DMnx,DMny, DMnz};
+
+                    if (i < d2dext_sender->layers[0])
+                        end[0] = d2dext_sender->x_counts[i];
+                    else
+                        start[0] = DMnx - d2dext_sender->x_counts[i];
+
+                    if (j < d2dext_sender->layers[2])
+                        end[1] = d2dext_sender->y_counts[j];
+                    else
+                        start[1] = DMny - d2dext_sender->y_counts[j];
+
+                    if (k < d2dext_sender->layers[4])
+                        end[2] = d2dext_sender->z_counts[k];
+                    else
+                        start[2] = DMnz - d2dext_sender->z_counts[k];
+
+                    for (int kk = start[2]; kk < end[2]; kk++) {
+                        for (int jj = start[1]; jj < end[1]; jj++) {
+                            for (int ii = start[0]; ii < end[0]; ii++) {
+                                if (unit_size == 8) {
+                                    double *sdata_ = (double *) sdata;
+                                    *((double *)x_out+count++) = sdata_(ii, jj, kk);
+                                } else {
+                                    double _Complex *sdata_ = (double _Complex *) sdata;
+                                    *((double _Complex *)x_out+count++) = sdata_(ii, jj, kk);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // communicate and assemble x_in
+    int DMnx_ext = DMnx + 2*xext;
+    int DMny_ext = DMny + 2*yext;    
+
+    MPI_Request request;
+    if (unit_size == 8) {
+        MPI_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_DOUBLE, 
+                                x_in, d2dext_recvr->counts, d2dext_recvr->displs, MPI_DOUBLE, comm_d2dext, &request); 
+        // copy local part 
+        restrict_to_subgrid(sdata, rdata,
+                    DMnx_ext, DMnx, DMnx_ext*DMny_ext, DMnx*DMny, 
+                    xext, xext+DMnx-1, yext, yext+DMny-1, zext, zext+DMnz-1, 
+                    0, 0, 0, sizeof(double));
+    } else {
+        MPI_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_DOUBLE_COMPLEX, 
+                                x_in, d2dext_recvr->counts, d2dext_recvr->displs, MPI_DOUBLE_COMPLEX, comm_d2dext, &request);         
+        // copy local part 
+        restrict_to_subgrid(sdata, rdata,
+                    DMnx_ext, DMnx, DMnx_ext*DMny_ext, DMnx*DMny, 
+                    xext, xext+DMnx-1, yext, yext+DMny-1, zext, zext+DMnz-1, 
+                    0, 0, 0, sizeof(double _Complex));
+    }
+
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+
+    int start[3] = {0,0,0}, end[3];
+
+    count = 0;
+    end[2] = 2 * zext + DMnz;
+    for (int k = d2dext_recvr->layers[4] + d2dext_recvr->layers[5]; k >= 0; k--) {
+        end[1] = 2 * yext + DMny;
+        for (int j = d2dext_recvr->layers[2] + d2dext_recvr->layers[3]; j >= 0; j--) {
+            end[0] = 2 * xext + DMnx;
+            for (int i = d2dext_recvr->layers[0] + d2dext_recvr->layers[1]; i >= 0; i--) {
+
+                start[0] = end[0] - d2dext_recvr->x_counts[i];
+                start[1] = end[1] - d2dext_recvr->y_counts[j];
+                start[2] = end[2] - d2dext_recvr->z_counts[k];
+
+                if (i != d2dext_recvr->layers[0] || j != d2dext_recvr->layers[2] || k != d2dext_recvr->layers[4]) {
+                    for (int kk = start[2]; kk < end[2]; kk++) {
+                        for (int jj = start[1]; jj < end[1]; jj++) {
+                            for (int ii = start[0]; ii < end[0]; ii++) {
+                                // Veff_PR(ii,jj,kk) = x_in[count++];
+                                if (unit_size == 8) {
+                                    double *rdata_ = (double *) rdata;
+                                    rdata_(ii,jj,kk) = *((double *)x_in+count++);
+                                } else {
+                                    double _Complex *rdata_ = (double _Complex *) rdata;
+                                    rdata_(ii,jj,kk) = *((double _Complex *)x_in+count++);
+                                }
+                            }
+                        }
+                    }
+                }
+                end[0] = start[0];
+            }
+            end[1] = start[1];
+        }
+        end[2] = start[2];
+    }
+
+    free(x_in);
+    free(x_out);
+#undef sdata_
+#undef rdata_
+}
+
+
+int MPI_Allreduce_overload(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+{    
+    size_t unit_size;    
+    if (datatype == MPI_DOUBLE) {
+        unit_size = sizeof(double);
+    } else if (datatype == MPI_DOUBLE_COMPLEX) {
+        unit_size = sizeof(double _Complex);
+    } else if (datatype == MPI_INT) {
+        unit_size = sizeof(int);
+    } else {
+        unit_size = 1;
+        printf("Please provide the type you need\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t size = count * unit_size;
+    size_t base = 100000000; // 100MB
+    int reps = max((size-1) / base + 1, 1);
+    if (reps == 1) {
+        return MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
+    }
+    size_t *counts = (size_t *) malloc(sizeof(size_t) * reps);
+    size_t *displs = (size_t *) malloc(sizeof(size_t) * reps);    
+    int batch = count / reps;
+
+    displs[0] = 0;
+    for (int i = 0; i < reps; i++) {
+        counts[i] = batch + (i < (count % batch) ? 1 : 0);
+        if (i != reps -1) displs[i+1] = displs[i] + counts[i];        
+    }
+
+    for (int rep = 0; rep < reps; rep++) {
+        const void *sendbuf_ = (MPI_IN_PLACE == sendbuf) ? MPI_IN_PLACE : (sendbuf + displs[rep] * unit_size);
+        void *recvbuf_ = recvbuf + displs[rep] * unit_size;        
+        int res = MPI_Allreduce(sendbuf_, recvbuf_, counts[rep], datatype, op, comm);
+        if (res != MPI_SUCCESS) {
+            free(counts);
+            free(displs);
+            return res;
+        }
+    }
+    free(counts);
+    free(displs);
+    return MPI_SUCCESS;
+}

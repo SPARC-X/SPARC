@@ -345,7 +345,6 @@ SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga','orth','md_nve','gamma','fast'])
 SYSTEMS["Tols"].append([1e-5, 1e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ################################################################################################################
-################################################################################################################
 SYSTEMS["systemname"].append('BaTiO3_scan')
 SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'orth', 'gamma','scan'])
@@ -396,6 +395,56 @@ SYSTEMS["directory"].append("./xc/mgga_tests/")
 SYSTEMS["Tags"].append(['bulk', 'spin', 'orth', 'kpt','scan'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('WSe2_cyclix')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['bulk', 'cyclix','kpt','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('HfSe2_cyclix')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['bulk', 'cyclix','gamma','smear_fd'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('FeCl2_cyclix_spin')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['cyclix','spin'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('NiCl2_cyclix_spin')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['cyclix','spin'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('WS2_cyclix_SOC')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['cyclix','SOC'])
+SYSTEMS["Tols"].append([tols["E_tol"], 2.0e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
+SYSTEMS["directory"].append("./cyclix/")
+SYSTEMS["Tags"].append(['cyclix','SOC'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al4_MD_OFDFT')
+SYSTEMS["directory"].append("./ofdft/")
+SYSTEMS["Tags"].append(['bulk', 'OFDFT', 'orth','md_nve','lda'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al4_non_orth_OFDFT')
+SYSTEMS["directory"].append("./ofdft/")
+SYSTEMS["Tags"].append(['bulk', 'OFDFT', 'nonorth','lda'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al4_Relax_OFDFT')
+SYSTEMS["directory"].append("./ofdft/")
+SYSTEMS["Tags"].append(['bulk', 'OFDFT', 'orth','lda','relax_atom_lbfgs'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al96_OFDFT')
+SYSTEMS["directory"].append("./ofdft/")
+SYSTEMS["Tags"].append(['bulk', 'OFDFT', 'orth','lda'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 SYSTEMS["systemname"].append('highT_Al')
 SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
@@ -431,34 +480,9 @@ SYSTEMS["directory"].append("./highT/")
 SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'lda'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
-SYSTEMS["systemname"].append('WSe2_cyclix')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['bulk', 'cyclix','kpt','smear_fd'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################
-SYSTEMS["systemname"].append('HfSe2_cyclix')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['bulk', 'cyclix','gamma','smear_fd'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################
-SYSTEMS["systemname"].append('FeCl2_cyclix_spin')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['cyclix','spin'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################
-SYSTEMS["systemname"].append('NiCl2_cyclix_spin')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['cyclix','spin'])
-SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################
-SYSTEMS["systemname"].append('WS2_cyclix_SOC')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['cyclix','SOC'])
-SYSTEMS["Tols"].append([tols["E_tol"], 2e-5, tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
-##################################################################################################################
-SYSTEMS["systemname"].append('MoS2_cyclix_SOC')
-SYSTEMS["directory"].append("./cyclix/")
-SYSTEMS["Tags"].append(['cyclix','SOC'])
+SYSTEMS["systemname"].append('highT_C_PBE0')
+SYSTEMS["directory"].append("./highT/")
+SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'PBE0'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
 SYSTEMS["systemname"].append('Fe3_noncollinear')

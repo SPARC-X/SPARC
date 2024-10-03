@@ -46,9 +46,12 @@
 #include "sqFinalization.h"
 #include "sqEnergy.h"
 #include "sqDensity.h"
+#include "sqHighT.h"
+#include "sqHighTDensity.h"
 #include "sqProperties.h"
 #include "sqParallelization.h"
 #include "sqNlocVecRoutines.h"
+#include "ofdft.h"
 #include "printing.h"
 
 #ifdef USE_EVA_MODULE
@@ -94,11 +97,15 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
                         pSPARC->REFERENCE_CUTOFF, pSPARC->delta_x, pSPARC->delta_y, pSPARC->delta_z, SCF_ind );
         }
     }
-    
-	// initialize the history variables of Anderson mixing
-	if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
-	    memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
-	    memset(pSPARC->mixing_hist_Fk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+
+    if (pSPARC->OFDFTFlag == 1) {
+        // skip it. No mixing in OFDFT.
+    } else {
+        // initialize the history variables of Anderson mixing
+        if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
+            memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+            memset(pSPARC->mixing_hist_Fk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+        }
     }
     
     Calculate_EGS_elecDensEnergy(pSPARC);
@@ -115,11 +122,17 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"====================================================================\n");
         fprintf(output_fp,"Free energy per atom               :%18.10E (Ha/atom)\n", pSPARC->Etot / pSPARC->n_atom);
         fprintf(output_fp,"Total free energy                  :%18.10E (Ha)\n", pSPARC->Etot);
-        fprintf(output_fp,"Band structure energy              :%18.10E (Ha)\n", pSPARC->Eband);
-        fprintf(output_fp,"Exchange correlation energy        :%18.10E (Ha)\n", pSPARC->Exc);
-        fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
-        fprintf(output_fp,"-Entropy*kb*T                      :%18.10E (Ha)\n", pSPARC->Entropy);
-        fprintf(output_fp,"Fermi level                        :%18.10E (Ha)\n", pSPARC->Efermi);
+        if (pSPARC->OFDFTFlag == 1) {
+            fprintf(output_fp,"Kinetic energy                     :%18.10E (Ha)\n", pSPARC->OFDFT_Ek);
+            fprintf(output_fp,"Exchange correlation energy        :%18.10E (Ha)\n", pSPARC->Exc);
+            fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
+        } else {
+            fprintf(output_fp,"Band structure energy              :%18.10E (Ha)\n", pSPARC->Eband);
+            fprintf(output_fp,"Exchange correlation energy        :%18.10E (Ha)\n", pSPARC->Exc);
+            fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
+            fprintf(output_fp,"-Entropy*kb*T                      :%18.10E (Ha)\n", pSPARC->Entropy);
+            fprintf(output_fp,"Fermi level                        :%18.10E (Ha)\n", pSPARC->Efermi);
+        }
         if (pSPARC->d3Flag == 1) {
         	fprintf(output_fp,"DFT-D3 correction                  :%18.10E (Ha)\n", pSPARC->d3Energy[0]);
         }
@@ -145,7 +158,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
     // calculate forces
     Calculate_EGS_Forces(pSPARC);
     t2 = MPI_Wtime();
-    
+
     // calculate atom magnetization
     if (pSPARC->spin_typ) CalculateAtomMag(pSPARC);
 
@@ -272,12 +285,14 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
 	}
 	
 	// Free the scf variables
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         Free_scfvar_SQ(pSPARC);
+    } else if (pSPARC->OFDFTFlag == 1) {
+        Free_NLCGvar_OFDFT(pSPARC);
     } else {
         Free_scfvar(pSPARC);
     }
-
+    
     // print final electron density
     if (pSPARC->PrintElecDensFlag == 1) {
         #ifdef DEBUG
@@ -364,7 +379,7 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
     t1 = MPI_Wtime();   
 #endif
 
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         SQ_OBJ *pSQ = pSPARC->pSQ;
         GetInfluencingAtoms_nloc(pSPARC, &pSPARC->Atom_Influence_nloc_kptcomm, 
                         pSQ->DMVertices_PR, pSQ->dmcomm_SQ);
@@ -398,6 +413,9 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
             OverlapCorrection_SQ(pSPARC);
             OverlapCorrection_forces_SQ(pSPARC);
         }
+    } else if (pSPARC->OFDFTFlag == 1) {
+        // Doing nothing. 
+        // There is no nonlocal terms and orbitals in OFDFT.
     } else {
         // find atoms that have nonlocal influence the process domain (of psi-domain)
         GetInfluencingAtoms_nloc(pSPARC, &pSPARC->Atom_Influence_nloc, pSPARC->DMVertices_dmcomm, 
@@ -468,19 +486,23 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
     // initialize electron density rho (initial guess)
     Init_electronDensity(pSPARC);
 
-    // solve KS-DFT equations using Chebyshev filtered subspace iteration
-    scf(pSPARC);
+    if (pSPARC->OFDFTFlag == 1) {
+        OFDFT_NLCG_TETER(pSPARC);
+    } else {
+        // solve KS-DFT equations using Chebyshev filtered subspace iteration
+        scf(pSPARC);
 
-    // DFT-D3 correction: it does not depend on SCF
-    if (pSPARC->d3Flag == 1) {
-        #ifdef DEBUG
-            t1 = MPI_Wtime();
-        #endif
-        d3_energy_gradient(pSPARC);
-        #ifdef DEBUG
-            t2 = MPI_Wtime();
-            if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
-        #endif
+        // DFT-D3 correction: it does not depend on SCF
+        if (pSPARC->d3Flag == 1) {
+            #ifdef DEBUG
+                t1 = MPI_Wtime();
+            #endif
+            d3_energy_gradient(pSPARC);
+            #ifdef DEBUG
+                t2 = MPI_Wtime();
+                if (rank == 0) printf("Time for D3 calculation:    %.3f (sec)\n",t2-t1);
+            #endif
+        }
     }
 }
 
@@ -573,9 +595,9 @@ void scf(SPARC_OBJ *pSPARC)
     // initialize mixing_hist_xk (and mixing_hist_xkm1)
     Update_mixing_hist_xk(pSPARC);
     
-    if (pSPARC->SQFlag == 1) {
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         for (i = 0; i < pSPARC->Nspden; i++)
-            TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->pSQ->Veff_loc_SQ + i*pSPARC->Nd_d_dmcomm);
+            TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->pSQ->Veff_loc_SQ + i * pSPARC->pSQ->DMnd_SQ);
     } else {
         // transfer Veff_loc from "phi-domain" to "psi-domain"
         for (i = 0; i < pSPARC->Nspden; i++)
@@ -619,8 +641,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
     t_cum_scf = 0.0;
     error = pSPARC->TOL_SCF + 1.0;
-    dEtot = dEband = pSPARC->TOL_SCF + 1.0;    
-    if (pSPARC->usefock > 1) pSPARC->MINIT_SCF = 1;
+    dEtot = dEband = pSPARC->TOL_SCF + 1.0;
 
     // 1st SCF will perform Chebyshev filtering several times, "count" keeps track 
     // of number of Chebyshev filtering calls, while SCFcount keeps track of # of
@@ -649,9 +670,11 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 		// start scf timer
         t_scf_s = MPI_Wtime();
         
-        if (pSPARC->SQFlag == 1)
+        if (pSPARC->sqAmbientFlag == 1) {
             Calculate_elecDens_SQ(pSPARC, SCFcount);
-        else {
+        } else if (pSPARC->sqHighTFlag == 1) {
+            Calculate_elecDens_SQ_highT(pSPARC, SCFcount);
+        } else {
             Calculate_elecDens(rank, pSPARC, SCFcount, error);
             if ((pSPARC->ixc[2]) && (pSPARC->countPotentialCalculate))
                 compute_Kinetic_Density_Tau_Transfer_phi(pSPARC);
@@ -779,7 +802,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
         // find mean value of Veff, and shift Veff by -mean(Veff)
         if (pSPARC->MixingVariable == 1) { // potential mixing 
-            shiting_Veff_mean(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->Nspden, Veff_mean, 0, -1);
+            shifting_Veff_mean(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->Nspden, Veff_mean, 0, -1);
         }
 
         Mixing(pSPARC, SCFcount);
@@ -793,7 +816,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             // shift the next input veff so that it's integral is
             // equal to that of the current output veff for periodic systems
             // shift Veff by +mean(Veff)
-            shiting_Veff_mean(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->Nspden, Veff_mean, 1, 1);
+            shifting_Veff_mean(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->Nspden, Veff_mean, 1, 1);
         } else if (pSPARC->MixingVariable == 0) { // recalculate potential for density mixing 
             // solve the poisson equation for electrostatic potential, "phi"
             Calculate_elecstPotential(pSPARC);
@@ -806,9 +829,9 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         t1 = MPI_Wtime();
         #endif
 
-        if (pSPARC->SQFlag == 1) {
+        if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
             for (i = 0; i < pSPARC->Nspden; i++)
-                TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi, pSPARC->pSQ->Veff_loc_SQ);
+                TransferVeff_phi2sq(pSPARC, pSPARC->Veff_loc_dmcomm_phi + i*DMnd, pSPARC->pSQ->Veff_loc_SQ + i * pSPARC->pSQ->DMnd_SQ);
         } else {
             // transfer Veff_loc from "phi-domain" to "psi-domain"
             for (i = 0; i < pSPARC->Nspden; i++)
@@ -869,29 +892,55 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     #endif
     
 	// check occupation (if Nstates is large enough)
-    if (pSPARC->SQFlag == 1) {
+#ifdef DEBUG
+    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         SQ_OBJ *pSQ = pSPARC->pSQ;
         if (pSQ->dmcomm_SQ != MPI_COMM_NULL) {
             // Find occupation corresponding to maximum eigenvalue
-            double maxeig, occ_maxeig;
-            maxeig = pSQ->maxeig[0];
-            for (k = 1; k < pSQ->DMnd_SQ; k++) {
-                if (pSQ->maxeig[k] > maxeig)
-                    maxeig = pSQ->maxeig[k];
-            }
-            occ_maxeig = 2.0 * smearing_function(pSPARC->Beta, maxeig, pSPARC->Efermi, pSPARC->elec_T_type);
+            double maxeig[2] = {-1E300, -1E300}, occ_maxeig[2] = {0,0};
+            for (int spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++){
+                int spn_g = spn_i + pSPARC->spin_start_indx;
+                maxeig[spn_g] = pSQ->maxeig[spn_i *pSQ->DMnd_SQ];
+                for (int k = 1; k < pSQ->DMnd_SQ; k++) {
+                    if (pSQ->maxeig[k+spn_i *pSQ->DMnd_SQ] > maxeig[spn_g])
+                        maxeig[spn_g] = pSQ->maxeig[k+spn_i *pSQ->DMnd_SQ];
+                }
+                occ_maxeig[spn_g] = 2.0 * smearing_function(pSPARC->Beta, maxeig[spn_g], pSPARC->Efermi, pSPARC->elec_T_type);
 
-            #ifdef DEBUG
-            if (!rank) printf("Max eigenvalue and corresponding occupation number: %.15f, %.15f\n",maxeig,occ_maxeig);
-            #endif
+                #ifdef DEBUG
+                if (!rank) printf("Max eigenvalue and corresponding occupation number: %.15f, %.15f\n",maxeig[spn_g],occ_maxeig[spn_g]);
+                #endif
 
-            if (occ_maxeig > pSPARC->SQ_tol_occ) {
-                if (!rank)  printf("WARNING: Occupation number corresponding to maximum "
-                            "eigenvalue exceeded the tolerance of: %E\n", pSPARC->SQ_tol_occ);
+                if (occ_maxeig[spn_g] > pSPARC->SQ_tol_occ) {
+                    if (!rank)  printf("WARNING: Occupation number corresponding to maximum "
+                                "eigenvalue exceeded the tolerance of: %E\n", pSPARC->SQ_tol_occ);
+                }
             }
-        }
+			
+            if (pSPARC->npspin > 1) {
+                MPI_Allreduce(MPI_IN_PLACE, maxeig, 2, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
+                MPI_Allreduce(MPI_IN_PLACE, occ_maxeig, 2, MPI_DOUBLE, MPI_SUM, pSPARC->spin_bridge_comm);
+            }
+			if (!rank && pSPARC->Verbosity && !pSPARC->usefock) {
+        		FILE *output_fp = fopen(pSPARC->OutFilename,"a");
+	    		if (output_fp == NULL) {
+            		printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+            		exit(EXIT_FAILURE);
+        		}
+        		fprintf(output_fp,"====================================================================\n");
+        		fprintf(output_fp,"                    sqDFT output quantities                    \n");
+        		fprintf(output_fp,"====================================================================\n");
+        		if (pSPARC->spin_typ == 0) {
+                    fprintf(output_fp,"Max. eigenvalue    :%18.10E (Ha)\n", maxeig[0]);
+        		    fprintf(output_fp,"Min. occupation    :%18.10E \n", occ_maxeig[0]);
+                } else {
+                    fprintf(output_fp,"Max. eigenvalue    : spin-up %18.10E (Ha) spin-down %18.10E (Ha)\n", maxeig[0], maxeig[1]);
+        		    fprintf(output_fp,"Min. occupation    : spin-up %18.10E      spin-down %18.10E \n", occ_maxeig[0], occ_maxeig[1]);
+                }
+        		fclose(output_fp);
+			}
+		}
     } else {
-        #ifdef DEBUG
         int spn_i;
         int Nk = pSPARC->Nkpts_kptcomm;
         int Ns = pSPARC->Nstates;
@@ -947,9 +996,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                 ind_90percent+1, pSPARC->occfac * g_ind_90percent,
                 ind_100percent+1, pSPARC->occfac * g_ind_100percent);
         }
-        #endif
     }
-
+#endif
     // check if scf is converged
     double TOL = (pSPARC->usefock % 2 == 1) ? pSPARC->TOL_SCF_INIT : pSPARC->TOL_SCF;
     if (error > TOL) {
@@ -1087,14 +1135,14 @@ void Update_mixing_hist_xk(SPARC_OBJ *pSPARC)
         }         
     } else {
         memcpy(pSPARC->mixing_hist_xkm1, pSPARC->Veff_loc_dmcomm_phi, sizeof(double)*pSPARC->Nd_d*pSPARC->Nspden);
-        shiting_Veff_mean(pSPARC, pSPARC->mixing_hist_xkm1, pSPARC->Nspden, Veff_mean, 0, -1);
+        shifting_Veff_mean(pSPARC, pSPARC->mixing_hist_xkm1, pSPARC->Nspden, Veff_mean, 0, -1);
         memcpy(pSPARC->mixing_hist_xk, pSPARC->mixing_hist_xkm1, sizeof(double)*pSPARC->Nd_d*pSPARC->Nspden);
     }
     memcpy(pSPARC->mixing_hist_xk, pSPARC->mixing_hist_xkm1, sizeof(double)*pSPARC->Nd_d*pSPARC->Nspden);
 }
 
 
-void shiting_Veff_mean(SPARC_OBJ *pSPARC, double *Veff, int ncol, double *Veff_mean, int option, int dir)
+void shifting_Veff_mean(SPARC_OBJ *pSPARC, double *Veff, int ncol, double *Veff_mean, int option, int dir)
 {
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) return;
     // when option = 0, calculate Veff_mean, option = 1, don't do it

@@ -524,7 +524,7 @@ void print_orbitals(SPARC_OBJ *pSPARC) {
     int spin_start = max(pSPARC->PrintPsiFlag[1],0);
     int spin_end = min(pSPARC->PrintPsiFlag[2], pSPARC->Nspin-1);
     int kpt_start = max(pSPARC->PrintPsiFlag[3],0);
-    int kpt_end = min(pSPARC->PrintPsiFlag[4], pSPARC->Nkpts-1);
+    int kpt_end = min(pSPARC->PrintPsiFlag[4], pSPARC->Nkpts_sym-1);
     int band_start = max(pSPARC->PrintPsiFlag[5],0);
     int band_end = min(pSPARC->PrintPsiFlag[6], pSPARC->Nstates-1);
 

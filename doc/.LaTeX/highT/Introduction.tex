@@ -36,14 +36,7 @@ If you publish work using/regarding SPARC-SQ, please cite the following articles
     \item \url{https://doi.org/10.1016/j.cpc.2015.11.005} (initial implementation),
      \url{https://doi.org/10.1016/j.cplett.2013.08.035} (formulation),
     \url{https://doi.org/10.1007/978-3-031-22340-2_12} (detailed mathematical formulation),
-%    \url{https://doi.org/10.1063/5.0204229},
-%    \url{https://doi.org/10.48550/arXiv.2407.15290}
-%    \item Non-orthogonal systems: \url{https://doi.org/10.1016/j.cplett.2018.04.018}
-%    \item Linear solvers: \url{https://doi.org/10.1016/j.cpc.2018.07.007},    \url{https://doi.org/10.1016/j.jcp.2015.11.018}
-%    \item Stress tensor/pressure: \url{https://doi.org/10.1063/1.5057355}
-%    \item Atomic forces: \url{https://doi.org/10.1016/j.cpc.2016.09.020}, \url{https://doi.org/10.1016/j.cpc.2017.02.019}
-%    \item Mixing: \url{https://doi.org/10.1016/j.cplett.2016.01.033}, \url{https://doi.org/10.1016/j.cplett.2015.06.029}, \url{https://doi.org/10.1016/j.cplett.2019.136983}
-%    \item SPMS pseudopotentials: \url{https://doi.org/10.1016/j.cpc.2022.108594}
+
 \end{itemize}
 \end{frame}
 
@@ -54,7 +47,6 @@ If you publish work using/regarding SPARC-SQ, please cite the following articles
 \end{itemize}
 \end{frame}
 
-
 \begin{frame}[allowframebreaks]{\textbf{Comments}} \label{Introduction}
 The code will fail with the following options and the related input options are listed.
 \begin{itemize}
@@ -62,7 +54,6 @@ The code will fail with the following options and the related input options are 
   \item K-point calculation: \texttt{KPOINT\_GRID}, \texttt{KPOINT\_SHIFT}.
   \item Dirichlet boundary condition in any direction: \texttt{BC}
   \item Define number of states/orbitals: \texttt{NSTATES}
-  \item Hybrid functionals: \texttt{EXCHANGE\_CORRELATION}
   \item Print eigenvalues into file: \texttt{PRINT\_EIGEN}
 \end{itemize}
 
@@ -71,13 +62,13 @@ The code will fail with the following options and the related input options are 
 \begin{frame}[allowframebreaks]{\textbf{Input file options}} \label{Index}
 \vspace{-2mm}
  \begin{block}{Spectral Quadrature}
-\hyperlink{SQ_FLAG}{\texttt{SQ\_FLAG}} $\vert$ 
+\hyperlink{SQ_AMBIENT_FLAG}{\texttt{SQ\_AMBIENT\_FLAG}} $\vert$ 
+\hyperlink{SQ_HIGHT_FLAG}{\texttt{SQ\_HIGHT\_FLAG}} $\vert$ 
 \hyperlink{SQ_RCUT}{\texttt{SQ\_RCUT}} $\vert$ 
 \hyperlink{SQ_NPL_G}{\texttt{SQ\_NPL\_G}}  $\vert$ 
-\hyperlink{SQ_GAUSS_MEM}{\texttt{SQ\_GAUSS\_MEM}} $\vert$ 
+\hyperlink{SQ_GAUSS_HYBRID_MEM}{\texttt{SQ\_HIGHT\_GAUSS\_HYBRID\_MEM}} $\vert$ 
 \hyperlink{SQ_TOL_OCC}{\texttt{SQ\_TOL\_OCC}} $\vert$ 
 \hyperlink{NP_DOMAIN_SQ_PARAL}{\texttt{NP\_DOMAIN\_SQ\_PARAL}} 
 \end{block}
 
 \end{frame}
-

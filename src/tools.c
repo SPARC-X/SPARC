@@ -421,7 +421,7 @@ void tridiag_gen(double *A, double *B, double *C, double *D, int len) {
     
     // Gauss elimination; forward substitution
     b = B[0];
-    if (fabs(b) < 1e-14) {
+    if (fabs(b) < 1e-50) {
         printf("Divide by zero in tridiag_gen\n"); 
         exit(EXIT_FAILURE);
     }
@@ -429,7 +429,7 @@ void tridiag_gen(double *A, double *B, double *C, double *D, int len) {
     for (i = 1; i<len; i++) {
         F[i] = C[i-1] / b;
         b= B[i] - A[i] * F[i];
-        if (fabs(b) < 1e-14) {
+        if (fabs(b) < 1e-50) {
             printf("Divide by zero in tridiag_gen\n"); 
             exit(EXIT_FAILURE);
         }
@@ -887,6 +887,31 @@ void VectorScale(double *Vec, const int len, const double c, MPI_Comm comm)
 
 
 /**
+ * @brief Create a random matrix with each entry a random number within given range.
+ *        In order to increase the flexibility of the routine, this routine also
+ *        accepts a shift to the seed, so that the same process can call this routine
+ *        multiple times and get different random arrays.
+ * 
+ * @param Mat Local part of the matrix.
+ * @param m Number of rows of the local copy of the matrix.
+ * @param n Number of columns of the local part of the matrix.
+ * @param rand_min Minimum value of the random entries.
+ * @param rand_max Maximum value of the random entries.
+ * @param seed Random number generator seed, seed >= 1.
+ */
+void SetRandMat_seed(
+    double *Mat, int m, int n, double rand_min, double rand_max, int seed)
+{
+    assert(seed >= 1);
+    srand(seed);
+    int len_tot = m * n;
+    for (int i = 0; i < len_tot; i++) {
+        Mat[i] = rand_min + (rand_max - rand_min) * ((double) rand() / RAND_MAX);
+    }
+}
+
+
+/**
  * @brief   Create a random matrix with each entry a random number within given range. 
  * 
  *          Note that each process within comm will have different random entries.
@@ -897,17 +922,12 @@ void VectorScale(double *Vec, const int len, const double c, MPI_Comm comm)
  */
 void SetRandMat(double *Mat, int m, int n, double rand_min, double rand_max, MPI_Comm comm)
 {
-    int rank, i, len_tot;
+    int rank;
     MPI_Comm_rank(comm, &rank);
 
     int seed_shift = 1;
-    int seed_temp = rank * 100 + seed_shift;
-    srand(seed_temp);
-
-    len_tot = m * n;
-    for (i = 0; i < len_tot; i++) {
-        Mat[i] = rand_min + (rand_max - rand_min) * ((double) rand() / RAND_MAX);
-    }
+    int seed = rank * 100 + seed_shift;
+    SetRandMat_seed(Mat, m, n, rand_min, rand_max, seed);
 }
 
 
@@ -2524,6 +2544,133 @@ void MKL_MDiFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *str
         c2c_3doutput[i] /= N;
     }
 }
+
+
+/**
+ * @brief   MKL multi-dimension FFT interface, real to complex, following conjugate even distribution. 
+ */
+void MKL_MDFFT_batch_real(double *r2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *r2c_3doutput, MKL_LONG *strides_out, int out_dist) {
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_REAL, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_DISTANCE, in_dist);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_DISTANCE, out_dist);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeForward(my_desc_handle, r2c_3dinput, r2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
+}
+
+
+
+/**
+ * @brief   MKL multi-dimension iFFT interface, complex to real, following conjugate even distribution. 
+ */
+void MKL_MDiFFT_batch_real(double _Complex *c2r_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, MKL_LONG *strides_in, double *c2r_3doutput, int out_dist) {
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_REAL, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
+    status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_DISTANCE, in_dist);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_DISTANCE, out_dist);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeBackward(my_desc_handle, c2r_3dinput, c2r_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
+
+    // scale the result to make it the same as definition of IFFT
+    int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];
+    for (int i = 0; i < N * ncol; i++) {
+        c2r_3doutput[i] /= N;
+    }
+}
+
+
+/**
+ * @brief   MKL multi-dimension FFT interface, complex to complex
+ */
+void MKL_MDFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *c2c_3doutput, MKL_LONG *strides_out, int out_dist)
+{
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+    status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_DISTANCE, in_dist);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_DISTANCE, out_dist);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeForward(my_desc_handle, c2c_3dinput, c2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
+}
+
+
+/**
+ * @brief   MKL multi-dimension iFFT interface, complex to complex. 
+ */
+void MKL_MDiFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_sizes, int in_dist, double _Complex *c2c_3doutput, MKL_LONG *strides_out, int out_dist)
+{
+    DFTI_DESCRIPTOR_HANDLE my_desc_handle = NULL;
+    MKL_LONG status;
+    /********************************************************************/
+    
+    status = DftiCreateDescriptor(&my_desc_handle,
+                                  DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
+    status = DftiSetValue(my_desc_handle,
+                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+    status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+    status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_DISTANCE, in_dist);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_DISTANCE, out_dist);
+
+    status = DftiCommitDescriptor(my_desc_handle);
+    status = DftiComputeBackward(my_desc_handle, c2c_3dinput, c2c_3doutput);
+    status = DftiFreeDescriptor(&my_desc_handle);
+
+    if (status && !DftiErrorClass(status, DFTI_NO_ERROR)) {
+        printf("Error: %s\n", DftiErrorMessage(status));
+    }
+    
+    // scale the result to make it the same as definition of IFFT
+    int N = dim_sizes[2]*dim_sizes[1]*dim_sizes[0];
+    for (int i = 0; i < N*ncol; i++) {
+        c2c_3doutput[i] /= N;
+    }
+}
 #endif
 
 
@@ -2556,6 +2703,7 @@ void FFTW_MDiFFT(int *dim_sizes, double _Complex *c2c_3dinput, double _Complex *
 
 /**
  * @brief   FFTW multi-dimension FFT interface, real to complex. 
+ * Warning: This routine might change input array 
  */
 void FFTW_MDFFT_real(int *dim_sizes, double *r2c_3dinput, double _Complex *r2c_3doutput) {
     fftw_complex *in, *out;
@@ -2577,6 +2725,52 @@ void FFTW_MDiFFT_real(int *dim_sizes, double _Complex *c2r_3dinput, double *c2r_
     fftw_execute(p);
     fftw_destroy_plan(p);
     for (i = 0; i < N; i++)
+        c2r_3doutput[i] /= N;
+}
+
+
+
+void FFTW_MDFFT_batch(int *dim_sizes, int ncol, double _Complex *c2c_3dinput, int idist, double _Complex *c2c_3doutput, int odist) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    p = fftw_plan_many_dft(3, dim_sizes, ncol, c2c_3dinput, dim_sizes, 1, idist, 
+                                            c2c_3doutput, dim_sizes, 1, odist, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+}
+
+
+void FFTW_MDiFFT_batch(int *dim_sizes, int ncol, double _Complex *c2c_3dinput, int idist, double _Complex *c2c_3doutput, int odist) {
+    fftw_complex *in, *out;
+    fftw_plan p;    
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2];
+    p = fftw_plan_many_dft(3, dim_sizes, ncol, c2c_3dinput, dim_sizes, 1, idist, 
+                                            c2c_3doutput, dim_sizes, 1, odist, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+
+    for (int i = 0; i < odist*ncol; i++)
+        c2c_3doutput[i] /= N;
+}
+
+// Warning: This routine might change input array 
+void FFTW_MDFFT_batch_real(int *dim_sizes, int ncol, double *r2c_3dinput, int *inembed, int idist, double _Complex *r2c_3doutput, int *onembed, int odist) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    
+    p = fftw_plan_many_dft_r2c(3, dim_sizes, ncol, r2c_3dinput, inembed, 1, idist, r2c_3doutput, onembed, 1, odist, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+}
+
+void FFTW_MDiFFT_batch_real(int *dim_sizes, int ncol, double _Complex *c2r_3dinput, int *inembed, int idist, double *c2r_3doutput, int *onembed, int odist) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    int N = dim_sizes[0] * dim_sizes[1] * dim_sizes[2], i;
+    p = fftw_plan_many_dft_c2r(3, dim_sizes, ncol, c2r_3dinput, inembed, 1, idist, c2r_3doutput, onembed, 1, odist, FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftw_destroy_plan(p);
+    for (i = 0; i < N*ncol; i++)
         c2r_3doutput[i] /= N;
 }
 #endif
@@ -2675,16 +2869,17 @@ double expint(const int n, const double x)
  *
  */
 void restrict_to_subgrid(
-    const double *v_i,    double *v_o,
+    const void *v_i,      void *v_o,
     const int stride_y_o, const int stride_y_i,
     const int stride_z_o, const int stride_z_i,
     const int x_o_spos,   const int x_o_epos,
     const int y_o_spos,   const int y_o_epos,
     const int z_o_spos,   const int z_o_epos,
     const int x_i_spos,   const int y_i_spos,
-    const int z_i_spos
+    const int z_i_spos,   const int unit_size
 )
 {
+    assert(unit_size == 8 || unit_size == 16);
     const int shift_ip = x_i_spos - x_o_spos;
     const int shift_jp = y_i_spos - y_o_spos;
     const int shift_kp = z_i_spos - z_o_spos;
@@ -2698,7 +2893,11 @@ void restrict_to_subgrid(
                 int ip     = i + shift_ip;
                 int idx    = offset + i;
                 int idx_i  = offset_i + ip;
-                v_o[idx] = v_i[idx_i];
+                if (unit_size == 8) {
+                    *((double *)v_o+idx) = *((double *)v_i+idx_i);
+                } else {
+                    *((double _Complex *)v_o+idx) = *((double _Complex *)v_i+idx_i);
+                }
             }
         }
     }
@@ -2828,7 +3027,7 @@ void copy_mat_blk(
  *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
  *          Cartesian order means that the vector is in the order (x,y,z)
  */
-void cart_to_block_dp(void *vec_cart, int ncol, int **DMVertices, int size_comm, 
+void cart_to_block_dp(void *vec_cart, int ncol, int (*DMVertices)[6], int size_comm, 
                     int Nx, int Ny, int Nd, void *vec_bdp, int unit_size) 
 {
     assert(unit_size == 8 || unit_size == 16);
@@ -2861,7 +3060,7 @@ void cart_to_block_dp(void *vec_cart, int ncol, int **DMVertices, int size_comm,
  *          [core0, core1, core2,...], corei is the part in i-th core of domain communicator
  *          Cartesian order means that the vector is in the order (x,y,z)
  */
-void block_dp_to_cart(void *vec_bdp, int ncol, int **DMVertices, int *displs, int size_comm, 
+void block_dp_to_cart(void *vec_bdp, int ncol, int (*DMVertices)[6], int *displs, int size_comm, 
                     int Nx, int Ny, int Nd, void *vec_cart, int unit_size) 
 {
     if (ncol == 0) return;

@@ -80,7 +80,8 @@ void Calculate_elecstPotential(SPARC_OBJ *pSPARC);
  *
  *          Note that this is only done in "phi-domain".
  */
-void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, double *f, double *d_cor);
+void MultipoleExpansion_phi(SPARC_OBJ *pSPARC, 
+    int DMnx, int DMny, int DMnz, int *DMVertices, double *f, double *d_cor, MPI_Comm comm);
  
 
 /**
@@ -112,6 +113,15 @@ void PartrialDipole_wire(SPARC_OBJ *pSPARC, double *f, double *d_cor);
 
 void Jacobi_preconditioner(SPARC_OBJ *pSPARC, int N, double c, double *r, double *f, MPI_Comm comm);
 
+
+void init_multipole_expansion(SPARC_OBJ *pSPARC, MPEXP_OBJ *MpExp, 
+        int Nx, int Ny, int Nz, int DMnx, int DMny, int DMnz, int *DMVertices, MPI_Comm comm);
+
+void free_multipole_expansion(MPEXP_OBJ *MpExp, MPI_Comm comm);
+
+void apply_multipole_expansion(SPARC_OBJ *pSPARC, MPEXP_OBJ *MpExp, 
+    int Nx, int Ny, int Nz, int DMnx, int DMny, int DMnz, 
+    int *DMVertices, double *rhs, double *d, MPI_Comm comm);
 
 #endif // ELECTROSTATICS_H
 

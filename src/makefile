@@ -13,11 +13,14 @@ USE_DP_SUBEIG = 0
 # Set USE_FFTW = 1 to use FFTW for fast Fourier transform in vdWDF. Don't open it together with USE_MKL
 USE_FFTW      = 0
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 0
+DEBUG_MODE    = 1
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
 ENABLE_SIMD_COMPLEX = 1
+
+# Enable ACCEL by GT
+USE_ACCELGT = 0
 
 # Specify the path MKLROOT if it's not already set to compile with MKL, e.g,
 # MKLROOT = /opt/intel/compilers_and_libraries_2017.4.196/linux/mkl
@@ -33,7 +36,7 @@ ENABLE_SIMD_COMPLEX = 1
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IhighT/include -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -83,7 +86,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         hamiltonianVecRoutines.o lapVecRoutines.o lapVecRoutinesKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o      \
         forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o printing.o \
-        linearAlgebra.o \
+        linearAlgebra.o kroneckerLaplacian.o\
         xc/vdW/d3/d3correction.o xc/vdW/d3/d3findR0ab.o xc/vdW/d3/d3copyC6.o                       \
         xc/vdW/d3/d3initialization.o xc/vdW/d3/d3finalization.o xc/vdW/d3/d3forceStress.o          \
         xc/vdW/vdWDF/vdWDFinitialization.o xc/vdW/vdWDF/vdWDFfinalization.o                        \
@@ -95,11 +98,12 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/exx/exactExchange.o xc/exx/exactExchangeKpt.o xc/exx/exactExchangeInitialization.o      \
         xc/exx/exactExchangeFinalization.o xc/exx/exactExchangeStress.o                            \
         xc/exx/exactExchangePressure.o xc/exx/exactExchangeEnergyDensity.o \
-        highT/sq.o highT/sqInitialization.o highT/sqFinalization.o highT/sqEnergy.o\
-        highT/sqDensity.o highT/sqNlocVecRoutines.o highT/sqParallelization.o          \
-        highT/sqProperties.o highT/sqtool.o   \
+        linearScaling/sq.o linearScaling/sqInitialization.o linearScaling/sqFinalization.o linearScaling/sqEnergy.o\
+        linearScaling/sqDensity.o linearScaling/sqNlocVecRoutines.o linearScaling/sqParallelization.o linearScaling/sqProperties.o\
+        highT/sqHighTExactExchange.o highT/sqHighT.o highT/sqHighTDensity.o highT/sqHighTInitialization.o\
         cyclix/cyclix_tools.o cyclix/cyclix_forces.o cyclix/cyclix_gradVec.o cyclix/cyclix_lapVec.o \
         cyclix/cyclix_stress.o \
+        ofdft/ofdft.o\
         mlff/covariance_matrix.o mlff/regression.o mlff/spherical_harmonics.o mlff/soap_descriptor.o mlff/sparc_mlff_interface.o \
         mlff/bessel_NR.o mlff/nrutils.o mlff/sparsification.o mlff/tools_mlff.o mlff/mlff_read_write.o \
         mlff/descriptor.o mlff/ddbp_tools.o highT/mlff/internal_energy_model.o cyclix/mlff/cyclix_mlff_tools.o \
