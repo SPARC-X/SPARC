@@ -1558,12 +1558,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->Nstates = (int) ((pSPARC->Nelectron / 2) * 1.2 + 5) * pSPARC->Nspinor_eig;
     } else {
         if (pSPARC->Nspinor_eig == 1) {
-            if (pSPARC->Nstates < (pSPARC->Nelectron / 2) && !pSPARC->sqAmbientFlag && !pSPARC->sqHighTFlag) {
+            if (pSPARC->Nstates < (pSPARC->Nelectron / 2) && (!pSPARC->sqAmbientFlag && !pSPARC->sqHighTFlag)) {
                 if (!rank) printf("\nERROR: number of states is less than Nelectron/2!\n");
                 exit(EXIT_FAILURE);
             }
         } else if (pSPARC->Nspinor_eig == 2) {
-            if (pSPARC->Nstates < pSPARC->Nelectron && !pSPARC->sqAmbientFlag && !pSPARC->sqHighTFlag) {
+            if (pSPARC->Nstates < pSPARC->Nelectron && (!pSPARC->sqAmbientFlag && !pSPARC->sqHighTFlag)) {
                 if (!rank) printf("\nERROR: number of states is less than Nelectron!\n");
                 exit(EXIT_FAILURE);
             }
@@ -3556,7 +3556,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                      SPARC (version Sept 30, 2024)                      *\n");
+    fprintf(output_fp,"*                      SPARC (version Oct 30, 2024)                       *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
