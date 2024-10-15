@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: conda-incubator/setup-miniconda@v3
       with:
-        python-version: "3.10"
+        python-version: "3.11"
         activate-environment: sparc-test
         conda-build-version: "24.3.0"
         miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
@@ -30,13 +30,13 @@ jobs:
         channel-priority: true
     - name: Install boa dependencies
       run: |
-        mamba install -c conda-forge pip "conda-build=24.3.0" "colorama=0.4"  "ruamel=1.0" "ruamel.yaml=0.17" "rich=13.6" "mamba=1.5" "jsonschema=4.19"
-        #pip install git+https://github.com/mamba-org/boa.git@00a11ffce59f47c0fc576f93d39baf1f8fc92f32
+        mamba install -c conda-forge pip conda-build colorama  ruamel ruamel.yaml rich mamba jsonschema
+        pip install git+https://github.com/mamba-org/boa.git
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
         conda info
-        CPU_COUNT=2 conda build .conda/
+        CPU_COUNT=2 conda mambabuild .conda/
     - name: Install local build
       run: |
         mamba install --use-local sparc
