@@ -19,19 +19,19 @@ jobs:
       max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: "3.11"
         activate-environment: sparc-test
-        conda-build-version: "24.3.0"
+        conda-build-version: "24.9.0"
         miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
         channels: conda-forge,defaults
         channel-priority: true
     - name: Install boa dependencies
       run: |
-        mamba install -c conda-forge pip conda-build colorama  ruamel ruamel.yaml rich mamba jsonschema
-        pip install git+https://github.com/mamba-org/boa.git
+        mamba install -c conda-forge pip setuptools "conda-build=24.9.0" "colorama=0.4.6"  "ruamel=1.0" ruamel.yaml "rich=13.9" "mamba=1.5.10" "jsonschema=4.23"
+        pip install git+https://github.com/mamba-org/boa.git@00a11ffce59f47c0fc576f93d39baf1f8fc92f32
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
