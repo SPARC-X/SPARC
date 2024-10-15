@@ -26,7 +26,7 @@ To use the `mdanalysis.py` one needs an input file `carbon.mdanalysis.inpt` whic
  * `RANGE_PCF:` - Maximum radial distance to be  considered 
  * `SIZE_HIST_PCF:` - Total number of spherical shells to be considered
  * `SELF_DIFFUSION_FLAG:` - Flag to do self-diffusion coefficient calculation using integration of VACF
- * `BLOCK_LENGTH_SELF_DIFFUSION:` - Block length for self diffuison calculation
+ * `BLOCK_LENGTH_SELF_DIFFUSION:` - Block lengths for self diffuison calculation (provide a block length for each elemental specie in the system)
  * `INTER_DIFFUSION_FLAG:` - Flag to do inter-diffusion coefficient calculation using integration of VACF
  * `BLOCK_LENGTH_INTER_DIFFUSION:` - Block length for inter diffuison calculation
  * `VISCOSITY_FLAG:` - Flag to do shear viscosity calculation using integration of VACF

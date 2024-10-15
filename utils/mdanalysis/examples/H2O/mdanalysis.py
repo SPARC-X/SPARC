@@ -702,7 +702,7 @@ if __name__ == "__main__":
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
 
     fid_out.write("*************************************************************************** \n")
-    fid_out.write("*                   MD analysis (Version 15 Oct 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
+    fid_out.write("*                   MD analysis (Version 05 Sept 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
     fid_out.write("*************************************************************************** \n")
 
     fid_out.write("Inputs:\n")
