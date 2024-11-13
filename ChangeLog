@@ -4,6 +4,15 @@
 -changes
 
 --------------
+Nov 13, 2024
+Name: Lucas Timmerman
+Changes: (initialization.c, initialization.h, electronicGroundState.c)
+1. Put check_inputs into it's own loop and added a broadcastable exit flag to trigger an exit on all processors
+2. Modified printing in static file so that atomic magnetic moments can be read by api.
+3. Added net magnetization to the static file
+4. Added net magnetization as part of the final outputs in .out file
+
+--------------
 Oct 15, 2024
 Name: Shashikant Kumar
 Changes: (utils/mdanalysis)

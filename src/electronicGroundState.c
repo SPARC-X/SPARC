@@ -136,6 +136,9 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         if (pSPARC->d3Flag == 1) {
         	fprintf(output_fp,"DFT-D3 correction                  :%18.10E (Ha)\n", pSPARC->d3Energy[0]);
         }
+        if (pSPARC->spin_typ > 0) {
+            fprintf(output_fp,"Net magnetization                  :%18.10E (Bohr magneton)\n", pSPARC->netM[0]);
+        }
         if (pSPARC->ixc[3] != 0) {
             fprintf(output_fp,"vdWDF energy                       :%18.10E (Ha)\n", pSPARC->vdWDFenergy);
         }
@@ -174,17 +177,19 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             fprintf(static_fp,"%18.10E %18.10E %18.10E\n",
                     pSPARC->forces[3*i],pSPARC->forces[3*i+1],pSPARC->forces[3*i+2]);
         }
-        if (pSPARC->spin_typ == 1) {        
-            fprintf(static_fp, "Atomic magnetization along Z-dir within Radius 2 Bohr: (Bohr magneton)\n");
-            for (i = 0; i < pSPARC->n_atom; i++) {
-                fprintf(static_fp,"%18.10E\n", pSPARC->AtomMag[i]);
-            }
-        }
-        if (pSPARC->spin_typ == 2) {        
-            fprintf(static_fp, "Atomic magnetization along X,Y,Z-dir within Radius 2 Bohr: (Bohr magneton)\n");
-            for (i = 0; i < pSPARC->n_atom; i++) {
-                fprintf(static_fp,"%18.10E %18.10E %18.10E\n",
-                        pSPARC->AtomMag[3*i],pSPARC->AtomMag[3*i+1],pSPARC->AtomMag[3*i+2]);
+        if (pSPARC->spin_typ > 0) {
+            fprintf(static_fp, "Net magnetization (Bohr magneton): %18.10E\n", pSPARC->netM[0]); 
+            if (pSPARC->spin_typ == 1) {       
+                fprintf(static_fp, "Atomic magnetization along Z-dir within Radius 2 Bohr (Bohr magneton):\n");
+                for (i = 0; i < pSPARC->n_atom; i++) {
+                    fprintf(static_fp,"%18.10E\n", pSPARC->AtomMag[i]);
+                }
+            } else if (pSPARC->spin_typ == 2) {        
+                fprintf(static_fp, "Atomic magnetization along X,Y,Z-dir within Radius 2 Bohr (Bohr magneton):\n");
+                for (i = 0; i < pSPARC->n_atom; i++) {
+                    fprintf(static_fp,"%18.10E %18.10E %18.10E\n",
+                            pSPARC->AtomMag[3*i],pSPARC->AtomMag[3*i+1],pSPARC->AtomMag[3*i+2]);
+                }
             }
         }
         fclose(static_fp);
