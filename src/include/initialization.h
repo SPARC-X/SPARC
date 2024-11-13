@@ -54,7 +54,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI);
  * @param argc          The number of arguments that are passed to the program.
  * @param argv          The array of strings representing command line arguments.
  */
-void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[]);
+void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[], int *exit_flag);
 
 
 /**

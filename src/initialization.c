@@ -238,19 +238,26 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     if (rank == 0) printf("\nCreating SPARC_INPUT_MPI datatype took %.3f ms\n",(t2-t1)*1000);
 #endif
 
+    int exit_flag;
     if (rank == 0) {
 #ifdef DEBUG
         printf("Initializing ...\n");
         t1 = MPI_Wtime();
 #endif
         // check input arguments and read filename
-        check_inputs(&SPARC_Input, argc, argv); 
+        check_inputs(&SPARC_Input, argc, argv, &exit_flag); 
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
         printf("\nChecking inputs parsed by commandline took %.3f ms\n",(t2-t1)*1000);
         t1 = MPI_Wtime();
 #endif
+    }
+
+    MPI_Bcast(&exit_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (exit_flag == 1) exit(EXIT_FAILURE);
+
+    if (rank ==0) {
         set_defaults(&SPARC_Input, pSPARC); // set default values
 
 #ifdef DEBUG
@@ -496,7 +503,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
 /**
  * @brief   Check input arguments and read filename.
  */
-void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[]) {
+void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[], int *exit_flag) {
 #ifdef DEBUG
     printf("Checking input arguments parsed by command line.\n");
 #endif
@@ -529,7 +536,8 @@ void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[]) {
     for (i = 1; i < argc-1; i++) {
         if (strcmp(argv[i],"--help") == 0 || strcmp(argv[i],"-h") == 0) {
             print_usage();
-            exit(EXIT_FAILURE);
+            *exit_flag = 1;
+            return;
         }
         if (strcmp(argv[i],"-name") == 0) {
             name_flag = 'Y';
@@ -549,7 +557,7 @@ void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[]) {
     
     if (name_flag != 'Y') {
         print_usage();
-        exit(EXIT_FAILURE);
+        *exit_flag = 1;
     }
 }
 
