@@ -40,6 +40,9 @@ jobs:
     - name: Install local build
       run: |
         mamba install --use-local sparc
+        which sparc
+        ldd $(which sparc)
+        ldd $(which mpirun)
     - name: Test simple sparc run
       run: |
         cd tests/Cu_FCC/standard/
