@@ -24,15 +24,15 @@ requirements:
     - linux-aarch64
   host:
     - compilers
-    - openmpi
+    - openmpi=4
     - openblas
     - scalapack
-    - fftw
+    - fftw=4.*=mpi_openmpi_*
   run:
-    - openmpi
+    - openmpi=4
     - openblas
     - scalapack
-    - fftw
+    - fftw=4.*=mpi_openmpi_*
 
 about:
   home: https://www.sparc-x.com
