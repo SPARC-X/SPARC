@@ -1093,6 +1093,20 @@ typedef struct _SPARC_OBJ{
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
     int readInitDens; // flag for reading inital density
+   /* Socket interface
+      Please keep this section as the last block in SPARC_OBJ definition,
+      add new features before this block.
+    */
+  
+#ifdef USE_SOCKET
+    int SocketFlag;             // boolean value to indicate whether to switch on socket support at all
+    int SocketSCFCount;   	// scf count in socket mode
+    char socket_host[L_STRING]; // socket file descriptor
+    int socket_port;            // socket host
+    int socket_inet;            // boolean value to indicate whether to use inet socket
+    int socket_fd;             // socket file descriptor; This should be initialized to -1
+    int socket_max_niter;           // max number of iterations. Default is 10000
+#endif
 }SPARC_OBJ;
 
 
@@ -1404,6 +1418,18 @@ typedef struct _SPARC_INPUT_OBJ{
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
     int readInitDens; // flag for reading inital density    
+
+    /* Socket interface
+       Please keep the socket interface as the last block in the SPARC_INPUT_OBJ
+       definition. All new features should be added before this block
+     */
+#ifdef USE_SOCKET
+    int SocketFlag;             // boolean value to indicate whether to switch on socket support at all
+    char socket_host[L_STRING]; // socket file descriptor
+    int socket_port;            // socket port
+    int socket_inet;            // boolean value to indicate whether to use inet socket
+    int socket_max_niter;           // max number of iterations
+#endif
 }SPARC_INPUT_OBJ;
 
 

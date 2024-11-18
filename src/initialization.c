@@ -42,6 +42,10 @@
 #include "ofdft.h"
 #include "sparc_mlff_interface.h"
 
+#ifdef USE_SOCKET
+#include "driver.h" // socker driver functions
+#endif
+
 #define TEMP_TOL 1e-12
 
 #define min(x,y) ((x)<(y)?(x):(y))
@@ -192,6 +196,11 @@ void print_usage() {
     printf("    -n <number of Nodes>\n");
     printf("    -c <number of CPUs per node>\n");
     printf("    -a <number of Accelerators (e.g., GPUs) per node>\n");
+#ifdef USE_SOCKET
+    printf("    -socket <socket> \n");
+    printf("            <socket> can be either  <host>:<port> or <unix_socket>:UNIX.\n");
+    printf("            Note: socket (driver) mode is an experimental feature.\n");
+#endif // USE_SOCKET
     printf("\n");
     printf("EXAMPLE:\n");
     printf("\n");
@@ -423,6 +432,11 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     }
     
 #ifdef DEBUG
+    t2 = MPI_Wtime();
+    if (rank == 0) printf("\nrank = %d, Copying data from SPARC_Input into SPARC & set up subcomm took %.3f ms\n",rank,(t2-t1)*1000);
+#endif
+    
+#ifdef DEBUG
     t1 = MPI_Wtime();
 #endif
 
@@ -492,6 +506,18 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     // estimate memory usage
     pSPARC->memory_usage = estimate_memory(pSPARC);
 
+
+
+    /* NOTE to future developers: Please keep the initialize_Socket as the last
+       part of the initialization function
+     */
+#ifdef USE_SOCKET
+    // Initialize the socket communicator as the last step
+    if (pSPARC->SocketFlag == 1)
+    {
+        initialize_Socket(pSPARC);
+    }
+#endif    
     // write initialized parameters into output file
     if (rank == 0) {
         write_output_init(pSPARC);
@@ -553,6 +579,29 @@ void check_inputs(SPARC_INPUT_OBJ *pSPARC_Input, int argc, char *argv[], int *ex
         if (strcmp(argv[i],"-a") == 0) {
             pSPARC_Input->num_acc_per_node = atoi(argv[i+1]);
         }
+#ifdef USE_SOCKET
+        if (strcmp(argv[i], "-socket") == 0)
+        {
+            const char *socket_str = argv[i + 1];
+            pSPARC_Input->SocketFlag = 1;
+            int ret = split_socket_name(socket_str,
+                                        pSPARC_Input->socket_host,
+                                        &pSPARC_Input->socket_port,
+                                        &pSPARC_Input->socket_inet);
+            if (ret != 0)
+            {
+                printf("Error: invalid socket name %s\n", socket_str);
+                exit(EXIT_FAILURE);
+            }
+#ifdef DEBUG
+            printf("Socket host = %s\n", pSPARC_Input->socket_host);
+            printf("Socket port is %d\n", pSPARC_Input->socket_port);
+            printf("Socket inet flag is %d\n", pSPARC_Input->socket_inet);
+            printf("Socket mode is %d\n", pSPARC_Input->SocketFlag);
+#endif // DEBUG
+        }
+
+#endif // USE_SOCKET
     }
     
     if (name_flag != 'Y') {
@@ -857,6 +906,31 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     // read in initial density
     pSPARC_Input->readInitDens = 0;
+
+    /* Default socket options
+       Note to future developers: please keep the USE_SOCKET macro
+       as the last part of the initialization function
+     */
+#ifdef USE_SOCKET
+    // Defaults for pSPARC_Input, if not initialized by the cmdline
+    if (pSPARC_Input->SocketFlag != 1)
+    {
+        pSPARC_Input->SocketFlag = 0; // socket off
+        strncpy(pSPARC_Input->socket_host, "localhost", sizeof(pSPARC_Input->socket_host));
+        pSPARC_Input->socket_port = -1; // socket port
+        pSPARC_Input->socket_inet = 0;  // 0: -> default unix socket, 1: -> inet socket
+    }
+    pSPARC_Input->socket_max_niter = 10000; // Set to a very large number
+#endif
+
+
+	/* Default spDFT option */
+	pSPARC_Input->spDFT_Flag = 0;             // flag for using spDFT method
+	pSPARC_Input->PrintspDFTFlag = 0;         // flag for printing spDFT data into .spDFT file
+	pSPARC_Input->spDFT_isesplit_const = 0;   // Is splitting energy to be kept constant
+	pSPARC_Input->spDFT_tau_s = 0.01;         // default smearing (in Ha) for spectral-partitioning
+	pSPARC_Input->spDFT_tol_occ = 1e-12;      // default maximum occupation of the highest-energy planewave
+
 }
 
 
@@ -1461,6 +1535,25 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     strncpy(pSPARC->InDensTCubFilename, pSPARC_Input->InDensTCubFilename,sizeof(pSPARC->InDensTCubFilename));
     strncpy(pSPARC->InDensUCubFilename, pSPARC_Input->InDensUCubFilename,sizeof(pSPARC->InDensUCubFilename));
     strncpy(pSPARC->InDensDCubFilename, pSPARC_Input->InDensDCubFilename,sizeof(pSPARC->InDensDCubFilename));
+    
+    /* Socket interface section
+     TODO: should we move the socket to a later section?
+    */
+#ifdef USE_SOCKET
+    // Copy the pSPARC_Input socket information to pSPARC.
+    // Since only rank 0 handles the communication, we don't need 
+    // to explicitly bcast except for SocketFlag
+    pSPARC->SocketFlag = pSPARC_Input->SocketFlag;
+    pSPARC->socket_inet = pSPARC_Input->socket_inet;
+    strncpy(pSPARC->socket_host, pSPARC_Input->socket_host, sizeof(pSPARC->socket_host));
+    pSPARC->socket_port = pSPARC_Input->socket_port;
+    pSPARC->socket_max_niter = pSPARC_Input->socket_max_niter;
+    // pSPARC->SocketSCFCount needs to be initialized here for non-socket calculations
+    pSPARC->SocketSCFCount = 0;
+    // Only SocketFlag and socket_max_ninter information is meaningful at all ranks
+    MPI_Bcast(&pSPARC->SocketFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&pSPARC->socket_max_niter, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 
     if (pSPARC->BandStructFlag == 1) {
         if (pSPARC->densfilecount != 3 && pSPARC->spin_typ == 1) {       
@@ -3564,7 +3657,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                      SPARC (version Oct 30, 2024)                       *\n");
+    fprintf(output_fp,"*                       SPARC (version Nov 18, 2024)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3972,6 +4065,20 @@ void write_output_init(SPARC_OBJ *pSPARC) {
 
 
     fprintf(output_fp,"OUTPUT_FILE: %s\n",pSPARC->filename_out);
+
+#ifdef USE_SOCKET
+    if (pSPARC->SocketFlag == 1)
+    {
+        fprintf(output_fp, "***************************************************************************\n");
+	fprintf(output_fp, "                              Socket Mode                                  \n");
+        fprintf(output_fp, "***************************************************************************\n");
+        fprintf(output_fp, "SOCKET_HOST: %s\n", pSPARC->socket_host);
+        fprintf(output_fp, "SOCKET_PORT: %d\n", pSPARC->socket_port);
+        fprintf(output_fp, "SOCKET_INET: %d\n", pSPARC->socket_inet);
+	fprintf(output_fp, "SOCKET_MAX_NITER: %d\n", pSPARC->socket_max_niter);
+    }
+#endif // USE_SOCKET
+
     fprintf(output_fp,"***************************************************************************\n");
     fprintf(output_fp,"                                Cell                                       \n");
     fprintf(output_fp,"***************************************************************************\n");
@@ -4093,6 +4200,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fclose(output_fp);
 
     // write .static file
+#ifndef USE_SOCKET
     if ((pSPARC->PrintAtomPosFlag == 1 || pSPARC->PrintForceFlag == 1) && pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
         FILE *static_fp = fopen(pSPARC->StaticFilename,"w");
         if (static_fp == NULL) {
@@ -4119,6 +4227,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         }
         fclose(static_fp);
     }
+#else
+    // Use the print method in socket driver to print the static file
+    socket_static_print_atom_pos(pSPARC);
+#endif
 }
 
 
