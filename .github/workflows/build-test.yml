@@ -62,7 +62,13 @@ jobs:
       run: |
         mpirun -n 1 sparc | tee command-socket.out || true
         # Output from the sparc test command
-        # should contain the -socket subcommand
-        grep "-socket" command-socket.out
+        # should contain the -socket subcommand (use regex)
+        grep "\\-socket" command-socket.out
+    - name: Run simple socket calculation
+      run: |
+        # Requires a local copy of sparc-x-api to function
+        pip install git+https://github.com/SPARC-X/SPARC-X-API.git@ee3feebfa8a84f72daa52f27e68dbb0d2bcc56db
+        cd tests/Socket/Al_volume_change
+        python test_all.py
         
         
