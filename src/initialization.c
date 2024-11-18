@@ -909,7 +909,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     /* Default socket options
        Note to future developers: please keep the USE_SOCKET macro
-       as the last part of the initialization function
+       as the LAST PART of the initialization function!!
      */
 #ifdef USE_SOCKET
     // Defaults for pSPARC_Input, if not initialized by the cmdline
@@ -922,14 +922,6 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     }
     pSPARC_Input->socket_max_niter = 10000; // Set to a very large number
 #endif
-
-
-	/* Default spDFT option */
-	pSPARC_Input->spDFT_Flag = 0;             // flag for using spDFT method
-	pSPARC_Input->PrintspDFTFlag = 0;         // flag for printing spDFT data into .spDFT file
-	pSPARC_Input->spDFT_isesplit_const = 0;   // Is splitting energy to be kept constant
-	pSPARC_Input->spDFT_tau_s = 0.01;         // default smearing (in Ha) for spectral-partitioning
-	pSPARC_Input->spDFT_tol_occ = 1e-12;      // default maximum occupation of the highest-energy planewave
 
 }
 
