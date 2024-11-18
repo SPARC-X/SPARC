@@ -130,8 +130,10 @@ int initialize_Socket(SPARC_OBJ *pSPARC)
   pSPARC->SocketSCFCount = 0;
 
 #ifdef DEBUG
-  if (rank == 0)
+  if (rank == 0){
     printf("##########################Initializing socket##########################\n");
+    printf("SPARC socket_inet type? %d\n", pSPARC->socket_inet);
+  }
 #endif
   // Create a fd according to the socket type
   int socket_fd = -1;

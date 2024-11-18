@@ -60,5 +60,9 @@ jobs:
         rm -rf output
     - name: Test socket compatibility
       run: |
-        mpirun -n 1 sparc || true
+        mpirun -n 1 sparc | tee command-socket.out || true
+        # Output from the sparc test command
+        # should contain the -socket subcommand
+        grep "-socket" command-socket.out
+        
         

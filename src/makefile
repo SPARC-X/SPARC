@@ -141,5 +141,6 @@ sparc: $(OBJSC)
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
+	rm -f socket/*.o
 test: ../tests/SPARC_testing_script.py
 	cd ../tests; python SPARC_testing_script.py
