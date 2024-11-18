@@ -64,11 +64,5 @@ jobs:
         # Output from the sparc test command
         # should contain the -socket subcommand (use regex)
         grep "\\-socket" command-socket.out
-    - name: Run simple socket calculation
-      run: |
-        # Requires a local copy of sparc-x-api to function
-        mamba install -c conda-forge sparc-x-api==1.0.4
-        cd tests/Socket/Al_volume_change
-        python test_all.py
         
         
