@@ -1,0 +1,73 @@
+\documentclass[xcolor=dvipsnames,t]{beamer}
+%\usepackage[utf8]{inputenc}
+\usepackage{verbatim} % for comment
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\usepackage{beamerouterthemesplit}
+\usepackage[T1]{fontenc}
+
+\setbeamerfont{institute}{size=\normalsize}
+
+\title[] {SPARC - MLFF \\ {\normalsize Machine-learned force fields} \\ {\small User guide}}
+%\author{}
+%\author{Qimen Xu, Abhiraj Sharma, Phanish Suryanarayana, }
+
+\institute[]
+{
+Material Physics \& Mechanics Group \\
+PI: Phanish Suryanarayana \\
+%Main Developers: Shashikant Kumar, Abhiraj Sharma\\
+%Collaborators: J.E. Pask (LLNL)\\
+Georgia Institute of Technology \\
+\hyperlink{Contributors}{Contributors}\\
+\hyperlink{Citation}{Citation} \\
+\hyperlink{Acknowledgements}{Acknowledgements}
+}
+
+\date{}
+\setbeamertemplate{frametitle continuation}{}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{block title}{bg=Apricot!50,fg=black}
+%\addtobeamertemplate{block begin}{\vskip -\smallskipamount}{}
+%\addtobeamertemplate{block end}{}{\vskip -\smallskipamount}
+\addtobeamertemplate{block begin}{\vspace*{-0.6pt}}{}
+\addtobeamertemplate{block end}{}{\vspace*{-0.6pt}}
+\hypersetup{colorlinks,
+citecolor=violet,
+linkcolor=blue,
+menucolor=white, 
+anchorcolor=yellow
+filecolor=pink,  
+}
+
+
+\setbeamertemplate{footline}{
+    \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=1ex,dp=1.5ex,leftskip=2ex,rightskip=2ex]{page footer}%
+        \usebeamerfont{title in head/foot}%
+        \insertshorttitle \hfill
+            \insertsection \hfill
+        \insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}}%
+}
+
+\let\otp\titlepage
+\renewcommand{\titlepage}{\otp\addtocounter{framenumber}{-1}}
+
+
+%\includeonly{Introduction,Stress,MD,Optimization,Print}
+%\includeonly{Introduction}
+
+\begin{document}
+
+%\frame{\titlepage}
+
+\begin{frame}[plain]
+ \titlepage
+\end{frame}
+
+\include{Introduction}
+\include{mlff}
+
+
+\end{document}

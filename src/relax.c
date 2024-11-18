@@ -107,7 +107,8 @@ void NLCG(SPARC_OBJ *pSPARC) {
                 Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*atm], &pSPARC->atom_pos[3*atm+1], &pSPARC->atom_pos[3*atm+2]);
             }
         }
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         err = delta_new = 0.0;
         for(atmc = 0; atmc < szatm; atmc++){
             r[atmc] = pSPARC->forces[atmc];
@@ -117,7 +118,8 @@ void NLCG(SPARC_OBJ *pSPARC) {
                 err = fabs(pSPARC->forces[atmc]); // defined as supremum norm of force vector
         }
     } else {
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         pSPARC->d = (double *)malloc(szatm * sizeof(double)); // search direction
         if (pSPARC->d == NULL) {
             printf("\nCannot allocate memory for search direction array in NLCG!\n");
@@ -191,9 +193,11 @@ void NLCG(SPARC_OBJ *pSPARC) {
 
         // Charge extrapolation (for better rho_guess)
         pSPARC->Relax_fac = sigma;
+        //elecDensExtrapolation converts to cell coords if cell_typ != 0 and MDFlag or RelaxFlag == 1
         elecDensExtrapolation(pSPARC);
         Check_atomlocation(pSPARC);
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         pSPARC->elecgs_Count++;
         eta_prev = 0.0;
         for(atmc = 0; atmc < szatm; atmc++){
@@ -220,7 +224,8 @@ void NLCG(SPARC_OBJ *pSPARC) {
             pSPARC->Relax_fac = alpha;
             elecDensExtrapolation(pSPARC);
             Check_atomlocation(pSPARC);
-            Calculate_electronicGroundState(pSPARC);
+            Calculate_Properties(pSPARC);
+            //Calculate_electronicGroundState(pSPARC);
             pSPARC->elecgs_Count++;
             eta_prev = eta;
             j++;
@@ -342,14 +347,16 @@ void LBFGS(SPARC_OBJ *pSPARC) {
                 Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*atm], &pSPARC->atom_pos[3*atm+1], &pSPARC->atom_pos[3*atm+2]);
             }
         }
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         err = 0.0;
         for(i = 0; i < n; i++){
             if (fabs(pSPARC->forces[i]) > err)
                 err = fabs(pSPARC->forces[i]); // defined as supremum norm of force vector
         }
     } else {
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         err = 0.0;
         for(i = 0; i < n; i++){
             if (fabs(pSPARC->forces[i]) > err)
@@ -630,7 +637,8 @@ void LBFGS(SPARC_OBJ *pSPARC) {
 
         elecDensExtrapolation(pSPARC);
         Check_atomlocation(pSPARC);
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         pSPARC->elecgs_Count++;
         err = 0.0;
         for(i = 0; i < n; i++){
@@ -743,7 +751,8 @@ void FIRE(SPARC_OBJ *pSPARC) {
                 Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*atm], &pSPARC->atom_pos[3*atm+1], &pSPARC->atom_pos[3*atm+2]);
             }
         }
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         err = 0.0;
         for(i = 0; i < n; i++){
             if (fabs(pSPARC->forces[i]) > err)
@@ -753,7 +762,8 @@ void FIRE(SPARC_OBJ *pSPARC) {
             acc[i] = pSPARC->forces[i]/mass;
         }
     } else {
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         err = 0.0;
         for(i = 0; i < n; i++){
             if (fabs(pSPARC->forces[i]) > err)
@@ -829,7 +839,8 @@ void FIRE(SPARC_OBJ *pSPARC) {
         pSPARC->Relax_fac = 1.0;
         elecDensExtrapolation(pSPARC);
         Check_atomlocation(pSPARC);
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         pSPARC->elecgs_Count++;
 
         for(i = 0; i < n; i++){
@@ -978,7 +989,8 @@ double volrelax_constraint(SPARC_OBJ *pSPARC, double vol)
     if (pSPARC->RelaxFlag == 2) {
         // turn stress calculation on
         pSPARC->Calc_stress = 1;
-        Calculate_electronicGroundState(pSPARC);
+        Calculate_Properties(pSPARC);
+        //Calculate_electronicGroundState(pSPARC);
         pSPARC->elecgs_Count++;
         pSPARC->RelaxCount++;
         
