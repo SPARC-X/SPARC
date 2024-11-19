@@ -2,6 +2,17 @@
 -Date
 -Name
 -changes
+--------------
+Nov 18, 2024
+Name: Tian Tian, Lucas Timmerman
+Changes: (initialization.c, initialization.h, electronicGroundState.c,
+	include/isddft.h, main.c, main_socket.c, makefile, md.c, relax.c,
+	socket/*.h, socket/*.c, tests/Socket/*, CI workflow, doc)
+1. Add socket communication layer and socket submodule
+2. Unifying MLFF and DFT single point calculations to Calculate_Properties function
+3. Update CI workflow for compiling socket code
+4. Update socket mode simple tests
+5. Update documentation for socket mode
 
 --------------
 Nov 13, 2024

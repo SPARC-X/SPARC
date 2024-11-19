@@ -1,0 +1,215 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks,c]{} \label{Socket}
+
+\begin{center}
+\Huge \textbf{Socket communication in SPARC}
+\end{center}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\textbf{Brief introduction}} \label{SOCKET_INTRO}
+  
+  The socket communication layer allows SPARC to be controlled by a socket server that is compatible with
+  \href{https://ipi-code.org/i-pi/introduction.html}{i-PI} protocol. The SPARC source code should be compiled with the
+  \texttt{USE\_SOCKET=1} option. 
+
+  To start a SPARC program with socket interface, use either option:
+  \begin{itemize}
+  \item Option 1: Specify socket address in command line
+\begin{itemize}
+    \item To start an INET socket, use\\
+    \texttt{\$ mpirun -n 8 ./lib/sparc -socket localhost:12345 -name filename}
+
+    \item To start a UNIX socket, use\\
+    \texttt{\$ mpirun -n 8 ./lib/sparc -socket /tmp/sparc.socket:unix -name filename}
+  \end{itemize}
+    
+  \item Option 2: Provide \texttt{.inpt} parameters
+
+    Visit the following pages for parameter specifications.
+    Any parameter \texttt{SPARC\_*} in the \texttt{.inpt} file
+    will overwrite the settings from command line.
+  \end{itemize}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\textbf{Output files}} \label{SOCKET_OUTPUT}
+  
+  The following files will be generated in the socket mode and may slightly
+  differ from standard SPARC outputs:
+  \begin{itemize}
+  \item \texttt{.out}: All the SCF steps will be written to  \texttt{.out} file, similar to a relaxation / MD calculation.
+  \item \texttt{.static}: It is concatenated from all single point
+    steps.  In addition to normal \texttt{.static} output, the lattice
+    information are also recorded.
+ \end{itemize}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SOCKET\_FLAG}} \label{SOCKET_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SOCKET\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+  Flag for starting the socket communication layer. It is equivalent to the \texttt{-socket} switch of command line.
+
+  Setting \texttt{SOCKET\_FLAG: 1} will disable \texttt{MD\_FLAG} and \texttt{RELAX\_FLAG}.
+  
+\end{block}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SOCKET\_HOST}} \label{SOCKET_HOST}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+localhost
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SOCKET\_HOST}: 127.0.0.1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+  Host name of the socket address that SPARC listens to.  If it's an
+  INET socket, it is the address of the interface.  For a UNIX socket,
+  it is the filename of the socket file
+  (e.g. \texttt{/tmp/sparc.socket}).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SOCKET\_PORT}} \label{SOCKET_PORT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SOCKET\_PORT}: 12345
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+  When SPARC connects to an INET socket server, it is the port number. The \texttt{SOCKET\_PORT} has no effect for a UNIX socket.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SOCKET\_INET}} \label{SOCKET_INET}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SOCKET\_INET}: 0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+  1 for INET socket, 0 for UNIX socket. If no set in \texttt{.inpt}
+  file, its value is determined by the \texttt{-socket address:port}
+  command line switch.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{SOCKET\_MAX\_NITER}} \label{SOCKET_MAX_NITER}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+10000
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{SOCKET\_MAX\_NITER}: 10000
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+  Maximum number of ionic SCF steps in the socket mode. As a socket
+  client, SPARC will terminate after \texttt{SOCKET\_MAX\_NITER} steps
+  are called.
+\end{block}
+
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -53,6 +53,7 @@
 #include "sqNlocVecRoutines.h"
 #include "ofdft.h"
 #include "printing.h"
+#include "sparc_mlff_interface.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -61,6 +62,16 @@
 #define max(x,y) ((x)>(y)?(x):(y))
 #define min(x,y) ((x)<(y)?(x):(y))
 #define TEMP_TOL 1e-12
+
+/**
+ * @brief   Calculate properties for fixed atom positions using DFT or MLFF
+ */
+void Calculate_Properties(SPARC_OBJ *pSPARC) {
+    if (pSPARC->mlff_flag < 1)
+        Calculate_electronicGroundState(pSPARC);
+    else
+        MLFF_call(pSPARC);
+}
 
 /**
  * @brief   Calculate the ground state energy and forces for fixed atom positions.  
@@ -86,6 +97,10 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             SCF_ind = pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0);
         else
             SCF_ind = 1;
+#ifdef USE_SOCKET
+	if (pSPARC->SocketFlag == 1)
+	    SCF_ind = pSPARC->SocketSCFCount;
+#endif 
         if (pSPARC->REFERENCE_CUTOFF > 0.5*nn) {
             printf("\nWARNING: REFERENCE_CUFOFF (%.6f Bohr) > 1/2 nn (nearest neighbor) distance (%.6f Bohr) in SCF#%d\n",
                         pSPARC->REFERENCE_CUTOFF, 0.5*nn,  SCF_ind);
@@ -144,6 +159,8 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         }
         fclose(output_fp);
         // for static calculation, print energy to .static file
+	// if socket mode is activated, each static scf step is
+	// separated by comment lines
         if (pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
             if (pSPARC->PrintForceFlag == 1 || pSPARC->PrintAtomPosFlag == 1) {
                 static_fp = fopen(pSPARC->StaticFilename,"a");
@@ -164,7 +181,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
 
     // calculate atom magnetization
     if (pSPARC->spin_typ) CalculateAtomMag(pSPARC);
-
+    
     // write forces into .static file if required
     if (rank == 0 && pSPARC->Verbosity && pSPARC->PrintForceFlag == 1 && pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
         static_fp = fopen(pSPARC->StaticFilename,"a");
@@ -553,8 +570,13 @@ void scf(SPARC_OBJ *pSPARC)
         else if(pSPARC->RelaxFlag >= 1)
             fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n",
                     pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
+#ifdef USE_SOCKET
+        else if(pSPARC->SocketFlag == 1)
+	  fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n", pSPARC->SocketSCFCount);
+#endif
         else
-            fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n",1);
+	  fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n",1);
+            
         
         if(pSPARC->spin_typ == 0)
             fprintf(output_fp,"===================================================================\n");
@@ -614,8 +636,8 @@ void scf(SPARC_OBJ *pSPARC)
     if (rank == 0) {
         printf("rank = %d, Veff calculation and Bcast (non-blocking) took %.3f ms\n",rank,(t2-t1)*1e3); 
     }
-	#endif
-
+    #endif
+    
     scf_loop(pSPARC);
     if (pSPARC->usefock > 0) {
         pSPARC->usefock ++;
@@ -738,7 +760,8 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             
             // calculate xc potential (LDA, PW92), "Vxc"
             Calculate_Vxc(pSPARC);
-		    pSPARC->countPotentialCalculate++;
+            pSPARC->countPotentialCalculate++;
+		    
 		    #ifdef DEBUG
             t2 = MPI_Wtime();
             if(!rank) printf("rank = %d, Calculating Vxc took %.3f ms\n", rank, (t2 - t1) * 1e3);

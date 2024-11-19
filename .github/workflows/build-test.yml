@@ -58,3 +58,11 @@ jobs:
         unset LD_LIBRARY_PATH
         python -c "import os, re; match = re.findall(r'Tests failed: (\d+)', open('output').read()); [print('All pass'), os._exit(0)] if int(match[0]) == 0 else [print('Failed'), os._exit(1)]"
         rm -rf output
+    - name: Test socket compatibility
+      run: |
+        mpirun -n 1 sparc | tee command-socket.out || true
+        # Output from the sparc test command
+        # should contain the -socket subcommand (use regex)
+        grep "\\-socket" command-socket.out
+        
+        

@@ -13,7 +13,10 @@ USE_DP_SUBEIG = 0
 # Set USE_FFTW = 1 to use FFTW for fast Fourier transform in vdWDF. Don't open it together with USE_MKL
 USE_FFTW      = 0
 # Set DEBUG_MODE = 1 to run with debug mode and print debug output
-DEBUG_MODE    = 1
+DEBUG_MODE    = 0
+
+# Set USE_SOCKET = 0 to disable compilation with socket support
+USE_SOCKET    = 1
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -109,6 +112,18 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         mlff/descriptor.o mlff/ddbp_tools.o highT/mlff/internal_energy_model.o cyclix/mlff/cyclix_mlff_tools.o \
         mlff/hnl_soap.o
 
+# Switch the socket compilation
+# For future developers: please keep the socket options separate from the
+# main objects
+# Please do not add socket related *.o files manually in OBJSC
+ifeq ($(USE_SOCKET), 1)
+CPPFLAGS += -Isocket/ -DUSE_SOCKET
+OBJSC := $(patsubst main.o,main_socket.o,$(OBJSC))
+OBJSC += socket/driver.o socket/libinetsocket.o socket/libunixsocket.o
+endif
+
+
+
 LIBBASE = ../lib/sparc
 TESTBASE = ../.ci
 
@@ -126,5 +141,6 @@ sparc: $(OBJSC)
 .PHONY: clean
 clean:
 	rm -f  $(OBJSC) $(LIBBASE)
+	rm -f socket/*.o
 test: ../tests/SPARC_testing_script.py
 	cd ../tests; python SPARC_testing_script.py

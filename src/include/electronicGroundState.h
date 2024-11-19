@@ -16,6 +16,14 @@
 
 
 /**
+ * @brief   Calculate properties for fixed atom positions using DFT or MLFF
+ * 
+ * @param pSPARC  
+ */
+void Calculate_Properties(SPARC_OBJ *pSPARC);
+
+
+/**
  * @brief   Calculate the ground state energy and forces for fixed atom positions.  
  *
  * @param pSPARC  

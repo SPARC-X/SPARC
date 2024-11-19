@@ -4,7 +4,7 @@ echo Compiling sparc using ${CPU_COUNT} cores
 
 cd ./src
 make clean
-make -j ${CPU_COUNT} USE_MKL=0 USE_SCALAPACK=1
+make -j ${CPU_COUNT} USE_MKL=0 USE_SCALAPACK=1 USE_FFTW=1 USE_SOCKET=1 DEBUG_MODE=1
 
 # ls -al lib
 echo "Installing sparc into $PREFIX/bin"
