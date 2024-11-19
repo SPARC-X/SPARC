@@ -4,11 +4,6 @@
 #include "mlff_types.h"
 #include "isddft.h"
 
-
-
-void read_h_nl(const int N, const int L, double *rgrid, double *h_nl, double *dh_nl, SPARC_OBJ *pSPARC);
-
-
 /*
 initialize_nlist function initializes the a objects in the NeighList structure and also allocates memory for the dunamic arrays.
 

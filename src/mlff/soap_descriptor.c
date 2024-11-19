@@ -17,57 +17,6 @@
 #define min(a,b) ((a)<(b)?(a):(b))
 #define temp_tol 1.0E-10
 
-
-
-
-
-
-
-
-void read_h_nl(const int N, const int L, double *rgrid, double *h_nl, double *dh_nl, SPARC_OBJ *pSPARC){
-	int i, j, info;
-	FILE *fp;
-	char line[512];
-	char a1[512], a2[512], a3[512], a4[512];
-	int count1=0, count2=0;
-
-	// fp = fopen("hnl.txt","r");
-	fp = fopen(pSPARC->hnl_file_name,"r");
-
-	fgets(line, sizeof (line), fp);
-	sscanf(line, "%s%s%s%s", a1, a2, a3, a4);
-	int N_r = atoi(a4);
-	pSPARC->N_rgrid_MLFF = N_r;
-
-	for (i = 0; i < N_r; i++){
-		info = fscanf(fp, "%s", a1);
-		rgrid[i] = atof(a1);
-
-	}
-
-	for (i =0; i < N*(L+1); i++){
-		info = fscanf(fp, "%s %s", a1, a2);
-
-		for (j = 0; j < N_r; j++){
-			info = fscanf(fp, "%s", a1);
-			h_nl[count1] = atof(a1);
-			count1++;	
-		}
-		for (j=0; j<N_r; j++){
-			info = fscanf(fp, "%s", a1);
-			dh_nl[count2] = atof(a1);
-			count2++;
-		}
-	}
-
-
-	fclose(fp);
-}
-
-
-
-
-
 /*
 initialize_nlist function initializes the a objects in the NeighList structure and also allocates memory for the dunamic arrays.
 

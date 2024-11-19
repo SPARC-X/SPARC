@@ -1,16 +1,14 @@
 #!/bin/bash
 #SBATCH -J SPARC_testsuite
-#SBATCH -A gts-phanish6                    # Account name
-#SBATCH -p inferno                             # Partition
+#SBATCH -A gts-amedford6                    # Account name
+#SBATCH -p inferno
 #SBATCH -N 2 --ntasks-per-node=24
 #SBATCH --mem-per-cpu=7G
 #SBATCH -t1:00:00
 cd $SLURM_SUBMIT_DIR
 
 module purge
-module load gcc
-module load mvapich2
-module load intel-oneapi-mkl/2023.1.0
+ml intel-oneapi-compilers intel-oneapi-mkl intel-oneapi-mpi
 
 echo $PWD 
 

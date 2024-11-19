@@ -55,9 +55,8 @@ MLFF_FLAG: 1
 MLFF_ANGULAR_BASIS: 6   # Lmax (maximum order of spherical harmonics in SOAP)
 MLFF_RADIAL_BASIS: 8   # N_R (Number of raddial basis functions in SOAP)
 MLFF_RCUT_SOAP: 10      # (Cutoff radius for the SOAP descriptor)
-MLFF_hnl_FILE: ../hnl_N_8.txt   # (name of hnl file which has h_nl and d h_nl/ dr) - (Lmax, N_R and RCUT_SOAP has to be consistent with this file)
 MLFF_MODEL_FOLDER: ./
-MLFF_INITIAL_STEPS_TRAIN: 8   # Initial number of MD steps where DFT calculation is imposed
+MLFF_INITIAL_STEPS_TRAIN: 9   # Initial number of MD steps where DFT calculation is imposed
 MLFF_MAX_STR_STORE: 500   # This is the maximum number of structure for which memory is allocated to store MLFF data
 MLFF_MAX_CONFIG_STORE: 5000  # THis is the maximum number of atomic descriptors per element type that is stored 
 MLFF_SCALE_FORCE: 1.0   # Scaling of force relative to energy

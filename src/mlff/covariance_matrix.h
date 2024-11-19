@@ -47,7 +47,7 @@ void copy_descriptors(DescriptorObj *desc_str_MLFF, DescriptorObj *desc_str);
 
 
 /*
-add_firstMD function updates the MLFF_Obj by updating design matrix, b vector etc. for the first MD
+add_firstDFT function updates the MLFF_Obj by updating design matrix, b vector etc. for the first MD
 
 [Input]
 1. desc_str: DescriptorObj structure of the first MD
@@ -59,7 +59,7 @@ add_firstMD function updates the MLFF_Obj by updating design matrix, b vector et
 [Output]
 1. mlff_str: MLFF_Obj structure
 */
-void add_firstMD(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str, double E, double* F, double* stress_sparc);
+void add_firstDFT(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str, double E, double* F, double* stress_sparc);
 
 
 /*
@@ -127,16 +127,6 @@ remove_train_cols function removes a given local confiugration from the training
 1. mlff_str: MLFF_Obj structure
 */
 void remove_train_cols(MLFF_Obj *mlff_str, int col_ID);
-
-/*
-get_N_r_hnl function calculates the number of grid points in hnl_file
-
-[Input]
-1. pSPARC: SPARC structure
-[Output]
-1. pSPARC: SPARC structure
-*/
-void get_N_r_hnl(SPARC_OBJ *pSPARC);
 
 // double mlff_kernel(int kernel_typ, double **X2_str, double **X3_str, double **X2_tr, double **X3_tr, int atom, int atom_tr,
 // 			 double beta_2, double beta_3, double xi_3, int size_X2, int size_X3);
