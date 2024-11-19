@@ -215,7 +215,7 @@ void copy_descriptors(DescriptorObj *desc_str_MLFF, DescriptorObj *desc_str){
 
 
 /*
-add_firstMD function updates the MLFF_Obj by updating design matrix, b vector etc. for the first MD
+add_firstDFT function updates the MLFF_Obj by updating design matrix, b vector etc. for the first MD
 
 [Input]
 1. desc_str: DescriptorObj structure of the first MD
@@ -229,7 +229,7 @@ add_firstMD function updates the MLFF_Obj by updating design matrix, b vector et
 */
 
 
-void add_firstMD(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str, double E, double *F, double *stress_sparc) {
+void add_firstDFT(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str, double E, double *F, double *stress_sparc) {
 
 	int rank, nprocs;
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -1425,31 +1425,6 @@ void remove_train_cols(MLFF_Obj *mlff_str, int col_ID){
 	mlff_str->n_cols = mlff_str->n_cols - 1;
 }
 
-
-/*
-get_N_r_hnl function calculates the number of grid points in hnl_file
-
-[Input]
-1. pSPARC: SPARC structure
-[Output]
-1. pSPARC: SPARC structure
-*/
-void get_N_r_hnl(SPARC_OBJ *pSPARC){
-	int i, j, info;
-	FILE *fp;
-	char line[512];
-	char a1[512], a2[512], a3[512], a4[512];
-	int count1=0, count2=0;
-
-	// fp = fopen("hnl.txt","r");
-	fp = fopen(pSPARC->hnl_file_name,"r");
-
-	fgets(line, sizeof (line), fp);
-	sscanf(line, "%s%s%s%s", a1, a2, a3, a4);
-	int N_r = atoi(a4);
-	pSPARC->N_rgrid_MLFF = N_r;
-	fclose(fp);
-}
 
 // The functions below are outdated. 
 // /*

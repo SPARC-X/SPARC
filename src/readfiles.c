@@ -647,10 +647,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"MLFF_IF_ATOM_DATA_AVAILABLE:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->if_atom_data_available);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"MLFF_hnl_FILE:") == 0) {
-            fscanf(input_fp,"%s",pSPARC_Input->hnl_file_name);  
-            fscanf(input_fp, "%*[^\n]\n");
-         } else if (strcmpi(str,"MLFF_MODEL_FOLDER:") == 0) {    // MLFF start
+        } else if (strcmpi(str,"MLFF_MODEL_FOLDER:") == 0) {    // MLFF start
             fscanf(input_fp,"%s",pSPARC_Input->mlff_data_folder);  
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"MLFF_DESCRIPTOR_TYPE:") == 0) {

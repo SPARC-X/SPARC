@@ -670,7 +670,7 @@ typedef struct _SPARC_OBJ{
     int n_str_max_mlff;
     int n_train_max_mlff;
     int mlff_flag;
-    int last_train_MD_iter;
+    int last_train_iter;
     int kernel_typ_MLFF;
     int descriptor_typ_MLFF;
     int N_rgrid_MLFF;
@@ -688,7 +688,6 @@ typedef struct _SPARC_OBJ{
     double xi_3_SOAP;
     double F_tol_SOAP;
     double F_rel_scale;
-    char hnl_file_name[L_STRING];
     char mlff_data_folder[L_STRING];
     double stress_rel_scale[6];
     int MLFF_DFT_fq;
@@ -1153,7 +1152,6 @@ typedef struct _SPARC_INPUT_OBJ{
     double F_tol_SOAP;
     double F_rel_scale;
     double stress_rel_scale[6];
-    char hnl_file_name[L_STRING];
     char mlff_data_folder[L_STRING];
     int MLFF_DFT_fq;
     

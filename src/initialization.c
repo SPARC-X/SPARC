@@ -51,7 +51,8 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 209
+//#define N_MEMBR 209
+#define N_MEMBR 208
 
 
 /**
@@ -1310,8 +1311,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->xi_3_SOAP = pSPARC_Input->xi_3_SOAP;
     pSPARC->F_tol_SOAP = pSPARC_Input->F_tol_SOAP;
     pSPARC->F_rel_scale = pSPARC_Input->F_rel_scale;
-    strncpy(pSPARC->hnl_file_name, pSPARC_Input->hnl_file_name,sizeof(pSPARC->hnl_file_name));
-     strncpy(pSPARC->mlff_data_folder, pSPARC_Input->mlff_data_folder,sizeof(pSPARC->mlff_data_folder));
+    strncpy(pSPARC->mlff_data_folder, pSPARC_Input->mlff_data_folder,sizeof(pSPARC->mlff_data_folder));
     pSPARC->stress_rel_scale[0] = pSPARC_Input->stress_rel_scale[0];
     pSPARC->stress_rel_scale[1] = pSPARC_Input->stress_rel_scale[1];
     pSPARC->stress_rel_scale[2] = pSPARC_Input->stress_rel_scale[2];
@@ -3957,7 +3957,6 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp, "MLFF_FLAG: %d\n", pSPARC->mlff_flag);
         fprintf(output_fp, "MLFF_INITIAL_STEPS_TRAIN: %d\n", pSPARC->begin_train_steps);
         
-        // fprintf(output_fp, "MLFF_hnl_FILE: %s\n", pSPARC->hnl_file_name);
         if (pSPARC->mlff_flag>1){
             fprintf(output_fp, "MLFF_IF_ATOM_DATA_AVAILABLE: %d\n", pSPARC->if_atom_data_available);
             fprintf(output_fp, "MLFF_MODEL_FOLDER: %s\n", pSPARC->mlff_data_folder);
@@ -4326,7 +4325,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1,  /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
-                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING,
+                          L_STRING, L_STRING, L_STRING, L_STRING,
                           L_STRING};
 
     // calculating offsets in an architecture independent manner
@@ -4551,7 +4550,6 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.InDensUCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.InDensDCubFilename, addr + i++);
 
-    MPI_Get_address(&sparc_input_tmp.hnl_file_name, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mlff_data_folder, addr + i++);
     for (i = 0; i < N_MEMBR; i++) {
         disps[i] = addr[i] - base;
