@@ -1,0 +1,52 @@
+name: Check and render LaTeX doc into pdf
+
+on: 
+  push:
+    branches:
+      - master
+    paths:
+      - doc/**
+      - .github/workflows/update-doc-pdf.yml
+  pull_request:
+    branches:
+      - master
+      paths:
+      - doc/**
+      - .github/workflows/update-doc-pdf.yml
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: "3.11"
+        activate-environment: sparc-test
+        conda-build-version: "24.9.0"
+        miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
+        channels: conda-forge,defaults
+        channel-priority: true
+    - name: Install tectonic as latex rendering engine
+      run: |
+        mamba install -c conda-forge tectonic
+    - name: Make temp build dir
+      run: |
+        mkdir -p doc/_build
+    - name: Render main manual
+      run: |
+        tectonic -X compile doc/.LaTeX/Manual.tex --outdir doc/_build
+    # - name: Render subdir manuals
+    #   run: |
+    #     for dir in $(ls doc/.LaTeX);
+    #     do
+           
+    #         if [ -f $dir/]
+    #     done
