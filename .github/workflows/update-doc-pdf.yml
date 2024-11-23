@@ -10,7 +10,7 @@ on:
   pull_request:
     branches:
       - master
-      paths:
+    paths:
       - doc/**
       - .github/workflows/update-doc-pdf.yml
   workflow_dispatch:
@@ -42,11 +42,20 @@ jobs:
         mkdir -p doc/_build
     - name: Render main manual
       run: |
-        tectonic -X compile doc/.LaTeX/Manual.tex --outdir doc/_build
-    # - name: Render subdir manuals
-    #   run: |
-    #     for dir in $(ls doc/.LaTeX);
-    #     do
-           
-    #         if [ -f $dir/]
-    #     done
+        tectonic -X compile doc/.LaTeX/Manual.tex \
+                 --outdir doc/_build
+        ls -al doc/_build
+    - name: Render subdir manuals
+      run: |
+        for dir in doc/.LaTeX/*; do
+          if [ -d "$dir" ]; then
+            manual=$(find "$dir" -maxdepth 1 -name "*Manual.tex" | head -n 1)
+            if [ -n "$manual" ]; then
+              tectonic -X compile "$manual" \
+                       --outdir doc/_build
+              echo "Rendered: $manual"
+            fi
+          fi
+        done
+        ls -al doc/_build
+        
