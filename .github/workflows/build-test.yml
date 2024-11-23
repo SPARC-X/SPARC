@@ -38,7 +38,7 @@ jobs:
         # Usage:
         # python test-outdated-package.py <parameters.json> <changelog>
         python .github/workflows/test-outdated-package.py \
-               ./parameters.json Changelog
+               ./parameters.json ChangeLog
   build-linux:
     runs-on: ubuntu-latest
     defaults:
