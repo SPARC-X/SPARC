@@ -40,18 +40,19 @@ jobs:
         python -m sparc.docparser --include-subdirs doc/.LaTeX
     - name: Check missing parameters in test examples
       run: |
-        
-        
-
-
-
+        # Usage:
+        # python test-missing-parameters.py <test-dir> <parameters.json>
+        # If test fails, a list of missing / typo params will
+        # be written in output
+        python .github/workflows/test-missing-parameters.py \
+               tests/ ./parameters.json
       
   render-pdf-linux:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -l {0}
-
+    after: check-parameters
     steps:
     - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
