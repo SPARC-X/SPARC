@@ -10,13 +10,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Check if initialization.c is up-to-date with Changelog
+  package-date-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: "3.11"
+        activate-environment: sparc-test
+        conda-build-version: "24.9.0"
+        miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
+        channels: conda-forge,defaults
+        channel-priority: true
+    - name: Install SPARC-X-API stable version for docparser
+      run: |
+        mamba install -c conda-forge pip setuptools
+        pip install git+https://github.com/SPARC-X/SPARC-X-API.git@v1.0.5
+    - name: Convert parameters.json
+      run: |
+        python -m sparc.docparser --include-subdirs doc/.LaTeX
+    - name: Check missing parameters in test examples
+      run: |
+        # Usage:
+        # python test-outdated-package.py <parameters.json> <changelog>
+        python .github/workflows/test-outdated-package.py \
+               ./parameters.json Changelog
   build-linux:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -l {0}
-    strategy:
-      max-parallel: 5
+    need: package-date-check
 
     steps:
     - uses: actions/checkout@v4
