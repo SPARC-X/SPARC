@@ -44,7 +44,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    need: package-date-check
+    needs: package-date-check
 
     steps:
     - uses: actions/checkout@v4
