@@ -52,7 +52,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    after: check-parameters
+    needs: check-parameters
     steps:
     - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
