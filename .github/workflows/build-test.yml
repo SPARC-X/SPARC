@@ -33,7 +33,7 @@ jobs:
     - name: Convert parameters.json
       run: |
         python -m sparc.docparser --include-subdirs doc/.LaTeX
-    - name: Check missing parameters in test examples
+    - name: Check package version and ChangeLog date
       run: |
         # Usage:
         # python test-outdated-package.py <parameters.json> <changelog>
