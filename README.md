@@ -180,9 +180,17 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 - `.restart` file  
 
   Information necessary to perform a restarted QMD calculation. 
+  
+### (6) Maintenance
+
+for SPARC C/C++ developers, check the [maintenance
+guide](https://sparc-x.github.io/SPARC-X-API/maintainers/sparc-c-c%2B%2B.html)
+for details including:
+1. CI/CD workflows
+2. Compiled binary release on conda-forge
 
 
-### (6) Citation:
+### (7) Citation:
 
 If you publish work using/regarding SPARC, please cite some of the following articles, particularly those that are most relevant to your work:
 * **General**: https://doi.org/10.1016/j.simpa.2024.100649 (v2), https://doi.org/10.1016/j.softx.2021.100709 (v1), https://doi.org/10.1016/j.cpc.2016.09.020 (initial developments, isolated systems), https://doi.org/10.1016/j.cpc.2017.02.019 (initial developments, extended systems)
