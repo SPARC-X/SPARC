@@ -572,7 +572,7 @@ void scf(SPARC_OBJ *pSPARC)
                     pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
 #ifdef USE_SOCKET
         else if(pSPARC->SocketFlag == 1)
-	  fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n", pSPARC->SocketSCFCount);
+	        fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n", pSPARC->SocketSCFCount);
 #endif
         else
 	  fprintf(output_fp,"                    Self Consistent Field (SCF#%d)                     \n",1);

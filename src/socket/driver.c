@@ -468,7 +468,10 @@ void reinit_mesh(SPARC_OBJ *pSPARC){
 
   Calculate_kpoints(pSPARC);
   if (pSPARC->Nkpts >= 1 && pSPARC->kptcomm_index != -1) {
-    Calculate_local_kpoints(pSPARC);
+    // set up sub-communicators
+    if (pSPARC->sqAmbientFlag == 0 && pSPARC->sqHighTFlag == 0 && pSPARC->OFDFTFlag == 0) {
+      Calculate_local_kpoints(pSPARC);
+    }
   }
   Calculate_PseudochargeCutoff(pSPARC);
 
