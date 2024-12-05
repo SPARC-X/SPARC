@@ -82,6 +82,14 @@ void OFDFT_NLCG_TETER(SPARC_OBJ *pSPARC) {
         if(pSPARC->RelaxFlag >= 1)
             fprintf(output_fp,"               Orbital Free DFT NLCG (OFDFT-NLCG#%d)                \n",
                     pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
+        else if (pSPARC->MDFlag == 1)
+            fprintf(output_fp,"               Orbital Free DFT NLCG (OFDFT-NLCG#%d)                \n",
+                    pSPARC->MDCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
+#ifdef USE_SOCKET
+        else if(pSPARC->SocketFlag == 1)
+	        fprintf(output_fp,"               Orbital Free DFT NLCG (OFDFT-NLCG#%d)                     \n", 
+                    pSPARC->SocketSCFCount);
+#endif
         else
             fprintf(output_fp,"               Orbital Free DFT NLCG (OFDFT-NLCG#%d)                \n",1);
         
