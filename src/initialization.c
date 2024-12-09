@@ -4281,8 +4281,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR};
+                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -4325,8 +4324,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1,  /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
-                          L_STRING, L_STRING, L_STRING, L_STRING,
-                          L_STRING};
+                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING};
 
     // calculating offsets in an architecture independent manner
     MPI_Aint addr[N_MEMBR],disps[N_MEMBR], base;
