@@ -145,4 +145,13 @@ void pdgemm_subcomm(
     int *descA, const double *B, int *descB, double beta, double *C, int *descC,
     MPI_Comm comm, int max_nproc);
 
+#ifdef USE_ELPA
+void elpa_pdsygvx(
+	double *a, int desca[9], double *b, int descb[9], int nev, double *ev, double *z, MPI_Comm comm, int *ierr);
+void elpa_pdsyevx(
+	double *a, int desca[9], int nev, double *ev, double *z, MPI_Comm comm, int *ierr);
+void elpa_pzhegvx(
+    double _Complex *a, int desca[9], double _Complex *b, int descb[9], int nev, double *ev, double _Complex *z, MPI_Comm comm, int *ierr);
+#endif
+
 #endif // LINEARALGEBRA_H

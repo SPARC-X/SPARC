@@ -429,6 +429,13 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
             if (rank == 0) printf("The dimension of subgrid for eigen sovler is (%d x %d).\n", 
                                     pSPARC->eig_paral_subdims[0], pSPARC->eig_paral_subdims[1]);
         #endif
+
+        #ifdef USE_ELPA
+            // No processor can have zero data in ELPA
+            int maxdim = max(pSPARC->eig_paral_subdims[0], pSPARC->eig_paral_subdims[1]);
+            pSPARC->eig_paral_blksz = max(1,min(pSPARC->Nstates/maxdim, pSPARC->eig_paral_blksz));
+            // if (rank == 0) printf("eig_paral_blksz %d\n", pSPARC->eig_paral_blksz);
+        #endif
         }
     }
     
@@ -2601,6 +2608,14 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         }
     }
 
+#if defined(USE_ELPA)
+    #if !defined(USE_MKL) && !defined(USE_SCALAPACK)
+        if (rank == 0)
+            printf(RED "ERROR: To use ELPA, please turn on MKL or SCALAPACK in makefile!\n"RESET);
+        exit(EXIT_FAILURE); 
+    #endif
+#endif
+
 #if !defined(USE_MKL) && !defined(USE_FFTW)
     if (pSPARC->ixc[3] != 0){
         if (rank == 0)
@@ -3649,7 +3664,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Dec 4, 2024)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Dec 10, 2024)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4281,8 +4296,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR};
+                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -4325,8 +4339,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1,  /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
-                          L_STRING, L_STRING, L_STRING, L_STRING,
-                          L_STRING};
+                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING};
 
     // calculating offsets in an architecture independent manner
     MPI_Aint addr[N_MEMBR],disps[N_MEMBR], base;
