@@ -16,7 +16,10 @@ USE_FFTW      = 0
 DEBUG_MODE    = 0
 
 # Set USE_SOCKET = 0 to disable compilation with socket support
-USE_SOCKET    = 1
+USE_SOCKET    = 0
+
+# set USE_ELPA = 1 to use ELPA for parallel eigensolver. ELPA requires MKL or Scalapack
+USE_ELPA      = 0
 
 # Enable SIMD vectorization for complex stencil routines
 # CAUTION: for some compilers this results in wrong results! Use for intel/19.0.3 or later versions
@@ -78,6 +81,13 @@ endif
 # to enable SIMD for complex stencil routines
 ifeq ($(ENABLE_SIMD_COMPLEX), 1)
 CPPFLAGS += -DENABLE_SIMD_COMPLEX
+endif
+
+# to enable ELPA for parallel eigensolver
+ifeq ($(USE_ELPA), 1)
+CPPFLAGS += -I${ELPA_ROOT}/include/elpa_openmp-2021.11.001 -DUSE_ELPA
+LDFLAGS  += -L${ELPA_ROOT}/lib
+LDLIBS   += -lelpa_openmp 
 endif
 
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 

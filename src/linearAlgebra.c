@@ -24,6 +24,11 @@
     #include "blacs.h"     // Cblacs_*
     #include "scalapack.h" // ScaLAPACK functions
 #endif
+/* ELPA routines */
+#ifdef USE_ELPA
+#include <elpa/elpa.h>
+#define assert_elpa_ok(x) assert(x == ELPA_OK)
+#endif
 
 #include "linearAlgebra.h"
 #include "parallelization.h"
@@ -530,8 +535,9 @@ void pdsygvx_subcomm_ (
                           "       total number of processors in the provided communicator.\n", dims[0], dims[1]);
         exit(EXIT_FAILURE);
     }
+
     #ifdef DEBUGSUBGRID
-    if (rank == 0) printf("pdsyevx_subcomm_: process grid = (%d, %d)\n", dims[0], dims[1]);
+    if (rank == 0) printf("pdsygvx_subcomm_: process grid = (%d, %d)\n", dims[0], dims[1]); fflush(stdout);
     #endif
 
     // generate a (subset) process grid within comm
@@ -545,6 +551,11 @@ void pdsygvx_subcomm_ (
     int ictxt_old = bhandle_global;
     // create new context with dimensions: nproc x 1
     Cblacs_gridinit(&ictxt_old, "Row", nproc, 1);
+
+#ifdef USE_ELPA
+    MPI_Comm subcomm;
+    MPI_Comm_split(comm, ictxt >= 0, 0, &subcomm);
+#endif
 
     if (ictxt >= 0) {
         int nprow, npcol, myrow, mycol;
@@ -590,10 +601,14 @@ void pdsygvx_subcomm_ (
         // if abstol is not provided in advance, use the most orthogonal setting
         if (*abstol < 0) *abstol = pdlamch_(&ictxt, "U");
 
+#ifdef USE_ELPA
+        elpa_pdsygvx(A_BLCYC, descA_BLCYC, B_BLCYC, descB_BLCYC, *n, w, Z_BLCYC, subcomm, info);
+#else
         automem_pdsygvx_(ibtype, jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 			 B_BLCYC, &ONE, &ONE, descB_BLCYC, vl, vu, il, iu, abstol, 
 			 m, nz, w, orfac, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, ifail, info);
-        
+#endif
+
         #ifdef DEBUGSUBGRID
         t2 = MPI_Wtime();
         if (!rank) printf("pdsygvx_subcomm: AZ=ZD: %.3f ms\n", (t2-t1)*1e3);
@@ -625,6 +640,12 @@ void pdsygvx_subcomm_ (
     }
     if (dims[0] * dims[1] < nproc)
         Bcast_eigenvalues(w, N, ictxt, dims[0]*dims[1], comm);
+
+#ifdef USE_ELPA
+    if (subcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&subcomm);
+#endif
+
     Cblacs_gridexit(ictxt_old);
 #endif // (USE_MKL or USE_SCALAPACK)
 }
@@ -665,6 +686,11 @@ void pdsyevx_subcomm_ (
     // limitations: only correct when a, b, z are in the same context
     int ictxt_old = desca[1];
 
+#ifdef USE_ELPA
+    MPI_Comm subcomm;
+    MPI_Comm_split(comm, ictxt >= 0, 0, &subcomm);
+#endif
+
     if (ictxt >= 0) {
         int nprow, npcol, myrow, mycol;
         Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
@@ -700,10 +726,14 @@ void pdsyevx_subcomm_ (
         t1 = MPI_Wtime();
         #endif
 
+#ifdef USE_ELPA
+        elpa_pdsyevx(A_BLCYC, descA_BLCYC, *n, w, Z_BLCYC, subcomm, info);
+#else
         automem_pdsyevx_ ( 
             jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 	        vl, vu, il, iu, abstol, m, nz, w, orfac, Z_BLCYC, 
             &ONE, &ONE, descZ_BLCYC, ifail, info);
+#endif
 
         #ifdef DEBUGSUBGRID
         t2 = MPI_Wtime();
@@ -734,6 +764,12 @@ void pdsyevx_subcomm_ (
 
     if (dims[0] * dims[1] < nproc)
         Bcast_eigenvalues(w, N, ictxt, dims[0]*dims[1], comm);
+
+#ifdef USE_ELPA
+    if (subcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&subcomm);
+#endif
+
 #endif // (USE_MKL or USE_SCALAPACK)
 }
 
@@ -773,6 +809,11 @@ void pzhegvx_subcomm_ (
 
     // limitations: only correct when a, b, z are in the same context
     int ictxt_old = desca[1];
+
+#ifdef USE_ELPA
+    MPI_Comm subcomm;
+    MPI_Comm_split(comm, ictxt >= 0, 0, &subcomm);
+#endif
 
     if (ictxt >= 0) {
         int nprow, npcol, myrow, mycol;
@@ -816,10 +857,14 @@ void pzhegvx_subcomm_ (
         t1 = MPI_Wtime();
         #endif
 
+#ifdef USE_ELPA
+        elpa_pzhegvx(A_BLCYC, descA_BLCYC, B_BLCYC, descB_BLCYC, *n, w, Z_BLCYC, subcomm, info);
+#else
         automem_pzhegvx_(ibtype, jobz, range, uplo, n, A_BLCYC, &ONE, &ONE, descA_BLCYC, 
 			 B_BLCYC, &ONE, &ONE, descB_BLCYC, vl, vu, il, iu, abstol, 
 			 m, nz, w, orfac, Z_BLCYC, &ONE, &ONE, descZ_BLCYC, ifail, info);
-        
+#endif 
+
         #ifdef DEBUGSUBGRID
         t2 = MPI_Wtime();
         if (!rank) printf("pzhegvx_subcomm_: AZ=ZD: %.3f ms\n", (t2-t1)*1e3);
@@ -851,6 +896,12 @@ void pzhegvx_subcomm_ (
 
     if (dims[0] * dims[1] < nproc)
         Bcast_eigenvalues(w, N, ictxt, dims[0]*dims[1], comm);
+
+#ifdef USE_ELPA
+    if (subcomm != MPI_COMM_NULL)
+        MPI_Comm_free(&subcomm);
+#endif
+
 #endif // (USE_MKL or USE_SCALAPACK)
 }
 
@@ -1124,3 +1175,202 @@ void pdgemm_subcomm(
     }
 #endif // (USE_MKL or USE_SCALAPACK)
 }
+
+
+#ifdef USE_ELPA
+void elpa_pdsygvx(
+    double *a, int desca[9], double *b, int descb[9],
+    int nev, double *ev, double *z, MPI_Comm comm, int *ierr)
+{
+	int ictxt = desca[1];
+	int nprow, npcol, my_prow, my_pcol;
+	Cblacs_gridinfo(ictxt, &nprow, &npcol, &my_prow, &my_pcol);
+	
+	int na = desca[2];
+	int nblk = desca[4];
+	int ZERO = 0;
+	int na_rows = numroc_(&na, &nblk, &my_prow, &ZERO, &nprow);
+	int na_cols = numroc_(&na, &nblk, &my_pcol, &ZERO, &npcol);
+
+	elpa_t handle;
+
+	if (elpa_init(20171202) != ELPA_OK) {
+		printf("Invalid elpa version\n");
+		exit(1);
+	}
+
+	handle = elpa_allocate(ierr);
+	assert_elpa_ok(*ierr);
+	
+	elpa_set_integer(handle, "cannon_for_generalized", 0,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "na", na,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "nev", nev,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "local_nrows", na_rows,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "local_ncols", na_cols,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "nblk", nblk,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "mpi_comm_parent", (int)(MPI_Comm_c2f(comm)),ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_row", my_prow, ierr);                             // row coordinate of MPI process
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_col", my_pcol, ierr);                             // column coordinate of MPI process
+	assert_elpa_ok(*ierr);
+
+	elpa_set_integer(handle, "blacs_context", (int) ictxt,ierr);
+	assert_elpa_ok(*ierr);
+
+	assert_elpa_ok(elpa_setup(handle));
+
+	elpa_set_integer(handle, "solver", ELPA_SOLVER_2STAGE, ierr);	
+    assert_elpa_ok(*ierr);
+
+	elpa_generalized_eigenvectors_d(handle, a, b, ev, z, 0, ierr);
+	if (*ierr != ELPA_OK) {
+		printf("Unable to solve elpa_pdsygvx\n");
+		exit(-1);
+	}
+
+	elpa_deallocate(handle,ierr);
+	elpa_uninit(ierr);
+}
+
+
+void elpa_pdsyevx(
+	double *a, int desca[9], int nev, double *ev, double *z, MPI_Comm comm, int *ierr)
+{
+	int ictxt = desca[1];
+	int nprow, npcol, my_prow, my_pcol;
+	Cblacs_gridinfo(ictxt, &nprow, &npcol, &my_prow, &my_pcol);
+
+	int na = desca[2];
+	int nblk = desca[4];
+	int ZERO = 0;
+	int na_rows = numroc_(&na, &nblk, &my_prow, &ZERO, &nprow);
+	int na_cols = numroc_(&na, &nblk, &my_pcol, &ZERO, &npcol);
+
+	elpa_t handle;	
+
+	if (elpa_init(20171201) != ELPA_OK) {                          // put here the API version that you are using
+		printf("Invalid elpa version\n");
+		exit(1);
+	}
+
+	handle = elpa_allocate(ierr);
+    assert_elpa_ok(*ierr);
+
+
+	/* Set parameters the matrix and it's MPI distribution */
+	elpa_set(handle, "na", na, ierr);                                           // size of the na x na matrix
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "nev", nev, ierr);                                         // number of eigenvectors that should be computed ( 1<= nev <= na)
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "local_nrows", na_rows, ierr);                             // number of local rows of the distributed matrix on this MPI task 
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "local_ncols", na_cols, ierr);                             // number of local columns of the distributed matrix on this MPI task
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "nblk", nblk, ierr);                                       // size of the BLACS block cyclic distribution
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "mpi_comm_parent", MPI_Comm_c2f(comm), ierr);    // the global MPI communicator
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_row", my_prow, ierr);                             // row coordinate of MPI process
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_col", my_pcol, ierr);                             // column coordinate of MPI process
+	assert_elpa_ok(*ierr);
+
+	/* Setup */
+	elpa_set_integer(handle, "blacs_context", (int) ictxt,ierr);
+	assert_elpa_ok(*ierr);
+
+	assert_elpa_ok(elpa_setup(handle));
+
+	/* if desired, set any number of tunable run-time options */
+	/* look at the list of possible options as detailed later in
+		USERS_GUIDE.md */
+
+	elpa_set(handle, "solver", ELPA_SOLVER_2STAGE, ierr);
+	
+	// set the AVX BLOCK2 kernel, otherwise ELPA_2STAGE_REAL_DEFAULT will
+	// be used
+	// elpa_set(handle, "real_kernel", ELPA_2STAGE_REAL_AVX_BLOCK2, ierr);
+	assert_elpa_ok(*ierr);
+	
+	/* use method solve to solve the eigenvalue problem */
+	/* other possible methods are desribed in USERS_GUIDE.md */
+	elpa_eigenvectors(handle, a, ev, z, ierr);
+	if (*ierr != ELPA_OK) {
+		printf("Unable to solve elpa_pdsyevx\n");
+		exit(-1);
+	}
+
+	/* cleanup */
+	elpa_deallocate(handle, ierr);
+	elpa_uninit(ierr);
+}
+
+
+void elpa_pzhegvx(
+    double _Complex *a, int desca[9], double _Complex *b, int descb[9],
+    int nev, double *ev, double _Complex *z, MPI_Comm comm, int *ierr)
+{
+	int ictxt = desca[1];
+	int nprow, npcol, my_prow, my_pcol;
+	Cblacs_gridinfo(ictxt, &nprow, &npcol, &my_prow, &my_pcol);
+	
+	int na = desca[2];
+	int nblk = desca[4];
+	int ZERO = 0;
+	int na_rows = numroc_(&na, &nblk, &my_prow, &ZERO, &nprow);
+	int na_cols = numroc_(&na, &nblk, &my_pcol, &ZERO, &npcol);
+
+	elpa_t handle;	
+
+	if (elpa_init(20171202) != ELPA_OK) {
+		printf("Invalid elpa version\n");
+		exit(1);
+	}
+
+	handle = elpa_allocate(ierr);
+	assert_elpa_ok(*ierr);
+	
+	elpa_set_integer(handle, "cannon_for_generalized", 0,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "na", na,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "nev", nev,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "local_nrows", na_rows,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "local_ncols", na_cols,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "nblk", nblk,ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set_integer(handle, "mpi_comm_parent", (int)(MPI_Comm_c2f(comm)),ierr);
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_row", my_prow, ierr);                             // row coordinate of MPI process
+	assert_elpa_ok(*ierr);
+	elpa_set(handle, "process_col", my_pcol, ierr);                             // column coordinate of MPI process
+	assert_elpa_ok(*ierr);
+
+	elpa_set_integer(handle, "blacs_context", (int) ictxt,ierr);
+	assert_elpa_ok(*ierr);
+
+	assert_elpa_ok(elpa_setup(handle));
+
+	elpa_set_integer(handle, "solver", ELPA_SOLVER_2STAGE, ierr);	
+    assert_elpa_ok(*ierr);
+
+	elpa_generalized_eigenvectors_dc(handle, a, b, ev, z, 0, ierr);
+	if (*ierr != ELPA_OK) {
+		printf("Unable to solve elpa_pzhegvx\n");
+		exit(-1);
+	}
+
+	elpa_deallocate(handle,ierr);
+	elpa_uninit(ierr);
+}
+#endif
