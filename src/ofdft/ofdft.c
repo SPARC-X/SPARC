@@ -54,7 +54,7 @@
  */
 void init_OFDFT(SPARC_OBJ *pSPARC) {
     pSPARC->OFDFT_Cf = 0.3*pow(3*M_PI*M_PI,2.0/3);
-    pSPARC->OFDFT_lambda =  0.2;
+    // pSPARC->OFDFT_lambda =  0.2;
 }
 
 /**
@@ -179,7 +179,7 @@ void OFDFT_NLCG_TETER(SPARC_OBJ *pSPARC) {
         iter2 ++;
         iter ++;
     }
-    if (iter == maxit) {
+    if (iter == maxit && !rank) {
         if (!rank) printf("WARNING: OFDFT-NLCG %d did not converge to desired accuracy!\n", 
                            pSPARC->RelaxCount + pSPARC->restartCount + (pSPARC->RestartFlag == 0));
         // write to .out file
