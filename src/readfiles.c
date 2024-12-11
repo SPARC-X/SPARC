@@ -662,7 +662,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"MLFF_PRESSURE_TRAIN_FLAG:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->mlff_pressure_train_flag);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if(strcmpi(str,"MLFF_SPLINE_NGRID_FLAG:") == 0) {
+        } else if(strcmpi(str,"MLFF_SPLINE_NGRID:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->N_rgrid_MLFF);
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"MLFF_RADIAL_BASIS:") == 0) {
