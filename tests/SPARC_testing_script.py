@@ -536,6 +536,16 @@ SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg'])
 SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('HfSe2_cyclix_mlff')
+SYSTEMS["directory"].append("./mlff/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg','cyclix'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('WSe2_cyclix_mlff')
+SYSTEMS["directory"].append("./mlff/")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg','cyclix'])
+SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
 # SYSTEMS["systemname"].append('??type the system name??')
 # SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
@@ -2693,7 +2703,7 @@ def WriteReport(data_info, systems, isparallel, ifVHQ, isorient):
   ################### Printing #############################################################
 	f_report = open("Report.txt",'w')
 	f_report.write("*************************************************************************** \n")
-	f_report.write("*                   TEST REPORT (Version 19 August 2024)                    *\n*                      Date:  "+date_time+"                        * \n")
+	f_report.write("*                   TEST REPORT (Version 20 March 2025)                    *\n*                      Date:  "+date_time+"                        * \n")
 	f_report.write("*************************************************************************** \n")
 	f_report.write("Tests Passed: "+str(passtests)+"/"+str(passtests+failtests)+"\n")
 	f_report.write("Tests Failed: "+str(failtests)+"/"+str(passtests+failtests)+"\n")
