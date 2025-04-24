@@ -103,7 +103,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/vdW/d3/d3correction.o xc/vdW/d3/d3findR0ab.o xc/vdW/d3/d3copyC6.o                       \
         xc/vdW/d3/d3initialization.o xc/vdW/d3/d3finalization.o xc/vdW/d3/d3forceStress.o          \
         xc/vdW/vdWDF/vdWDFinitialization.o xc/vdW/vdWDF/vdWDFfinalization.o                        \
-        xc/vdW/vdWDF/vdWDFnonlinearCorre.o xc/vdW/vdWDF/vdWDFreadKernel.o                 \
+        xc/vdW/vdWDF/vdWDFnonlocalCorre.o xc/vdW/vdWDF/vdWDFreadKernel.o                 \
         xc/vdW/vdWDF/vdWDFstress.o xc/vdW/vdWDF/vdWDFparallelization.o                        \
         xc/mgga/mGGAscan.o xc/mgga/mGGArscan.o xc/mgga/mGGAr2scan.o xc/mgga/mGGAhamiltonianTerm.o  \
         xc/mgga/mGGAinitialization.o xc/mgga/mGGAfinalization.o xc/mgga/mGGAtauTransferTauVxc.o  \

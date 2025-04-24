@@ -21,7 +21,7 @@
 #include "isddft.h"
 #include "gradVecRoutines.h"
 #include "tools.h"
-#include "vdWDFnonlinearCorre.h"
+#include "vdWDFnonlocalCorre.h"
 #include "mGGAtauTransferTauVxc.h"
 #include "mGGAscan.h"
 #include "mGGArscan.h"
