@@ -35,7 +35,7 @@
         + 1/2*sum_{alpha}sum_{beta}(intint(theta_alpha(r_1) * d(phi_{alphabeta}(|r_2 - r_1|))/dF_xy * theta_beta(r_2))d(r_1)d(r_2))
         + 1/2*sum_{alpha}sum_{beta}(intint(theta_alpha(r_1) * phi_{alphabeta}(|r_2 - r_1|) * d(theta_beta(r_2))/dF_xy)d(r_1)d(r_2))
 
- Structure of functions in vdWDFNonlinearCorre.c
+ Structure of functions in vdWDFstress.c
  Calculate_XC_stress_vdWDF // Compute stress of vdWDF, called by Calculate_XC_stress in stress.c and Calculate_XC_pressure in pressure.c
  ├──vdWDF_stress_gradient
  └──vdWDF_stress_kernel

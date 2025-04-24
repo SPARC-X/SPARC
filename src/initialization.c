@@ -3664,7 +3664,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Dec 11, 2024)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version Apr 24, 2025)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4646,6 +4646,8 @@ Exchange Correlation
                        options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE 4 --Zhang-Yang RPBE
                  "rPW86x"  Refitted Perdew & Wang 86     iexch=3
                  "scanx"  SCAN exchange                  iexch=4
+                 "rscanx"  rSCAN exchange                iexch=5
+                 "r2scanx" r2SCAN exchange               iexch=6
    
    Correlation:  "noc"    none                           icorr=0
                  "pz"     Perdew-Zunger                  icorr=1 
@@ -4653,6 +4655,8 @@ Exchange Correlation
                  "pbec"   Perdew-Burke-Ernzenhof corr    icorr=3
                        options: 1 -- PBE, 2 --PBEsol, 3 -- RPBE
                  "scanc"  SCAN correlation               icorr=4
+                 "rscanc" rSCAN correlation              icorr=5
+                 "r2scanc"r2SCAN correlation             icorr=6
 
    Meta-GGA:     "nom"    none                           imeta=0
                  "scan"   SCAN-Meta-GGA                  imeta=1

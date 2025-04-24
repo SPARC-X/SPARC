@@ -1,5 +1,5 @@
 /**
- * @file    vdWDFnonlinearCorre.c
+ * @file    vdWDFnonlocalCorre.c
  * @brief   This file contains the functions for vdF-DF1 and vdW-DF2 functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
@@ -39,7 +39,7 @@
 #include "initialization.h"
 #include "tools.h"
 #include "parallelization.h"
-#include "vdWDFnonlinearCorre.h"
+#include "vdWDFnonlocalCorre.h"
 #include "vdWDFparallelization.h"
 #include "gradVecRoutines.h"
 
@@ -69,7 +69,7 @@
 #endif
 
 /*
- Structure of functions in vdWDFNonlinearCorre.c
+ Structure of functions in vdWDFNonlocalCorre.c
 
  ├──get_q0_Grid
  |  ├──pw
