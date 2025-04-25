@@ -1,5 +1,5 @@
 /**
- * @file    vdWDFnonlinearCorre.h
+ * @file    vdWDFnonlocalCorre.h
  * @brief   This file contains the function declarations for non-linear correlation part of vdF-DF1 and vdW-DF2 functional.
  *
  * @authors Boqin Zhang <bzhang376@gatech.edu>
