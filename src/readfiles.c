@@ -1739,6 +1739,18 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                    "Reminder: check if the number of atoms specified is inconsistent\n"
                    "          with the number of coordinates provided\n"); 
             exit(EXIT_FAILURE);
+        } else if (strcmpi(str, "ATOM_SOLVE:") == 0) { // atom solve flag, will be handled later
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if (strcmpi(str, "SINGLE_ATOM_TYPE:") == 0) { // atom solve type, will be handled later
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "SINGLE_ATOM_SPIN_TYPE:") == 0) { // atom solve spin typ
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "HUBBARD:") == 0) { // atom solve spin typ
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "U_ATOM_TYPE:") == 0) { // atom solve spin typ
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "U_VAL:") == 0) { // atom solve spin typ
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"",str);
             exit(EXIT_FAILURE);
@@ -1751,16 +1763,178 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         exit(EXIT_FAILURE);
     }
 
-    free(atmcnt_cum);
-    free(ion_filename);
-    free(str);
-    fclose(ion_fp);
 
     // calculate total mass
     pSPARC->TotalMass = 0;
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         pSPARC->TotalMass += pSPARC->Mass[ityp] * pSPARC->nAtomv[ityp];
     }    
+
+    //////////////////////////// ATOM SOLVE BLOCK ///////////////////////////////////
+    // @author: Sayan Bhowmik (sbhowmik9@gatech.edu)
+    pSPARC->atom_solve_flag = (int *)calloc(pSPARC->Ntypes, sizeof(int));
+    fseek(ion_fp, 0L, SEEK_SET);
+
+    /* Identify atom types for which radial solve is desired */
+    typcnt = -1;
+    char *atm_str= malloc(L_ATMTYPE * sizeof(char));
+    int id_OG; int str_len;
+    int atm_flag = 0;
+    // while (!feof(ion_fp)) {
+    //     fscanf(ion_fp,"%s",str);
+    while (fscanf(ion_fp,"%s",str) != EOF) {
+        // enable commenting with '#'
+        if (str[0] == '#' || str[0] == '\n') {
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            continue;
+        }
+
+        if (strcmpi(str, "ATOM_SOLVE:") == 0) {
+#ifdef DEBUG
+            printf("Found single atom solution block.\n");
+#endif
+            pSPARC->atomSolvSpinFlag = 0;
+            atm_flag = 1;
+            fscanf(ion_fp, "%*[^\n]\n"); 
+        } else if (strcmpi(str, "SINGLE_ATOM_TYPE:") == 0) {
+            fscanf(ion_fp, "%s", atm_str);
+            str_len = strlen(atm_str);
+            char *local_str = (char *)calloc(str_len, sizeof(char));
+            id_OG = -1;
+
+            for (int JJ = 0; JJ < pSPARC->Ntypes; JJ++) {
+                memcpy(local_str, pSPARC->atomType+(L_ATMTYPE*JJ), str_len*sizeof(char));
+            
+
+                if (strcmpi(atm_str, local_str) == 0) {
+                    id_OG = JJ;
+                    break;
+                }
+            }
+
+            if (id_OG == -1) {
+                printf("This type of atom does not exist in the original types above.\n");
+                exit(EXIT_FAILURE);
+            } else {
+                typcnt++;
+                if (pSPARC->atom_solve_flag != NULL) {
+                    pSPARC->atom_solve_flag[typcnt] = 1;
+                } else {
+                    printf("Check if you have indicated start of the ATOM SOLVE block...\n");
+                    printf("Include the following line to indicate start of the block\n");
+                    printf("ATOM_SOLVE:\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            free(local_str);
+        } else if(strcmpi(str, "SINGLE_ATOM_SPIN_TYPE:") == 0) {
+            fscanf(ion_fp,"%d",&pSPARC->atomSolvSpinFlag);
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        }
+        else {
+            // skip current line
+            fscanf(ion_fp, "%*[^\n]\n"); 
+        }
+    }
+
+    if ((atm_flag == 1) && (typcnt < 0)) {
+        printf("No atom types read for radial atom solution.\n");
+        exit(EXIT_FAILURE);
+    }
+    pSPARC->atom_solve_count = typcnt+1;
+    free(atm_str); 
+    //////////////////////////////// END ///////////////////////////////////
+
+    //////////////////////////// HUBBARD BLOCK ///////////////////////////////////
+    // @author: Sayan Bhowmik (sbhowmik9@gatech.edu)
+    pSPARC->is_hubbard = 0;
+    fseek(ion_fp, 0L, SEEK_SET);
+
+    /* Identify atom types for which radial solve is desired */
+    typcnt = -1;
+    atm_str= malloc(L_ATMTYPE * sizeof(char));
+    int Uval_count = 0;
+
+    // while (!feof(ion_fp)) {
+    //     fscanf(ion_fp,"%s",str);
+    while (fscanf(ion_fp,"%s",str) != EOF){
+        // enable commenting with '#'
+        if (str[0] == '#' || str[0] == '\n') {
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+            continue;
+        }
+        
+        if (strcmpi(str, "HUBBARD:") == 0) {
+#ifdef DEBUG
+            printf("Found Hubbard block.\n");
+#endif
+            pSPARC->atomSolvSpinFlag = 0;
+            atm_flag = 1;
+            pSPARC->is_hubbard = 1;
+            pSPARC->AtmU = (HUB_DUDAREV_OBJ *)malloc(pSPARC->Ntypes*sizeof(HUB_DUDAREV_OBJ)); // initialise the AtmU object
+            fscanf(ion_fp, "%*[^\n]\n"); 
+        } else if (strcmpi(str, "U_ATOM_TYPE:") == 0) {
+            fscanf(ion_fp, "%s", atm_str);
+            str_len = strlen(atm_str);
+            char *local_str = (char *)calloc(str_len+1, sizeof(char));
+            id_OG = -1;
+
+            for (int JJ = 0; JJ < pSPARC->Ntypes; JJ++) {
+                memcpy(local_str, pSPARC->atomType+(L_ATMTYPE*JJ), str_len*sizeof(char));
+            
+
+                if (strcmpi(atm_str, local_str) == 0) {
+                    id_OG = JJ;
+                    break;
+                }
+            }
+
+            if (id_OG == -1) {
+                printf("This type of atom does not exist in the original types above.\n");
+                exit(EXIT_FAILURE);
+            } else {
+                typcnt++;
+                if (pSPARC->atom_solve_flag != NULL) {
+                    pSPARC->atom_solve_flag[typcnt] = 1;
+                } else {
+                    printf("Check if you have indicated start of the HUBBARD block...\n");
+                    printf("Include the following line to indicate start of the block\n");
+                    printf("HUBBARD:\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            free(local_str);
+        } else if(strcmpi(str, "U_VAL:") == 0) {
+            Uval_count = fscanf(ion_fp,"%lf %lf %lf %lf",&pSPARC->AtmU[typcnt].U[0], &pSPARC->AtmU[typcnt].U[1],
+                &pSPARC->AtmU[typcnt].U[2], &pSPARC->AtmU[typcnt].U[3]);
+            if (Uval_count != 4) {
+                printf("\nError: U_VAL must have exactly 4 values corresponding to s p d f orbitals. Found %d values.\n", Uval_count);
+                exit(EXIT_FAILURE);
+            }
+
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        }
+        else {
+            // skip current line
+            fscanf(ion_fp, "%*[^\n]\n"); 
+        }
+    }
+
+    // checks
+    if ((pSPARC->is_hubbard == 1) && (typcnt+1 == 0)) {
+        printf("\nPlease specify atoms where you want to apply hubbard corrections.\n");
+        exit(EXIT_FAILURE);
+    }
+    free(atm_str);
+
+    //////////////////////////////// END ///////////////////////////////////
+    free(atmcnt_cum);
+    free(ion_filename);
+    free(str);
+    fclose(ion_fp);
+
 }
 
 

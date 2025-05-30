@@ -1034,4 +1034,89 @@ Specifies the net initial spin on each atom for a spin-polarized calculation. If
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{HUBBARD}} \label{HUBBARD}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+None
+\end{block}
 
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{HUBBARD: \\}
+\texttt{U\_ATOM\_TYPE: Ni \\}
+\texttt{U\_VAL:} 0 0 0.05 0 \\
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Triggers a DFT+U calculation on top of the \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}} specified in the \texttt{.inpt} file. Must be followed by specifying the atoms on which a U correction is desired along with value of U as per Dudarev's scheme.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{U\_ATOM\_TYPE}} \label{U_ATOM_TYPE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+String
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{U\_ATOM\_TYPE: Ni \\}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Atomic type symbol for which a U correction is desired. Must be specified within the \hyperlink{HUBBARD}{\texttt{HUBBARD}} block. The atomic type should already have been specified above in the \texttt{.ion} file.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{U\_VAL}} \label{U_VAL}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+None
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+Hartree
+\end{block}
+
+\begin{block}{Example}
+\texttt{U\_VAL:} 0 0 0.1 0 \\
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Value of effective \texttt{U} for every azimuthal quantum number (s, p, d, and f orbitals) of the atom on which the correction is applied per Dudarev's scheme. The corrections will only be applied to the outermost states available in the corresponding \hyperlink{PSEUDO_POT}{\texttt{PSEUDO\_POT}}. Must be specified after specifying the \hyperlink{U_ATOM_TYPE}{\texttt{U\_ATOM\_TYPE}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

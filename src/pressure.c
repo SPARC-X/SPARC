@@ -40,6 +40,7 @@
 #include "forces.h"
 #include "stress.h"
 #include "exchangeCorrelation.h"
+#include "hubbardPressure.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -107,6 +108,18 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     #endif
     }    
 
+    // hubbard pressure
+    if (pSPARC->is_hubbard) {
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+    #endif    
+        Calculate_hubbard_pressure(pSPARC);
+    #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if(!rank) printf("Time for calculating hubbard pressure components: %.3f ms\n", (t2 - t1)*1e3);
+    #endif
+    }
+
 	// find total pressure    
  	if(!rank){
  	    // Define measure of unit cell
@@ -120,6 +133,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
         		
  		pSPARC->pres = (-2 * (pSPARC->Eband + pSPARC->Escc) + pSPARC->pres_xc + pSPARC->pres_el + pSPARC->pres_nl);
         if (pSPARC->usefock > 0) pSPARC->pres += pSPARC->pres_exx; 
+        if (pSPARC->is_hubbard) pSPARC->pres += pSPARC->pres_hub; // hubbard
  		pSPARC->pres /= (-3 * cell_measure); // measure = volume for 3D, area for 2D, and length for 1D.
  	}
 #ifdef DEBUG    

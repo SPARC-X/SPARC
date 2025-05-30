@@ -546,6 +546,21 @@ SYSTEMS["directory"].append("./mlff/")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'nonorth', 'mlff1', 'md_nvkg','cyclix'])
 SYSTEMS["Tols"].append([1e-5, 5e-4, 0.5]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+SYSTEMS["systemname"].append('MoO3_hubbard')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['gga','orth','hubbard'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('NiO_spin_kpts_non_ortho_hubbard')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['bulk', 'gga','spin','kpt','nonorth','hubbard'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('TiCrO4_kpt_hubbard')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['bulk', 'gga','orth','kpt','hubbard'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
 # SYSTEMS["systemname"].append('??type the system name??')
 # SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)

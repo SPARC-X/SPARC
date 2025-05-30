@@ -30,6 +30,7 @@
 #include "readfiles.h"
 #include "initialization.h"
 #include "md.h"
+#include "occupationMatrix.h"
 #define max(x,y) ((x)>(y)?(x):(y))
 
 
@@ -209,6 +210,8 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
  */
 // TODO: Check if the FtF matrix is singular and if it is then decide on how to do extrapolation or not to do at all
 void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
+    // if hubbard calculation then call the occupation matrix extrapolation function
+    if (pSPARC->is_hubbard) occMatExtrapolation(pSPARC);
     // processors that are not in the dmcomm_phi will remain idle
     if (pSPARC->dmcomm_phi == MPI_COMM_NULL) {
         return; 

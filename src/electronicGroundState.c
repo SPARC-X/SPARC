@@ -54,6 +54,8 @@
 #include "ofdft.h"
 #include "printing.h"
 #include "sparc_mlff_interface.h"
+#include "locOrbRoutines.h"
+#include "occupationMatrix.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -117,9 +119,15 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         // skip it. No mixing in OFDFT.
     } else {
         // initialize the history variables of Anderson mixing
+        memset(pSPARC->mix_Gamma, 0, sizeof(double)*pSPARC->MixingHistory);
         if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
             memset(pSPARC->mixing_hist_Xk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
             memset(pSPARC->mixing_hist_Fk, 0, sizeof(double)* pSPARC->Nd_d * pSPARC->Nspden * pSPARC->MixingHistory);
+        }
+
+        // refresh history for occupation matrix if hubbard flag on
+        if (pSPARC->is_hubbard) {
+            RefreshOccMatHistory(pSPARC);
         }
     }
     
@@ -156,6 +164,9 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
         }
         if (pSPARC->ixc[3] != 0) {
             fprintf(output_fp,"vdWDF energy                       :%18.10E (Ha)\n", pSPARC->vdWDFenergy);
+        }
+        if (pSPARC->is_hubbard) {
+            fprintf(output_fp,"U correction                       :%18.10E (Ha)\n", pSPARC->E_Hub_HF);
         }
         fclose(output_fp);
         // for static calculation, print energy to .static file
@@ -469,6 +480,32 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         t1 = MPI_Wtime();   
     #endif
         
+        // hubbard block in psi-domain
+        if (pSPARC->is_hubbard) {
+            // find atoms that have local influence the process domain (of psi-domain)
+            GetInfluencingAtoms_loc(pSPARC, &pSPARC->Atom_Influence_loc_orb, pSPARC->DMVertices_dmcomm, 
+                                    pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+
+        #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (rank == 0) printf("\nFinding local influencing atoms in psi-domain took %.3f ms\n",(t2-t1)*1000);
+            t1 = MPI_Wtime();   
+        #endif
+
+            if (pSPARC->isGammaPoint)
+                CalculateLocalProjectors(pSPARC, &pSPARC->locProj, pSPARC->Atom_Influence_loc_orb, 
+                                        pSPARC->DMVertices_dmcomm, pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+            else
+                CalculateLocalProjectors_kpt(pSPARC, &pSPARC->locProj, pSPARC->Atom_Influence_loc_orb, 
+                    pSPARC->DMVertices_dmcomm, pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+
+        #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (rank == 0) printf("\nCalculating local projectors in psi-domain took %.3f ms\n",(t2-t1)*1000);
+            t1 = MPI_Wtime();   
+        #endif
+        }
+        
         // find atoms that have nonlocal influence the process domain (of kptcomm_topo)
         GetInfluencingAtoms_nloc(pSPARC, &pSPARC->Atom_Influence_nloc_kptcomm, pSPARC->DMVertices_kptcomm, 
                                 pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
@@ -500,6 +537,36 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         t2 = MPI_Wtime();
         if (rank == 0) printf("\nCalculating nonlocal projectors in kptcomm_topo took %.3f ms\n",(t2-t1)*1000);   
     #endif
+
+        // hubbard block in kptcomm_topo
+        if (pSPARC->is_hubbard) {
+        #ifdef DEBUG
+            t1 = MPI_Wtime();
+        #endif
+            // find atoms that have local influence the process domain (of psi-domain)
+            GetInfluencingAtoms_loc(pSPARC, &pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->DMVertices_kptcomm, 
+                                    pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
+
+        #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (rank == 0) printf("\nFinding local influencing atoms in kptcomm_topo took %.3f ms\n",(t2-t1)*1000);
+            t1 = MPI_Wtime();   
+        #endif
+
+            if (pSPARC->isGammaPoint)
+                CalculateLocalProjectors(pSPARC, &pSPARC->locProj_kptcomm, pSPARC->Atom_Influence_loc_orb_kptcomm, 
+                                        pSPARC->DMVertices_kptcomm, 
+                                        pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
+            else
+                CalculateLocalProjectors_kpt(pSPARC, &pSPARC->locProj_kptcomm, pSPARC->Atom_Influence_loc_orb_kptcomm, 
+                                            pSPARC->DMVertices_kptcomm, 
+                                            pSPARC->kptcomm_index < 0 ? MPI_COMM_NULL : pSPARC->kptcomm_topo);
+
+        #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (rank == 0) printf("\nCalculating local projectors in kptcomm_topo took %.3f ms\n",(t2-t1)*1000); 
+        #endif
+        }
         
         // initialize orbitals psi
         Init_orbital(pSPARC);
@@ -507,6 +574,11 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
 
     // initialize electron density rho (initial guess)
     Init_electronDensity(pSPARC);
+
+    // initialize occupation matrix for hubbard dft
+    if (pSPARC->is_hubbard) {
+        init_occ_mat_scf(pSPARC);
+    }
 
     if (pSPARC->OFDFTFlag == 1) {
         OFDFT_NLCG_TETER(pSPARC);
@@ -696,6 +768,18 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
 		// start scf timer
         t_scf_s = MPI_Wtime();
+
+        // Print occupation matrix if Hubbard
+        if (pSPARC->is_hubbard) {
+            if (rank == 0) {
+                #ifndef DEBUG
+                printf("-------------\n"
+                   "SCF iter %d  \n"
+                   "-------------\n", SCFcount+1);
+                #endif
+                print_Occ_mat(pSPARC);
+            }
+        }
         
         if (pSPARC->sqAmbientFlag == 1) {
             Calculate_elecDens_SQ(pSPARC, SCFcount);
@@ -741,6 +825,18 @@ void scf_loop(SPARC_OBJ *pSPARC) {
                    "Etot = %.9f, dEtot = %.3e, dEband = %.3e\n", 
                    rank,(t2-t1)*1e3,pSPARC->Etot,dEtot,dEband);
 		    #endif    
+        }
+
+        // Calculate occupation matrix if Hubbard calculation
+        if (pSPARC->is_hubbard) {
+            #ifdef DEBUG
+            t1 = MPI_Wtime();
+            #endif
+            Calculate_Occupation_Matrix(pSPARC, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj);
+            #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if(!rank) printf("rank = %d, Calculating occMat took %0.3f ms.\n",rank,(t2-t1)*1e3);
+            #endif
         }
 
         // update potential for potential mixing only
@@ -839,6 +935,11 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         t2 = MPI_Wtime();
         if(!rank) printf("rank = %d, Mixing (+ precond) took %.3f ms\n", rank, (t2 - t1) * 1e3);
         #endif
+
+        // Hubbard mixing
+        if (pSPARC->is_hubbard) {
+            mixing_rho_mn(pSPARC, SCFcount);
+        }
 
         if (pSPARC->MixingVariable == 1) { // potential mixing, add veff_mean back
             // shift the next input veff so that it's integral is

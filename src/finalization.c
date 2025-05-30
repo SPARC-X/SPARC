@@ -100,6 +100,86 @@ void Free_basic(SPARC_OBJ *pSPARC) {
     int i;
     
     // free variables in all processors
+
+    // free hubbard 
+    if (pSPARC->is_hubbard) {
+        // free AtmU struct components
+        for (i = 0; i < pSPARC->Ntypes; i++) {
+            if (!pSPARC->atom_solve_flag[i]) continue;
+            
+            free(pSPARC->AtmU[i].orbitals);
+            free(pSPARC->AtmU[i].RadialGrid);
+            free(pSPARC->AtmU[i].SplineFitOrb);
+            free(pSPARC->AtmU[i].ppl);
+            free(pSPARC->AtmU[i].occ);
+            free(pSPARC->AtmU[i].Uval);
+        }
+        free(pSPARC->AtmU);
+        free(pSPARC->IP_displ_U);
+        free(pSPARC->rho_mn_displ);
+
+        int atmcount = 0;
+        for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+            if (!pSPARC->atom_solve_flag[ityp]) {
+                atmcount += pSPARC->nAtomv[ityp];
+                continue;
+            }
+            // int angnum = pSPARC->AtmU[ityp].angnum;
+            for (int iat  = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                for (int spinor = 0; spinor < pSPARC->Nspinor; spinor++) {
+                    free(pSPARC->rho_mn[atmcount][spinor]);
+                    free(pSPARC->rho_mn_at[atmcount][spinor]);
+                    if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){
+                        
+                        free(pSPARC->drho_mn[atmcount][spinor]);
+                        free(pSPARC->drho_mn_0dt[atmcount][spinor]);
+                        free(pSPARC->drho_mn_1dt[atmcount][spinor]);
+                        free(pSPARC->drho_mn_2dt[atmcount][spinor]);
+                    }
+                }
+                free(pSPARC->rho_mn[atmcount]);
+                free(pSPARC->rho_mn_at[atmcount]);
+
+                if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){
+                    
+                    free(pSPARC->drho_mn[atmcount]);
+                    free(pSPARC->drho_mn_0dt[atmcount]);
+                    free(pSPARC->drho_mn_1dt[atmcount]);
+                    free(pSPARC->drho_mn_2dt[atmcount]);
+                }
+
+                free(pSPARC->rho_mn_X[atmcount]);
+                free(pSPARC->rho_mn_F[atmcount]);
+                free(pSPARC->rho_mn_xkm1[atmcount]);
+                free(pSPARC->rho_mn_fkm1[atmcount]);
+                free(pSPARC->rho_mn_xk[atmcount]);
+                free(pSPARC->rho_mn_fk[atmcount]);
+
+                atmcount++;
+            }
+        }
+        free(pSPARC->rho_mn);
+        free(pSPARC->rho_mn_at);
+        if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1 || pSPARC->RelaxFlag == 3){
+            
+            free(pSPARC->drho_mn);
+            free(pSPARC->drho_mn_0dt);
+            free(pSPARC->drho_mn_1dt);
+            free(pSPARC->drho_mn_2dt);
+
+            free(pSPARC->atom_pos_nm_occM);
+            free(pSPARC->atom_pos_0dt_occM);
+            free(pSPARC->atom_pos_1dt_occM);
+            free(pSPARC->atom_pos_2dt_occM);
+        }
+        free(pSPARC->rho_mn_X);
+        free(pSPARC->rho_mn_F);
+        free(pSPARC->rho_mn_xkm1);
+        free(pSPARC->rho_mn_fkm1);
+        free(pSPARC->rho_mn_xk);
+        free(pSPARC->rho_mn_fk);
+    }
+
     free(pSPARC->forces);
     free(pSPARC->FDweights_D1);
     free(pSPARC->FDweights_D2);
@@ -213,6 +293,7 @@ void Free_basic(SPARC_OBJ *pSPARC) {
     if (pSPARC->OFDFTFlag == 1) return;
 
     // mixing variables
+    free(pSPARC->mix_Gamma);
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         free(pSPARC->mixing_hist_xk);
         free(pSPARC->mixing_hist_fk);
@@ -346,6 +427,13 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->CyclixFlag) {
         free_cyclix(pSPARC);
     }
+
+    // free atom solve stuff
+    if (!rank) {
+        free(pSPARC->atom_solve_flag);
+    } else {
+        if (pSPARC->is_hubbard) free(pSPARC->atom_solve_flag);
+    }
     
     // free communicators 
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
@@ -436,6 +524,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
             }
             free(pSPARC->nlocProj);
         }
+
+        // deallocate local orbitals in psi-domain if Hubbard calc
+        if (pSPARC->is_hubbard) {
+            if (pSPARC->dmcomm != MPI_COMM_NULL && pSPARC->bandcomm_index >= 0) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                    if (!pSPARC->atom_solve_flag[ityp]){ // condition to check if U corrections are desired for atomtype
+                        continue;
+                    }
+
+                    if (! pSPARC->locProj[ityp].nproj) {
+                        free(pSPARC->locProj[ityp].Orb);
+                        continue;
+                    }
+
+                    for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
+                        free(pSPARC->locProj[ityp].Orb[iat]);
+                    }
+                    free(pSPARC->locProj[ityp].Orb);
+                }
+                free(pSPARC->locProj);
+            }
+        }
         
         // deallocate nonlocal projectors in kptcomm_topo
         if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->kptcomm_index >= 0) {
@@ -457,6 +567,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
                 }
             }
             free(pSPARC->nlocProj_kptcomm);
+        }
+
+        // deallocate local orbitals in kptcomm_topo if Hubbard calc
+        if (pSPARC->is_hubbard) {
+            if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->kptcomm_index >= 0) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                    if (!pSPARC->atom_solve_flag[ityp]){ // condition to check if U corrections are desired for atomtype
+                        continue;
+                    }
+
+                    if (! pSPARC->locProj_kptcomm[ityp].nproj) {
+                        free(pSPARC->locProj_kptcomm[ityp].Orb);
+                        continue;
+                    }
+
+                    for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb_kptcomm[ityp].n_atom; iat++) {
+                        free(pSPARC->locProj_kptcomm[ityp].Orb[iat]);
+                    }
+                    free(pSPARC->locProj_kptcomm[ityp].Orb);
+                }
+                free(pSPARC->locProj_kptcomm);
+            }
         }
     } else{
         // deallocate nonlocal projectors in psi-domain
@@ -518,6 +650,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
             }
             free(pSPARC->nlocProj);
         }
+
+        // deallocate local orbitals in psi-domain if Hubbard calc
+        if (pSPARC->is_hubbard) {
+            if (pSPARC->dmcomm != MPI_COMM_NULL && pSPARC->bandcomm_index >= 0) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                    if (!pSPARC->atom_solve_flag[ityp]){ // condition to check if U corrections are desired for atomtype
+                        continue;
+                    }
+
+                    if (! pSPARC->locProj[ityp].nproj) {
+                        free(pSPARC->locProj[ityp].Orb_c);
+                        continue;
+                    }
+
+                    for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
+                        free(pSPARC->locProj[ityp].Orb_c[iat]);
+                    }
+                    free(pSPARC->locProj[ityp].Orb_c);
+                }
+                free(pSPARC->locProj);
+            }
+        }
         
         // deallocate nonlocal projectors in kptcomm_topo
         if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->kptcomm_index >= 0) {
@@ -578,6 +732,28 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
             }
             free(pSPARC->nlocProj_kptcomm);
         }
+
+        // deallocate local orbitals in kptcomm_topo if Hubbard calc
+        if (pSPARC->is_hubbard) {
+            if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->kptcomm_index >= 0) {
+                for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+                    if (!pSPARC->atom_solve_flag[ityp]){ // condition to check if U corrections are desired for atomtype
+                        continue;
+                    }
+
+                    if (! pSPARC->locProj_kptcomm[ityp].nproj) {
+                        free(pSPARC->locProj_kptcomm[ityp].Orb_c);
+                        continue;
+                    }
+
+                    for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb_kptcomm[ityp].n_atom; iat++) {
+                        free(pSPARC->locProj_kptcomm[ityp].Orb_c[iat]);
+                    }
+                    free(pSPARC->locProj_kptcomm[ityp].Orb_c);
+                }
+                free(pSPARC->locProj_kptcomm);
+            }
+        }
     }    
 
 	// free atom influence struct components
@@ -614,6 +790,32 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
             }
         }
         free(pSPARC->Atom_Influence_nloc);
+
+        // Free local_orbital objects if Hubbard calculation
+        if (pSPARC->is_hubbard) {
+            for (i = 0; i < pSPARC->Ntypes; i++) {
+                if (!pSPARC->atom_solve_flag[i]) {
+                    continue;
+                }
+    
+                if (pSPARC->Atom_Influence_loc_orb[i].n_atom > 0) {
+                    free(pSPARC->Atom_Influence_loc_orb[i].coords);
+                    free(pSPARC->Atom_Influence_loc_orb[i].atom_index);
+                    free(pSPARC->Atom_Influence_loc_orb[i].xs);
+                    free(pSPARC->Atom_Influence_loc_orb[i].xe);
+                    free(pSPARC->Atom_Influence_loc_orb[i].ys);
+                    free(pSPARC->Atom_Influence_loc_orb[i].ye);
+                    free(pSPARC->Atom_Influence_loc_orb[i].zs);
+                    free(pSPARC->Atom_Influence_loc_orb[i].ze);
+                    free(pSPARC->Atom_Influence_loc_orb[i].ndc);
+                    for (j = 0; j < pSPARC->Atom_Influence_loc_orb[i].n_atom; j++) {
+                        free(pSPARC->Atom_Influence_loc_orb[i].grid_pos[j]);
+                    }
+                    free(pSPARC->Atom_Influence_loc_orb[i].grid_pos);
+                }
+            }
+            free(pSPARC->Atom_Influence_loc_orb);
+        }
     }
 	if (pSPARC->kptcomm_topo != MPI_COMM_NULL && pSPARC->kptcomm_index >= 0) {
         for (i = 0; i < pSPARC->Ntypes; i++) {
@@ -634,6 +836,33 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
             }
         }
         free(pSPARC->Atom_Influence_nloc_kptcomm);
+
+        // Free local_orbital objects if Hubbard calculation
+        if (pSPARC->is_hubbard) {
+            for (i = 0; i < pSPARC->Ntypes; i++) {
+                if (!pSPARC->atom_solve_flag[i]) {
+                    continue;
+                }
+    
+                if (pSPARC->Atom_Influence_loc_orb_kptcomm[i].n_atom > 0) {
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].coords);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].atom_index);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].xs);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].xe);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].ys);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].ye);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].zs);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].ze);
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].ndc);
+                    for (j = 0; j < pSPARC->Atom_Influence_loc_orb_kptcomm[i].n_atom; j++) {
+                        free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].grid_pos[j]);
+                    }
+                    free(pSPARC->Atom_Influence_loc_orb_kptcomm[i].grid_pos);
+                }
+            }
+            free(pSPARC->Atom_Influence_loc_orb_kptcomm);
+        }
+        
     }
 }
 

@@ -27,6 +27,7 @@
 #include "exactExchangeKpt.h"
 #include "mGGAhamiltonianTerm.h"
 #include "spinOrbitCoupling.h"
+#include "locOrbRoutines.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -102,6 +103,21 @@ void Hamiltonian_vectors_mult(
     EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
     EVA_buff_rhs_add(0, ncol);
     #endif
+
+    // apply hubbard potential if applicable
+    if (pSPARC->is_hubbard) {
+        int hub_spin = 0;
+        if (pSPARC->Nspinor_spincomm > 1) {
+            hub_spin = spin;
+        } else {
+            hub_spin = pSPARC->spincomm_index;
+        }
+        if (comm == pSPARC->kptcomm_topo) {
+            Vhub_vec_mult(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol, x, ldi, Hx, ldo, hub_spin, comm);
+        } else {
+            Vhub_vec_mult(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol, x, ldi, Hx, ldo, hub_spin, comm);
+        }
+    }
 }
 
 
@@ -176,6 +192,23 @@ void Hamiltonian_vectors_mult_kpt(
         // Apply scalar-relativistic part
         Vnl_vec_mult_kpt(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
                             x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, kpt, comm);
+        
+        // apply hubbard potential if applicable
+        if (pSPARC->is_hubbard) {
+            int hub_spin = 0;
+            if (pSPARC->Nspinor_spincomm > 1) {
+                hub_spin = spin;
+            } else {
+                hub_spin = pSPARC->spincomm_index;
+            }
+            if (comm == pSPARC->kptcomm_topo) {
+                Vhub_vec_mult_kpt(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol, 
+                                    x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, hub_spin, kpt, comm);
+            } else {
+                Vhub_vec_mult_kpt(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol, 
+                                    x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, hub_spin, kpt, comm);
+            }
+        }
         
         if (pSPARC->SOC_Flag == 0) continue;
         // Apply spin-orbit onto the same spinor

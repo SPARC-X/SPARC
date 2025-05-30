@@ -64,7 +64,7 @@ void  AndersonExtrapWtdAvg(
         const int N, const int m, const int Nspden, const int opt, 
         const double *x_k, const double *f_k, 
         const double *X, const double *F, double *x_wavg, double *f_wavg, 
-        MPI_Comm comm
+        MPI_Comm comm, double *mix_Gamma
 );
 
 

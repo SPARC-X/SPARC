@@ -152,6 +152,29 @@ typedef struct _PSD_OBJ {
 
 
 /**
+* @brief This structure type is for storing atom solution variables and use in hubbard DFT (Dudarev Scheme).
+*/
+typedef struct _HUB_DUDAREV_OBJ {
+    double U[4];            // U values for each l = 0, 1, 2, 3
+    double *orbitals;       // orbitals
+    double *RadialGrid;     // stores the radial grid
+    double *SplineFitOrb;   // derivative of orbitals from Spline
+    int size;               // size of the arrays storing the orbitals
+    int nspinor;            // number of spin orbitals
+    int max_l;              // maximum value of azimuthal quantum number
+    int angnum;             // storing the size of rho_mn matrix
+    int *ppl;               // To store the number of orbitals for each "l" azimuthal quantum number
+    int val_len;            // total number of valence orbitals
+    int *occ;               // occupation of each orbital
+    double *Uval;           // store Hubbard U values for each orbital, could be used to store any scalar multiplier to the projectors/orbitals
+    double rc[3];           // This is a cutoff set to cutoff orbitals beyond this point for cells in x, y, and z direction
+    double rc2;
+    // double ***rho_mn_init;    // Storing initial rho_mn[spinor][iat][angnum x angnum]
+} HUB_DUDAREV_OBJ;
+
+
+
+/**
  * @brief   This structure type is designed for storing info. of atoms
  *          that have influence on the distributed domain owned by current
  *          process. Each struct contains atoms of one type.
@@ -195,6 +218,29 @@ typedef struct _ATOM_NLOC_INFLUENCE_OBJ {
 
 
 /**
+ * @brief   This structure type is designed for storing info. of atoms
+ *          that have local orbital influence on the distributed domain owned 
+ *          by current process. Each struct contains atoms of one type.
+ */
+ typedef struct _ATOM_LOC_INFLUENCE_OBJ {
+    // overlapping atom info.
+    int n_atom;     // number of atoms of this type
+    double *coords; // coordinates of atoms, dimension = n_atom x 3
+    int *atom_index; // original atom index the image atom corresponds to
+    // overlapping domain info.
+    // corners of overlapping region
+    int *xs; int *xe;
+    int *ys; int *ye;
+    int *zs; int *ze; // each of dimension = n_atom x 1
+        
+    int *ndc; // number of grids in the spherical rc-domain
+    int **grid_pos; // local positions of the grids in the spherical rc-domain
+    
+} ATOM_LOC_INFLUENCE_OBJ;
+
+
+
+/**
  * @brief   This structure type is designed for storing nonlocal projectors,
  *          each struct contains nonlocal projectors of atoms of one type.
  */
@@ -217,6 +263,17 @@ typedef struct _NLOC_PROJ_OBJ {
     double _Complex **Chisowtl_cyclix;
     double _Complex **Chisowtnl_cyclix;
 } NLOC_PROJ_OBJ;
+
+
+/**
+ * @brief   This structure type is designed for storing local orbitals,
+ *          each struct contains nonlocal projectors of atoms of one type.
+ */
+ typedef struct _LOC_PROJ_OBJ {
+    int nproj;                  // number of projectors per atom
+    double **Orb;               // projector real
+    double _Complex **Orb_c;     // projector complex
+} LOC_PROJ_OBJ;
 
 
 
@@ -493,6 +550,7 @@ typedef struct _SPARC_OBJ{
     double *mixing_hist_Xk;      // residual matrix of Veff_loc, for mixing (LOCAL)
     double *mixing_hist_Fk;      // residual matrix of the residual of Veff_loc (LOCAL)
     double *mixing_hist_Pfk;     // the preconditioned residual distributed in phi-domain (LOCAL)
+    double *mix_Gamma;           // the calculated Gamma for Anderson Mixing
     
     double *psdChrgDens;          // pseudocharge density, "b" (LOCAL)
     double *psdChrgDens_ref;      // reference pseudocharge density, "b_ref" (LOCAL)
@@ -642,6 +700,40 @@ typedef struct _SPARC_OBJ{
     double *atom_spin;      // stores the net spin on each atom
     PSD_OBJ *psd;           // struct array storing pseudopotential info.
     ///////////////////////////////////////////////////////////
+
+    /* atom solver */
+    int *atom_solve_flag; // To indicate if a radial atom solve is required for the particular atom type
+    int atom_solve_count; // total number of atom types for which atom_solve_count is desired
+    int atomSolvSpinFlag;
+
+    /* hubbard DFT */
+    HUB_DUDAREV_OBJ *AtmU;      // struct array storing atom solution info
+    double E_Hub_HF;
+    int is_hubbard;             // flag indicating a hubbard DFT calculation
+    int *IP_displ_U;            // Storing displacements for inner product (per atom)
+    int *rho_mn_displ;          // storing displacements for occupation matrix (per atom)
+    double ***rho_mn;           // storing occupation matrix for atoms having U corrections
+    double ***rho_mn_at;        // for occupation matrix extrapolation
+    double ***drho_mn;          // for occupation matrix extrapolation
+    double ***drho_mn_0dt;      // for occupation matrix extrapolation
+    double ***drho_mn_1dt;      // for occupation matrix extrapolation
+    double ***drho_mn_2dt;      // for occupation matrix extrapolation
+    double *atom_pos_nm_occM;   // for occupation matrix extrapolation
+    double *atom_pos_0dt_occM;  // for occupation matrix extrapolation
+    double *atom_pos_1dt_occM;  // for occupation matrix extrapolation
+    double *atom_pos_2dt_occM;  // for occupation matrix extrapolation
+    double **rho_mn_X;          // Residual matrix for occ mat
+    double **rho_mn_F;          // Residual matrix of the residual for occ mat
+    double **rho_mn_xkm1;       // residual of mixed occ mat (new mixed and previous mixed)
+    double **rho_mn_fkm1;       // previous residual of mixed occ mat
+    double **rho_mn_xk;         // previous occ mat
+    double **rho_mn_fk;         // previous residual occ mat
+    LOC_PROJ_OBJ *locProj;      // local orbitals in psi-domain (LOCAL)
+    LOC_PROJ_OBJ *locProj_kptcomm;      // local orbitals in kptcomm_topo (LOCAL)
+    ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc_orb;     // atom info. for atoms that have local orbital influence on distributed domain (LOCAL)
+    ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc_orb_kptcomm;     // atom info. for atoms that have local orbital influence on distributed domain in kptcomm_topo (LOCAL)
+    double stress_hub[6];                   // Hubbard contribution to stress
+    double pres_hub;                       // Hubbard contribution to pressure
  
     /* Chebyshev filtering */
     int ChebDegree;        // degree of Chebyshev polynomial

@@ -41,6 +41,10 @@
 #include "cyclix_tools.h"
 #include "ofdft.h"
 #include "sparc_mlff_interface.h"
+#include "sparcAtom.h"
+#include "locOrbRoutines.h"
+#include "hubbardInitialization.h"
+#include "occupationMatrix.h"
 
 #ifdef USE_SOCKET
 #include "driver.h" // socker driver functions
@@ -296,6 +300,9 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         t1 = MPI_Wtime();
 #endif
 
+        // broadcast hubbard flag
+        MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
 
@@ -315,6 +322,15 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         printf("\nReading pseudopotential file took %.3f ms\n",(t2-t1)*1000);
 #endif
 
+        // Atom solution
+        int atm_count = 0;
+        for (int JJ = 0; JJ < pSPARC->Ntypes; JJ++) {
+            if (pSPARC->atom_solve_flag[JJ]) {
+                printf("\nAtom #%d\n",++atm_count);
+                sparc_atom(pSPARC, JJ, &SPARC_Input);
+            }
+        }
+
     } else {
 
 #ifdef DEBUG
@@ -325,6 +341,9 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         t2 = MPI_Wtime();
         if (rank == 0) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
 #endif
+        // broadcast hubbard flag
+        MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
     }
@@ -455,6 +474,7 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
     if (rank == 0) printf("\nCalculate_SplineDerivRadFun took %.3f ms\n",(t2-t1)*1000);
 #endif
     
+    pSPARC->mix_Gamma = (double *)calloc(pSPARC->MixingHistory, sizeof(double)); // mix_Gamma required for DFT+U
     if (pSPARC->sqAmbientFlag == 1) {
         init_SQ(pSPARC);
     } else if (pSPARC->sqHighTFlag == 1) {
@@ -474,6 +494,38 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         if (pSPARC->usefock == 1) {                
             // Allocate memory space for Exx methods
             init_exx(pSPARC);
+        }
+        
+        if (pSPARC->is_hubbard) {
+        #ifdef DEBUG
+                t1 = MPI_Wtime();
+        #endif
+                bcast_SPARC_Atom_Soln(pSPARC);
+        #ifdef DEBUG
+                t2 = MPI_Wtime();
+                if (rank == 0) printf("\nrank = %d, Broadcasting the atom solution using MPI_Pack & MPI_Unpack in SPARC took %.3f ms\n",rank,(t2-t1)*1000);
+        #endif
+            }
+
+        if (pSPARC->is_hubbard) {
+            #ifdef DEBUG
+            t1 = MPI_Wtime();
+            #endif
+            // Calculate spline derivatives
+            Calculate_SplineDerivLocOrb(pSPARC);
+            #ifdef DEBUG
+            t2 = MPI_Wtime();
+            if (rank == 0) printf("\nCalculate_SplineDeriv of local orbitals took %.3f ms\n",(t2-t1)*1000);
+            #endif
+
+            // calculate indices for storing local inner product
+            CalculateLocalInnerProductIndex(pSPARC);
+
+            // calculate indices for storing occ_mat
+            CalculateOccMatAtomIndex(pSPARC);
+
+            // Initialise occupation matrix and occupation matrix history
+            init_occ_mat(pSPARC);
         }
         
     }
@@ -3664,7 +3716,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version Apr 24, 2025)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version May 29, 2025)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

@@ -1,0 +1,50 @@
+
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name> 
+# PSEUDO_POT: <path/to/pseudopotential/file>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+# Reminder: when changing number of atoms, change the RELAX flags accordingly
+#           as well.
+
+ATOM_TYPE: Ti                # atom type
+PSEUDO_POT: ../../../psps/22_Ti_12_2.0_2.8_pbe_n_v1.0.psp8
+N_TYPE_ATOM: 2               # number of atoms of this type
+COORD_FRAC:                  # coordinates follows
+0.000000 0.500000 0.250000
+0.500000 0.000000 0.750000  
+
+ATOM_TYPE: Cr                # atom type
+PSEUDO_POT: ../../../psps/24_Cr_14_1.7_2.1_pbe_n_v1.0.psp8
+N_TYPE_ATOM: 2               # number of atoms of this type
+COORD_FRAC:                  # coordinates follows
+0.000000 0.000000 0.000000
+0.500000 0.500000 0.500000
+
+ATOM_TYPE: O               # atom type 
+PSEUDO_POT: ../../../psps/08_O_6_1.2_1.4_pbe_n_v1.0.psp8
+N_TYPE_ATOM: 8               # number of atoms of this type
+COORD_FRAC:                  # coordinates follows
+0.000000 0.500000 0.460598 
+0.500000 0.500000 0.297638 
+0.000000 0.500000 0.039402 
+0.000000 0.000000 0.202362 
+0.500000 0.000000 0.960598 
+0.000000 0.000000 0.797638 
+0.500000 0.000000 0.539402 
+0.500000 0.500000 0.702362 
+
+HUBBARD:
+U_ATOM_TYPE: Ti
+U_VAL: 0 0 0.1 0 # U values in hartrees for s p d f orbitals (valence only)
+
+U_ATOM_TYPE: Cr
+U_VAL: 0 0 0.2 0 # U values in hartrees for s p d f orbitals (valence only)

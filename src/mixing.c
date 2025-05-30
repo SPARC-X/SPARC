@@ -56,13 +56,14 @@ void  AndersonExtrapolation(
     
     // find the weighted average vectors
     // use Nspden = 0, opt = 0 here. default as previous
-    AndersonExtrapWtdAvg(N, m, 0, 0, x_k, f_k, X, F, x_kp1, f_wavg, comm);
+    double *mix_Gamma = (double *)malloc(m * sizeof(double));
+    AndersonExtrapWtdAvg(N, m, 0, 0, x_k, f_k, X, F, x_kp1, f_wavg, comm, mix_Gamma);
     
     // add beta * f to x_{k+1}
     for (i = 0; i < N; i++)
         x_kp1[i] += beta * f_wavg[i];
     
-    free(f_wavg);
+    free(f_wavg); free(mix_Gamma);
 }
 
 
@@ -77,7 +78,7 @@ void  AndersonExtrapWtdAvg(
         const int N, const int m, const int Nspden, const int opt, 
         const double *x_k, const double *f_k, 
         const double *X, const double *F, double *x_wavg, double *f_wavg, 
-        MPI_Comm comm
+        MPI_Comm comm, double *mix_Gamma
 ) 
 {
     double *Gamma = (double *)calloc( m , sizeof(double) );
@@ -100,6 +101,7 @@ void  AndersonExtrapWtdAvg(
     cblas_dgemv(CblasColMajor, CblasNoTrans, N, m, -1.0, F, 
         N, Gamma, 1, 1.0, f_wavg, 1);
 
+    memcpy(mix_Gamma, Gamma, m*sizeof(double)); // output gamma
     free(Gamma);
 }
 
@@ -314,8 +316,8 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         // Anderson extrapolation
         // find weighted average x_wavg, f_wavg
         AndersonExtrapWtdAvg(
-            N, m, pSPARC->Nspden, pSPARC->MixingVariable, x_k, f_k, R, F, x_wavg, f_wavg, pSPARC->dmcomm_phi
-        ); 
+            N, m, pSPARC->Nspden, pSPARC->MixingVariable, x_k, f_k, R, F, x_wavg, f_wavg, pSPARC->dmcomm_phi,
+        pSPARC->mix_Gamma); 
     } else {
         // Simple (linear) mixing
         for (int i = 0; i < N; i++) {
