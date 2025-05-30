@@ -42,7 +42,8 @@ USE_ACCELGT = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include
+CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
+           -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -120,7 +121,12 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         mlff/covariance_matrix.o mlff/regression.o mlff/spherical_harmonics.o mlff/soap_descriptor.o mlff/sparc_mlff_interface.o \
         mlff/bessel_NR.o mlff/nrutils.o mlff/sparsification.o mlff/tools_mlff.o mlff/mlff_read_write.o \
         mlff/descriptor.o mlff/ddbp_tools.o highT/mlff/internal_energy_model.o cyclix/mlff/cyclix_mlff_tools.o \
-        mlff/hnl_soap.o
+        mlff/hnl_soap.o \
+        atom/sparcAtom.o atom/atomicStates.o atom/electronicGroundStateAtom.o atom/finalizeAtom.o atom/initializationAtom.o \
+        atom/spectralFunctionsAtom.o atom/toolsAtom.o atom/mgga_atom/mGGApotentialAtom.o atom/mgga_atom/mGGAtoolsAtom.o \
+        atom/exx_atom/exxToolsAtom.o atom/exx_atom/exxPotentialEnergyAtom.o \
+        xc/hubbard/hubbardInitialization.o xc/hubbard/locOrbRoutines.o xc/hubbard/occupationMatrix.o \
+        xc/hubbard/hubbardForce.o xc/hubbard/hubbardStress.o xc/hubbard/hubbardPressure.o
 
 # Switch the socket compilation
 # For future developers: please keep the socket options separate from the

@@ -39,6 +39,7 @@
 #include "cyclix_stress.h"
 #include "forces.h"
 #include "exchangeCorrelation.h"
+#include "hubbardStress.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -183,12 +184,28 @@ void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC) {
         #endif
     }    
 
+    // hubbard stress
+    if (pSPARC->is_hubbard) {
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+        #endif
+        Calculate_hubbard_stresses(pSPARC);
+        #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if(!rank) printf("Time for calculating hubbard stress components: %.3f ms\n", (t2 - t1)*1e3);
+        #endif
+    }
+
     // find stress
  	if(!rank){ 	    
         for(i = 0; i < 6; i++){
             pSPARC->stress[i] = (pSPARC->stress_k[i] + pSPARC->stress_xc[i] + pSPARC->stress_nl[i] + pSPARC->stress_el[i]);
             if (pSPARC->usefock > 0) 
                 pSPARC->stress[i] += pSPARC->stress_exx[i];
+
+            if (pSPARC->is_hubbard) { // hubbard stress
+                pSPARC->stress[i] += pSPARC->stress_hub[i];
+            }
         }
         
         if (pSPARC->BC == 2) {

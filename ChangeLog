@@ -4,6 +4,19 @@
 -changes
 
 --------------
+May 29, 2025
+Name: Sayan Bhowmik
+Changes: (src/atom/, src/xc/hubbard/, electronicGroundState.c,
+          energy.c, finalization.c, forces.c, hamiltonianVecRoutines.c,
+          include/isddft.h, include/mixing.h, initialization.c, makefile,
+          mixing.c, orbitalElecDensInit.c, pressure.c, readfiles.c, stress.c,
+          tests/MoO3_hubbard/, tests/NiO_spin_kpts_non_ortho_hubbard/,
+          tests/TiCrO4_kpt_hubbard/, tests/SPARC_testing_script.py, 
+          tests/README.md)
+1. Added atom code for single atom solution - LDA, GGA, metaGGA, hybrid PBE0.
+2. Added DFT+U (Dudarev formulation) - energy, force, stress, pressure without stress calc.
+
+--------------
 April 24, 2025
 Name: Boqin Zhang
 Changes: src/xc/vdW/vdWDF/, makefile

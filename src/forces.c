@@ -34,6 +34,7 @@
 #include "d3forceStress.h"
 #include "cyclix_forces.h"
 #include "cyclix_tools.h"
+#include "hubbardForce.h"
 
 #ifdef SPARCX_ACCEL
 	#include "accel.h"
@@ -71,6 +72,17 @@ void Calculate_EGS_Forces(SPARC_OBJ *pSPARC)
     t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating nonlocal force components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
+
+    if (pSPARC->is_hubbard) {
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+        #endif
+        Calculate_hubbard_forces(pSPARC);
+        #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if(!rank) printf("Time for calculating hubbard force components: %.3f ms\n", (t2 - t1)*1e3);
+        #endif
+    }
 
     // Convert the forces from non cartesian to cartesian coordinates
     if(pSPARC->cell_typ > 10 && pSPARC->cell_typ < 20){

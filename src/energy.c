@@ -14,6 +14,7 @@
 #include <math.h>
 #include <mpi.h>
 #include <assert.h>
+#include <string.h>
 
 #include "energy.h"
 #include "exchangeCorrelation.h"
@@ -22,6 +23,7 @@
 #include "isddft.h"
 #include "sqProperties.h"
 #include "sqEnergy.h"
+#include "occupationMatrix.h"
 
 #define TEMP_TOL (1e-14)
 
@@ -36,8 +38,10 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     double Etot, Eband, Entropy, E1, E2, E3;
+    double E_Hub_HF, E_Hub;
     
     Etot = Eband = Entropy = E1 = E2 = E3 = 0.0; // initialize energies
+    E_Hub = E_Hub_HF = 0.0;
 
     #ifdef DEBUG
     double dEtot = 0.0, dEband = 0.0; // this is for temp use
@@ -103,10 +107,55 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
             }
         }
     }
+
+    // Hubbard correction 
+    if (pSPARC->is_hubbard) {
+        int atmcount = 0;
+        int angnum;
+        double local_sum, local_sum2;
+
+        double *rho_mn, *rho_mn_sq;
+        for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
+            if (!pSPARC->atom_solve_flag[ityp]) {
+                atmcount += pSPARC->nAtomv[ityp];
+                continue;
+            }
+
+            angnum = pSPARC->AtmU[ityp].angnum;
+            rho_mn = (double *)malloc(angnum*angnum*sizeof(double));
+            rho_mn_sq = (double *)malloc(angnum*angnum*sizeof(double));
+
+            for (int iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
+                for (int spinor = 0; spinor < pSPARC->Nspinor; spinor++) {
+                    for (int c = 0; c < angnum; c++) {
+                        for (int r = 0; r < angnum; r++) {
+                            rho_mn[c*angnum + r] = pSPARC->rho_mn[atmcount][spinor][c*angnum + r];
+                        }
+                    }
+
+                    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, angnum, angnum, angnum, 1.0,
+                        rho_mn, angnum, rho_mn, angnum, 0.0, rho_mn_sq, angnum);
+
+                    local_sum = 0;
+                    local_sum2 = 0;
+                    for (int col = 0; col < angnum; col++) {
+                        // We are only dealing with traces
+                        local_sum +=  0.5 * pSPARC->AtmU[ityp].Uval[col] * rho_mn_sq[angnum*col + col];
+                        local_sum2 +=  0.5* pSPARC->AtmU[ityp].Uval[col] * (rho_mn[angnum*col + col] - rho_mn_sq[angnum*col + col]);
+                    }
+                    E_Hub_HF += pSPARC->occfac*local_sum;
+                    E_Hub += pSPARC->occfac*local_sum2;
+                }
+                atmcount++;
+            }
+            free(rho_mn); free(rho_mn_sq);
+        }
+        pSPARC->E_Hub_HF = E_Hub_HF;
+    }
     
     if ((pSPARC->usefock == 0 ) || (pSPARC->usefock%2 == 1)) {
         // calculate total free energy
-        Etot = Eband + E1 - E2 - E3 + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
+        Etot = Eband + E1 - E2 - E3 + E_Hub_HF + pSPARC->Exc + pSPARC->Esc + pSPARC->Entropy;
         pSPARC->Exc_corr = E3;
         pSPARC->Etot = Etot;
         MPI_Bcast(&pSPARC->Etot, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -117,6 +166,11 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
                         "E3      = %18.12f\nExc     = %18.12f\nEsc     = %18.12f\nEntropy = %18.12f\n"
                         "dE = %.3e, dEband = %.3e\n", 
                 Etot, Eband, E1, E2, E3, pSPARC->Exc, pSPARC->Esc, pSPARC->Entropy, dEtot, dEband); 
+        if (pSPARC->is_hubbard) {
+            if (!rank) {
+                printf("Ehub (Harris-Foulkes)    = %18.12f\nEhub    = %18.12f\n", E_Hub_HF, E_Hub);
+            }
+        }
     #endif
     } else {
         // add the Exact exchange correction term    
