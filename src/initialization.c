@@ -55,8 +55,8 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-//#define N_MEMBR 209
-#define N_MEMBR 208
+#define N_MEMBR 209
+// #define N_MEMBR 208
 
 
 /**
@@ -300,8 +300,8 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         t1 = MPI_Wtime();
 #endif
 
-        // broadcast hubbard flag
-        MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        // // broadcast hubbard flag
+        // MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
@@ -341,8 +341,8 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         t2 = MPI_Wtime();
         if (rank == 0) printf("Broadcasting the input parameters took %.3f ms\n",(t2-t1)*1000);
 #endif
-        // broadcast hubbard flag
-        MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        // // broadcast hubbard flag
+        // MPI_Bcast(&pSPARC->is_hubbard, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         // broadcast Ntypes read from ion file
         MPI_Ibcast(&pSPARC->Ntypes, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
@@ -967,6 +967,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // read in initial density
     pSPARC_Input->readInitDens = 0;
 
+    // DFT+U
+    pSPARC_Input->is_hubbard = 0;
+
     /* Default socket options
        Note to future developers: please keep the USE_SOCKET macro
        as the LAST PART of the initialization function!!
@@ -1571,6 +1574,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->OFDFT_tol = pSPARC_Input->OFDFT_tol;
     pSPARC->OFDFT_lambda = pSPARC_Input->OFDFT_lambda;
     pSPARC->twist = pSPARC_Input->twist;
+    pSPARC->is_hubbard = pSPARC_Input->is_hubbard; // DFT+U
 
     // char type values
     strncpy(pSPARC->MDMeth , pSPARC_Input->MDMeth,sizeof(pSPARC->MDMeth));
@@ -3716,7 +3720,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                       SPARC (version May 29, 2025)                      *\n");
+    fprintf(output_fp,"*                       SPARC (version June 3, 2025)                      *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -3777,6 +3781,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"EXX_RANGE_FOCK: %.6f\n", pSPARC->hyb_range_fock);
         fprintf(output_fp,"EXX_RANGE_PBE: %.6f\n", pSPARC->hyb_range_pbe);
     }
+    // DFT+U
+    fprintf(output_fp, "HUBBARD_FLAG: %d\n", pSPARC->is_hubbard);
     if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         if (pSPARC->sqAmbientFlag) fprintf(output_fp,"SQ_AMBIENT_FLAG: %d\n", pSPARC->sqAmbientFlag);
         if (pSPARC->sqHighTFlag) fprintf(output_fp,"SQ_HIGHT_FLAG: %d\n", pSPARC->sqHighTFlag);
@@ -4056,6 +4062,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
                 pSPARC->stress_rel_scale[4], pSPARC->stress_rel_scale[5]);
         fprintf(output_fp, "MLFF_DFT_FQ: %d\n", pSPARC->MLFF_DFT_fq);
     }
+    
 
     fprintf(output_fp,"VERBOSITY: %d\n",pSPARC->Verbosity);
     fprintf(output_fp,"PRINT_FORCES: %d\n",pSPARC->PrintForceFlag);
@@ -4329,7 +4336,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT, /* int array */
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, /* int array */
 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE,
@@ -4373,7 +4380,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
-                          1, 1, 1, /* int */ 
+                          1, 1, 1, 1, /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
                           L_kpoint, 6, /* double array */
                           1, 1, 1, 1, 1, 
@@ -4520,6 +4527,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.N_rgrid_MLFF, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MLFF_DFT_fq, addr + i++);
     MPI_Get_address(&sparc_input_tmp.REFERENCE_CUTOFF_FAC, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.is_hubbard, addr + i++);
 
     // double array type
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);

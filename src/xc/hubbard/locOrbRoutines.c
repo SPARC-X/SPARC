@@ -724,6 +724,7 @@ void CalculateLocalInnerProductIndex(SPARC_OBJ *pSPARC)
     {
         if (!pSPARC->atom_solve_flag[ityp]) {
             atom_index += pSPARC->nAtomv[ityp];
+            if (id == 0) atom_index2 = atom_index;
             continue;
         }
 

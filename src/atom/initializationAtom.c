@@ -249,7 +249,7 @@ void copy_PSP_atom(SPARC_ATOM_OBJ *pSPARC_ATOM, SPARC_OBJ *pSPARC, int ityp) {
     for (int l = 0; l <= pSPARC_ATOM->psd->lmax; l++) {
         pSPARC_ATOM->psd->rc[l] = pSPARC->psd[ityp].rc[l];
         pSPARC_ATOM->psd->ppl[l] = pSPARC->psd[ityp].ppl[l];
-        lpos[l+1] = lpos[l] + pSPARC->psd->ppl[l];
+        lpos[l+1] = lpos[l] + pSPARC_ATOM->psd->ppl[l];
     }
     int nproj = lpos[lmax+1];
 

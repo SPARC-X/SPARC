@@ -227,7 +227,7 @@ void Compute_Integral_Orb_Dpsi(SPARC_OBJ *pSPARC, double *dpsi, double *beta) {
  * @brief Calculate forces in gamma point using integrals.
  */
 void Compute_force_hubbard_by_integrals(SPARC_OBJ *pSPARC, double *force_hub, double *alpha) {
-    int n, ityp, iat, ncol, atom_index, atom_index2, count;
+    int n, ityp, iat, ncol, atom_index, atom_index2, first_id, count;
     int spinor, Nspinor, hub_sp;
     double *pre_fac;
     int angnum;
@@ -283,10 +283,15 @@ void Compute_force_hubbard_by_integrals(SPARC_OBJ *pSPARC, double *force_hub, do
     for (spinor = 0; spinor < Nspinor; spinor++) {
         int spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
 
-        atom_index = 0; 
+        atom_index = 0; first_id = 0;
 
         for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (!pSPARC->atom_solve_flag[ityp]) continue;
+            if (!pSPARC->atom_solve_flag[ityp]) {
+                if (first_id == 0) atom_index += pSPARC->nAtomv[ityp];
+                continue;
+            }
+
+            if (first_id == 0) first_id++;
 
             angnum = pSPARC->AtmU[ityp].angnum;
             for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
@@ -315,14 +320,17 @@ void Compute_force_hubbard_by_integrals(SPARC_OBJ *pSPARC, double *force_hub, do
             hub_sp = spinor;
         }
 
-        atom_index = 0; atom_index2 = 0;
+        atom_index = 0; atom_index2 = 0, first_id = 0;
 
         for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
             if (!pSPARC->atom_solve_flag[ityp]) {
-                continue;
                 atom_index += pSPARC->nAtomv[ityp];
+                if (first_id == 0) atom_index2 = atom_index;
+                continue;
             }
 
+            if (first_id == 0) first_id++;
+            
             angnum = pSPARC->AtmU[ityp].angnum;
 
             for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
@@ -663,7 +671,7 @@ void Compute_Integral_Orb_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi, dou
  * @brief Calculate k-point DFT+U forces using integral.
  */
 void Compute_force_hubbard_by_integrals_kpt(SPARC_OBJ *pSPARC, double *force_hub, double _Complex *alpha) {
-    int k, n, ityp, iat, ncol, atom_index, atom_index2, count, Nk;
+    int k, n, ityp, iat, ncol, atom_index, atom_index2, first_id, count, Nk;
     int spinor, Nspinor, hub_sp, *IP_displ_U;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Nk = pSPARC->Nkpts_kptcomm;
@@ -721,10 +729,15 @@ void Compute_force_hubbard_by_integrals_kpt(SPARC_OBJ *pSPARC, double *force_hub
         for (spinor = 0; spinor < Nspinor; spinor++) {
             int spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor * k + pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
 
-            atom_index = 0;
+            atom_index = 0; first_id = 0;
 
             for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (!pSPARC->atom_solve_flag[ityp]) continue;
+                if (!pSPARC->atom_solve_flag[ityp]) {
+                    if (first_id == 0) atom_index += pSPARC->nAtomv[ityp];
+                    continue;
+                }
+
+                if (first_id == 0) first_id++;
 
                 angnum = pSPARC->AtmU[ityp].angnum;
                 for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
@@ -756,13 +769,16 @@ void Compute_force_hubbard_by_integrals_kpt(SPARC_OBJ *pSPARC, double *force_hub
                 hub_sp = spinor;
             }
 
-            atom_index = 0; atom_index2 = 0;
+            atom_index = 0; atom_index2 = 0, first_id = 0;
 
             for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
                 if (!pSPARC->atom_solve_flag[ityp]) {
-                    continue;
                     atom_index += pSPARC->nAtomv[ityp];
+                    if (first_id == 0) atom_index2 = atom_index;
+                    continue;
                 }
+
+                if (first_id == 0) first_id++;
 
                 angnum = pSPARC->AtmU[ityp].angnum;
 

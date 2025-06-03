@@ -2,7 +2,7 @@
 *                       SPARC (version May 29, 2025)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu May 29 15:16:27 2025                  *
+*                   Start time: Mon Jun  2 16:55:31 2025                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -20,6 +20,7 @@ SPIN_TYP: 1
 ELEC_TEMP_TYPE: Gaussian
 SMEARING: 0.007349864435
 EXCHANGE_CORRELATION: GGA_PBE
+HUBBARD_FLAG: 1
 NSTATES: 19
 CHEB_DEGREE: 38
 CHEFSI_BOUND_FLAG: 0
@@ -68,14 +69,14 @@ Density: 4.3401107614E-01 (amu/Bohr^3), 4.8634730270E+00 (g/cc)
 ***************************************************************************
 NP_SPIN_PARAL: 2
 NP_KPOINT_PARAL: 3
-NP_BAND_PARAL: 4
+NP_BAND_PARAL: 8
 NP_DOMAIN_PARAL: 1 1 1
-NP_DOMAIN_PHI_PARAL: 2 3 4
+NP_DOMAIN_PHI_PARAL: 3 4 4
 EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  24
+Number of processors               :  48
 Mesh spacing in x-direction        :  0.197398 (Bohr)
 Mesh spacing in y-direction        :  0.197398 (Bohr)
 Mesh spacing in z-direction        :  0.19712 (Bohr)
@@ -95,50 +96,50 @@ Atomic mass                        :  15.9994
 Pseudocharge radii of atom type 2  :  7.90 7.90 7.88 (x, y, z dir)
 Number of atoms of type 2          :  1
 Estimated total memory usage       :  333.08 MB
-Estimated memory per processor     :  13.88 MB
+Estimated memory per processor     :  6.94 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -8.6301154630E+01         2.0000E+00        9.407E-02        3.830
-2            -8.6292912747E+01         2.0000E+00        5.200E-02        0.976
-3            -8.6294116540E+01         2.0000E+00        3.125E-02        0.972
-4            -8.6297462408E+01         1.9994E+00        1.194E-02        0.970
-5            -8.6297728085E+01         1.9992E+00        3.663E-03        0.973
-6            -8.6297732662E+01         1.9990E+00        2.349E-03        0.975
-7            -8.6297753845E+01         1.9989E+00        7.739E-04        0.964
-8            -8.6297755286E+01         1.9988E+00        4.487E-04        0.962
-9            -8.6297755866E+01         1.9988E+00        1.422E-04        0.970
-10           -8.6297755935E+01         1.9988E+00        5.171E-05        0.960
-11           -8.6297755935E+01         1.9988E+00        3.446E-05        0.955
-12           -8.6297755900E+01         1.9988E+00        1.331E-05        0.958
-13           -8.6297755896E+01         1.9988E+00        9.972E-06        0.958
-14           -8.6297755941E+01         1.9988E+00        4.807E-06        0.956
-15           -8.6297755913E+01         1.9988E+00        1.846E-06        0.950
-16           -8.6297755861E+01         1.9988E+00        7.266E-07        0.946
+1            -8.6301201717E+01         2.0000E+00        9.421E-02        2.447
+2            -8.6292855303E+01         2.0000E+00        5.195E-02        0.627
+3            -8.6294106733E+01         2.0000E+00        3.129E-02        0.627
+4            -8.6297470136E+01         1.9994E+00        1.184E-02        0.627
+5            -8.6297727647E+01         1.9992E+00        3.681E-03        0.624
+6            -8.6297732618E+01         1.9990E+00        2.350E-03        0.622
+7            -8.6297753844E+01         1.9989E+00        7.745E-04        0.620
+8            -8.6297755273E+01         1.9988E+00        4.509E-04        0.621
+9            -8.6297755867E+01         1.9988E+00        1.419E-04        0.618
+10           -8.6297755935E+01         1.9988E+00        5.169E-05        0.620
+11           -8.6297755935E+01         1.9988E+00        3.461E-05        0.619
+12           -8.6297755900E+01         1.9988E+00        1.331E-05        0.616
+13           -8.6297755897E+01         1.9988E+00        9.935E-06        0.618
+14           -8.6297755940E+01         1.9988E+00        4.846E-06        0.660
+15           -8.6297755914E+01         1.9988E+00        1.840E-06        0.681
+16           -8.6297755862E+01         1.9988E+00        8.152E-07        0.663
 Total number of SCF: 16    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
-Free energy per atom               : -8.6297755861E+01 (Ha/atom)
+Free energy per atom               : -8.6297755862E+01 (Ha/atom)
 Total free energy                  : -1.7259551172E+02 (Ha)
-Band structure energy              : -2.0576226225E+01 (Ha)
-Exchange correlation energy        : -2.2947870449E+01 (Ha)
+Band structure energy              : -2.0576225972E+01 (Ha)
+Exchange correlation energy        : -2.2947870581E+01 (Ha)
 Self and correction energy         : -2.4714021220E+02 (Ha)
--Entropy*kb*T                      : -6.6231362091E-05 (Ha)
-Fermi level                        :  1.7381919780E-01 (Ha)
-Net magnetization                  :  1.9988061659E+00 (Bohr magneton)
-U correction                       :  1.9899724182E-01 (Ha)
-RMS force                          :  2.9983412926E-01 (Ha/Bohr)
-Maximum force                      :  2.9983412926E-01 (Ha/Bohr)
-Time for force calculation         :  0.096 (sec)
-Pressure                           :  4.8142284036E+01 (GPa)
-Maximum stress                     :  1.3186435062E+02 (GPa)
-Time for stress calculation        :  0.232 (sec)
+-Entropy*kb*T                      : -6.6230779750E-05 (Ha)
+Fermi level                        :  1.7381922510E-01 (Ha)
+Net magnetization                  :  1.9988061885E+00 (Bohr magneton)
+U correction                       :  1.9899718208E-01 (Ha)
+RMS force                          :  2.9983516679E-01 (Ha/Bohr)
+Maximum force                      :  2.9983516679E-01 (Ha/Bohr)
+Time for force calculation         :  0.071 (sec)
+Pressure                           :  4.8142340861E+01 (GPa)
+Maximum stress                     :  1.3186430759E+02 (GPa)
+Time for stress calculation        :  0.159 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  20.354 sec
+Total walltime                     :  13.377 sec
 ___________________________________________________________________________
 
 ***************************************************************************

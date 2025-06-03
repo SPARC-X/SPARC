@@ -12,6 +12,7 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 * Spin-orbit coupling (SOC).
 * Noncollinear spin.
 * Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
+* DFT+U through Dudarev's formulation.
 * Symmetry-adaption for cyclic and/or helical symmetries (Cyclix-DFT).
 * O(N) Spectral Quadrature (SQ) method.
 * On-the-fly machine-learned force field (MLFF) molecular dynamics (MD) simulations. 
