@@ -13,6 +13,7 @@
 #include <time.h>
 #include <mpi.h>
 #include <math.h>
+#include <errno.h>
 #include "driver.h"
 #include "isddft.h"
 #include "libinetsocket.h"
@@ -239,6 +240,10 @@ int readBuffer(int fd, void *data, int len)
       perror("Error reading from socket: server has quit or connection broke");
       return -1;
     }
+  else if (n < 0)
+    {
+      perror("Error reading from socket: server has quit or connection broke");
+    }
   return 0;
 }
 
@@ -375,14 +380,33 @@ void reinit_mesh(SPARC_OBJ *pSPARC){
   pSPARC->range_z = range_z;
 
   // Update the lattice matrix information like Jacbdet, LatUVec, etc
-  Cart2nonCart_transformMat(pSPARC);
-  
+  if (pSPARC->cell_typ < 20) {
+    Cart2nonCart_transformMat(pSPARC);
+  }
+
+  // Convert cartesian coordinates of atom positions into cell coordinates
+  int atm, count = 0;
+  if(pSPARC->cell_typ != 0){
+    //Cart2nonCart_transformMat(pSPARC);
+    for(int i = 0; i < pSPARC->Ntypes; i++){
+      for(atm = 0; atm < pSPARC->nAtomv[i]; atm++) {
+          Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*count], &pSPARC->atom_pos[3*count+1], &pSPARC->atom_pos[3*count+2]);
+          count++;
+      }
+    }
+  }
+
+  map_atom_coord(pSPARC);
 
   // Update finite difference delta
   pSPARC->delta_x = pSPARC->range_x/(pSPARC->numIntervals_x);
   pSPARC->delta_y = pSPARC->range_y/(pSPARC->numIntervals_y);
   pSPARC->delta_z = pSPARC->range_z/(pSPARC->numIntervals_z);
   pSPARC->dV = pSPARC->delta_x * pSPARC->delta_y * pSPARC->delta_z * pSPARC->Jacbdet;
+  if (pSPARC->cell_typ > 20 && pSPARC->cell_typ <= 30) {
+    if (rank == 0) printf("ERROR: Socket not compatible with cyclic cells\n");
+    exit(EXIT_FAILURE);
+  }
 
   int FDn = pSPARC->order / 2;
   int p, i;
@@ -586,7 +610,6 @@ void reassign_atoms_info(SPARC_OBJ *pSPARC, int natoms, double *atom_pos, double
   pSPARC->atom_pos = (double *)malloc(sizeof(double) * 3 * natoms);
   memcpy(pSPARC->atom_pos, atom_pos, sizeof(double) * 3 * natoms);
   memcpy(pSPARC->LatVec, lattice, sizeof(double) * 9);
-  map_atom_coord(pSPARC);
   reinit_mesh(pSPARC);
 }
 
