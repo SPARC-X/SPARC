@@ -1012,6 +1012,8 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"PRINT_ENERGY_DENSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PrintEnergyDensFlag);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"HUBBARD_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->is_hubbard);
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
@@ -1848,7 +1850,7 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     //////////////////////////// HUBBARD BLOCK ///////////////////////////////////
     // @author: Sayan Bhowmik (sbhowmik9@gatech.edu)
-    pSPARC->is_hubbard = 0;
+    // pSPARC->is_hubbard = 0;
     fseek(ion_fp, 0L, SEEK_SET);
 
     /* Identify atom types for which radial solve is desired */
@@ -1869,9 +1871,13 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 #ifdef DEBUG
             printf("Found Hubbard block.\n");
 #endif
+            if (pSPARC_Input->is_hubbard == 0) {
+                printf("Please specify HUBBARD_FALG: 1 in the .inpt file.\n");
+                exit(EXIT_FAILURE);
+            }
             pSPARC->atomSolvSpinFlag = 0;
             atm_flag = 1;
-            pSPARC->is_hubbard = 1;
+            // pSPARC->is_hubbard = 1;
             pSPARC->AtmU = (HUB_DUDAREV_OBJ *)malloc(pSPARC->Ntypes*sizeof(HUB_DUDAREV_OBJ)); // initialise the AtmU object
             fscanf(ion_fp, "%*[^\n]\n"); 
         } else if (strcmpi(str, "U_ATOM_TYPE:") == 0) {
@@ -1896,7 +1902,8 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             } else {
                 typcnt++;
                 if (pSPARC->atom_solve_flag != NULL) {
-                    pSPARC->atom_solve_flag[typcnt] = 1;
+                    // pSPARC->atom_solve_flag[typcnt] = 1;
+                    pSPARC->atom_solve_flag[id_OG] = 1;
                 } else {
                     printf("Check if you have indicated start of the HUBBARD block...\n");
                     printf("Include the following line to indicate start of the block\n");
@@ -1907,8 +1914,10 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
             free(local_str);
         } else if(strcmpi(str, "U_VAL:") == 0) {
-            Uval_count = fscanf(ion_fp,"%lf %lf %lf %lf",&pSPARC->AtmU[typcnt].U[0], &pSPARC->AtmU[typcnt].U[1],
-                &pSPARC->AtmU[typcnt].U[2], &pSPARC->AtmU[typcnt].U[3]);
+            // Uval_count = fscanf(ion_fp,"%lf %lf %lf %lf",&pSPARC->AtmU[typcnt].U[0], &pSPARC->AtmU[typcnt].U[1],
+            //     &pSPARC->AtmU[typcnt].U[2], &pSPARC->AtmU[typcnt].U[3]);
+            Uval_count = fscanf(ion_fp,"%lf %lf %lf %lf",&pSPARC->AtmU[id_OG].U[0], &pSPARC->AtmU[id_OG].U[1],
+                &pSPARC->AtmU[id_OG].U[2], &pSPARC->AtmU[id_OG].U[3]);
             if (Uval_count != 4) {
                 printf("\nError: U_VAL must have exactly 4 values corresponding to s p d f orbitals. Found %d values.\n", Uval_count);
                 exit(EXIT_FAILURE);
@@ -1923,7 +1932,7 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     }
 
     // checks
-    if ((pSPARC->is_hubbard == 1) && (typcnt+1 == 0)) {
+    if ((pSPARC_Input->is_hubbard == 1) && (typcnt+1 == 0)) {
         printf("\nPlease specify atoms where you want to apply hubbard corrections.\n");
         exit(EXIT_FAILURE);
     }

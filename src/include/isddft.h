@@ -1471,6 +1471,9 @@ typedef struct _SPARC_INPUT_OBJ{
     double exx_frac;        // hybrid mixing coefficient    
     int ExxMethod;          // method for solving poissons equation, kronecker product way or FFT
 
+    /* DFT+U */
+    int is_hubbard;         // DFT+U flag
+
     /* SQ methods */
     int sqAmbientFlag;             // Flag of SQ method
     // int SQ_highT_gauss_mem;       // Memory option for gauss quadrature 

@@ -383,14 +383,17 @@ void Compute_stress_tensor_hubbard_by_integrals(SPARC_OBJ *pSPARC,double *stress
 
     // g_n <Orb_Jlm | Psi> stored here
     double *alpha_gn = (double *)calloc( pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor, sizeof(double));
-    int atmcount;
+    int atmcount, first_id;
     for (spinor = 0; spinor < Nspinor; spinor++) {
         int spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
 
-        atmcount = 0; 
+        atmcount = 0; first_id = 0;
 
         for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (!pSPARC->atom_solve_flag[ityp]) continue;
+            if (!pSPARC->atom_solve_flag[ityp]) {
+                if (first_id == 0) atmcount += pSPARC->nAtomv[ityp];
+                continue;
+            }
 
             for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {
                 // Scale each column of < Orb_Jlm, x_n > with g_n (size: m x Ns_loc)
@@ -883,16 +886,21 @@ void Compute_stress_tensor_hubbard_by_integrals_kpt(SPARC_OBJ *pSPARC, double *s
 
     // g_nk <Orb_Jlm | Psi> stored here
     double _Complex *alpha_gnk = (double _Complex *)calloc( pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor * Nk, sizeof(double _Complex));
-    int angnum, atmcount;
+    int angnum, atmcount, first_id;
 
     for (k = 0; k < Nk; k++) {
         for (spinor = 0; spinor < Nspinor; spinor++) {
             int spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor * k + pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
 
-            atmcount = 0;
+            atmcount = 0; first_id = 0;
 
             for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-                if (!pSPARC->atom_solve_flag[ityp]) continue;
+                if (!pSPARC->atom_solve_flag[ityp]) {
+                    if (first_id == 0) atmcount += pSPARC->nAtomv[ityp];
+                    continue;
+                }
+
+                if (first_id == 0) first_id++;
 
                 angnum = pSPARC->AtmU[ityp].angnum;
                 for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++) {

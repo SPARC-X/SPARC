@@ -34,12 +34,12 @@ void sparc_atom(SPARC_OBJ *pSPARC, int ityp, SPARC_INPUT_OBJ *pSPARC_Input) {
     electronicGroundState_atom(&pSPARC_ATOM);
 
     // Printing
-    if (!pSPARC->is_hubbard){
+    if (!pSPARC_Input->is_hubbard){
         printResultsAtom(&pSPARC_ATOM);
     } 
 
     // Copy solution
-    if (pSPARC->is_hubbard) copyAtomSolution(&pSPARC_ATOM, pSPARC, ityp);
+    if (pSPARC_Input->is_hubbard) copyAtomSolution(&pSPARC_ATOM, pSPARC, ityp);
 
     // Free memory
     Finalize_Atom(&pSPARC_ATOM);

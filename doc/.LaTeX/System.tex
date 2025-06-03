@@ -777,6 +777,40 @@ Default is using VASP's HSE03 value. Different code has different parameters. Be
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{HUBBARD\_FLAG}} \label{HUBBARD_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+0 or 1
+\end{block}
+
+\begin{block}{Default}
+\texttt{0}
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{HUBBARD\_FLAG}: \texttt{1}
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for adding hubbard correction on top of the \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}}.
+\end{block}
+
+\begin{block}{Remark}
+Usually used along with LDA, GGA or SCAN type functionals.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[allowframebreaks,c]{} \label{System:ion}
@@ -1053,13 +1087,17 @@ No unit
 
 \begin{block}{Example}
 \texttt{HUBBARD: \\}
-\texttt{U\_ATOM\_TYPE: Ni \\}
-\texttt{U\_VAL:} 0 0 0.05 0 \\
+% \texttt{U\_ATOM\_TYPE: Ni \\}
+% \texttt{U\_VAL:} 0 0 0.05 0 \\
 \end{block}
 \end{columns}
 
 \begin{block}{Description}
-Triggers a DFT+U calculation on top of the \hyperlink{EXCHANGE_CORRELATION}{\texttt{EXCHANGE\_CORRELATION}} specified in the \texttt{.inpt} file. Must be followed by specifying the atoms on which a U correction is desired along with value of U as per Dudarev's scheme.
+Start of the DFT+U parameter block. Must be followed by specifying the atoms on which a U correction is desired along with value of U as per Dudarev's scheme.
+\end{block}
+
+\begin{block}{Remark}
+\hyperlink{HUBBARD_FLAG}{HUBBARD\_FLAG} must be specified to 1 in \texttt{.inpt} file.
 \end{block}
 
 \end{frame}
