@@ -242,7 +242,7 @@ int readBuffer(int fd, void *data, int len)
     }
   else if (n < 0)
     {
-      perror("Error reading from socket: server has quit or connection broke")
+      perror("Error reading from socket: server has quit or connection broke");
     }
   return 0;
 }
