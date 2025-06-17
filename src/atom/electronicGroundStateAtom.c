@@ -77,16 +77,16 @@ void electronicGroundState_atom(SPARC_ATOM_OBJ *pSPARC_ATOM){
     /* SCF loop for local and semi-local part */
     scfLoopAtom(pSPARC_ATOM);
     while (!pSPARC_ATOM->scf_success) {
-#ifdef DEBUG
+// #ifdef DEBUG
         printf("#######################################################################\n");
         printf("                         WARNING! BE CAREFUL.                          \n");
         printf("#######################################################################\n");
         printf("\nAdjusting SCF tolerance for convergence....\n");
-#endif
+// #endif
         pSPARC_ATOM->SCF_tol *= 10;
-#ifdef DEBUG
+// #ifdef DEBUG
         printf("Adjusted SCF tolerance now is %0.6e\n",pSPARC_ATOM->SCF_tol);
-#endif
+// #endif
         scfLoopAtom(pSPARC_ATOM);
     }
     if ((pSPARC_ATOM->scf_success) && (pSPARC_ATOM->usefock == 0)) {

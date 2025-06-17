@@ -1,3 +1,5 @@
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
 \begin{frame}[allowframebreaks]{\textbf{Introduction}} \label{Introduction}
   SPARC is an open-source software package for the accurate, efficient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem. The main features of SPARC currently include
   \begin{itemize}
@@ -9,6 +11,7 @@
     \item Spin polarized and unpolarized calculations.
     \item Spin-orbit coupling.
     \item Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
+    \item DFT+U
     \item Symmetry-adaption for cyclic and/or helical symmetries.
     \item Linear-scaling Spectral Quadrature (SQ) method.
     \item Soft and transferable table of SPMS pseudopotentials.
@@ -33,7 +36,7 @@
  	    \item \textbf{Boqin Zhang}: vdW-DF, DFT-D3, meta-GGA (SCAN) \\  
  	    \item \textbf{Shashikant Kumar}: Testing framework, NLCC, MLFF \\  
             \item \textbf{Mostafa Faghih Shojaei}: SPMS table of pseudopotentials \\ 
-            \item \textbf{Sayan Bhowmik\footnotemark}: Atom code, DFT+U (Dudarev) \\
+            \item \textbf{Sayan Bhowmik\footnotemark[1]}: Atom code, DFT+U (Dudarev) \\
             \item \textbf{Swarnava Ghosh}: Preliminary development \\
             \item \textbf{Deepa Phanish}: Initial development
  	\end{itemize}
@@ -48,11 +51,11 @@
         \item \textbf{Benjamin Comer}: Code testing, Initial testing framework
         \item \textbf{Sushree Jagriti Sahoo}: Code testing
         \item \textbf{Tian Tian}: Socket communication layer, code testing, Python API
-        \item \textbf{Lucas R Timmerman}: Socket communication layer, code testing, Python API
-        \item \textbf{Sayan Bhowmik\footnotemark[\value{footnote}]}: Atom code, DFT+U (Dudarev)
+        \item \textbf{Lucas R Timmerman\footnotemark[2]}: Socket communication layer, code testing, Python API
     \end{itemize}
  	\end{itemize}
-\footnotetext{co-advised}
+\footnotetext[1]{co-advised with Andrew J. Medford}
+\footnotetext[2]{co-advised with Phanish Suryanarayana}
 \end{frame}
 
 
@@ -64,6 +67,8 @@ If you publish work using/regarding SPARC, please cite some of the following art
     \item Linear solvers: \url{https://doi.org/10.1016/j.cpc.2018.07.007}, \url{https://doi.org/10.1016/j.jcp.2015.11.018}
     \item Stress tensor/pressure: \url{https://doi.org/10.1063/1.5057355}
     \item Atomic forces: \url{https://doi.org/10.1016/j.cpc.2016.09.020} (isolated systems), \url{https://doi.org/10.1016/j.cpc.2017.02.019} (extended systems)
+    \item Hybrid XC:
+    \url{https://doi.org/10.1063/5.0225396}, \url{https://doi.org/10.1063/5.0260892} (GPU)
     \item Mixing: \url{https://doi.org/10.1016/j.cplett.2016.01.033}, \url{https://doi.org/10.1016/j.cplett.2015.06.029} (restarting), \url{https://doi.org/10.1016/j.cplett.2019.136983} (preconditioning)
     \item SPMS pseudopotentials: \url{https://doi.org/10.1016/j.cpc.2022.108594}
     \item Cyclic and/or helical symmetry:
@@ -75,7 +80,9 @@ If you publish work using/regarding SPARC, please cite some of the following art
     \url{https://doi.org/10.1016/j.cplett.2013.08.035} (formulation),
     \url{https://doi.org/10.1007/978-3-031-22340-2_12} (detailed mathematical formulation)
     \item On-the-fly MLFF:
-    \url{https://doi.org/10.1063/5.0180541}, \url{https://doi.org/10.1063/5.0204229} (SQ), \url{https://doi.org/10.48550/arXiv.2408.07554} (Cyclix), \url{https://doi.org/10.48550/arXiv.2407.15290} (internal energy)
+    \url{https://doi.org/10.1063/5.0180541}, \url{https://doi.org/10.1063/5.0204229} (SQ), \url{https://doi.org/10.1016/j.jmps.2024.105927} (Cyclix), \url{https://doi.org/10.1063/5.0230060} (internal energy)
+    \item Atom code:
+    \url{https://doi.org/10.1016/j.cpc.2024.109448} (spectral scheme)
 \end{itemize}
 \end{frame}
   
