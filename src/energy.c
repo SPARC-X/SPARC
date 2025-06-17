@@ -25,6 +25,13 @@
 #include "sqEnergy.h"
 #include "occupationMatrix.h"
 
+#ifdef USE_MKL
+    #include <mkl.h>
+#else
+    #include <cblas.h>
+    #include <lapacke.h>
+#endif
+
 #define TEMP_TOL (1e-14)
 
 
