@@ -12,7 +12,7 @@ SPARC is an open-source software package for the accurate, effcient, and scalabl
 * Spin-orbit coupling (SOC).
 * Noncollinear spin.
 * Dispersion interactions through DFT-D3, vdW-DF1, and vdW-DF2.
-* DFT+U through Dudarev's formulation.
+* DFT+U
 * Symmetry-adaption for cyclic and/or helical symmetries (Cyclix-DFT).
 * O(N) Spectral Quadrature (SQ) method.
 * On-the-fly machine-learned force field (MLFF) molecular dynamics (MD) simulations. 
@@ -199,14 +199,16 @@ If you publish work using/regarding SPARC, please cite some of the following art
 * **Linear solvers**: https://doi.org/10.1016/j.cpc.2018.07.007, https://doi.org/10.1016/j.jcp.2015.11.018
 * **Stress tensor/pressure**: https://doi.org/10.1063/1.5057355
 * **Atomic forces**: https://doi.org/10.1016/j.cpc.2016.09.020 (isolated systems), https://doi.org/10.1016/j.cpc.2017.02.019 (extended systems)
+* **Hybrid XC**: https://doi.org/10.1063/5.0225396, https://doi.org/10.1063/5.0260892 (GPU)
 * **Mixing**: https://doi.org/10.1016/j.cplett.2016.01.033, https://doi.org/10.1016/j.cplett.2015.06.029 (restarting), https://doi.org/10.1016/j.cplett.2019.136983 (preconditioning)
 * **SPMS pseudopotentials**: https://doi.org/10.1016/j.cpc.2022.108594
 * **Cyclic and/or helical symmetry**: https://doi.org/10.1103/PhysRevB.103.035101, https://doi.org/10.1103/PhysRevB.100.125143 (initial developments, extended systems), https://doi.org/10.1016/j.jmps.2016.08.007 (initial developments, isolated systems)
 * **O(N) Spectral Quadrature method**: https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cpc.2015.11.005 (initial implementation), https://doi.org/10.1016/j.cplett.2013.08.035 (formulation), https://doi.org/10.1007/978-3-031-22340-2_12 (detailed mathematical formulation)
-* **On-the-fly MLFF**: https://doi.org/10.1063/5.0180541, https://doi.org/10.1063/5.0204229 (SQ), https://doi.org/10.48550/arXiv.2408.07554 (Cyclix), https://doi.org/10.48550/arXiv.2407.15290 (internal energy) 
+* **On-the-fly MLFF**: https://doi.org/10.1063/5.0180541, https://doi.org/10.1063/5.0204229 (SQ), https://doi.org/10.1016/j.jmps.2024.105927 (Cyclix), https://doi.org/10.1063/5.0230060 (internal energy) 
+* **Atom code**: https://doi.org/10.1016/j.cpc.2024.109448 (spectral scheme)
 
 
-### (7) Acknowledgement:
+### (8) Acknowledgement:
   
 * **U.S. Department of Energy (DOE), Office of Science (SC): DE-SC0023445, DE-SC0019410**
 * **U.S. Department of Energy (DOE), National Nuclear Security Administration (NNSA): Advanced Simulation and Computing (ASC) Program**
