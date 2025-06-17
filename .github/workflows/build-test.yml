@@ -29,7 +29,7 @@ jobs:
     - name: Install SPARC-X-API stable version for docparser
       run: |
         mamba install -c conda-forge pip setuptools
-        pip install git+https://github.com/SPARC-X/SPARC-X-API.git@v1.0.5
+        pip install git+https://github.com/SPARC-X/SPARC-X-API.git@v1.1.0
     - name: Convert parameters.json
       run: |
         python -m sparc.docparser --include-subdirs doc/.LaTeX
