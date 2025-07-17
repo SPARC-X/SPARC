@@ -55,8 +55,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 209
-// #define N_MEMBR 208
+#define N_MEMBR 210
 
 
 /**
@@ -856,6 +855,7 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     /* Default cell relaxation parameters*/
     pSPARC_Input->max_dilatation = 1.06;      // maximum lattice dilatation
     pSPARC_Input->TOL_RELAX_CELL = 1e-2;      // in GPa (all periodic)
+    pSPARC_Input->relaxPrTarget  = 0;         // Default relaxation pressure in 0 GPa
 
     /* Default band structure calculation parameters */
     pSPARC_Input->BandStructFlag = 0;
@@ -1575,6 +1575,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->OFDFT_lambda = pSPARC_Input->OFDFT_lambda;
     pSPARC->twist = pSPARC_Input->twist;
     pSPARC->is_hubbard = pSPARC_Input->is_hubbard; // DFT+U
+    pSPARC->relaxPrTarget = pSPARC_Input->relaxPrTarget; // Target pressure for cell relaxation
 
     // char type values
     strncpy(pSPARC->MDMeth , pSPARC_Input->MDMeth,sizeof(pSPARC->MDMeth));
@@ -1704,7 +1705,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     if (pSPARC->BandStructFlag == 1) {
         pSPARC->MAXIT_SCF = 1;
         pSPARC->MINIT_SCF = 1; 
-        if (pSPARC->is_hubbard) pSPARC->MAXIT_SCF = 50;
+        // if (pSPARC->is_hubbard) pSPARC->MAXIT_SCF = 50; // need to work on hubbard band
         pSPARC->PrintElecDensFlag = 0;
         pSPARC->PrintEigenFlag = 1;
     } 
@@ -3856,6 +3857,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         }
     }
 
+    if (pSPARC->RelaxFlag > 1) {
+        fprintf(output_fp,"RELAX_PRESSURE: %.15g\n",pSPARC->relaxPrTarget);
+    }
+
     fprintf(output_fp,"CALC_STRESS: %d\n",pSPARC->Calc_stress);
     if(pSPARC->Calc_stress == 0)
         fprintf(output_fp,"CALC_PRES: %d\n",pSPARC->Calc_pres);
@@ -4355,6 +4360,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 7,      /* int array */ 
@@ -4397,7 +4403,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1,  /* double */
+                          1, 1,  /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING, L_STRING, L_STRING, L_STRING, L_STRING};
 
@@ -4611,6 +4617,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.xi_3_SOAP, addr + i++);
     MPI_Get_address(&sparc_input_tmp.F_tol_SOAP, addr + i++);
     MPI_Get_address(&sparc_input_tmp.F_rel_scale, addr + i++);
+
+    MPI_Get_address(&sparc_input_tmp.relaxPrTarget, addr + i++);
     
 
     // char type

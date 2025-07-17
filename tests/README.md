@@ -73,7 +73,7 @@ A new test system can be added to the test suite. The input and reference output
  * Step 3: Generate the input files and the corresponding output files for the given system
  * Step 4: The output files should be named as: `.refout`,`refstatic`,`refaimd`,`refgeopt`,`refeigen`
  * Step 5: Place the input and reference output files inside the `standard` and `high_accuracy` folders
- * Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 561)
+ * Step 6: Update the `SPARC_testing_script.py` by adding the new system to the dictionary variable named `SYSTEMS` (initialized at line 40) in the end (at line 573)
 
 ### (5) Running on the cluster:
 

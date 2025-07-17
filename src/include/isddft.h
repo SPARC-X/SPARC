@@ -857,6 +857,7 @@ typedef struct _SPARC_OBJ{
     double qmass;          // mass parameter
     double amu2au;         // conversion factor for atomic mass unit -> atomic unit of mass
     double fs2atu;         // conversion factor for femto second -> atomic unit of time (Jiffy) 
+    double relaxPrTarget;  // Target pressure for cell relaxation in GPa
     // NPT
     int NPTscaleVecs[3];    // which lattice vector can be rescaled?
     int NPTconstraintFlag; // confinement on side length of cell. none: no length confinement (default); 1: a:b keeps unchanged; 2: a:c keeps unchanged; 
@@ -1349,6 +1350,7 @@ typedef struct _SPARC_INPUT_OBJ{
     int L_history;
     int L_autoscale;
     int L_lineopt;
+    double relaxPrTarget;  // Target pressure for cell relaxation in GPa
     
     /* Stress options*/
     int Calc_stress;
