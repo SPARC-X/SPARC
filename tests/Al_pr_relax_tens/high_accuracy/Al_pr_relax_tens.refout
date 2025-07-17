@@ -1,0 +1,388 @@
+***************************************************************************
+*                       SPARC (version June 17, 2025)                      *
+*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
+*           Distributed under GNU General Public License 3 (GPL)          *
+*                   Start time: Thu Jul 10 22:07:28 2025                  *
+***************************************************************************
+                           Input parameters                                
+***************************************************************************
+LATVEC_SCALE: 1 1 1 
+LATVEC:
+7.628635126863900 0.000000000000000 0.000000000000000 
+0.000000000000000 7.628635126863900 0.000000000000000 
+0.000000000000000 0.000000000000000 7.628635126863900 
+FD_GRID: 26 26 26
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 4 4 4
+KPOINT_SHIFT: 0.5 0.5 0.5
+SPIN_TYP: 0
+ELEC_TEMP_TYPE: Gaussian
+SMEARING: 0.007349864435
+EXCHANGE_CORRELATION: GGA_PBE
+HUBBARD_FLAG: 0
+NSTATES: 12
+CHEB_DEGREE: 26
+CHEFSI_BOUND_FLAG: 0
+RELAX_FLAG: 2
+RELAX_PRESSURE: -5.9490177591
+CALC_STRESS: 1
+MAXIT_SCF: 100
+MINIT_SCF: 2
+MAXIT_POISSON: 3000
+TOL_SCF: 1.00E-05
+POISSON_SOLVER: AAR
+TOL_POISSON: 1.00E-07
+TOL_LANCZOS: 1.00E-02
+TOL_PSEUDOCHARGE: 1.00E-08
+MIXING_VARIABLE: density
+MIXING_PRECOND: kerker
+TOL_PRECOND: 8.61E-05
+PRECOND_KERKER_KTF: 1
+PRECOND_KERKER_THRESH: 0
+MIXING_PARAMETER: 1
+MIXING_HISTORY: 7
+PULAY_FREQUENCY: 1
+PULAY_RESTART: 0
+REFERENCE_CUTOFF: 0.5
+RHO_TRIGGER: 4
+NUM_CHEFSI: 1
+FIX_RAND: 0
+VERBOSITY: 1
+PRINT_FORCES: 1
+PRINT_ATOMS: 1
+PRINT_EIGEN: 0
+PRINT_DENSITY: 0
+PRINT_VELS: 0
+PRINT_RESTART: 0
+PRINT_ENERGY_DENSITY: 0
+TOL_RELAX_CELL: 1.00E-04
+RELAX_MAXDILAT: 1.06E+00
+PRINT_RELAXOUT: 1
+OUTPUT_FILE: Al_pr_relax_tens
+***************************************************************************
+                                Cell                                       
+***************************************************************************
+Lattice vectors (Bohr):
+7.628635126863900 0.000000000000000 0.000000000000000 
+0.000000000000000 7.628635126863900 0.000000000000000 
+0.000000000000000 0.000000000000000 7.628635126863900 
+Volume: 4.4395661359E+02 (Bohr^3)
+Density: 2.4310068303E-01 (amu/Bohr^3), 2.7241553955E+00 (g/cc)
+***************************************************************************
+                           Parallelization                                 
+***************************************************************************
+NP_SPIN_PARAL: 1
+NP_KPOINT_PARAL: 8
+NP_BAND_PARAL: 3
+NP_DOMAIN_PARAL: 1 1 1
+NP_DOMAIN_PHI_PARAL: 2 3 4
+EIG_SERIAL_MAXNS: 1500
+***************************************************************************
+                             Initialization                                
+***************************************************************************
+Number of processors               :  24
+Mesh spacing                       :  0.293409 (Bohr)
+Number of symmetry adapted k-points:  32
+Output printed to                  :  Al_pr_relax_tens.out
+Total number of atom types         :  1
+Total number of atoms              :  4
+Total number of electrons          :  12
+Atom type 1  (valence electrons)   :  Al 3
+Pseudopotential                    :  ../../../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8
+Atomic mass                        :  26.981539
+Pseudocharge radii of atom type 1  :  7.04 7.04 7.04 (x, y, z dir)
+Number of atoms of type 1          :  4
+Estimated total memory usage       :  273.18 MB
+Estimated memory per processor     :  11.38 MB
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.19682559138104 7.19682559138104 7.19682559138104 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.276801 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#1)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3156281602E+00        1.193E-01        1.702
+2            -2.3171346973E+00        2.853E-02        0.418
+3            -2.3172535399E+00        1.573E-03        0.417
+4            -2.3172705353E+00        4.109E-04        0.419
+5            -2.3172720183E+00        9.453E-05        0.417
+6            -2.3172721502E+00        1.369E-05        0.417
+7            -2.3172721489E+00        4.479E-06        0.420
+Total number of SCF: 7     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3172721489E+00 (Ha/atom)
+Total free energy                  : -9.2690885956E+00 (Ha)
+Band structure energy              :  7.3110661336E-01 (Ha)
+Exchange correlation energy        : -4.5612505710E+00 (Ha)
+Self and correction energy         : -1.2498820466E+01 (Ha)
+-Entropy*kb*T                      : -3.4255474616E-03 (Ha)
+Fermi level                        :  2.4631572604E-01 (Ha)
+RMS force                          :  6.0707325908E-07 (Ha/Bohr)
+Maximum force                      :  1.0694142156E-06 (Ha/Bohr)
+Time for force calculation         :  0.041 (sec)
+Pressure                           :  2.1455566399E+01 (GPa)
+Maximum stress                     :  2.1455590725E+01 (GPa)
+Time for stress calculation        :  0.077 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 8.08635323447573 8.08635323447573 8.08635323447573 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.311014 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#2)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3204201356E+00        1.472E-01        0.439
+2            -2.3194633277E+00        4.259E-02        0.389
+3            -2.3193057129E+00        2.750E-03        0.387
+4            -2.3193061426E+00        3.041E-04        0.391
+5            -2.3193061686E+00        5.142E-05        0.386
+6            -2.3193061535E+00        6.170E-06        0.393
+Total number of SCF: 6     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3193061535E+00 (Ha/atom)
+Total free energy                  : -9.2772246141E+00 (Ha)
+Band structure energy              : -1.4353498781E-02 (Ha)
+Exchange correlation energy        : -4.1916035257E+00 (Ha)
+Self and correction energy         : -1.2499021789E+01 (Ha)
+-Entropy*kb*T                      : -3.8949862043E-03 (Ha)
+Fermi level                        :  1.4846894650E-01 (Ha)
+RMS force                          :  2.3843024691E-07 (Ha/Bohr)
+Maximum force                      :  3.0629050733E-07 (Ha/Bohr)
+Time for force calculation         :  0.038 (sec)
+Pressure                           : -9.1186971807E+00 (GPa)
+Maximum stress                     :  9.1186987621E+00 (GPa)
+Time for stress calculation        :  0.070 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 8.00305180558811 8.00305180558811 8.00305180558811 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.30781 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#3)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3205166703E+00        1.619E-02        0.441
+2            -2.3205035126E+00        4.357E-03        0.389
+3            -2.3205017165E+00        2.924E-04        0.391
+4            -2.3205017220E+00        2.589E-05        0.389
+5            -2.3205017725E+00        3.935E-06        0.385
+Total number of SCF: 5     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3205017725E+00 (Ha/atom)
+Total free energy                  : -9.2820070900E+00 (Ha)
+Band structure energy              :  4.5256897132E-02 (Ha)
+Exchange correlation energy        : -4.2208973650E+00 (Ha)
+Self and correction energy         : -1.2499026959E+01 (Ha)
+-Entropy*kb*T                      : -3.7817319275E-03 (Ha)
+Fermi level                        :  1.5644646744E-01 (Ha)
+RMS force                          :  2.6451918260E-08 (Ha/Bohr)
+Maximum force                      :  3.0205410155E-08 (Ha/Bohr)
+Time for force calculation         :  0.037 (sec)
+Pressure                           : -8.0777991526E+00 (GPa)
+Maximum stress                     :  8.0777993753E+00 (GPa)
+Time for stress calculation        :  0.066 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.84001884726028 7.84001884726028 7.84001884726028 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.301539 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#4)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3224911944E+00        3.022E-02        0.452
+2            -2.3224443870E+00        7.959E-03        0.402
+3            -2.3224382264E+00        5.204E-04        0.398
+4            -2.3224382272E+00        4.087E-05        0.396
+5            -2.3224382681E+00        6.464E-06        0.397
+Total number of SCF: 5     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3224382681E+00 (Ha/atom)
+Total free energy                  : -9.2897530726E+00 (Ha)
+Band structure energy              :  1.6645108051E-01 (Ha)
+Exchange correlation energy        : -4.2812371902E+00 (Ha)
+Self and correction energy         : -1.2499020492E+01 (Ha)
+-Entropy*kb*T                      : -3.5937728087E-03 (Ha)
+Fermi level                        :  1.7259710619E-01 (Ha)
+RMS force                          :  2.3570243253E-08 (Ha/Bohr)
+Maximum force                      :  3.1711665047E-08 (Ha/Bohr)
+Time for force calculation         :  0.039 (sec)
+Pressure                           : -5.3012274590E+00 (GPa)
+Maximum stress                     :  5.3012282780E+00 (GPa)
+Time for stress calculation        :  0.070 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.87866106027822 7.87866106027822 7.87866106027822 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.303025 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#5)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3220479062E+00        6.996E-03        0.449
+2            -2.3220453657E+00        1.860E-03        0.398
+3            -2.3220450320E+00        1.220E-04        0.396
+4            -2.3220450322E+00        9.657E-06        0.395
+Total number of SCF: 4     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3220450322E+00 (Ha/atom)
+Total free energy                  : -9.2881801287E+00 (Ha)
+Band structure energy              :  1.3711439961E-01 (Ha)
+Exchange correlation energy        : -4.2665647595E+00 (Ha)
+Self and correction energy         : -1.2499023593E+01 (Ha)
+-Entropy*kb*T                      : -3.6327281815E-03 (Ha)
+Fermi level                        :  1.6869539968E-01 (Ha)
+RMS force                          :  1.9648759483E-08 (Ha/Bohr)
+Maximum force                      :  2.6611343598E-08 (Ha/Bohr)
+Time for force calculation         :  0.039 (sec)
+Pressure                           : -6.0612537611E+00 (GPa)
+Maximum stress                     :  6.0612543357E+00 (GPa)
+Time for stress calculation        :  0.069 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.87297846110344 7.87297846110344 7.87297846110344 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.302807 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#6)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3221060660E+00        1.035E-03        0.449
+2            -2.3221061120E+00        2.746E-04        0.398
+3            -2.3221060902E+00        1.799E-05        0.394
+4            -2.3221060327E+00        1.435E-06        0.397
+Total number of SCF: 4     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3221060327E+00 (Ha/atom)
+Total free energy                  : -9.2884241308E+00 (Ha)
+Band structure energy              :  1.4140292731E-01 (Ha)
+Exchange correlation energy        : -4.2687076074E+00 (Ha)
+Self and correction energy         : -1.2499023075E+01 (Ha)
+-Entropy*kb*T                      : -3.6267592874E-03 (Ha)
+Fermi level                        :  1.6926606451E-01 (Ha)
+RMS force                          :  5.0731958636E-09 (Ha/Bohr)
+Maximum force                      :  8.8246504684E-09 (Ha/Bohr)
+Time for force calculation         :  0.039 (sec)
+Pressure                           : -5.9539938931E+00 (GPa)
+Maximum stress                     :  5.9539939495E+00 (GPa)
+Time for stress calculation        :  0.069 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.87271663898368 7.87271663898368 7.87271663898368 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.302797 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#7)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3221088229E+00        4.777E-05        0.448
+2            -2.3221088309E+00        1.269E-05        0.394
+3            -2.3221088248E+00        8.320E-07        0.396
+Total number of SCF: 3     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3221088248E+00 (Ha/atom)
+Total free energy                  : -9.2884352991E+00 (Ha)
+Band structure energy              :  1.4160074331E-01 (Ha)
+Exchange correlation energy        : -4.2688067907E+00 (Ha)
+Self and correction energy         : -1.2499023051E+01 (Ha)
+-Entropy*kb*T                      : -3.6264857006E-03 (Ha)
+Fermi level                        :  1.6929238583E-01 (Ha)
+RMS force                          :  1.2019938850E-09 (Ha/Bohr)
+Maximum force                      :  1.6259103690E-09 (Ha/Bohr)
+Time for force calculation         :  0.039 (sec)
+Pressure                           : -5.9487720520E+00 (GPa)
+Maximum stress                     :  5.9487720635E+00 (GPa)
+Time for stress calculation        :  0.069 (sec)
+***************************************************************************
+                         Reinitialized parameters                          
+***************************************************************************
+CELL: 7.87272895907907 7.87272895907907 7.87272895907907 
+CHEB_DEGREE: 26
+***************************************************************************
+                             Reinitialization                              
+***************************************************************************
+Mesh spacing                       :  0.302797 (Bohr)
+===================================================================
+                    Self Consistent Field (SCF#8)                     
+===================================================================
+Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
+1            -2.3221087102E+00        2.255E-06        0.446
+2            -2.3221086712E+00        6.182E-07        0.395
+Total number of SCF: 2     
+====================================================================
+                    Energy and force calculation                    
+====================================================================
+Free energy per atom               : -2.3221086712E+00 (Ha/atom)
+Total free energy                  : -9.2884346849E+00 (Ha)
+Band structure energy              :  1.4159116411E-01 (Ha)
+Exchange correlation energy        : -4.2688015534E+00 (Ha)
+Self and correction energy         : -1.2499023052E+01 (Ha)
+-Entropy*kb*T                      : -3.6264984839E-03 (Ha)
+Fermi level                        :  1.6929112241E-01 (Ha)
+RMS force                          :  8.0232069207E-10 (Ha/Bohr)
+Maximum force                      :  9.8006209753E-10 (Ha/Bohr)
+Time for force calculation         :  0.039 (sec)
+Pressure                           : -5.9489970658E+00 (GPa)
+Maximum stress                     :  5.9489970713E+00 (GPa)
+Time for stress calculation        :  0.069 (sec)
+***************************************************************************
+                               Timing info                                 
+***************************************************************************
+Total walltime                     :  17.346 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*                       PI: Phanish Suryanarayana                         *
+*               List of contributors: See the documentation               *
+*         Citation: See README.md or the documentation for details        *
+*  Acknowledgements: U.S. DOE SC (DE-SC0019410), U.S. DOE NNSA (ASC)      *
+*      {Preliminary developments: U.S. NSF (1333500,1663244,1553212)}     *
+***************************************************************************
+                                                                           

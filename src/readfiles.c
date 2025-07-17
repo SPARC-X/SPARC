@@ -1014,6 +1014,9 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"HUBBARD_FLAG:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->is_hubbard);
+        } else if (strcmpi(str,"RELAX_PRESSURE:") == 0) {    
+            fscanf(input_fp,"%lf",&pSPARC_Input->relaxPrTarget); // input in GPa
+            fscanf(input_fp, "%*[^\n]\n");
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);

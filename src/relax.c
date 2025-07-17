@@ -1071,8 +1071,11 @@ double volrelax_constraint(SPARC_OBJ *pSPARC, double vol)
     // free memory
     free(stress_lc);
 
-    // return max pressure stress
-    return max_P_stress;
+    // return max pressure stress - target relaxation pressure
+    #ifdef DEBUG
+    if (rank == 0) printf("\n\n CELL_RELAX residual = %6.6f\n\n",-max_P_stress - pSPARC->relaxPrTarget);
+    #endif
+    return (-max_P_stress - pSPARC->relaxPrTarget);
 }
 
 

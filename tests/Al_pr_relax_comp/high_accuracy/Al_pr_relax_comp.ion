@@ -1,0 +1,22 @@
+#=========================
+# format of ion file
+#=========================
+# ATOM_TYPE: <atom type name>
+# N_TYPE_ATOM: <num of atoms of this type>
+# COORD:
+# <xcoord> <ycoord> <zcoord>
+# ...
+# RELAX:
+# <xrelax> <yrelax> <zrelax>
+# ...
+
+ATOM_TYPE: Al                 # atom type
+ATOMIC_MASS: 26.981539           # atomic mass (amu)
+PSEUDO_POT: ../../../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8  # pseudopotential file
+N_TYPE_ATOM: 4                # number of atoms of this type
+
+COORD_FRAC:                   # fractional coordinates (in lattice vector basis)
+                   0                   0                   0
+   0.500000000000000                   0   0.500000000000000
+                   0   0.500000000000000   0.500000000000000
+   0.500000000000000   0.500000000000000                   0
