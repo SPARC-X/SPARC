@@ -3,6 +3,12 @@
 -Name
 -changes
 --------------
+September 03, 2025
+Name: Tian Tian
+Changes: src/initialization.c, src/socket/driver.c, src/socket/driver.h
+1. Add references to functions to avoid implicit function declarationerror in newer gcc compilation toolchains
+
+--------------
 July 17, 2025
 Name: Sayan Bhowmik
 Changes: src/include/isddft.h, src/initialization.c, src/readfiles.c, src/relax.c,

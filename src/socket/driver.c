@@ -20,12 +20,16 @@
 #include "libunixsocket.h"
 
 #include "initialization.h"
-/* #include "orbitalElecDensInit.h" */
 #include "electronicGroundState.h"
 #include "relax.h"
-/* #include "md.h" */
+#include "eigenSolver.h" // Mesh2Cheb
+#include "electrostatics.h" // Calculate_PseudochargeCutoff
+
 
 /* Tools to be used in socket interface. Don't need #ifdef switches */
+int write_message_to_socket(SPARC_OBJ *pSPARC, char *message);
+void map_atom_coord(SPARC_OBJ *pSPARC);
+
 
 int split_socket_name(const char *str, char *host, int *port, int *inet)
 {
@@ -1011,7 +1015,7 @@ void print_socket_error_info(SPARC_OBJ *pSPARC)
 
   FILE *output_fp = fopen(pSPARC->OutFilename,"w");
   if (output_fp == NULL) {
-    printf(stderr, "\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+    fprintf(stderr, "\nCannot open file \"%s\"\n",pSPARC->OutFilename);
     exit(EXIT_FAILURE);
   }
 
