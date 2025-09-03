@@ -1017,7 +1017,7 @@ void print_socket_error_info(SPARC_OBJ *pSPARC)
 
   FILE *output_fp = fopen(pSPARC->OutFilename,"w");
   if (output_fp == NULL) {
-    printf(stderr, "\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+    fprintf(stderr, "\nCannot open file \"%s\"\n",pSPARC->OutFilename);
     exit(EXIT_FAILURE);
   }
 
