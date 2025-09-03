@@ -23,9 +23,15 @@
 /* #include "orbitalElecDensInit.h" */
 #include "electronicGroundState.h"
 #include "relax.h"
+#include "eigenSolver.h" // Mesh2Cheb
+#include "electrostatics.h" // Calculate_PseudochargeCutoff
+
 /* #include "md.h" */
 
 /* Tools to be used in socket interface. Don't need #ifdef switches */
+int write_message_to_socket(SPARC_OBJ *pSPARC, char *message);
+void map_atom_coord(SPARC_OBJ *pSPARC);
+
 
 int split_socket_name(const char *str, char *host, int *port, int *inet)
 {
