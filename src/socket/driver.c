@@ -22,7 +22,7 @@
 #include "initialization.h"
 /* #include "orbitalElecDensInit.h" */
 #include "electronicGroundState.h"
-#include "relax.h"
+/* #include "relax.h" */
 #include "eigenSolver.h" // Mesh2Cheb
 #include "electrostatics.h" // Calculate_PseudochargeCutoff
 
