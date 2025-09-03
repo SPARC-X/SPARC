@@ -47,6 +47,11 @@ int close_Socket(SPARC_OBJ *pSPARC);
  **/
 void main_Socket(SPARC_OBJ *pSPARC);
 
+/**
+ * @brief   Print static file information when socket is present
+ **/
+void socket_static_print_atom_pos(SPARC_OBJ *pSPARC)
+
 // IPI constants
 
 #define IPI_HEADERLEN 12
