@@ -2252,6 +2252,7 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 		}
 		cc += pSPARC->nAtomv[ityp];
 	}
+	free(lattice);
 }
 
 /*
