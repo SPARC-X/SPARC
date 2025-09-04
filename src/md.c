@@ -13,6 +13,13 @@
 #include <string.h>
 #include <math.h>
 
+#ifdef USE_MKL
+    #include <mkl.h>
+#else
+    #include <cblas.h>
+    #include <lapacke.h>
+#endif
+
 #include "md.h"
 #include "isddft.h"
 #include "orbitalElecDensInit.h"
@@ -2135,11 +2142,68 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 	//*avgdis  = pow((pSPARC->range_x * pSPARC->range_y * pSPARC->range_z)/pSPARC->n_atom,1/3.0);
 	int atm2, ityp2, cc2, pairIndex;
 	cc = 0;
+
+	// Store the cell as a 3x3 lattice vector
+	double *lattice = (double *)calloc(sizeof(double), 9);
+	double cell[3] = {pSPARC->range_x, pSPARC->range_y, pSPARC->range_z};
+	double dr[3];
+    int row, col;
+	for (row = 0; row < 3; row++) {
+        lattice[row*3] = pSPARC->LatUVec[row*3] * cell[row];
+        lattice[row*3 + 1] = pSPARC->LatUVec[row*3 + 1] * cell[row];
+        lattice[row*3 + 2] = pSPARC->LatUVec[row*3 + 2] * cell[row];
+    }
+
+	// Calculate the inverse of lattice-vector
+	double LV_inv[9], U[9], S[3], VT[9], superb[2], temp_mat[9], LatVec[9];
+    double S_inv[9] = {0};
+	int m = 3;
+
+	for (int JJ = 0; JJ < 9; JJ++) {
+        LatVec[JJ] = lattice[JJ];
+    }
+
+	/* Calculating pinv(LatVec): This is necessary because for extremely skewed LV, the LV maybe close to singular */
+	// Compute SVD of LatVec(LV) first: LV = U * S * V^T
+	LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', m, m, LatVec, m, S, U, m, VT, m, superb);
+
+	// First compute S^{-1}
+	for (int i = 0; i < 3; i++) {
+		if (S[i] > 1e-12) S_inv[i * 3 + i] = 1.0/S[i];
+	}
+
+	// Compute LV^{-1} = V * S^{-1} * U^T
+	cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, m, m, m, 1.0, VT, m, S_inv, m, 0.0, temp_mat, m);
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, m, m, 1.0, temp_mat, m, U, m, 0.0, LV_inv, m);
+
 	for(ityp = 0; ityp < pSPARC->Ntypes; ityp++){
 	    mindis[ityp] = 1000000000.0;
 		for(atm = 0; atm < pSPARC->nAtomv[ityp] - 1; atm++){
 			for(atm2 = atm + 1; atm2 < pSPARC->nAtomv[ityp]; atm2++){
-				temp = fabs(sqrt(pow(pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc)],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc) + 1],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc) + 2],2.0) ));
+				// temp = fabs(sqrt(pow(pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc)],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc) + 1],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc) + 2],2.0) ));
+				
+				// Vector connecting atoms atm and atm2
+				dr[0] = pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc)];
+				dr[1] = pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc) + 1];
+				dr[2] = pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc) + 2];
+
+				double frac[3], dr_pbc[3];
+
+				// Minimum Image Convention (MIC) in fractional coordinates
+				// frac = LV^{-1} * dr
+				cblas_dgemv(CblasRowMajor, CblasNoTrans, m, m, 1.0, LV_inv, m, dr, 1, 0.0, frac, 1);
+
+				// Wrap into [-0.5, 0.5)
+				frac[0] -= round(frac[0]);
+				frac[1] -= round(frac[1]);
+				frac[2] -= round(frac[2]);
+
+				// dr_pbc = lattice * frac
+				cblas_dgemv(CblasRowMajor, CblasNoTrans, m, m, 1.0, lattice, 3, frac, 1, 0.0, dr_pbc, 1);
+
+				// Calculate distance
+				temp = sqrt(dr_pbc[0]*dr_pbc[0] + dr_pbc[1]*dr_pbc[1] + dr_pbc[2]*dr_pbc[2]);
+
 				if(temp < mindis[ityp])
 					mindis[ityp] = temp;
 			}
@@ -2155,7 +2219,30 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 			mindis[pairIndex] = 1000000000.0;
 			for(atm = 0; atm < pSPARC->nAtomv[ityp]; atm++){
 				for(atm2 = 0; atm2 < pSPARC->nAtomv[ityp2]; atm2++){
-					temp = fabs(sqrt(pow(pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc2)],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc2) + 1],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc2) + 2],2.0) ));
+					// temp = fabs(sqrt(pow(pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc2)],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc2) + 1],2.0) + pow(pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc2) + 2],2.0) ));
+					
+					// Vector connecting atoms atm and atm2
+					dr[0] = pSPARC->atom_pos[3 * (atm + cc)] - pSPARC->atom_pos[3 * (atm2 + cc2)];
+					dr[1] = pSPARC->atom_pos[3 * (atm + cc) + 1] - pSPARC->atom_pos[3 * (atm2 + cc2) + 1];
+					dr[2] = pSPARC->atom_pos[3 * (atm + cc) + 2] - pSPARC->atom_pos[3 * (atm2 + cc2) + 2];
+
+					double frac[3], dr_pbc[3];
+
+					// Minimum Image Convention (MIC) in fractional coordinates
+					// frac = LV^{-1} * dr
+					cblas_dgemv(CblasRowMajor, CblasNoTrans, m, m, 1.0, LV_inv, m, dr, 1, 0.0, frac, 1);
+
+					// Wrap into [-0.5, 0.5)
+					frac[0] -= round(frac[0]);
+					frac[1] -= round(frac[1]);
+					frac[2] -= round(frac[2]);
+
+					// dr_pbc = lattice * frac
+					cblas_dgemv(CblasRowMajor, CblasNoTrans, m, m, 1.0, lattice, 3, frac, 1, 0.0, dr_pbc, 1);
+
+					// Calculate distance
+					temp = sqrt(dr_pbc[0]*dr_pbc[0] + dr_pbc[1]*dr_pbc[1] + dr_pbc[2]*dr_pbc[2]);
+
 					if(temp < mindis[pairIndex])
 						mindis[pairIndex] = temp;
 				}
