@@ -853,17 +853,17 @@ void Compute_stress_tensor_kinetic_cyclix(SPARC_OBJ *pSPARC, double *dpsi, doubl
 
     double temp_k = 0.0;
     for(n = 0; n < ncol; n++){
-        double dpsi3_dpsi3 = 0.0;
         for (spinor = 0; spinor < Nspinor; spinor++) {
+            double dpsi3_dpsi3 = 0.0;
             double *dpsi_ptr = dpsi + n * DMndsp + spinor * DMnd; // dpsi_1
             for(i = 0; i < DMnd; i++){
                 dpsi3_dpsi3 += *(dpsi_ptr + i) * *(dpsi_ptr + i) * pSPARC->Intgwt_psi[i];
             }
-        }
-        double *occ = pSPARC->occ;
-        if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-        double g_nk = occ[n + pSPARC->band_start_indx];
-        temp_k += dpsi3_dpsi3 * g_nk;
+            double *occ = pSPARC->occ;
+            if (pSPARC->spin_typ == 1) occ += spinor * Ns;
+            double g_nk = occ[n + pSPARC->band_start_indx];
+            temp_k += dpsi3_dpsi3 * g_nk;
+        }    
     }
     *stress_k = - pSPARC->occfac * temp_k;
 }
@@ -882,7 +882,7 @@ void Compute_stress_tensor_nloc_by_integrals_cyclix(SPARC_OBJ *pSPARC, double *s
     IP_displ = pSPARC->IP_displ;
 
     double *beta3_x3 = alpha + IP_displ[pSPARC->n_atom]*ncol*Nspinor;
-    double stress_nl_ = 0;
+    double stress_nl_ = 0.0;
     count = 0;
     for (spinor = 0; spinor < Nspinor; spinor++) {
         for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
@@ -984,9 +984,9 @@ void Calculate_nonlocal_kinetic_stress_kpt_cyclix(SPARC_OBJ *pSPARC)
             beta3 = alpha_so2 + pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nspinor * (Nk + kpt);
             Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, beta3, kpt, "SO2");
         }
-    }
 
-    Compute_stress_tensor_kinetic_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, &stress_k);
+        Compute_stress_tensor_kinetic_kpt_cyclix(pSPARC, pSPARC->Yorb_kpt, &stress_k, kpt);
+    }
     
     if (pSPARC->npNd > 1) {
         MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
@@ -1137,7 +1137,7 @@ void Compute_Integral_Chi_XmRjp_beta_Dpsi_kpt_cyclix(SPARC_OBJ *pSPARC, double _
 /**
  * @brief    Calculate kinetic stress tensor
  */
-void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double *stress_k) 
+void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double *stress_k, int kpt) 
 {
     int ncol, DMnd, Nspinor, DMndsp, Nk, Ns;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
@@ -1147,26 +1147,22 @@ void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex
     Nk = pSPARC->Nkpts_kptcomm;
     Ns = pSPARC->Nstates;
 
-    int kpt, n, spinor, i;
-    double stress_k_ = 0;
-    for(kpt = 0; kpt < Nk; kpt++) {
-        double temp_k = 0.0;
-        for(n = 0; n < ncol; n++){
+    int n, spinor, i;
+    double temp_k = 0.0;
+    for(n = 0; n < ncol; n++){
+        for (spinor = 0; spinor < Nspinor; spinor++) {
             double dpsi3_dpsi3 = 0.0;
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                double _Complex *dpsi_ptr = dpsi + n * DMndsp + spinor * DMnd; // dpsi_1
-                for(i = 0; i < DMnd; i++){
-                    dpsi3_dpsi3 += (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i))) * pSPARC->Intgwt_psi[i];
-                }
+            double _Complex *dpsi_ptr = dpsi + n * DMndsp + spinor * DMnd; // dpsi_1
+            for(i = 0; i < DMnd; i++){
+                dpsi3_dpsi3 += (creal(*(dpsi_ptr + i)) * creal(*(dpsi_ptr + i)) + cimag(*(dpsi_ptr + i)) * cimag(*(dpsi_ptr + i))) * pSPARC->Intgwt_psi[i];
             }
             double *occ = pSPARC->occ + kpt*Ns;
             if (pSPARC->spin_typ == 1) occ += spinor * Nk * Ns;
             double g_nk = occ[n + pSPARC->band_start_indx];
             temp_k += dpsi3_dpsi3 * g_nk;
         }
-        stress_k_ -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k;
     }
-    *stress_k = stress_k_;
+    *stress_k -= pSPARC->occfac * pSPARC->kptWts_loc[kpt] / pSPARC->Nkpts * temp_k;
 }
 
 
@@ -1175,7 +1171,7 @@ void Compute_stress_tensor_nloc_by_integrals_kpt_cyclix(SPARC_OBJ *pSPARC, doubl
     int k, n, np, ldispl, ityp, iat, ncol, Ns;
     int count, l, m, lmax, Nk, spinor, Nspinor;
     int l_start, mexclude, ppl, *IP_displ;
-    double g_nk, kptwt, alpha_r, alpha_i, SJ, temp2_s, scaled_gamma_Jl = 0;
+    double g_nk, kptwt, alpha_r, alpha_i, SJ, temp2_s, scaled_gamma_Jl = 0.0;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     Ns = pSPARC->Nstates;
     Nk = pSPARC->Nkpts_kptcomm;

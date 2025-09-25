@@ -2113,7 +2113,7 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp) {
  * @param origUnit (OUTPUT) Unit for the original stress.
  * @return double Stress component in GPa.
  */
-double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char origUnit[16]) {
+double convertStressToGPa(SPARC_OBJ *pSPARC, double Stress, double cellsizes[3], int BCs[3], char origUnit[16]) {
     double scale = 1.0; // scale the stress by the dimensions of the dirichlet directions
     int nperiods = 3;
     if (BCs[0] == 1) { scale *= cellsizes[0]; nperiods--; }
@@ -2121,14 +2121,17 @@ double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char o
     if (BCs[2] == 1) { scale *= cellsizes[2]; nperiods--; }
 
     // scale and then convert to GPa
-    double StressGPa = Stress / scale * CONST_HA_BOHR3_GPA; 
+    double StressGPa;
+    if (pSPARC->CyclixFlag)
+        StressGPa = Stress*CONST_HA_BOHR3_GPA/(M_PI * ( pow(pSPARC->xout,2.0) - pow(pSPARC->xin,2.0) ) );
+    else
+        StressGPa = Stress / scale * CONST_HA_BOHR3_GPA; 
 
     // find the original unit
-    if (nperiods == 1)
+    if (nperiods == 1 || pSPARC->CyclixFlag)
         snprintf(origUnit, 16, "Ha/Bohr");
     else
         snprintf(origUnit, 16, "Ha/Bohr**%d", nperiods);
-
     return StressGPa;
 }
 

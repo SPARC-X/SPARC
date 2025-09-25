@@ -92,7 +92,7 @@ void PrintStress (SPARC_OBJ *pSPARC, double *stress, FILE *fp);
  * @param origUnit (OUTPUT) Unit for the original stress.
  * @return double Stress component in GPa.
  */
-double convertStressToGPa(double Stress, double cellsizes[3], int BCs[3], char origUnit[16]);
+double convertStressToGPa(SPARC_OBJ *pSPARC, double Stress, double cellsizes[3], int BCs[3], char origUnit[16]);
 
 
 #endif // STRESS_H 

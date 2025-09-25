@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version June 24, 2024)                      *
+*                       SPARC (version September 04, 2025)                      *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Mon Jun 24 15:32:27 2024                  *
+*                   Start time: Wed Sep 24 20:39:53 2025                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -17,6 +17,7 @@ SPIN_TYP: 1
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 0.001
 EXCHANGE_CORRELATION: GGA_PBE
+HUBBARD_FLAG: 0
 NSTATES: 24
 CHEB_DEGREE: 100
 CHEFSI_BOUND_FLAG: 0
@@ -47,7 +48,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: NiCl2_cyclix_spin/temp_run/NiCl2_cyclix_spin
+OUTPUT_FILE: cyclix/NiCl2_cyclix_spin/temp_run/NiCl2_cyclix_spin
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -59,17 +60,17 @@ Density: 1.1801764804E-01 (amu/Bohr^3), 1.3224907831E+00 (g/cc)
 NP_SPIN_PARAL: 2
 NP_KPOINT_PARAL: 1
 NP_BAND_PARAL: 24
-NP_DOMAIN_PARAL: 2 1 1
-NP_DOMAIN_PHI_PARAL: 12 2 4
+NP_DOMAIN_PARAL: 5 1 1
+NP_DOMAIN_PHI_PARAL: 16 3 5
 EIG_SERIAL_MAXNS: 1500
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  96
+Number of processors               :  240
 Mesh spacing in x-direction        :  0.120106 (Bohr)
 Mesh spacing in y-direction        :  0.00228479 (Bohr)
 Mesh spacing in z-direction        :  0.0603356 (Bohr)
-Output printed to                  :  NiCl2_cyclix_spin/temp_run/NiCl2_cyclix_spin.out
+Output printed to                  :  cyclix/NiCl2_cyclix_spin/temp_run/NiCl2_cyclix_spin.out
 Total number of atom types         :  2
 Total number of atoms              :  3
 Total number of electrons          :  32
@@ -84,50 +85,51 @@ Atomic mass                        :  35.4515
 Pseudocharge radii of atom type 2  :  6.61 0.16 6.52 (x, y, z dir)
 Number of atoms of type 2          :  2
 Estimated total memory usage       :  3.77 GB
-Estimated memory per processor     :  40.24 MB
+Estimated memory per processor     :  16.09 MB
 ========================================================================================
                     Self Consistent Field (SCF#1)                     
 ========================================================================================
 Iteration     Free Energy (Ha/atom)    Magnetization     SCF Error        Timing (sec)
-1            -6.2910924269E+01         2.0000E+00        1.129E-01        14.338
-2            -6.2929928854E+01         2.0000E+00        1.068E-01        5.571
-3            -6.2948641552E+01         2.0000E+00        3.387E-02        5.471
-4            -6.2950081701E+01         2.0000E+00        2.551E-02        5.361
-5            -6.2950691908E+01         2.0000E+00        2.235E-02        5.433
-6            -6.2951196643E+01         2.0000E+00        1.323E-02        4.950
-7            -6.2951312891E+01         2.0000E+00        3.505E-03        4.893
-8            -6.2951340596E+01         2.0000E+00        1.417E-03        4.702
-9            -6.2951343762E+01         2.0000E+00        8.493E-04        4.575
-10           -6.2951345244E+01         2.0000E+00        4.275E-04        4.407
-11           -6.2951345330E+01         2.0000E+00        8.725E-05        3.951
-12           -6.2951345380E+01         2.0000E+00        5.428E-05        3.677
-13           -6.2951345340E+01         2.0000E+00        1.441E-05        3.596
-14           -6.2951345401E+01         2.0000E+00        9.820E-06        3.404
-15           -6.2951345313E+01         2.0000E+00        5.107E-06        3.355
-16           -6.2951345320E+01         2.0000E+00        2.450E-06        3.149
-17           -6.2951345323E+01         2.0000E+00        1.309E-06        3.198
-18           -6.2951345369E+01         2.0000E+00        5.081E-07        3.176
+1            -6.2910933572E+01         2.0000E+00        1.129E-01        11.459
+2            -6.2929933907E+01         2.0000E+00        1.068E-01        4.068
+3            -6.2948641455E+01         2.0000E+00        3.387E-02        3.872
+4            -6.2950081741E+01         2.0000E+00        2.551E-02        3.770
+5            -6.2950692063E+01         2.0000E+00        2.235E-02        3.851
+6            -6.2951196689E+01         2.0000E+00        1.323E-02        3.542
+7            -6.2951312896E+01         2.0000E+00        3.505E-03        3.587
+8            -6.2951340597E+01         2.0000E+00        1.417E-03        3.366
+9            -6.2951343761E+01         2.0000E+00        8.497E-04        3.269
+10           -6.2951345244E+01         2.0000E+00        4.281E-04        3.189
+11           -6.2951345329E+01         2.0000E+00        8.728E-05        2.861
+12           -6.2951345379E+01         2.0000E+00        5.427E-05        2.720
+13           -6.2951345340E+01         2.0000E+00        1.441E-05        2.643
+14           -6.2951345401E+01         2.0000E+00        9.815E-06        2.526
+15           -6.2951345313E+01         2.0000E+00        5.105E-06        2.514
+16           -6.2951345320E+01         2.0000E+00        2.452E-06        2.386
+17           -6.2951345323E+01         2.0000E+00        1.310E-06        2.411
+18           -6.2951345369E+01         2.0000E+00        5.074E-07        2.380
 Total number of SCF: 18    
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
 Free energy per atom               : -6.2951345369E+01 (Ha/atom)
 Total free energy                  : -1.8885403611E+02 (Ha)
-Band structure energy              : -3.3094848484E+01 (Ha)
-Exchange correlation energy        : -2.7768505398E+01 (Ha)
+Band structure energy              : -3.3094848682E+01 (Ha)
+Exchange correlation energy        : -2.7768505386E+01 (Ha)
 Self and correction energy         : -2.6483206126E+02 (Ha)
--Entropy*kb*T                      : -6.7058103078E-12 (Ha)
-Fermi level                        : -2.1775059848E-01 (Ha)
-RMS force                          :  1.0914965440E-02 (Ha/Bohr)
-Maximum force                      :  1.9680005893E-02 (Ha/Bohr)
-Time for force calculation         :  0.364 (sec)
-Maximum stress                     :  9.2703004584E+00 (Ha/Bohr**2)
-Maximum stress equiv. to periodic  :  9.4225718588E+03 (GPa)
-Time for stress calculation        :  0.412 (sec)
+-Entropy*kb*T                      : -6.6630590067E-12 (Ha)
+Fermi level                        : -2.1775729606E-01 (Ha)
+Net magnetization                  :  1.9999999997E+00 (Bohr magneton)
+RMS force                          :  1.0914970005E-02 (Ha/Bohr)
+Maximum force                      :  1.9680015829E-02 (Ha/Bohr)
+Time for force calculation         :  0.300 (sec)
+Maximum stress                     :  3.1174111247E+00 (Ha/Bohr)
+Maximum stress equiv. to periodic  :  9.5748737466E+00 (GPa)
+Time for stress calculation        :  0.480 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  93.502 sec
+Total walltime                     :  75.291 sec
 ___________________________________________________________________________
 
 ***************************************************************************
