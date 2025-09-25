@@ -284,7 +284,7 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
                 double cellsizes[3] = {pSPARC->range_x, pSPARC->range_y, pSPARC->range_z};
                 int BCs[3] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
                 char stressUnit[16];
-                double maxSGPa = convertStressToGPa(maxS, cellsizes, BCs, stressUnit);
+                double maxSGPa = convertStressToGPa(pSPARC, maxS, cellsizes, BCs, stressUnit);
                 fprintf(output_fp,"Maximum stress                     :%18.10E (%s)\n",maxS,stressUnit);
                 fprintf(output_fp,"Maximum stress equiv. to periodic  :%18.10E (GPa)\n",maxSGPa);
             }

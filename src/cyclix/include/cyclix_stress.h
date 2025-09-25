@@ -45,7 +45,7 @@ void Dpseudopot_cyclix_z(SPARC_OBJ *pSPARC, double *VJ, int FDn, int ishift_p, i
  * @brief    Calculate kinetic stress tensor
  */
 void Compute_stress_tensor_kinetic_cyclix(SPARC_OBJ *pSPARC, double *dpsi, double *stress_k);
-void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double *stress_k);
+void Compute_stress_tensor_kinetic_kpt_cyclix(SPARC_OBJ *pSPARC, double _Complex *dpsi, double *stress_k, int kpt);
 
 /**
  * @brief    Calculate nonlocal stress components
