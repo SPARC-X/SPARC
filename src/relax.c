@@ -1346,9 +1346,9 @@ void PrintCellRelax(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,":CELL: %18.10E %18.10E %18.10E\n", pSPARC->range_x, pSPARC->range_y, pSPARC->range_z);
     fprintf(output_fp,":VOLUME: %18.10E\n", pSPARC->range_x*pSPARC->range_y*pSPARC->range_z*pSPARC->Jacbdet);
     fprintf(output_fp,":LATVEC:\n");
-    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatVec[0],pSPARC->LatVec[1],pSPARC->LatVec[2]);
-    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatVec[3],pSPARC->LatVec[4],pSPARC->LatVec[5]);
-    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatVec[6],pSPARC->LatVec[7],pSPARC->LatVec[8]);
+    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatUVec[0],pSPARC->LatUVec[1],pSPARC->LatUVec[2]);
+    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatUVec[3],pSPARC->LatUVec[4],pSPARC->LatUVec[5]);
+    fprintf(output_fp,"%18.10E %18.10E %18.10E \n",pSPARC->LatUVec[6],pSPARC->LatUVec[7],pSPARC->LatUVec[8]);
     fprintf(output_fp,":STRESS:\n");
 
     PrintStress(pSPARC, pSPARC->stress, output_fp);
