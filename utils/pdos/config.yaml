@@ -1,0 +1,43 @@
+# PDOS Calculator Configuration File
+# Example configuration for calculate_pdos.py
+
+# SPARC output path (directory and base filename)
+# Example: "Al_BCC_1/Al" will look for Al_BCC_1/Al.out, Al_BCC_1/Al.static, etc.
+sparc_path: "examples/Al_FCC/Al"
+
+# Output directory for PDOS results
+# If not specified, will use the same directory as sparc_path
+output_dir: null
+
+# Gaussian broadening width (eV)
+gaussian_width: 0.2721140795
+# Energy range for plotting (eV)
+# min_E_plot: 5.0
+# max_E_plot: 65.0
+
+# Number of energy points for PDOS calculation
+N_PDOS: 1000
+
+# # Whether to sum over the m index for the PDOS calculation
+# sum_over_m_index: False  # True by default
+
+# # Whether to recompute the PDOS
+# recompute_pdos: True
+
+# # If not recompute the PDOS, then we directly load the PDOS data from the txt file
+# projection_datapath: "Al_FCC_0/data_projections.txt"
+
+# # Whether to print the projection data
+# print_projection_data: False
+
+# # Whether to orthogonalize the atomic orbitals
+# orthogonalize_atomic_orbitals: False # False by default
+
+# # Single atom calculation settings
+# full_pdos_calculation: False
+# atom_type: ["Al", 13]  # Can be element name (e.g., "Al") or atomic number (e.g., 13)
+# atom_index_for_specified_atom_type: [0, 1]  # Index of the atom in the static file
+
+
+# # whether to use k-point parallelization
+# k_point_parallelization: True
