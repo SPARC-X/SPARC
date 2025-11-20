@@ -5,15 +5,17 @@ Responsible for constructing the total Hamiltonian matrix from various potential
 
 from __future__ import annotations
 import numpy as np
-from typing import Dict, Optional, Any
-from dataclasses import dataclass
+from typing import Dict, Optional, TYPE_CHECKING
 
 from ..mesh.operators import RadialOperatorsBuilder
 from ..pseudo.local import LocalPseudopotential
 from ..utils.occupation_states import OccupationInfo
 
+# Type checking for SwitchesFlags, avoid circular import
+if TYPE_CHECKING:
+    from .driver import SwitchesFlags
 
-# Error messages
+# Hamiltonian Builder Error messages
 OPS_BUILDER_MUST_BE_A_RADIAL_OPERATORS_BUILDER_ERROR = \
     "parameter ops_builder must be a RadialOperatorsBuilder, get type {} instead"
 LOCAL_PSEUDOPOTENTIAL_MUST_BE_A_LOCAL_PSEUDOPOTENTIAL_ERROR = \
@@ -22,139 +24,25 @@ OCCUPATION_INFO_MUST_BE_AN_OCCUPATION_INFO_ERROR = \
     "parameter occupation_info must be an OccupationInfo, get type {} instead"
 ALL_ELECTRON_MUST_BE_A_BOOLEAN_ERROR = \
     "parameter all_electron must be a boolean, get type {} instead"
-
 EIGENVECTORS_MUST_BE_A_NUMPY_ARRAY_ERROR = \
     "parameter eigenvectors must be a numpy array, get type {} instead"
 EIGENVECTORS_MUST_BE_A_2D_ARRAY_ERROR = \
     "parameter eigenvectors must be a 2D array, get dimension {} instead"
 HARTREE_FOCK_EXCHANGE_MATRIX_FOR_L_CHANNEL_NOT_AVAILABLE_ERROR = \
     "Hartree-Fock exchange matrix for l={l} is not available, please set the HF exchange matrices first"
-
 MIXING_PARAMETER_NOT_A_FLOAT_ERROR = \
     "parameter mixing_parameter must be a float, get type {} instead"
 MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR = \
     "parameter mixing_parameter must be in [0, 1], got {} instead"
-
 DE_XC_DTAU_NOT_AVAILABLE_ERROR = \
     "parameter de_xc_dtau is not available for l={l}, please set the de_xc_dtau first"
 
 
-# Warning messages
+# Hamiltonian Builder Warning messages
 HARTREE_FOCK_EXCHANGE_MATRIX_FOR_L_CHANNEL_NOT_AVAILABLE_WARNING = \
     "WARNING: Hartree-Fock exchange matrix for l={l} is not available, please set the HF exchange matrices first"
 HF_EXCHANGE_MATRIX_NOT_AVAILABLE_WARNING = \
     "WARNING: Hartree-Fock exchange matrix is not available, please set the HF exchange matrices first"
-
-
-
-
-class SwitchesFlags:
-    """
-    Internal helper class for HamiltonianBuilder to manage functional switches.
-    Determines which Hamiltonian components to include based on the XC functional.
-    
-    Attributes:
-        use_hf_exchange (bool): Whether to use Hartree-Fock exchange
-        use_oep_exchange (bool): Whether to use Optimized Effective Potential (OEP) exchange
-        use_oep_correlation (bool): Whether to use OEP correlation
-        use_rpa_correlation (bool): Whether to use Random Phase Approximation (RPA) correlation
-        use_metagga (bool): Whether to use meta-GGA functional (requires de_xc_dtau in Hamiltonian)
-        OEP (bool): Whether to use OEP methods
-        inside_OEP (bool): Whether currently inside OEP iteration
-        uscrpa (bool): Whether to use RPA (Random Phase Approximation) - "use RPA" flag
-    """
-    def __init__(self, xc_functional: str, hybrid_mixing_parameter: Optional[float] = None):
-        """
-        Initialize switches based on XC functional and hybrid mixing parameter.
-        
-        Parameters
-        ----------
-        xc_functional : str
-            Name of XC functional
-        hybrid_mixing_parameter : float, optional
-            Mixing parameter for hybrid functionals (0-1). Required only for hybrid functionals.
-            - For PBE0: should be 0.25
-            - For HF: should be 1.0
-        """
-        # Type checking
-        assert isinstance(xc_functional, str), \
-            "parameter xc_functional must be a string, get type {} instead".format(type(xc_functional))
-        if hybrid_mixing_parameter is not None:
-            assert isinstance(hybrid_mixing_parameter, (float, int)), \
-                "parameter hybrid_mixing_parameter must be a float, get type {} instead".format(type(hybrid_mixing_parameter))
-            hybrid_mixing_parameter = float(hybrid_mixing_parameter)
-        
-        self.xc_functional = xc_functional
-        self.hybrid_mixing_parameter = hybrid_mixing_parameter
-        
-        # Initialize all flags to False
-        self.OEP = False
-        self.inside_OEP = False
-        self.uscrpa = False
-        self.use_hf_exchange = False
-        self.use_oep_exchange = False
-        self.use_oep_correlation = False
-        self.use_rpa_correlation = False
-        self.use_metagga = False
-        
-        # Set flags based on functional
-        if xc_functional == 'RPA':
-            self.OEP = True
-            self.uscrpa = True
-            self.use_oep_exchange = True
-            self.use_oep_correlation = True
-            self.use_rpa_correlation = True
-        elif xc_functional == 'OEPx':
-            self.OEP = True
-            self.uscrpa = True
-            self.use_oep_exchange = True
-            self.use_oep_correlation = True
-        elif xc_functional == 'HF':
-            self.use_hf_exchange = True
-            # Check if hybrid_mixing_parameter is provided for hybrid functionals
-            if hybrid_mixing_parameter is None:
-                print("WARNING: hybrid_mixing_parameter not provided for HF functional, using default value 1.0")
-                self.hybrid_mixing_parameter = 1.0
-            elif not np.isclose(hybrid_mixing_parameter, 1.0):
-                print("WARNING: hybrid_mixing_parameter for HF should be 1.0, got {}".format(hybrid_mixing_parameter))
-        elif xc_functional == 'PBE0':
-            self.use_hf_exchange = True
-            # Check if hybrid_mixing_parameter is provided for hybrid functionals
-            if hybrid_mixing_parameter is None:
-                print("WARNING: hybrid_mixing_parameter not provided for PBE0 functional, using default value 0.25")
-                self.hybrid_mixing_parameter = 0.25
-            elif not np.isclose(hybrid_mixing_parameter, 0.25):
-                print("WARNING: hybrid_mixing_parameter for PBE0 should be 0.25, got {}".format(hybrid_mixing_parameter))
-        
-        # Set meta-GGA flag for functionals that require de_xc_dtau
-        if xc_functional in ['SCAN', 'RSCAN', 'R2SCAN']:
-            self.use_metagga = True
-        
-        # LDA/GGA functionals: no special flags (default False)
-    
-    def print_info(self):
-        """
-        Print functional switch information summary.
-        """
-        print("=" * 60)
-        print("\t\t FUNCTIONAL SWITCHES")
-        print("=" * 60)
-        print(f"\t XC Functional              : {self.xc_functional}")
-        if self.hybrid_mixing_parameter is not None:
-            print(f"\t Hybrid Mixing Parameter    : {self.hybrid_mixing_parameter}")
-        else:
-            print(f"\t Hybrid Mixing Parameter    : None (not applicable)")
-        print()
-        print("\t FUNCTIONAL FLAGS:")
-        print(f"\t use_hf_exchange            : {self.use_hf_exchange}")
-        print(f"\t use_oep_exchange           : {self.use_oep_exchange}")
-        print(f"\t use_oep_correlation        : {self.use_oep_correlation}")
-        print(f"\t use_rpa_correlation        : {self.use_rpa_correlation}")
-        print(f"\t use_metagga                : {self.use_metagga}")
-        print(f"\t OEP                        : {self.OEP}")
-        print(f"\t inside_OEP                 : {self.inside_OEP}")
-        print(f"\t use_RPA (uscrpa)           : {self.uscrpa}")
-        print()
 
 
 class HamiltonianBuilder:
@@ -251,12 +139,12 @@ class HamiltonianBuilder:
             from ..pseudo.non_local import NonLocalPseudopotential
             
             nonlocal_calculator = NonLocalPseudopotential(
-                pseudo=self.pseudo,
-                ops_builder=self.ops_builder
+                pseudo      = self.pseudo,
+                ops_builder = self.ops_builder
             )
             
             self.H_nonlocal = nonlocal_calculator.compute_all_nonlocal_matrices(
-                l_channels=self.occupation_info.unique_l_values
+                l_channels = self.occupation_info.unique_l_values
             )
         else:
             self.H_nonlocal = {}
@@ -264,15 +152,16 @@ class HamiltonianBuilder:
     
     def build_for_l_channel(
         self,
-        l: int,
-        v_hartree: np.ndarray,
-        v_x: np.ndarray,
-        v_c: np.ndarray,
-        switches: SwitchesFlags,
-        v_x_oep: Optional[np.ndarray] = None,
-        v_c_oep: Optional[np.ndarray] = None,
-        de_xc_dtau: Optional[np.ndarray] = None,
-        symmetrize: bool = False
+        l                : int,
+        v_hartree        : np.ndarray,
+        v_x              : np.ndarray,
+        v_c              : np.ndarray,
+        switches         : 'SwitchesFlags',
+        v_x_oep          : Optional[np.ndarray] = None,
+        v_c_oep          : Optional[np.ndarray] = None,
+        de_xc_dtau       : Optional[np.ndarray] = None,
+        symmetrize       : bool                 = False,
+        exclude_boundary : bool                 = False,
         ) -> np.ndarray:
         """
         Build total Hamiltonian for angular momentum channel l
@@ -287,7 +176,7 @@ class HamiltonianBuilder:
             Exchange potential V_x(r) at quadrature points
         v_c : np.ndarray
             Correlation potential V_c(r) at quadrature points
-        switches : SwitchesFlags
+        switches : 'SwitchesFlags'
             Functional switches determining which components to include
         v_x_oep : np.ndarray, optional
             OEP exchange potential (if used)
@@ -298,6 +187,8 @@ class HamiltonianBuilder:
         symmetrize : bool, optional
             Whether to apply symmetrization using S^(-1/2) (default: False)
             Transforms: H → S^(-1/2) @ H @ S^(-1/2), then H → (H+H^T)/2
+        exclude_boundary : bool, optional
+            Whether to exclude boundary nodes from the Hamiltonian matrix (default: False)
         
         Returns
         -------
@@ -318,7 +209,7 @@ class HamiltonianBuilder:
         
         # Determine whether to mix the exchange functionals of HF and GGA_PBE
         hybrid_mixing_parameter = 0.0
-        if switches.use_hf_exchange:
+        if switches.use_hf_exchange or switches.use_oep_exchange:
             assert isinstance(switches.hybrid_mixing_parameter, float), \
                 MIXING_PARAMETER_NOT_A_FLOAT_ERROR.format(type(switches.hybrid_mixing_parameter))
             assert 0.0 <= switches.hybrid_mixing_parameter <= 1.0, \
@@ -347,21 +238,12 @@ class HamiltonianBuilder:
         v_xc_total = (1.0 - hybrid_mixing_parameter) * v_x
         v_xc_total += v_c
         if v_x_oep is not None:
-            v_xc_total += v_x_oep
+            v_xc_total += v_x_oep * hybrid_mixing_parameter
         if v_c_oep is not None:
             v_xc_total += v_c_oep
         
         H_xc = self.ops_builder.build_potential_matrix(v_xc_total)
         H += H_xc
-
-
-        # np.savetxt("H_part.txt", self.H_kinetic + self.H_ext)
-        # np.savetxt("H_hartree.txt", H_hartree)
-        # np.savetxt("H_xc.txt", H_xc)
-        # np.savetxt("v_hartree.txt", v_hartree)
-        # np.savetxt("v_x.txt", v_x)
-        # np.savetxt("v_c.txt", v_c)
-        # raise RuntimeError("Stop here")
 
         # Add meta-GGA kinetic density term (radial component)
         if switches.use_metagga:
@@ -387,11 +269,18 @@ class HamiltonianBuilder:
             assert l in self.H_hf_exchange_dict, \
                 HARTREE_FOCK_EXCHANGE_MATRIX_FOR_L_CHANNEL_NOT_AVAILABLE_ERROR.format(l)
             H += self.H_hf_exchange_dict[l] * hybrid_mixing_parameter
-        
+
+
+        # Exclude boundary nodes from the Hamiltonian matrix
+        if exclude_boundary:
+            H = H[1:-1,1:-1]
+
         # Apply symmetrization transformation (if requested)
         if symmetrize:
             # Get S^(-1/2) from ops_builder
             S_inv_sqrt = self.ops_builder.get_S_inv_sqrt()
+            if exclude_boundary:
+                S_inv_sqrt = S_inv_sqrt[1:-1,1:-1]
 
             # Transform: H → S^(-1/2) @ H @ S^(-1/2)
             H = S_inv_sqrt @ H @ S_inv_sqrt

@@ -671,11 +671,10 @@ def create_xc_evaluator(
         
         # hybrid functionals
         'PBE0': GGA_PBE,
-        # 'HF': HF,
-        
-        # TODO: Add OEP and RPA
-        # 'OEPx': OEPx,
-        # 'RPA': RPA,
+
+        # OEP functionals
+        'EXX': GGA_PBE,
+        'RPA': GGA_PBE,
     }
     
     if functional_name not in FUNCTIONAL_MAP:

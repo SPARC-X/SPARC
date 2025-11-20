@@ -9,13 +9,16 @@ Reference implementation: datagen/tools/HF_EX.py
 
 from __future__ import annotations
 import numpy as np
-from typing import Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Optional, Tuple, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..utils.occupation_states import OccupationInfo
     from ..mesh.operators import RadialOperatorsBuilder
 
 # Error messages
+FACTORIAL_N_MUST_BE_NON_NEGATIVE_INTEGER_ERROR = \
+    "parameter n must be a non-negative integer, get {} instead"
+
 L_VALUES_MUST_BE_INTEGERS_ERROR = \
     "parameter l_values in class OccupationInfo must be integers, get type {} instead"
 
@@ -24,11 +27,12 @@ ORBITALS_MUST_BE_A_NUMPY_ARRAY_ERROR = \
 ORBITALS_MUST_BE_A_2D_NUMPY_ARRAY_ERROR = \
     "parameter orbitals must be a 2D numpy array, get dimension {} instead"
 ORBITALS_MUST_HAVE_N_GRID_ROWS_ERROR = \
-    "parameter orbitals must have n_grid rows, get {} instead"
+    "parameter orbitals must have n_grid rows, get {} rows instead of {} rows"
 ORBITALS_MUST_HAVE_N_ORBITALS_COLUMNS_ERROR = \
-    "parameter orbitals must have n_orbitals columns, get {} instead"
+    "parameter orbitals must have n_orbitals columns, get {} columns instead of {} columns"
 
-
+EXCHANGE_POTENTIAL_OUTPUT_SHAPE_ERROR = \
+    "exchange potential must have shape (n_orbitals, n_grid), get shape {} instead"
 
 def factorial(n: int) -> int:
     """
@@ -38,7 +42,8 @@ def factorial(n: int) -> int:
     
     Uses lookup table for common values to avoid repeated computation.
     """
-    assert n >= 0 and isinstance(n, int)
+    assert n >= 0 and isinstance(n, int), \
+        FACTORIAL_N_MUST_BE_NON_NEGATIVE_INTEGER_ERROR.format(n)
 
     if n == 0: return 1
     elif n == 1: return 1
@@ -57,44 +62,53 @@ def factorial(n: int) -> int:
         return result
 
 
-def _wigner_3j_000(l1: int, l2: int, L: int) -> float:
-    """
-    Wigner 3j symbol (l1 l2 L; 0 0 0) with built-in selection rules.
-    """
-    J = l1 + l2 + L
-    # parity: l1 + l2 + L must be even
-    if (J & 1) == 1:
-        return 0.0
-    # triangle inequalities
-    if l1 < abs(l2 - L) or l1 > l2 + L:
-        return 0.0
-    if l2 < abs(l1 - L) or l2 > l1 + L:
-        return 0.0
-    if L  < abs(l1 - l2) or L  > l1 + l2:
-        return 0.0
 
-    g = J // 2
-    W = (-1)**g
-    W *= np.sqrt(
-        factorial(J - 2*l1) * factorial(J - 2*l2) * factorial(J - 2*L)
-        / factorial(J + 1)
-    )
-    W *= factorial(g) / (factorial(g - l1) * factorial(g - l2) * factorial(g - L))
-    return float(W)
+class CoulombCouplingCalculator:
+
+    @staticmethod
+    def radial_kernel(l: int, r_nodes: np.ndarray, r_weights: np.ndarray) -> np.ndarray:
+        """
+        Compute kernel K^(l) with entries:
+            K_ij^(l) = [ r_<^l / r_>^(l+1) ] * (w_i w_j) / (2l + 1),
+        where r_< = min(r_i, r_j), r_> = max(r_i, r_j).
+
+        This term represents the radial part of the spherical harmonic expansion of the Coulomb interaction.
+        """
+        r_min = np.minimum(r_nodes, r_nodes.reshape(-1, 1))
+        r_max = np.maximum(r_nodes, r_nodes.reshape(-1, 1))
+        
+        return ((r_min / r_max)**l / r_max) * (r_weights * r_weights.reshape(-1, 1)) / (2*l + 1)
 
 
-def _radial_kernel(l: int, r_nodes: np.ndarray, r_weights: np.ndarray) -> np.ndarray:
-    """
-    Compute kernel K^(l) with entries:
-        K_ij^(l) = [ r_<^l / r_>^(l+1) ] * (w_i w_j) / (2l + 1),
-    where r_< = min(r_i, r_j), r_> = max(r_i, r_j).
+    @staticmethod
+    def wigner_3j_000(l1: int, l2: int, L: int) -> float:
+        """
+        Wigner 3j symbol (l1 l2 L; 0 0 0) with built-in selection rules.
+        """
+        assert isinstance(l1, int), "l1 must be an integer, get type {} instead".format(type(l1))
+        assert isinstance(l2, int), "l2 must be an integer, get type {} instead".format(type(l2))
+        assert isinstance(L, int) , "L must be an integer, get type {} instead".format(type(L))
+        J = l1 + l2 + L
+        # parity: l1 + l2 + L must be even
+        if (J & 1) == 1:
+            return 0.0
+        # triangle inequalities
+        if l1 < abs(l2 - L) or l1 > l2 + L:
+            return 0.0
+        if l2 < abs(l1 - L) or l2 > l1 + L:
+            return 0.0
+        if L  < abs(l1 - l2) or L  > l1 + l2:
+            return 0.0
 
-    This term represents the radial part of the spherical harmonic expansion of the Coulomb interaction.
-    """
-    r_min = np.minimum(r_nodes, r_nodes.reshape(-1, 1))
-    r_max = np.maximum(r_nodes, r_nodes.reshape(-1, 1))
-    
-    return ((r_min / r_max)**l / r_max) * (r_weights * r_weights.reshape(-1, 1)) / (2*l + 1)
+        g = J // 2
+        W = (-1)**g
+        W *= np.sqrt(
+            factorial(J - 2*l1) * factorial(J - 2*l2) * factorial(J - 2*L)
+            / factorial(J + 1)
+        )
+        W *= factorial(g) / (factorial(g - l1) * factorial(g - l2) * factorial(g - L))
+        return float(W)
+
 
 
 class HartreeFockExchange:
@@ -109,7 +123,7 @@ class HartreeFockExchange:
         self,
         ops_builder    : 'RadialOperatorsBuilder',
         occupation_info: 'OccupationInfo'
-    ):
+        ):
         """
         Initialize HF exchange calculator.
         
@@ -129,14 +143,14 @@ class HartreeFockExchange:
         self.n_grid = len(self.quadrature_nodes)
         
         # Extract occupation data
-        self.l_values = occupation_info.l_values
+        self.l_values    = occupation_info.l_values
         self.occupations = occupation_info.occupations
-        self.n_orbitals = len(self.l_values)
+        self.n_orbitals  = len(self.l_values)
 
         assert self.l_values.dtype == int, \
             L_VALUES_MUST_BE_INTEGERS_ERROR.format(self.l_values.dtype)
 
-    
+
 
     def _compute_exchange_matrix(
         self, 
@@ -159,11 +173,11 @@ class HartreeFockExchange:
         for l_prime in l_coupling:
             # Angular part: compute vectorized alpha without in-place modification
             w3j_values = np.array([
-                _wigner_3j_000(int(l_value), int(lj), int(l_prime)) for lj in self.l_values
+                CoulombCouplingCalculator.wigner_3j_000(int(l_value), int(lj), int(l_prime)) for lj in self.l_values
             ], dtype=float)
             
             # Radial part: compute the radial coupling kernel K^(L)
-            radial_kernel = _radial_kernel(
+            radial_kernel = CoulombCouplingCalculator.radial_kernel(
                 int(l_prime), self.quadrature_nodes, self.quadrature_weights
             )
 
@@ -187,6 +201,67 @@ class HartreeFockExchange:
         
         # Be careful with the sign change of the exchange matrix here.
         return - H_hf_exchange_matrix
+
+
+    def compute_exchange_potentials(
+        self,
+        orbitals):
+        """
+        Compute Hartree-Fock exchange potentials for all angular momentum channels.
+
+        This function is useful for the OEP calculation. Here, the input orbitals should only contain the occupied orbitals.
+
+        Parameters
+        ----------
+        orbitals : np.ndarray
+            Kohn-Sham orbitals (radial wavefunctions) at quadrature points
+            Shape: (n_grid, n_orbitals)
+
+        Returns
+        -------
+        np.ndarray
+            Hartree-Fock exchange potential for all angular momentum channels
+            Shape: (len(l_values), n_grid)
+        """
+        # Check Type and shape
+        assert isinstance(orbitals, np.ndarray), \
+            ORBITALS_MUST_BE_A_NUMPY_ARRAY_ERROR.format(type(orbitals))
+        assert orbitals.ndim == 2, \
+            ORBITALS_MUST_BE_A_2D_NUMPY_ARRAY_ERROR.format(orbitals.ndim)
+        assert orbitals.shape[0] == self.n_grid, \
+            ORBITALS_MUST_HAVE_N_GRID_ROWS_ERROR.format(self.n_grid, orbitals.shape[0])
+        assert orbitals.shape[1] == self.n_orbitals, \
+            ORBITALS_MUST_HAVE_N_ORBITALS_COLUMNS_ERROR.format(self.n_orbitals, orbitals.shape[1])
+
+        # Compute HF exchange matrices for all l channels
+        l_coupling = np.arange(0, 2 * np.max(self.l_values) + 1)
+
+        # Compute exchange potential for each l channel
+        exchange_potential_l_contribution_list : List[np.ndarray] = []
+        for l_prime in l_coupling:
+            _wigner_term = np.array([
+                CoulombCouplingCalculator.wigner_3j_000(int(l1), int(l2), int(l_prime))**2 for l1 in self.l_values for l2 in self.l_values
+            ], dtype=float).reshape(len(self.l_values), len(self.l_values))
+            
+            _exchange_potential_l_contribution = -0.5 * np.einsum(
+                'ki,ji,ikj->kj',
+                _wigner_term * self.occupations,
+                orbitals,
+                np.einsum('li,lk,jl->ikj',
+                    orbitals,
+                    orbitals,
+                    CoulombCouplingCalculator.radial_kernel(l_prime, self.quadrature_nodes, self.quadrature_weights) * (2 * l_prime + 1),
+                ),
+                optimize=True,
+            )
+
+            exchange_potential_l_contribution_list.append(_exchange_potential_l_contribution)
+
+        exchange_potential = np.sum(exchange_potential_l_contribution_list, axis=0)
+        assert exchange_potential.shape == (self.n_orbitals, self.n_grid), \
+            EXCHANGE_POTENTIAL_OUTPUT_SHAPE_ERROR.format(exchange_potential.shape, self.n_orbitals, self.n_grid)
+        
+        return exchange_potential
 
 
     def compute_exchange_matrices_dict(
@@ -277,13 +352,13 @@ class HartreeFockExchange:
             wigner_matrix = np.zeros((len(l_values), len(l_values)))
             for i1 in range(len(l_values)):
                 for i2 in range(len(l_values)):
-                    wigner_matrix[i1, i2] = _wigner_3j_000(int(l_values[i1]), int(l_values[i2]), int(l_coupling))**2
+                    wigner_matrix[i1, i2] = CoulombCouplingCalculator.wigner_3j_000(int(l_values[i1]), int(l_values[i2]), int(l_coupling))**2
             
             # Create occupation matrix
             occ_matrix = occupations * occupations.reshape(-1, 1)
             
             # Compute radial kernel for this l coupling
-            r_kernel = _radial_kernel(l_coupling, self.quadrature_nodes, self.quadrature_weights)
+            r_kernel = CoulombCouplingCalculator.radial_kernel(l_coupling, self.quadrature_nodes, self.quadrature_weights)
             
             # Compute exchange energy contribution for this l coupling
             # This is the complex einsum from the reference code:
@@ -307,4 +382,5 @@ class HartreeFockExchange:
             E_HF += exchange_contribution
         
         return E_HF
+
 

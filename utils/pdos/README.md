@@ -11,12 +11,12 @@ Before using the PDOS calculator, ensure you have the following Python packages 
 - **Numpy** - Numerical computing library
 - **Scipy** - Scientific computing library (includes linalg, interpolate, sparse, special modules)
 - **PyYAML** - YAML configuration file parsing
-
+- **Pandas** - Data manipulation and analysis
 
 You can install the required packages using pip:
 
 ```bash
-pip install numpy scipy pyyaml
+pip install numpy scipy pandas pyyaml
 ```
 
 

@@ -24,6 +24,15 @@ class EigenSolver:
         """
         self.xc_functional = xc_functional
     
+
+    @staticmethod
+    def solve_full(H: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Solve for all eigenvalues and eigenvectors.
+        """
+        return np.linalg.eigh(H, UPLO='L')
+
+
     def solve_lowest(self, H: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
         """
         Solve for k lowest eigenvalues and eigenvectors.

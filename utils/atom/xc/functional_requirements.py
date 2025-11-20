@@ -110,10 +110,10 @@ _FUNCTIONAL_REQUIREMENTS: Dict[str, FunctionalRequirements] = {
     ),
     
     # Optimized Effective Potential
-    'OEPx': FunctionalRequirements(
+    'EXX': FunctionalRequirements(
         needs_gradient=True,
         needs_tau=False,
-        functional_type='OEP',
+        functional_type='hybrid-GGA',
         needs_orbitals=True
     ),
     

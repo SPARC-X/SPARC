@@ -3,6 +3,14 @@
 -Name
 -changes
 --------------
+November 19, 2025
+Name: Qihao Cheng
+Changes: utils/pdos/, utils/atom/
+1. Added XC functional fallback in PDOS: unsupported SPARC functionals now default to GGA_PBE for atomic orbital generation.
+2. Extended atomic DFT module to support EXX and RPA (OEP-based implementation).
+3. Added thread-parallel RPA frequency evaluation and improved standalone atomic code performance.
+
+--------------
 November 07, 2025
 Name: Qihao Cheng
 Changes: utils/pdos/, utils/atom/

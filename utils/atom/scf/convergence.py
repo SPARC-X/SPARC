@@ -10,6 +10,8 @@ from dataclasses import dataclass
 # Convergence Checker Error Messages
 LOOP_TYPE_ERROR_MESSAGE = \
     "parameter loop_type must be 'Inner' or 'Outer', get {} instead"
+FOOTER_BLANK_LINE_TYPE_ERROR_MESSAGE = \
+    "parameter footer_blank_line must be a boolean, get type {} instead"
 
 @dataclass
 class ConvergenceHistory:
@@ -36,11 +38,12 @@ class ConvergenceChecker:
     
     def __init__(
         self,
-        tolerance: float = 1e-6,
-        n_consecutive: int = 1,
-        norm_type: int = 2,
-        loop_type: str = "Inner"
-    ):
+        tolerance        : float = 1e-6,
+        n_consecutive    : int   = 1,
+        norm_type        : int   = 2,
+        loop_type        : str   = "Inner",
+        footer_blank_line: bool  = False,
+        ):
         """
         Parameters
         ----------
@@ -52,17 +55,28 @@ class ConvergenceChecker:
             Norm type for residual calculation (1, 2, or np.inf)
         loop_type : str
             Type of loop for display purposes ("Inner" or "Outer")
+        footer_blank_line: bool
+            If True, print a blank line after the footer
         """
         assert loop_type in ["Inner", "Outer"], \
             LOOP_TYPE_ERROR_MESSAGE.format(loop_type)
             
-        self.tolerance     = tolerance
-        self.n_consecutive = n_consecutive
-        self.norm_type     = norm_type
-        self.loop_type     = loop_type
-        
+        self.tolerance          = tolerance
+        self.n_consecutive      = n_consecutive
+        self.norm_type          = norm_type
+        self.loop_type          = loop_type
+        self._footer_blank_line = footer_blank_line
+
         self._consecutive_count = 0
         self._history = ConvergenceHistory(iterations=[], residuals=[])
+
+    def set_footer_blank_line(self, footer_blank_line: bool):
+        """
+        Set the footer blank line flag
+        """
+        assert isinstance(footer_blank_line, bool), \
+            FOOTER_BLANK_LINE_TYPE_ERROR_MESSAGE.format(type(footer_blank_line))
+        self._footer_blank_line = footer_blank_line
     
     
     def check(
@@ -170,8 +184,10 @@ class ConvergenceChecker:
         """Print table footer with final status"""
         status_msg = "converged" if converged else "not converged"
         if self.loop_type == "Outer":
-            print(f"[Outer] Converged after {n_iterations} iteration(s)")
+            print(f"{prefix} Outer SCF iteration converged after {n_iterations} iteration(s)")
         else:
             print(f"{prefix}\t SCF Iteration {status_msg} after {n_iterations} iteration(s)")
+        
+        if self._footer_blank_line:
             print()
 

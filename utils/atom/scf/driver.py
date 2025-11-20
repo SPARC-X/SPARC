@@ -1,18 +1,45 @@
 from __future__ import annotations
+from matplotlib import use
 import numpy as np
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, Optional, Union, List, Tuple, Iterable
 from dataclasses import dataclass, field
 
-from .hamiltonian import HamiltonianBuilder, SwitchesFlags
+from .hamiltonian import HamiltonianBuilder
 from .density import DensityCalculator, DensityData
 from .poisson import PoissonSolver
 from .convergence import ConvergenceChecker
 from .eigensolver import EigenSolver
 from .mixer import Mixer
-from ..utils.occupation_states import OccupationInfo
-from ..xc.evaluator import XCEvaluator, create_xc_evaluator, XCPotentialData
+from ..xc.evaluator import XCEvaluator, create_xc_evaluator
 from ..xc.functional_requirements import get_functional_requirements, FunctionalRequirements
 from ..xc.hybrid import HartreeFockExchange
+from ..xc.oep import OEPCalculator
+from ..mesh.operators import RadialOperatorsBuilder
+from ..utils.occupation_states import OccupationInfo
+
+
+# Switches Flags Error Messages
+XC_FUNCTIONAL_NOT_STRING_ERROR = \
+    "parameter xc_functional must be a string, get type {} instead"
+HYBRID_MIXING_PARAMETER_NOT_A_FLOAT_ERROR = \
+    "parameter hybrid_mixing_parameter must be a float, get type {} instead"
+USE_XC_FUNCTIONAL_TYPE_ERROR = \
+    "parameter use_xc_functional must be a boolean, get type {} instead"
+USE_HF_EXCHANGE_TYPE_ERROR = \
+    "parameter use_hf_exchange must be a boolean, get type {} instead"
+USE_OEP_EXCHANGE_TYPE_ERROR = \
+    "parameter use_oep_exchange must be a boolean, get type {} instead"
+USE_OEP_CORRELATION_TYPE_ERROR = \
+    "parameter use_oep_correlation must be a boolean, get type {} instead"
+
+USE_OEP_NOT_BOOL_ERROR = \
+    "parameter use_oep must be a boolean, get type {} instead"
+USE_OEP_SHOULD_NOT_BE_NONE_FOR_PBE0_ERROR = \
+    "parameter use_oep should not be None for PBE0 functional, get None instead"
+USE_OEP_NOT_TRUE_FOR_OEP_FUNCTIONAL_ERROR = \
+    "parameter use_oep must be True for OEP functional `{}`, get {} instead"
+USE_OEP_NOT_FALSE_FOR_NON_OEP_FUNCTIONAL_ERROR = \
+    "parameter use_oep must be False for non-OEP functional `{}`, get {} instead"
 
 
 # SCF Settings Error Messages
@@ -34,12 +61,23 @@ EIGENVALUES_TYPE_ERROR_MESSAGE = \
     "parameter eigenvalues must be a numpy array, get type {} instead"
 EIGENVECTORS_TYPE_ERROR_MESSAGE = \
     "parameter eigenvectors must be a numpy array, get type {} instead"
+DENSITY_DATA_TYPE_ERROR_MESSAGE = \
+    "parameter density_data must be a DensityData instance, get type {} instead"
+FULL_EIGENVALUES_TYPE_ERROR_MESSAGE = \
+    "parameter full_eigenvalues must be a numpy array, get type {} instead"
+FULL_EIGENVECTORS_TYPE_ERROR_MESSAGE = \
+    "parameter full_eigenvectors must be a numpy array, get type {} instead"
+FULL_L_TERMS_TYPE_ERROR_MESSAGE = \
+    "parameter full_l_terms must be a numpy array, get type {} instead"
+
 RHO_TYPE_ERROR_MESSAGE = \
     "parameter rho must be a numpy array, get type {} instead"
 CONVERGED_TYPE_ERROR_MESSAGE = \
     "parameter converged must be a boolean, get type {} instead"
 ITERATIONS_TYPE_ERROR_MESSAGE = \
     "parameter iterations must be an integer, get type {} instead"
+RHO_RESIDUAL_TYPE_ERROR_MESSAGE = \
+    "parameter rho_residual must be a float, get type {} instead"
 RESIDUAL_TYPE_ERROR_MESSAGE = \
     "parameter residual must be a float, get type {} instead"
 TOTAL_ENERGY_TYPE_ERROR_MESSAGE = \
@@ -50,7 +88,8 @@ OUTER_ITERATIONS_TYPE_ERROR_MESSAGE = \
     "parameter outer_iterations must be an integer, get type {} instead"
 OUTER_CONVERGED_TYPE_ERROR_MESSAGE = \
     "parameter outer_converged must be a boolean, get type {} instead"
-
+ENABLE_PARALLELIZATION_NOT_BOOL_ERROR = \
+    "parameter enable_parallelization must be a boolean, get type {} instead"
 
 # SCF Driver Error Messages
 HAMILTONIAN_BUILDER_TYPE_ERROR_MESSAGE = \
@@ -65,22 +104,277 @@ MIXER_TYPE_ERROR_MESSAGE = \
     "parameter mixer must be a Mixer, get type {} instead"
 OCCUPATION_INFO_TYPE_ERROR_MESSAGE = \
     "parameter occupation_info must be a OccupationInfo, get type {} instead"
+HYBRID_MIXING_PARAMETER_TYPE_ERROR_MESSAGE = \
+    "parameter hybrid_mixing_parameter must be a float, get type {} instead"
+OPS_BUILDER_OEP_TYPE_ERROR_MESSAGE = \
+    "parameter ops_builder_oep must be a RadialOperatorsBuilder, get type {} instead"
+OEP_MIXING_PARAMETER_TYPE_ERROR_MESSAGE = \
+    "parameter oep_mixing_parameter must be a float, get type {} instead"
+FREQUENCY_QUADRATURE_POINT_NUMBER_TYPE_ERROR_MESSAGE = \
+    "parameter frequency_quadrature_point_number must be an integer, get type {} instead"
+ANGULAR_MOMENTUM_CUTOFF_TYPE_ERROR_MESSAGE = \
+    "parameter angular_momentum_cutoff must be an integer, get type {} instead"
+ANGULAR_MOMENTUM_CUTOFF_NOT_NONE_ERROR_MESSAGE = \
+    "parameter angular_momentum_cutoff must be not None, get None instead"
 
 
 RHO_INITIAL_TYPE_ERROR_MESSAGE = \
     "parameter rho_initial must be a numpy array, get type {} instead"
 SETTINGS_TYPE_ERROR_MESSAGE = \
     "parameter settings must be a SCFSettings or a dictionary, get type {} instead"
+V_X_OEP_TYPE_ERROR_MESSAGE = \
+    "parameter v_x_oep must be a numpy array, get type {} instead"
+V_C_OEP_TYPE_ERROR_MESSAGE = \
+    "parameter v_c_oep must be a numpy array, get type {} instead"
 H_HF_EXCHANGE_DICT_BY_L_TYPE_ERROR_MESSAGE = \
     "provided parameter H_hf_exchange_dict_by_l must be a dictionary, get type {} instead"
 ORBITALS_INITIAL_TYPE_ERROR_MESSAGE = \
     "parameter orbitals_initial must be a numpy array, get type {} instead"
+XC_FUNCTIONAL_TYPE_ERROR_MESSAGE = \
+    "parameter xc_functional must be a string, get type {} instead"
+SWITCHES_TYPE_ERROR_MESSAGE = \
+    "parameter switches must be a SwitchesFlags, get type {} instead"
+XC_REQUIREMENTS_TYPE_ERROR_MESSAGE = \
+    "parameter xc_requirements must be a FunctionalRequirements, get type {} instead"
+XC_CALCULATOR_TYPE_ERROR_MESSAGE = \
+    "parameter xc_calculator must be a XCEvaluator, get type {} instead"
+
+
+OCC_EIGENVALUES_LIST_NOT_LIST_ERROR_MESSAGE = \
+    "parameter occ_eigenvalues_list must be a list, get type {} instead"
+OCC_EIGENVECTORS_LIST_NOT_LIST_ERROR_MESSAGE = \
+    "parameter occ_eigenvectors_list must be a list, get type {} instead"
+UNOCC_EIGENVALUES_LIST_NOT_LIST_ERROR_MESSAGE = \
+    "parameter unocc_eigenvalues_list must be a list, get type {} instead"
+UNOCC_EIGENVECTORS_LIST_NOT_LIST_ERROR_MESSAGE = \
+    "parameter unocc_eigenvectors_list must be a list, get type {} instead"
+OCC_EIGENVALUES_LIST_LENGTH_ERROR_MESSAGE = \
+    "Number of occupied eigenvalues in 'occ_eigenvalues_list' must match number of unique l values, get {} instead"
+OCC_EIGENVECTORS_LIST_LENGTH_ERROR_MESSAGE = \
+    "Number of occupied eigenvectors in 'occ_eigenvectors_list' must match number of unique l values, get {} instead"
+UNOCC_EIGENVALUES_LIST_LENGTH_ERROR_MESSAGE = \
+    "Number of unoccupied eigenvalues in 'unocc_eigenvalues_list' must match number of unique l values, get {} instead"
+UNOCC_EIGENVECTORS_LIST_LENGTH_ERROR_MESSAGE = \
+    "Number of unoccupied eigenvectors in 'unocc_eigenvectors_list' must match number of unique l values, get {} instead"
+OCC_EIGENVALUES_LIST_NDIM_ERROR_MESSAGE = \
+    "Occupied eigenvalues in 'occ_eigenvalues_list' must be 1D arrays, get dimension {} instead"
+OCC_EIGENVECTORS_LIST_NDIM_ERROR_MESSAGE = \
+    "Occupied eigenvectors in 'occ_eigenvectors_list' must be 2D arrays, get dimension {} instead"
+UNOCC_EIGENVALUES_LIST_NDIM_ERROR_MESSAGE = \
+    "Unoccupied eigenvalues in 'unocc_eigenvalues_list' must be 1D arrays, get dimension {} instead"
+UNOCC_EIGENVECTORS_LIST_NDIM_ERROR_MESSAGE = \
+    "Unoccupied eigenvectors in 'unocc_eigenvectors_list' must be 2D arrays, get dimension {} instead"
+OCC_EIGENVALUES_AND_EIGENVECTORS_LIST_SHAPE_MISMATCH_ERROR_MESSAGE = \
+    "Occupied eigenvalues and eigenvectors in 'occ_eigenvalues_list' and 'occ_eigenvectors_list' must have the same number of rows, get {} and {} instead"
+UNOCC_EIGENVALUES_AND_EIGENVECTORS_LIST_SHAPE_MISMATCH_ERROR_MESSAGE = \
+    "Unoccupied eigenvalues and eigenvectors in 'unocc_eigenvalues_list' and 'unocc_eigenvectors_list' must have the same number of rows, get {} and {} instead"
+OCC_EIGENVECTORS_LIST_SHAPE_ERROR_MESSAGE = \
+    "Occupied eigenvectors in 'occ_eigenvectors_list' must have the same number of rows as the number of interior nodes, get {} and {} instead"
+UNOCC_EIGENVECTORS_LIST_SHAPE_ERROR_MESSAGE = \
+    "Unoccupied eigenvectors in 'unocc_eigenvectors_list' must have the same number of rows as the number of interior nodes, get {} and {} instead"
+
+
+# Switches Flags Warning Messages
+HYBRID_MIXING_PARAMETER_NOT_PROVIDED_WARNING = \
+    "WARNING: hybrid_mixing_parameter not provided for {xc_functional} functional, using default value {default_value}"
+HYBRID_MIXING_PARAMETER_NOT_1_0_WARNING = \
+    "WARNING: hybrid_mixing_parameter for {xc_functional} should be 1.0, got {hybrid_mixing_parameter}"
+HYBRID_MIXING_PARAMETER_NOT_0_0_WARNING = \
+    "WARNING: hybrid_mixing_parameter for {xc_functional} should be 0.0, got {hybrid_mixing_parameter}"
+HYBRID_MIXING_PARAMETER_NOT_0_25_WARNING = \
+    "WARNING: hybrid_mixing_parameter for {xc_functional} should be 0.25, got {hybrid_mixing_parameter}"
+
+
 
 # SCF Driver Warning Messages
 INNER_SCF_DID_NOT_CONVERGE_WARNING = \
     "WARNING: Inner SCF did not converge after {max_iter} iterations"
 HF_CALCULATOR_NOT_AVAILABLE_WARNING = \
     "WARNING: Hartree-Fock calculator is not available, please initialize the HF calculator first"
+
+
+
+class SwitchesFlags:
+    """
+    Internal helper class for HamiltonianBuilder to manage functional switches.
+    Determines which Hamiltonian components to include based on the XC functional.
+    
+    Attributes:
+        use_xc_functional   (bool) : Whether to use XC functional
+        use_hf_exchange     (bool) : Whether to include Hartree-Fock exchange mixing
+        use_oep_exchange    (bool) : Whether to use OEP exchange potential
+        use_oep_correlation (bool) : Whether to use OEP correlation potential, for RPA
+        use_metagga         (bool) : Whether the functional requires meta-GGA terms
+    """
+    def __init__(
+        self, 
+        xc_functional          : str, 
+        use_oep                : Optional[bool]  = None,
+        hybrid_mixing_parameter: Optional[float] = None,
+        ):
+        """
+        Initialize switches based on XC functional and hybrid mixing parameter.
+        
+        Parameters
+        ----------
+        xc_functional : str
+            Name of XC functional
+        use_oep : bool, optional
+            Whether to use OEP exchange potential, useful only for PBE0 functional, 
+            otherwise it has to agree with use_oep_exchange flag
+        hybrid_mixing_parameter : float, optional
+            Mixing parameter for hybrid functionals (0-1). Required only for hybrid functionals.
+            - For PBE0: should be 0.25
+            - For HF  : should be 1.0
+        """
+        # Type checking
+        assert isinstance(xc_functional, str), \
+            XC_FUNCTIONAL_NOT_STRING_ERROR.format(type(xc_functional))
+
+        if use_oep is not None:
+            assert isinstance(use_oep, bool), \
+            USE_OEP_NOT_BOOL_ERROR.format(type(use_oep))
+        if hybrid_mixing_parameter is not None:
+            assert isinstance(hybrid_mixing_parameter, (float, int)), \
+                HYBRID_MIXING_PARAMETER_NOT_A_FLOAT_ERROR.format(type(hybrid_mixing_parameter))
+            hybrid_mixing_parameter = float(hybrid_mixing_parameter)
+        
+        self.check_xc_functional_and_use_oep_consistency(use_oep, xc_functional)
+        
+        
+        self.xc_functional           = xc_functional
+        self.hybrid_mixing_parameter = hybrid_mixing_parameter
+        
+        # Initialize all flags to False, except use_xc_functional which is True by default
+        self.use_xc_functional   = True
+        self.use_hf_exchange     = False
+        self.use_oep_exchange    = False
+        self.use_oep_correlation = False
+        self.use_metagga         = False
+        
+        # Set flags based on functional
+        if xc_functional == 'None':
+            self.use_xc_functional   = False
+
+        # Exchange-only functionals
+        elif xc_functional == 'EXX':
+            self.use_oep_exchange    = True
+            self.use_oep_correlation = False # EXX does not use correlation potential
+            self.use_xc_functional   = False
+            if hybrid_mixing_parameter is not None:
+                print(HYBRID_MIXING_PARAMETER_NOT_PROVIDED_WARNING.format(xc_functional='EXX', default_value=1.0))
+                self.hybrid_mixing_parameter = 1.0
+            elif not np.isclose(hybrid_mixing_parameter, 1.0):
+                print(HYBRID_MIXING_PARAMETER_NOT_1_0_WARNING.format(xc_functional='EXX', hybrid_mixing_parameter=hybrid_mixing_parameter))
+        
+        # Exchange-correlation functionals, for RPA
+        elif xc_functional == 'RPA':
+            self.use_oep_exchange    = True
+            self.use_oep_correlation = True
+            self.use_xc_functional   = False
+            if hybrid_mixing_parameter is not None:
+                print(HYBRID_MIXING_PARAMETER_NOT_PROVIDED_WARNING.format(xc_functional='RPA', default_value=1.0))
+                self.hybrid_mixing_parameter = 1.0
+            elif not np.isclose(hybrid_mixing_parameter, 1.0):
+                print(HYBRID_MIXING_PARAMETER_NOT_1_0_WARNING.format(xc_functional='RPA', hybrid_mixing_parameter=hybrid_mixing_parameter))
+
+        # Hartree-Fock exchange functionals
+        elif xc_functional == 'HF':
+            self.use_hf_exchange     = True
+            self.use_xc_functional   = False
+            # Check if hybrid_mixing_parameter is provided for hybrid functionals
+            if hybrid_mixing_parameter is None:
+                print(HYBRID_MIXING_PARAMETER_NOT_PROVIDED_WARNING.format(xc_functional='HF', default_value=1.0))
+                self.hybrid_mixing_parameter = 1.0
+            elif not np.isclose(hybrid_mixing_parameter, 1.0):
+                print(HYBRID_MIXING_PARAMETER_NOT_1_0_WARNING.format(xc_functional='HF', hybrid_mixing_parameter=hybrid_mixing_parameter))
+        
+        # Hybrid GGA functionals
+        elif xc_functional == 'PBE0':
+            # Check if hybrid_mixing_parameter is provided for hybrid functionals
+            if hybrid_mixing_parameter is None:
+                print(HYBRID_MIXING_PARAMETER_NOT_PROVIDED_WARNING.format(xc_functional='PBE0', default_value=0.25))
+                self.hybrid_mixing_parameter = 0.25
+            elif not np.isclose(hybrid_mixing_parameter, 0.25):
+                print(HYBRID_MIXING_PARAMETER_NOT_0_25_WARNING.format(xc_functional='PBE0', hybrid_mixing_parameter=hybrid_mixing_parameter))
+
+            if use_oep is False:
+                self.use_hf_exchange  = True
+                self.use_oep_exchange = False
+            else:
+                self.use_oep_exchange = True
+                self.use_hf_exchange  = False
+
+        # Set meta-GGA flag for functionals that require de_xc_dtau
+        elif xc_functional in ['SCAN', 'RSCAN', 'R2SCAN']:
+            self.use_metagga = True
+        
+        # LDA/GGA functionals: no special flags (default False)
+        elif xc_functional in ['LDA_PZ', 'LDA_PW', 'GGA_PBE']:
+            pass
+
+        # Invalid XC functional
+        else:
+            raise ValueError(f"Invalid XC functional: {xc_functional}")
+
+
+
+    @property
+    def use_oep(self) -> bool:
+        return self.use_oep_exchange or self.use_oep_correlation
+
+
+    @staticmethod
+    def check_xc_functional_and_use_oep_consistency(use_oep: bool, xc_functional: str):
+        """
+        Check if the consistency between use_oep and xc_functional is correct
+        """
+        # PBE0 functional must be used with OEP flag
+        if xc_functional == 'PBE0':
+            assert use_oep is not None, \
+                USE_OEP_SHOULD_NOT_BE_NONE_FOR_PBE0_ERROR.format(xc_functional)
+            return 
+        
+        # For other functionals, use_oep can be None, and no extra check is needed
+        if use_oep is None:
+            return
+        
+
+        if xc_functional in ['EXX', 'RPA']:
+            assert use_oep is True, \
+                USE_OEP_NOT_TRUE_FOR_OEP_FUNCTIONAL_ERROR.format(xc_functional)
+        elif xc_functional in ['LDA_PZ', 'LDA_PW', 'GGA_PBE', 'SCAN', 'RSCAN', 'R2SCAN', 'HF']:
+            assert use_oep is False, \
+                USE_OEP_NOT_FALSE_FOR_NON_OEP_FUNCTIONAL_ERROR.format(xc_functional)
+        else:
+            raise ValueError(f"Invalid XC functional: {xc_functional}")
+
+
+
+    def print_info(self):
+        """
+        Print functional switch information summary.
+        """
+        print("=" * 60)
+        print("\t\t FUNCTIONAL SWITCHES")
+        print("=" * 60)
+        print(f"\t XC Functional              : {self.xc_functional}")
+        if self.hybrid_mixing_parameter is not None:
+            print(f"\t Hybrid Mixing Parameter    : {self.hybrid_mixing_parameter}")
+        else:
+            print(f"\t Hybrid Mixing Parameter    : None (not applicable)")
+        print()
+        print("\t FUNCTIONAL FLAGS:")
+        print(f"\t use_xc_functional          : {self.use_xc_functional}")
+        print(f"\t use_hf_exchange            : {self.use_hf_exchange}")
+        print(f"\t use_oep_exchange           : {self.use_oep_exchange}")
+        print(f"\t use_oep_correlation        : {self.use_oep_correlation}")
+        print(f"\t use_metagga                : {self.use_metagga}")
+        print()
+
+
+
+
 
 
 @dataclass
@@ -105,16 +399,16 @@ class SCFSettings:
     """
     
     # Inner loop settings
-    inner_max_iter: int = 200
-    rho_tol: float = 1e-6
-    n_consecutive: int = 1
+    inner_max_iter : int   = 200
+    rho_tol        : float = 1e-6
+    n_consecutive  : int   = 1
     
     # Outer loop settings
-    outer_max_iter: int = 1
-    outer_rho_tol: float = 1e-5
+    outer_max_iter : int   = 1
+    outer_rho_tol  : float = 1e-5
     
     # Output settings
-    print_debug: bool = False
+    print_debug    : bool  = False
 
 
     def __post_init__(self):
@@ -149,12 +443,12 @@ class SCFSettings:
             Settings object
         """
         return cls(
-            inner_max_iter=settings_dict.get('inner_max_iter', 200),
-            rho_tol=settings_dict.get('rho_tol', 1e-6),
-            n_consecutive=settings_dict.get('n_consecutive', 1),
-            outer_max_iter=settings_dict.get('outer_max_iter', 1),
-            outer_rho_tol=settings_dict.get('outer_rho_tol', 1e-5),
-            print_debug=settings_dict.get('print_debug', False)
+            inner_max_iter = settings_dict.get('inner_max_iter' , 200),
+            rho_tol        = settings_dict.get('rho_tol'        , 1e-6),
+            n_consecutive  = settings_dict.get('n_consecutive'  , 1),
+            outer_max_iter = settings_dict.get('outer_max_iter' , 1),
+            outer_rho_tol  = settings_dict.get('outer_rho_tol'  , 1e-5),
+            print_debug    = settings_dict.get('print_debug'    , False)
         )
     
 
@@ -186,61 +480,95 @@ class SCFResult:
     ----------
     eigen_energies : np.ndarray
         Kohn-Sham eigenvalues (orbital energies) for all states, shape (n_states,)
+
     orbitals : np.ndarray
         Converged Kohn-Sham orbitals (radial wavefunctions R_nl(r))
         Shape: (n_states, n_quad_points)
+
     density_data : DensityData
         Converged electron density and related quantities (rho, grad_rho, tau)
+
+    full_eigen_energies : np.ndarray, optional
+        Optional storage of the complete KS spectrum (occupied + unoccupied).
+        Shape: (n_full_states,). 
+
+    full_orbitals : np.ndarray, optional
+        Optional storage of all radial orbitals associated with full_eigen_energies.
+        Shape: (n_full_states, n_quad_points). 
+
+    full_l_terms : np.ndarray, optional
+        Optional storage of the angular momentum index for each entry in full_eigen_energies.
+        Shape: (n_full_states,). 
+
     converged : bool
         Whether inner SCF loop converged
+
     iterations : int
         Number of inner SCF iterations performed
+
     rho_residual : float
         Final density residual of inner loop (L2 norm)
+
     outer_iterations : int, optional
         Number of outer SCF iterations (for HF/OEP/RPA methods)
+
     outer_converged : bool, optional
         Whether outer SCF loop converged
+
     total_energy : float, optional
         Total energy of the system
+
     energy_components : dict, optional
         Breakdown of energy components (kinetic, Hartree, XC, etc.)
     """
     
     # Core results
-    eigen_energies: np.ndarray
-    orbitals: np.ndarray
-    density_data: DensityData
+    eigen_energies : np.ndarray
+    orbitals       : np.ndarray
+    density_data   : DensityData
     
     # Inner loop convergence info
-    converged: bool
-    iterations: int
-    rho_residual: float
+    converged      : bool
+    iterations     : int
+    rho_residual   : float
     
     # Outer loop info (optional)
-    outer_iterations  : Optional[int]   = None
-    outer_converged   : Optional[bool]  = None
+    full_eigen_energies : Optional[np.ndarray] = None
+    full_orbitals       : Optional[np.ndarray] = None
+    full_l_terms        : Optional[np.ndarray] = None
+    
+    outer_iterations    : Optional[int]   = None
+    outer_converged     : Optional[bool]  = None
     
     # Energy info (optional)
-    total_energy      : Optional[float] = None
-    energy_components : Optional[dict]  = field(default=None)
+    total_energy        : Optional[float] = None
+    energy_components   : Optional[dict]  = field(default=None)
     
     def __post_init__(self):
         # type check for required fields
         assert isinstance(self.eigen_energies, np.ndarray), \
-            "eigen_energies must be a numpy array, got {}".format(type(self.eigen_energies))
+            EIGENVALUES_TYPE_ERROR_MESSAGE.format(type(self.eigen_energies))
         assert isinstance(self.orbitals, np.ndarray), \
-            "orbitals must be a numpy array, got {}".format(type(self.orbitals))
+            EIGENVECTORS_TYPE_ERROR_MESSAGE.format(type(self.orbitals))
         assert isinstance(self.density_data, DensityData), \
-            "density_data must be a DensityData instance, got {}".format(type(self.density_data))
+            DENSITY_DATA_TYPE_ERROR_MESSAGE.format(type(self.density_data))
         assert isinstance(self.converged, bool), \
             CONVERGED_TYPE_ERROR_MESSAGE.format(type(self.converged))
         assert isinstance(self.iterations, int), \
             ITERATIONS_TYPE_ERROR_MESSAGE.format(type(self.iterations))
         assert isinstance(self.rho_residual, (float, np.floating)), \
-            "rho_residual must be a float, got {}".format(type(self.rho_residual))
+            RHO_RESIDUAL_TYPE_ERROR_MESSAGE.format(type(self.rho_residual))
         
         # type check for optional fields (only if not None)
+        if self.full_eigen_energies is not None:
+            assert isinstance(self.full_eigen_energies, np.ndarray), \
+                FULL_EIGENVALUES_TYPE_ERROR_MESSAGE.format(type(self.full_eigen_energies))
+        if self.full_orbitals is not None:
+            assert isinstance(self.full_orbitals, np.ndarray), \
+                FULL_EIGENVECTORS_TYPE_ERROR_MESSAGE.format(type(self.full_orbitals))
+        if self.full_l_terms is not None:
+            assert isinstance(self.full_l_terms, np.ndarray), \
+                FULL_L_TERMS_TYPE_ERROR_MESSAGE.format(type(self.full_l_terms))
         if self.outer_iterations is not None:
             assert isinstance(self.outer_iterations, int), \
                 OUTER_ITERATIONS_TYPE_ERROR_MESSAGE.format(type(self.outer_iterations))
@@ -271,16 +599,19 @@ class SCFResult:
             Result object
         """
         return cls(
-            eigenvalues=result_dict['eigenvalues'],
-            eigenvectors=result_dict['eigenvectors'],
-            rho=result_dict['rho'],
-            converged=result_dict['converged'],
-            iterations=result_dict['iterations'],
-            residual=result_dict['residual'],
-            outer_iterations=result_dict.get('outer_iterations'),
-            outer_converged=result_dict.get('outer_converged'),
-            total_energy=result_dict.get('total_energy'),
-            energy_components=result_dict.get('energy_components')
+            eigenvalues         = result_dict['eigenvalues'],
+            eigenvectors        = result_dict['eigenvectors'],
+            rho                 = result_dict['rho'],
+            converged           = result_dict['converged'],
+            iterations          = result_dict['iterations'],
+            residual            = result_dict['residual'],
+            full_eigen_energies = result_dict.get('full_eigen_energies'),
+            full_orbitals       = result_dict.get('full_orbitals'),
+            full_l_terms        = result_dict.get('full_l_terms'),
+            outer_iterations    = result_dict.get('outer_iterations'),
+            outer_converged     = result_dict.get('outer_converged'),
+            total_energy        = result_dict.get('total_energy'),
+            energy_components   = result_dict.get('energy_components')
         )
     
     def to_dict(self) -> dict:
@@ -293,15 +624,21 @@ class SCFResult:
             Dictionary representation of results
         """
         result = {
-            'eigenvalues': self.eigenvalues,
+            'eigenvalues' : self.eigenvalues,
             'eigenvectors': self.eigenvectors,
-            'rho': self.rho,
-            'converged': self.converged,
-            'iterations': self.iterations,
-            'residual': self.residual
+            'rho'         : self.rho,
+            'converged'   : self.converged,
+            'iterations'  : self.iterations,
+            'residual'    : self.residual
         }
         
         # Add optional fields if present
+        if self.full_eigen_energies is not None:
+            result['full_eigen_energies'] = self.full_eigen_energies
+        if self.full_orbitals is not None:
+            result['full_orbitals'] = self.full_orbitals
+        if self.full_l_terms is not None:
+            result['full_l_terms'] = self.full_l_terms
         if self.outer_iterations is not None:
             result['outer_iterations'] = self.outer_iterations
         if self.outer_converged is not None:
@@ -366,14 +703,20 @@ class SCFDriver:
     
     def __init__(
         self,
-        hamiltonian_builder : HamiltonianBuilder,
-        density_calculator  : DensityCalculator,
-        poisson_solver      : PoissonSolver,
-        eigensolver         : EigenSolver,
-        mixer               : Mixer,
-        occupation_info     : OccupationInfo,
-        xc_functional       : str,
-        hybrid_mixing_parameter : Optional[float] = None
+        hamiltonian_builder               : HamiltonianBuilder,
+        density_calculator                : DensityCalculator,
+        poisson_solver                    : PoissonSolver,
+        eigensolver                       : EigenSolver,
+        mixer                             : Mixer,
+        occupation_info                   : OccupationInfo,
+        xc_functional                     : str,
+        use_oep                           : Optional[bool]                   = None,
+        hybrid_mixing_parameter           : Optional[float]                  = None,
+        ops_builder_oep                   : Optional[RadialOperatorsBuilder] = None,
+        oep_mixing_parameter              : Optional[float]                  = None,
+        frequency_quadrature_point_number : Optional[int]                    = None,  # parameter for RPA correlation potential
+        angular_momentum_cutoff           : Optional[int]                    = None,  # parameter for RPA functional only
+        enable_parallelization            : Optional[bool]                   = None,  # parameter for RPA calculations only
         ):
         """
         Parameters
@@ -394,6 +737,9 @@ class SCFDriver:
             Name of XC functional (e.g., 'LDA_PZ', 'GGA_PBE', 'SCAN')
             Used to determine what density-related quantities to compute
             Also used to initialize the XC calculator internally
+        use_oep : bool, optional
+            Whether to use OEP exchange potential, useful only for PBE0 functional, 
+            otherwise it has to agree with use_oep_exchange flag
         hybrid_mixing_parameter : float, optional
             Mixing parameter for hybrid functionals (HF exchange fraction)
             Required only for hybrid functionals (PBE0, HF)
@@ -401,39 +747,67 @@ class SCFDriver:
             - For HF: 1.0
             For non-hybrid functionals, this parameter is ignored
             This parameter is designed to be autodiff-compatible for delta learning
+        ops_builder_oep : RadialOperatorsBuilder, optional
+            Dedicated operators builder for OEP basis/projectors. It must be provided when OEP is enabled, otherwise it will be ignored.
+        oep_mixing_parameter : float, optional
+            Scaling parameter (λ) applied to OEP exchange/correlation potentials.
+        frequency_quadrature_point_number : int, optional
+            Number of frequency quadrature points for RPA correlation potential.
+        angular_momentum_cutoff : int, optional
+            Maximum angular momentum quantum number to include for RPA functional.
         """
-        self.hamiltonian_builder = hamiltonian_builder
-        self.density_calculator  = density_calculator
-        self.poisson_solver      = poisson_solver
-        self.eigensolver         = eigensolver
-        self.mixer               = mixer
-        self.occupation_info     = occupation_info
-        self.xc_functional       = xc_functional
-        self.hybrid_mixing_parameter = hybrid_mixing_parameter
-        
+
+        self.hamiltonian_builder               = hamiltonian_builder
+        self.density_calculator                = density_calculator
+        self.poisson_solver                    = poisson_solver
+        self.eigensolver                       = eigensolver
+        self.mixer                             = mixer
+        self.occupation_info                   = occupation_info
+        self.xc_functional                     = xc_functional
+        self.hybrid_mixing_parameter           = hybrid_mixing_parameter
+        self.use_oep                           = use_oep
+        self.ops_builder_oep                   = ops_builder_oep
+        self.oep_mixing_parameter              = oep_mixing_parameter
+        self.frequency_quadrature_point_number = frequency_quadrature_point_number
+        self.angular_momentum_cutoff           = angular_momentum_cutoff
+        self.enable_parallelization            = enable_parallelization
+        self._check_initialization()
+
+
         # Create SwitchesFlags instance (handles validation internally)
-        self.switches = SwitchesFlags(xc_functional, hybrid_mixing_parameter)
+        self.switches = SwitchesFlags(
+            xc_functional           = xc_functional,
+            use_oep                 = use_oep,
+            hybrid_mixing_parameter = hybrid_mixing_parameter
+        )
         
         # Get functional requirements (what to compute for this functional)
         self.xc_requirements : FunctionalRequirements = get_functional_requirements(xc_functional)
         
         # Initialize XC calculator internally based on functional
         self.xc_calculator : Optional[XCEvaluator] = self._initialize_xc_calculator(
-            derivative_matrix=density_calculator.derivative_matrix,
-            r_quad=density_calculator.quadrature_nodes
+            derivative_matrix = density_calculator.derivative_matrix,
+            r_quad            = density_calculator.quadrature_nodes
         )
         
         # Initialize HF exchange calculator for hybrid functionals
         self.hf_calculator : Optional[HartreeFockExchange] = self._initialize_hf_calculator()
-        
+
+        # Initialize OEP calculator for OEP calculations
+        self.oep_calculator : Optional[OEPCalculator] = self._initialize_oep_calculator()
+
         # Extract NLCC density from pseudopotential (if using pseudopotential)
-        self.rho_nlcc : np.ndarray = self._initialize_nlcc_density()
+        self.rho_nlcc : Optional[np.ndarray] = self._initialize_nlcc_density()
         
         # Initialize convergence checkers (will be configured in run method)
         self.inner_convergence_checker : Optional[ConvergenceChecker] = None
         self.outer_convergence_checker : Optional[ConvergenceChecker] = None
 
-        # type check for required parameters
+    
+    def _check_initialization(self):
+        """
+        Check the initialization of the SCFDriver for required parameters.
+        """
         assert isinstance(self.hamiltonian_builder, HamiltonianBuilder), \
             HAMILTONIAN_BUILDER_TYPE_ERROR_MESSAGE.format(type(self.hamiltonian_builder))
         assert isinstance(self.density_calculator, DensityCalculator), \
@@ -446,12 +820,35 @@ class SCFDriver:
             MIXER_TYPE_ERROR_MESSAGE.format(type(self.mixer))
         assert isinstance(self.occupation_info, OccupationInfo), \
             OCCUPATION_INFO_TYPE_ERROR_MESSAGE.format(type(self.occupation_info))
-    
-    
+        assert isinstance(self.xc_functional, str), \
+            XC_FUNCTIONAL_TYPE_ERROR_MESSAGE.format(type(self.xc_functional))
+        if self.hybrid_mixing_parameter is not None:
+            assert isinstance(self.hybrid_mixing_parameter, (float, np.floating)), \
+                HYBRID_MIXING_PARAMETER_TYPE_ERROR_MESSAGE.format(type(self.hybrid_mixing_parameter))
+        if self.use_oep is not None:
+            assert isinstance(self.use_oep, bool), \
+                USE_OEP_NOT_BOOL_ERROR.format(type(self.use_oep))
+        if self.ops_builder_oep is not None:
+            assert isinstance(self.ops_builder_oep, RadialOperatorsBuilder), \
+                OPS_BUILDER_OEP_TYPE_ERROR_MESSAGE.format(type(self.ops_builder_oep))
+        if self.oep_mixing_parameter is not None:
+            assert isinstance(self.oep_mixing_parameter, (float, np.floating)), \
+                OEP_MIXING_PARAMETER_TYPE_ERROR_MESSAGE.format(type(self.oep_mixing_parameter))
+        if self.frequency_quadrature_point_number is not None:
+            assert isinstance(self.frequency_quadrature_point_number, int), \
+                FREQUENCY_QUADRATURE_POINT_NUMBER_TYPE_ERROR_MESSAGE.format(type(self.frequency_quadrature_point_number))
+        if self.angular_momentum_cutoff is not None:
+            assert isinstance(self.angular_momentum_cutoff, int), \
+                ANGULAR_MOMENTUM_CUTOFF_TYPE_ERROR_MESSAGE.format(type(self.angular_momentum_cutoff))
+        if self.enable_parallelization is not None:
+            assert isinstance(self.enable_parallelization, bool), \
+                ENABLE_PARALLELIZATION_NOT_BOOL_ERROR.format(type(self.enable_parallelization))
+        
+
     def _initialize_xc_calculator(
         self, 
-        derivative_matrix: np.ndarray,
-        r_quad: np.ndarray
+        derivative_matrix : np.ndarray,
+        r_quad            : np.ndarray
         ) -> Optional[XCEvaluator]:
         """
         Initialize XC calculator based on the functional name.
@@ -479,15 +876,13 @@ class SCFDriver:
         ValueError
             If the specified functional is not implemented
         """
-        if self.xc_functional in ['None', 'HF']:
-            return None
-        else:
+        if self.switches.use_xc_functional:
             return create_xc_evaluator(
-                functional_name=self.xc_functional,
-                derivative_matrix=derivative_matrix,
-                r_quad=r_quad
+                functional_name   = self.xc_functional,
+                derivative_matrix = derivative_matrix,
+                r_quad            = r_quad
             )
-    
+        
     
     def _initialize_hf_calculator(self) -> Optional[HartreeFockExchange]:
         """
@@ -504,13 +899,42 @@ class SCFDriver:
         
         # Create HF exchange calculator with ops_builder and occupation_info
         hf_calculator = HartreeFockExchange(
-            ops_builder=self.hamiltonian_builder.ops_builder,
-            occupation_info=self.occupation_info
+            ops_builder     = self.hamiltonian_builder.ops_builder,
+            occupation_info = self.occupation_info
         )
         
         return hf_calculator
     
     
+    def _initialize_oep_calculator(self) -> Optional[OEPCalculator]:
+        """
+        Initialize OEP calculator for OEP calculations.
+        
+        Returns
+        -------
+        Optional[OEPCalculator]
+            OEP calculator if functional requires it, None otherwise
+        """
+        # Only create OEP calculator for OEP calculations
+        if not self.switches.use_oep:
+            return None
+        else:
+            assert self.ops_builder_oep is not None, \
+                "ops_builder_oep must be provided when OEP is enabled"
+        
+        # Create OEP calculator with ops_builder and occupation_info
+        oep_calculator = OEPCalculator(
+            ops_builder                       = self.hamiltonian_builder.ops_builder,
+            ops_builder_oep                   = self.ops_builder_oep,
+            occupation_info                   = self.occupation_info,
+            use_rpa_correlation               = self.switches.use_oep_correlation,
+            frequency_quadrature_point_number = self.frequency_quadrature_point_number,
+            angular_momentum_cutoff           = self.angular_momentum_cutoff,
+        )
+
+        return oep_calculator
+
+
     def _initialize_nlcc_density(self) -> np.ndarray:
         """
         Initialize non-linear core correction (NLCC) density from pseudopotential.
@@ -614,8 +1038,8 @@ class SCFDriver:
 
     def run(
         self,
-        rho_initial : np.ndarray,
-        settings    : Union[SCFSettings, Dict[str, Any]],
+        rho_initial      : np.ndarray,
+        settings         : Union[SCFSettings, Dict[str, Any]],
         orbitals_initial : Optional[np.ndarray] = None
         ) -> SCFResult:
         """
@@ -656,10 +1080,14 @@ class SCFDriver:
         # Initialize outer convergence checker if outer loop is needed
         if needs_outer_loop:
             self.outer_convergence_checker = ConvergenceChecker(
-                tolerance     = settings.outer_rho_tol,
-                n_consecutive = settings.n_consecutive,  # Outer loop typically converges in 1 iteration
-                loop_type     = "Outer"
+                tolerance         = settings.outer_rho_tol,
+                n_consecutive     = settings.n_consecutive,  # Outer loop typically converges in 1 iteration
+                loop_type         = "Outer",
+                footer_blank_line = True,
             )
+        else:
+            self.inner_convergence_checker.set_footer_blank_line(True)
+
         
         if hasattr(settings, 'print_debug') and settings.print_debug:
             print("="*60)
@@ -736,6 +1164,8 @@ class SCFDriver:
         rho_initial             : np.ndarray,
         settings                : SCFSettings,
         orbitals_initial        : Optional[np.ndarray]            = None,
+        v_x_oep                 : Optional[np.ndarray]            = None,
+        v_c_oep                 : Optional[np.ndarray]            = None,
         H_hf_exchange_dict_by_l : Optional[Dict[int, np.ndarray]] = None,
         ) -> SCFResult:
         """
@@ -754,6 +1184,10 @@ class SCFDriver:
             Initial orbitals guess for debugging
             Shape: (n_grid, n_orbitals)
             If provided, will be used as initial orbitals instead of solving eigenvalue problem
+        v_x_oep : np.ndarray, optional
+            OEP exchange potential
+        v_c_oep : np.ndarray, optional
+            OEP correlation potential
         H_hf_exchange_dict_by_l : dict, optional
             Hartree-Fock exchange matrices dictionary (from outer loop)
         
@@ -770,19 +1204,22 @@ class SCFDriver:
             SETTINGS_TYPE_ERROR_MESSAGE.format(type(settings))
         if orbitals_initial is not None:
             assert isinstance(orbitals_initial, np.ndarray), \
-                ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+            ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+        if v_x_oep is not None:
+            assert isinstance(v_x_oep, np.ndarray), \
+            V_X_OEP_TYPE_ERROR_MESSAGE.format(type(v_x_oep))
+        if v_c_oep is not None:
+            assert isinstance(v_c_oep, np.ndarray), \
+            V_C_OEP_TYPE_ERROR_MESSAGE.format(type(v_c_oep))
         if H_hf_exchange_dict_by_l is not None:
             assert isinstance(H_hf_exchange_dict_by_l, dict), \
-                H_HF_EXCHANGE_DICT_BY_L_TYPE_ERROR_MESSAGE.format(type(H_hf_exchange_dict_by_l))
+            H_HF_EXCHANGE_DICT_BY_L_TYPE_ERROR_MESSAGE.format(type(H_hf_exchange_dict_by_l))
         
         # initialize variables
         max_iter    = settings.inner_max_iter
         print_debug = settings.print_debug
 
-        # rho = rho_initial.copy()
-
-        rho = self.density_calculator.normalize_density(rho_initial.copy())
-
+        rho          = self.density_calculator.normalize_density(rho_initial.copy())
         density_data = self.density_calculator.create_density_data_from_mixed(
             rho_mixed        = rho,
             orbitals         = orbitals_initial,
@@ -815,6 +1252,7 @@ class SCFDriver:
             # For all-electron: rho_nlcc is zero, so rho_total = rho_valence
             v_x = np.zeros_like(rho)  # Default: no exchange potential
             v_c = np.zeros_like(rho)  # Default: no correlation potential
+            de_xc_dtau = None         # Default: no meta-GGA derivative term
 
             if self.xc_calculator is not None:
                 # Compute XC using new interface: DensityData → XCPotentialData
@@ -824,50 +1262,59 @@ class SCFDriver:
                 de_xc_dtau = xc_potential_data.de_xc_dtau
             
             # ===== Step 2: Build and solve for each l channel =====
-            eigenvalues_all  = []
-            eigenvectors_all = []
-            
+            occ_eigenvalues_list    : List[np.ndarray] = []
+            occ_eigenvectors_list   : List[np.ndarray] = []
+            unocc_eigenvalues_list  : List[np.ndarray] = []  # needed only for OEP
+            unocc_eigenvectors_list : List[np.ndarray] = []  # needed only for OEP
+
             for l in self.occupation_info.unique_l_values:
                 # Build Hamiltonian for this l
                 H_l = self.hamiltonian_builder.build_for_l_channel(
-                    l          = l,
-                    v_hartree  = v_hartree,
-                    v_x        = v_x,
-                    v_c        = v_c,
-                    switches   = self.switches,
-                    de_xc_dtau = de_xc_dtau,
-                    symmetrize = False
+                    l                = l,
+                    v_hartree        = v_hartree,
+                    v_x              = v_x,
+                    v_c              = v_c,
+                    switches         = self.switches,
+                    v_x_oep          = v_x_oep,
+                    v_c_oep          = v_c_oep,
+                    de_xc_dtau       = de_xc_dtau,
+                    symmetrize       = True,
+                    exclude_boundary = True,
                 )
-                                
-                S_inv_sqrt = self.hamiltonian_builder.ops_builder.get_S_inv_sqrt()
-                H_l = S_inv_sqrt[1:-1,1:-1] @ H_l[1:-1,1:-1] @ S_inv_sqrt[1:-1,1:-1]
-                H_l = 0.5 * (H_l + H_l.T)
-
                 # Number of states to solve for this l
                 n_states = self.occupation_info.n_states_for_l(l)
                 
-                # Solve eigenvalue problem
-                # eigvals, eigvecs = self.eigensolver.solve_lowest(H_l[1:-1,1:-1], n_states)
-                eigvals, eigvecs = self.eigensolver.solve_lowest(H_l, n_states)
-                
-                eigenvalues_all.append(eigvals)
-                eigenvectors_all.append(eigvecs)
+                if self.switches.use_oep:
+                    full_eigvals_l, full_eigvecs_l = self.eigensolver.solve_full(H_l)
+                    occ_eigvals_l = full_eigvals_l[:n_states]
+                    occ_eigvecs_l = full_eigvecs_l[:, :n_states]
+
+                    # Store unoccupied eigenvalues and eigenvectors, used only for OEP and at final readout
+                    unocc_eigenvalues_list.append(full_eigvals_l[n_states:])
+                    unocc_eigenvectors_list.append(full_eigvecs_l[:, n_states:])
+                else:
+                    # Solve eigenvalue problem
+                    occ_eigvals_l, occ_eigvecs_l = self.eigensolver.solve_lowest(H_l, n_states)                
+
+                # Store occupied eigenvalues and eigenvectors
+                occ_eigenvalues_list.append(occ_eigvals_l)
+                occ_eigenvectors_list.append(occ_eigvecs_l)
             
             # Reorder eigenstates to match occupation list order
-            eigenvalues, eigenvectors = self._reorder_eigenstates_by_occupation(
-                eigenvalues_all, eigenvectors_all
+            occ_eigenvalues, occ_eigenvectors = self._reorder_eigenstates_by_occupation(
+                occ_eigenvalues_list, occ_eigenvectors_list
             )
             
             # Interpolate eigenvectors to quadrature points, also symmetrize the eigenvectors
-            orbitals = self.hamiltonian_builder.interpolate_eigenvectors_to_quadrature(
-                eigenvectors = eigenvectors,
+            occ_orbitals = self.hamiltonian_builder.interpolate_eigenvectors_to_quadrature(
+                eigenvectors = occ_eigenvectors,
                 symmetrize   = True,
                 pad_width    = 1,
             )
             
             # ===== Step 3: Compute new density =====
             # Compute new density from orbitals
-            rho_new = self.density_calculator.compute_density(orbitals, normalize=True)
+            rho_new = self.density_calculator.compute_density(occ_orbitals, normalize=True)
             
             # ===== Step 4: Check convergence =====
             converged, residual = self.inner_convergence_checker.check(
@@ -885,7 +1332,7 @@ class SCFDriver:
             # Update density_data for next iteration using mixed density
             density_data = self.density_calculator.create_density_data_from_mixed(
                 rho_mixed        = rho,
-                orbitals         = orbitals,
+                orbitals         = occ_orbitals,
                 compute_gradient = self.xc_requirements.needs_gradient,
                 compute_tau      = self.xc_requirements.needs_tau,
                 rho_nlcc         = self.rho_nlcc
@@ -900,22 +1347,46 @@ class SCFDriver:
 
         
         # Create final density_data from converged orbitals, do not include NLCC
-        final_density_data : DensityData = self.density_calculator.create_density_data_from_orbitals(
-            orbitals         = orbitals,
-            compute_gradient = self.xc_requirements.needs_gradient,
-            compute_tau      = self.xc_requirements.needs_tau,
-            rho_nlcc         = None
-        )
+        final_density_data : DensityData = \
+            self.density_calculator.create_density_data_from_orbitals(
+                orbitals         = occ_orbitals,
+                compute_gradient = self.xc_requirements.needs_gradient,
+                compute_tau      = self.xc_requirements.needs_tau,
+                rho_nlcc         = None
+            )
+
+        # Construct full eigenvalues, orbitals and l terms for OEP, only needed for OEP and at final readout
+        if self.switches.use_oep:
+            full_eigen_energies, full_orbitals, full_l_terms = \
+                self._compute_full_orbitals_and_eigenvalues(
+                    rho_initial      = rho_initial,
+                    orbitals_initial = orbitals_initial,
+                    v_x_oep          = v_x_oep,
+                    v_c_oep          = v_c_oep,
+                    switches         = self.switches,
+                    xc_requirements  = self.xc_requirements,
+                    xc_calculator    = self.xc_calculator
+                )
+        else:
+            full_eigen_energies = None
+            full_orbitals       = None
+            full_l_terms        = None
         
-        # Return final state
-        return SCFResult(
-            eigen_energies = eigenvalues,
-            orbitals       = orbitals,
-            density_data   = final_density_data,
-            converged      = converged,
-            iterations     = iteration + 1,
-            rho_residual   = residual
+
+        result = SCFResult(
+            eigen_energies      = occ_eigenvalues,
+            orbitals            = occ_orbitals,
+            density_data        = final_density_data,
+            converged           = converged,
+            iterations          = iteration + 1,
+            rho_residual        = residual,
+            full_eigen_energies = full_eigen_energies,
+            full_orbitals       = full_orbitals,
+            full_l_terms        = full_l_terms,
         )
+
+        return result
+
 
 
     def _outer_loop(
@@ -954,35 +1425,59 @@ class SCFDriver:
             SETTINGS_TYPE_ERROR_MESSAGE.format(type(settings))
         if orbitals_initial is not None:
             assert isinstance(orbitals_initial, np.ndarray), \
-                ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+            ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+
 
         # initialize variables
         max_outer_iter = settings.outer_max_iter
         print_debug    = settings.print_debug
         
-        rho = rho_initial.copy()
-        orbitals = orbitals_initial
+        rho            = rho_initial.copy()
+        orbitals       = orbitals_initial
 
-        # Compute HF exchange matrices from initial orbitals if provided
-        if orbitals_initial is not None:
+        # Compute HF exchange matrices from initial orbitals if needed
+        if self.switches.use_hf_exchange and (orbitals_initial is not None):
             H_hf_exchange_dict_by_l = self._compute_hf_exchange_matrices_dict(orbitals_initial)
         else:
             H_hf_exchange_dict_by_l = self._get_zero_hf_exchange_matrices_dict()
-        
-            
+
         # Reset outer convergence checker
         self.outer_convergence_checker.reset()
         
+
+        # Compute default full orbitals and eigenvalues if use_oep is True
+        if self.switches.use_oep:
+            full_eigen_energies, full_orbitals, full_l_terms = \
+                self._compute_default_full_orbitals_and_eigenvalues(
+                    rho_initial      = rho_initial,
+                    orbitals_initial = orbitals_initial,
+                    xc_functional    = 'GGA_PBE'
+                )
+
         for outer_iter in range(max_outer_iter):
             
             if print_debug:
                 print(f"Outer iteration {outer_iter + 1}")
+
+            # Compute OEP potentials from initial orbitals if use_oep is True
+            if self.switches.use_oep:
+                v_x_oep, v_c_oep = self.oep_calculator.compute_oep_potentials(
+                    full_eigen_energies = full_eigen_energies,
+                    full_orbitals       = full_orbitals,
+                    full_l_terms        = full_l_terms,
+                    enable_parallelization = self.enable_parallelization,
+                )
+            else:
+                v_x_oep = None
+                v_c_oep = None
             
             # Run inner SCF with fixed HF exchange
             inner_result : SCFResult = self._inner_loop(
                 rho_initial             = rho,
                 settings                = settings,
-                H_hf_exchange_dict_by_l = H_hf_exchange_dict_by_l
+                H_hf_exchange_dict_by_l = H_hf_exchange_dict_by_l,
+                v_x_oep                 = v_x_oep,
+                v_c_oep                 = v_c_oep,
             )
             
             # update rho and orbitals
@@ -990,13 +1485,13 @@ class SCFDriver:
             orbitals = inner_result.orbitals
 
             # update HF exchange dictionary
-            H_hf_exchange_dict_by_l = self._compute_hf_exchange_matrices_dict(orbitals) 
+            if self.switches.use_hf_exchange:
+                H_hf_exchange_dict_by_l = self._compute_hf_exchange_matrices_dict(orbitals) 
 
-            
             # Check outer loop convergence
             outer_converged, outer_residual = self.outer_convergence_checker.check(
                 rho, rho_new, outer_iter + 1,
-                print_status=print_debug
+                print_status = print_debug
             )
             
             if outer_converged:
@@ -1004,22 +1499,329 @@ class SCFDriver:
             
             # Update for next outer iteration
             rho = rho_new
+            if self.switches.use_oep:
+                # if OEP is used, also update full orbitals and eigenvalues from inner result
+                full_eigen_energies = inner_result.full_eigen_energies
+                full_orbitals       = inner_result.full_orbitals
+                full_l_terms        = inner_result.full_l_terms
         
 
         # Update outer loop info in result
         outer_iterations = outer_iter + 1
-        outer_converged = (outer_iter < max_outer_iter - 1)
+        outer_converged  = (outer_iter < max_outer_iter - 1)
         
         # Print outer loop footer if debug enabled
         if print_debug:
             self.outer_convergence_checker.print_footer(outer_converged, outer_iterations)
         
-        return SCFResult(
-            eigen_energies = inner_result.eigen_energies,
-            orbitals       = inner_result.orbitals,
-            density_data   = inner_result.density_data,
-            converged      = outer_converged,
-            iterations     = outer_iterations,
-            rho_residual   = outer_residual,
+        outer_result = SCFResult(
+            eigen_energies      = inner_result.eigen_energies,
+            orbitals            = inner_result.orbitals,
+            density_data        = inner_result.density_data,
+            converged           = outer_converged,
+            iterations          = outer_iterations,
+            rho_residual        = outer_residual,
+            full_eigen_energies = inner_result.full_eigen_energies,
+            full_orbitals       = inner_result.full_orbitals,
+            full_l_terms        = inner_result.full_l_terms,
+        )
+
+        return outer_result
+
+
+
+
+    def _compute_full_orbitals_and_eigenvalues(
+        self,
+        rho_initial      : np.ndarray,
+        switches         : SwitchesFlags,
+        xc_requirements  : FunctionalRequirements,
+        xc_calculator    : Optional[XCEvaluator] = None,
+        orbitals_initial : Optional[np.ndarray]  = None,
+        v_x_oep          : Optional[np.ndarray]  = None,
+        v_c_oep          : Optional[np.ndarray]  = None,
+        ) -> SCFResult:
+        """
+        Compute full orbitals and eigenvalues from initial density and orbitals
+        Note: No inner SCF loop needed for default full orbitals and eigenvalues, just solve eigenvalue problem for each l channel.
+                
+        Fixed: external potential, HF exchange (if any)
+        Iterate: rho → V_H, V_xc → H → solve → orbitals → rho'
+        
+        Parameters
+        ----------
+        rho_initial : np.ndarray
+            Initial density guess
+        switches : SwitchesFlags
+            Switches flags
+        xc_requirements : FunctionalRequirements
+            Functional requirements
+        xc_calculator : Optional[XCEvaluator]
+            XC calculator, optional
+        orbitals_initial : np.ndarray, optional
+            Initial orbitals guess for debugging
+            Shape: (n_grid, n_orbitals)
+            If provided, will be used as initial orbitals instead of solving eigenvalue problem
+        v_x_oep : np.ndarray, optional
+            OEP exchange potential
+        v_c_oep : np.ndarray, optional
+            OEP correlation potential
+        
+        Returns
+        -------
+        full_eigen_energies : np.ndarray
+            Full eigenvalues (occupied followed by virtual)
+        full_orbitals : np.ndarray
+            Full orbitals interpolated to quadrature grid
+        full_l_terms : np.ndarray
+            Angular momentum index for each entry in full_eigen_energies
+        """
+        # type check for required fields
+        assert isinstance(rho_initial, np.ndarray), \
+            RHO_INITIAL_TYPE_ERROR_MESSAGE.format(type(rho_initial))
+        assert isinstance(switches, SwitchesFlags), \
+            SWITCHES_TYPE_ERROR_MESSAGE.format(type(switches))
+        assert isinstance(xc_requirements, FunctionalRequirements), \
+            XC_REQUIREMENTS_TYPE_ERROR_MESSAGE.format(type(xc_requirements))
+
+        # type check for optional fields        
+        if xc_calculator is not None:
+            assert isinstance(xc_calculator, XCEvaluator), \
+            XC_CALCULATOR_TYPE_ERROR_MESSAGE.format(type(xc_calculator))        
+        if orbitals_initial is not None:
+            assert isinstance(orbitals_initial, np.ndarray), \
+            ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+        if v_x_oep is not None:
+            assert isinstance(v_x_oep, np.ndarray), \
+            V_X_OEP_TYPE_ERROR_MESSAGE.format(type(v_x_oep))
+        if v_c_oep is not None:
+            assert isinstance(v_c_oep, np.ndarray), \
+            V_C_OEP_TYPE_ERROR_MESSAGE.format(type(v_c_oep))
+
+        # initialize variables
+        rho          = self.density_calculator.normalize_density(rho_initial.copy())
+        density_data = self.density_calculator.create_density_data_from_mixed(
+            rho_mixed        = rho,
+            orbitals         = orbitals_initial,
+            compute_gradient = xc_requirements.needs_gradient,
+            compute_tau      = xc_requirements.needs_tau and (orbitals_initial is not None),
+            rho_nlcc         = self.rho_nlcc
+        )
+            
+        # ===== Step 1: Compute potentials =====
+        # Hartree potential
+        v_hartree = self.poisson_solver.solve_hartree(rho)
+
+        # XC potential
+        # For pseudopotentials: use rho_total = rho_valence + rho_nlcc
+        # For all-electron: rho_nlcc is zero, so rho_total = rho_valence
+        v_x = np.zeros_like(rho)  # Default: no exchange potential
+        v_c = np.zeros_like(rho)  # Default: no correlation potential
+        de_xc_dtau = None         # Default: no meta-GGA derivative term
+
+        if xc_calculator is not None:
+            # Compute XC using new interface: DensityData → XCPotentialData
+            xc_potential_data = xc_calculator.compute_xc(density_data)
+            v_x = xc_potential_data.v_x
+            v_c = xc_potential_data.v_c
+            de_xc_dtau = xc_potential_data.de_xc_dtau
+        
+        # ===== Step 2: Build and solve for each l channel =====
+        occ_eigenvalues_list    : List[np.ndarray] = []
+        occ_eigenvectors_list   : List[np.ndarray] = []
+        unocc_eigenvalues_list  : List[np.ndarray] = []  # needed only for OEP
+        unocc_eigenvectors_list : List[np.ndarray] = []  # needed only for OEP
+
+
+        if self.angular_momentum_cutoff is not None:
+            unique_l_values = list(range(self.angular_momentum_cutoff + 1))
+        else:
+            unique_l_values = self.occupation_info.unique_l_values
+        
+
+        for l in unique_l_values:
+            # Build Hamiltonian for this l
+            H_l = self.hamiltonian_builder.build_for_l_channel(
+                l                = l,
+                v_hartree        = v_hartree,
+                v_x              = v_x,
+                v_c              = v_c,
+                switches         = switches,
+                v_x_oep          = v_x_oep,
+                v_c_oep          = v_c_oep,
+                de_xc_dtau       = de_xc_dtau,
+                symmetrize       = True,
+                exclude_boundary = True,
+            )
+
+
+            # Number of states to solve for this l
+            n_occ_states = self.occupation_info.n_states_for_l(l)
+
+            # Solve eigenvalue problem
+            full_eigenvalues_l, full_eigenvectors_l = self.eigensolver.solve_full(H_l)
+
+            # Append eigenvalues and eigenvectors to lists
+            occ_eigenvalues_list.append(full_eigenvalues_l[:n_occ_states])
+            occ_eigenvectors_list.append(full_eigenvectors_l[:, :n_occ_states])
+            unocc_eigenvalues_list.append(full_eigenvalues_l[n_occ_states:])
+            unocc_eigenvectors_list.append(full_eigenvectors_l[:, n_occ_states:])
+        
+
+        return self._construct_full_eigenvalues_and_orbitals_and_l_terms(
+            occ_eigenvalues_list    = occ_eigenvalues_list,
+            occ_eigenvectors_list   = occ_eigenvectors_list,
+            unocc_eigenvalues_list  = unocc_eigenvalues_list,
+            unocc_eigenvectors_list = unocc_eigenvectors_list,
+            angular_momentum_cutoff = self.angular_momentum_cutoff
+            )
+
+
+    def _compute_default_full_orbitals_and_eigenvalues(
+        self, 
+        rho_initial      : np.ndarray,
+        orbitals_initial : np.ndarray,
+        xc_functional    : str = 'GGA_PBE'
+        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Compute full orbitals and eigenvalues from initial density and orbitals
+        Note: No inner SCF loop needed for default full orbitals and eigenvalues, just solve eigenvalue problem for each l channel.
+        
+        Parameters
+        ----------
+        rho_initial : np.ndarray
+            Initial density
+        orbitals_initial : np.ndarray
+            Initial orbitals
+        xc_functional : str
+            XC functional, default: 'GGA_PBE'
+
+        Returns
+        -------
+        full_eigen_energies : np.ndarray
+            Full eigenvalues (occupied followed by virtual)
+        full_orbitals : np.ndarray
+            Full orbitals interpolated to quadrature grid
+        full_l_terms : np.ndarray
+            Angular momentum index for each entry in full_eigen_energies
+        """
+        # type check for required fields
+        assert isinstance(rho_initial, np.ndarray), \
+            RHO_INITIAL_TYPE_ERROR_MESSAGE.format(type(rho_initial))
+        assert isinstance(orbitals_initial, np.ndarray), \
+            ORBITALS_INITIAL_TYPE_ERROR_MESSAGE.format(type(orbitals_initial))
+        assert isinstance(xc_functional, str), \
+            XC_FUNCTIONAL_TYPE_ERROR_MESSAGE.format(type(xc_functional))
+        
+        _switches        : SwitchesFlags          = SwitchesFlags(xc_functional)
+        _xc_requirements : FunctionalRequirements = get_functional_requirements(xc_functional)
+        _xc_calculator   : XCEvaluator            = \
+            create_xc_evaluator(
+                functional_name   = xc_functional,
+                derivative_matrix = self.density_calculator.derivative_matrix,
+                r_quad            = self.density_calculator.quadrature_nodes
+            )
+
+        return self._compute_full_orbitals_and_eigenvalues(
+            rho_initial      = rho_initial,
+            orbitals_initial = orbitals_initial,
+            switches         = _switches,
+            xc_requirements  = _xc_requirements,
+            xc_calculator    = _xc_calculator
+            )
+
+
+    def _construct_full_eigenvalues_and_orbitals_and_l_terms(
+        self,
+        occ_eigenvalues_list    : List[np.ndarray],
+        occ_eigenvectors_list   : List[np.ndarray],
+        unocc_eigenvalues_list  : List[np.ndarray],
+        unocc_eigenvectors_list : List[np.ndarray],
+        angular_momentum_cutoff : Optional[int] = None,
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Construct full eigenvalues, orbitals and l terms for OEP, only needed for OEP and at final readout
+        """
+        # type check for required fields
+        assert isinstance(occ_eigenvalues_list, list), \
+            OCC_EIGENVALUES_LIST_NOT_LIST_ERROR_MESSAGE.format(type(occ_eigenvalues_list))
+        assert isinstance(occ_eigenvectors_list, list), \
+            OCC_EIGENVECTORS_LIST_NOT_LIST_ERROR_MESSAGE.format(type(occ_eigenvectors_list))
+        assert isinstance(unocc_eigenvalues_list, list), \
+            UNOCC_EIGENVALUES_LIST_NOT_LIST_ERROR_MESSAGE.format(type(unocc_eigenvalues_list))
+        assert isinstance(unocc_eigenvectors_list, list), \
+            UNOCC_EIGENVECTORS_LIST_NOT_LIST_ERROR_MESSAGE.format(type(unocc_eigenvectors_list))
+        if angular_momentum_cutoff is not None:
+            assert isinstance(angular_momentum_cutoff, int), \
+            ANGULAR_MOMENTUM_CUTOFF_TYPE_ERROR_MESSAGE.format(type(angular_momentum_cutoff))
+
+        # length checks
+        unique_l_values_number = len(self.occupation_info.unique_l_values) if angular_momentum_cutoff is None else angular_momentum_cutoff + 1
+        assert len(occ_eigenvalues_list) == unique_l_values_number, \
+            OCC_EIGENVALUES_LIST_LENGTH_ERROR_MESSAGE.format(len(occ_eigenvalues_list))
+        assert len(occ_eigenvectors_list) == unique_l_values_number, \
+            OCC_EIGENVECTORS_LIST_LENGTH_ERROR_MESSAGE.format(len(occ_eigenvectors_list))
+        assert len(unocc_eigenvalues_list) == unique_l_values_number, \
+            UNOCC_EIGENVALUES_LIST_LENGTH_ERROR_MESSAGE.format(len(unocc_eigenvalues_list))
+        assert len(unocc_eigenvectors_list) == unique_l_values_number, \
+            UNOCC_EIGENVECTORS_LIST_LENGTH_ERROR_MESSAGE.format(len(unocc_eigenvectors_list))
+        
+        # Dimention and shape checks
+        n_physical_nodes = self.hamiltonian_builder.ops_builder.physical_nodes.shape[0]
+        n_interior_nodes = n_physical_nodes - 2
+
+        for i in range(unique_l_values_number):
+            occ_eigenvalues    = occ_eigenvalues_list[i]
+            occ_eigenvectors   = occ_eigenvectors_list[i]
+            unocc_eigenvalues  = unocc_eigenvalues_list[i]
+            unocc_eigenvectors = unocc_eigenvectors_list[i]
+            
+            # check dimention
+            assert occ_eigenvalues.ndim == 1, \
+                OCC_EIGENVALUES_LIST_NDIM_ERROR_MESSAGE.format(occ_eigenvalues.ndim)
+            assert occ_eigenvectors.ndim == 2, \
+                OCC_EIGENVECTORS_LIST_NDIM_ERROR_MESSAGE.format(occ_eigenvectors.ndim)
+            assert unocc_eigenvalues.ndim == 1, \
+                UNOCC_EIGENVALUES_LIST_NDIM_ERROR_MESSAGE.format(unocc_eigenvalues.ndim)
+            assert unocc_eigenvectors.ndim == 2, \
+                UNOCC_EIGENVECTORS_LIST_NDIM_ERROR_MESSAGE.format(unocc_eigenvectors.ndim)
+            
+            # occupied shape check
+            assert occ_eigenvalues.shape[0] == occ_eigenvectors.shape[1], \
+                OCC_EIGENVALUES_AND_EIGENVECTORS_LIST_SHAPE_MISMATCH_ERROR_MESSAGE.format(occ_eigenvalues.shape[0], occ_eigenvectors.shape[1])
+            assert occ_eigenvectors.shape[0] == n_interior_nodes, \
+                OCC_EIGENVECTORS_LIST_SHAPE_ERROR_MESSAGE.format(occ_eigenvectors.shape[0], n_interior_nodes)
+
+            # unoccupied shape check
+            assert unocc_eigenvalues.shape[0] == unocc_eigenvectors.shape[1], \
+                UNOCC_EIGENVALUES_AND_EIGENVECTORS_LIST_SHAPE_MISMATCH_ERROR_MESSAGE.format(unocc_eigenvalues.shape[0], unocc_eigenvectors.shape[1])
+            assert unocc_eigenvectors.shape[0] == n_interior_nodes, \
+                UNOCC_EIGENVECTORS_LIST_SHAPE_ERROR_MESSAGE.format(unocc_eigenvectors.shape[0], n_interior_nodes)
+        
+
+        # Reorder eigenstates to match occupation list order
+        occ_eigenvalues, occ_eigenvectors = self._reorder_eigenstates_by_occupation(
+            occ_eigenvalues_list, occ_eigenvectors_list
         )
         
+        full_eigenvalues  = np.concatenate([occ_eigenvalues,  *unocc_eigenvalues_list], axis = 0)
+        full_eigenvectors = np.concatenate([occ_eigenvectors, *unocc_eigenvectors_list], axis = 1)
+
+        # Interpolate eigenvectors to quadrature points, also symmetrize the eigenvectors
+        full_orbitals = self.hamiltonian_builder.interpolate_eigenvectors_to_quadrature(
+            eigenvectors = full_eigenvectors,
+            symmetrize   = True,
+            pad_width    = 1,
+        )
+
+        # Compute angular momentum index for each entry in full_eigen_energies
+        unocc_l_terms = np.concatenate([
+            np.full(vals.shape[0], l, dtype=int)
+            for l, vals in zip(range(unique_l_values_number), unocc_eigenvalues_list)
+            if vals.size > 0
+        ]) if len(unocc_eigenvalues_list) > 0 else np.empty(0, dtype=int)
+
+        full_l_terms = np.concatenate([self.occupation_info.occ_l, unocc_l_terms])
+
+        return full_eigenvalues, full_orbitals, full_l_terms
+

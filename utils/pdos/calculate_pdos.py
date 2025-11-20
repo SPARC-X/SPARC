@@ -48,6 +48,21 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='invalid valu
 # Regex patterns
 SCIENTIFIC_NOTATION_PATTERN = r'[+-]?\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?'
 
+# XC Functional valid list
+# Valid XC Functional
+VALID_XC_FUNCTIONAL_LIST = [
+    'LDA_PZ' , # LDA Perdew-Zunger
+    'LDA_PW' , # LDA Perdew-Wang
+    'GGA_PBE', # GGA Perdew-Burke-Ernzerhof
+    'SCAN'   , # SCAN functional, meta-GGA
+    'RSCAN'  , # RSCAN functional, meta-GGA
+    'R2SCAN' , # R2SCAN functional, meta-GGA
+    'HF'     , # Hartree-Fock
+    'PBE0'   , # PBE0 Perdew-Burke-Ernzerhof, hybrid functional
+    'EXX'    , # Exact Exchange, using OEP method
+    'RPA'    , # Random Phase Approximation, with exact exchange
+]
+
 # Type check errors
 NATOM_TYPE_NOT_INTEGER_ERROR = \
     "parameter natom_types must be an integer, get {} instead"
@@ -270,7 +285,8 @@ LATVEC_SECTION_NOT_FOUND_WARNING = \
     "Warning: Parameter 'LATVEC' section not found in output file, trying to determine the lattice type from LATVEC_SCALE, perceed as the lattice is orthogonal"
 NOT_ORTHOGONALIZE_ATOMIC_ORBITALS_OVERLAP_MATRIX_NOT_PRINTED_WARNING = \
     "WARNING: Since we are not to orthogonalize the atomic orbitals, the overlap matrix is not printed"
-
+XC_FUNCTIONAL_NOT_VALID_WARNING = \
+    "WARNING: Currently, only the following XC functionals are supported: \n\t\t{}. \n\t Degrade to functional 'GGA_PBE' to generate the atomic orbitals for now.".format(', '.join(VALID_XC_FUNCTIONAL_LIST))
 
 # PDOS output format
 pdos_output_header_msg = \
@@ -949,8 +965,11 @@ def get_default_generator_for_atomic_wave_function(xc_functional, psp_file_path)
         XC_functional: Exchange-correlation functional name
         psp_dir_path: Path to pseudopotential directory
     """
+    xc_functional = "123"
+    if xc_functional not in VALID_XC_FUNCTIONAL_LIST:
+        print(XC_FUNCTIONAL_NOT_VALID_WARNING)
+        xc_functional = 'GGA_PBE'
 
-    assert xc_functional in ['LDA_PW', 'LDA_PZ', 'GGA_PBE', 'HF', 'PBE0', 'SCAN','RSCAN','R2SCAN'], XC_FUNCTIONAL_NOT_VALID_ERROR.format(xc_functional)
     assert os.path.exists(psp_file_path), "psp_file_path {} does not exist".format(psp_file_path)
 
     # Add parent directory to path in order to import AtomicDFTSolver
