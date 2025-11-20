@@ -24,8 +24,14 @@ Atomic Density Functional Theory (DFT) Solver
 from __future__ import annotations
 
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import sys
 from pathlib import Path
+
 
 # Fix the relative import issue when running as a script
 try:
@@ -40,11 +46,15 @@ if __package__ is None:
     if str(parent_dir) not in sys.path:
         sys.path.insert(0, str(parent_dir))
 
+
 import numpy as np
+np.set_printoptions(precision=20) 
+np.set_printoptions(threshold=sys.maxsize)
+
 from typing import Optional, Dict, Any, Tuple
 
 # Mesh & operators
-from .mesh.builder import Quadrature1D, Mesh1D, RPAFrequencyGrid
+from .mesh.builder import Quadrature1D, Mesh1D
 from .mesh.operators import GridData, RadialOperatorsBuilder
 
 # Typing imports
@@ -52,7 +62,7 @@ from .pseudo.local import LocalPseudopotential
 from .pseudo.non_local import NonLocalPseudopotential
 from .utils.occupation_states import OccupationInfo
 from .scf.energy import EnergyComponents
-from .scf.driver import SCFResult
+from .scf.driver import SCFResult, SwitchesFlags
 from .xc.evaluator import XCPotentialData
 from .xc.functional_requirements import get_functional_requirements
 
@@ -65,7 +75,6 @@ from .scf import (
     EnergyCalculator,
     EigenSolver,
     Mixer,
-    ConvergenceChecker
 )
 
 # XC and snapshot
@@ -75,11 +84,25 @@ from .post.builder import SnapshotBuilder
 
 
 # Valid XC Functional
-VALID_XC_FUNCTIONAL_LIST = ['GGA_PBE', 'RPA', 'OEPx', 'LDA_PZ', 'LDA_PW', 'SCAN', 'RSCAN', 'R2SCAN', 'PBE0', 'HF']
+VALID_XC_FUNCTIONAL_LIST = [
+    'LDA_PZ' , # LDA Perdew-Zunger
+    'LDA_PW' , # LDA Perdew-Wang
+    'GGA_PBE', # GGA Perdew-Burke-Ernzerhof
+    'SCAN'   , # SCAN functional, meta-GGA
+    'RSCAN'  , # RSCAN functional, meta-GGA
+    'R2SCAN' , # R2SCAN functional, meta-GGA
+    'HF'     , # Hartree-Fock
+    'PBE0'   , # PBE0 Perdew-Burke-Ernzerhof, hybrid functional
+    'EXX'    , # Exact Exchange, using OEP method
+    'RPA'    , # Random Phase Approximation, with exact exchange
+]
+
+# Valid XC Functional for OEP
+VALID_XC_FUNCTIONAL_FOR_OEP_LIST = ['EXX', 'RPA', 'PBE0']
+
 
 # Valid Mesh Type
 VALID_MESH_TYPE_LIST = ['exponential', 'polynomial', 'uniform']
-
 
 
 # Type Check Error Messages
@@ -103,22 +126,22 @@ SCF_TOLERANCE_NOT_FLOAT_ERROR = \
     "parameter scf_tolerance must be a float, get {} instead"
 ALL_ELECTRON_FLAG_NOT_BOOL_ERROR = \
     "parameter all_electron_flag must be a boolean, get {} instead"
-ENABLE_DOMAIN_SIZE_TEST_NOT_BOOL_ERROR = \
-    "parameter enable_domain_size_test must be a boolean, get {} instead"
+USE_OEP_NOT_BOOL_ERROR = \
+    "parameter use_oep must be a boolean, get {} instead"
+USE_OEP_NOT_TRUE_FOR_OEP_FUNCTIONAL_ERROR = \
+    "parameter use_oep must be True for OEP functional `{}`, get {} instead"
+USE_OEP_NOT_FALSE_FOR_NON_OEP_FUNCTIONAL_ERROR = \
+    "parameter use_oep must be False for non-OEP functional `{}`, get {} instead"
 PSP_DIR_PATH_NOT_STRING_ERROR = \
     "parameter psp_dir_path must be a string, get {} instead"
 PSP_FILE_NAME_NOT_STRING_ERROR = \
     "parameter psp_file_name must be a string, get {} instead"
-FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_INTEGER_ERROR = \
-    "parameter frequency_integration_point_number must be an integer, get {} instead"
-EIGENTOLERANCE_X_NOT_FLOAT_ERROR = \
-    "parameter eigentolerance_x must be a float, get {} instead"
-EIGENTOLERANCE_C_NOT_FLOAT_ERROR = \
-    "parameter eigentolerance_c must be a float, get {} instead"
-L_MAX_QUANTUM_NUMBER_NOT_INTEGER_ERROR = \
-    "parameter l_max_quantum_number must be an integer, get {} instead"
-SMOOTHENING_CUTOFF_FREQUENCY_NOT_FLOAT_ERROR = \
-    "parameter smoothening_cutoff_frequency must be a float, get {} instead"
+FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_INTEGER_ERROR = \
+    "parameter frequency_quadrature_point_number must be an integer, get {} instead"
+ANGULAR_MOMENTUM_CUTOFF_NOT_INTEGER_ERROR = \
+    "parameter angular_momentum_cutoff must be an integer, get {} instead"
+ENABLE_PARALLELIZATION_NOT_BOOL_ERROR = \
+    "parameter enable_parallelization must be a boolean, get {} instead"
 DOUBLE_HYBRID_FLAG_NOT_BOOL_ERROR = \
     "parameter double_hybrid_flag must be a boolean, get {} instead"
 HYBRID_MIXING_PARAMETER_NOT_FLOAT_ERROR = \
@@ -127,6 +150,15 @@ MESH_SPACING_NOT_FLOAT_ERROR = \
     "parameter mesh_spacing must be a float, get {} instead"
 PRINT_DEBUG_NOT_BOOL_ERROR = \
     "parameter print_debug must be a boolean, get {} instead"
+OEP_BASIS_NUMBER_NOT_INTEGER_ERROR = \
+    "parameter oep_basis_number must be an integer, get {} instead"
+OEP_BASIS_NUMBER_NOT_GREATER_THAN_0_ERROR = \
+    "parameter oep_basis_number must be greater than 0, get {} instead"
+OEP_MIXING_PARAMETER_NOT_FLOAT_ERROR = \
+    "parameter oep_mixing_parameter must be a float, get {} instead"
+OEP_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR = \
+    "parameter oep_mixing_parameter must be in [0, 1], get {} instead"
+
 
 # Value Check Error Messages
 ATOMIC_NUMBER_NOT_GREATER_THAN_0_ERROR = \
@@ -142,10 +174,10 @@ POLYNOMIAL_ORDER_NOT_GREATER_THAN_0_ERROR = \
 
 QUADRATURE_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR = \
     "parameter quadrature_point_number must be greater than 0, get {} instead"
-FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR = \
-    "parameter frequency_integration_point_number must be greater than 0, get {} instead"
-L_MAX_QUANTUM_NUMBER_NEGATIVE_ERROR = \
-    "parameter l_max_quantum_number must be non-negative, get {} instead"
+FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR = \
+    "parameter frequency_quadrature_point_number must be greater than 0, get {} instead"
+ANGULAR_MOMENTUM_CUTOFF_NEGATIVE_ERROR = \
+    "parameter angular_momentum_cutoff must be non-negative, get {} instead"
 XC_FUNCTIONAL_TYPE_ERROR_MESSAGE = \
     "parameter xc_functional must be a string, get type {} instead"
 XC_FUNCTIONAL_NOT_IN_VALID_LIST_ERROR = \
@@ -160,16 +192,13 @@ PSP_DIR_PATH_NOT_EXISTS_ERROR = \
     "parameter default psp directory path {} does not exist, please provide a valid psp directory path"
 PSP_FILE_NAME_NOT_EXISTS_ERROR = \
     "parameter psp file name `{}` does not exist in the psp file path `{}`, please provide a valid psp file name"
-EIGENTOLERANCE_X_NOT_GREATER_THAN_0_ERROR = \
-    "parameter eigentolerance_x must be greater than 0, get {} instead"
-EIGENTOLERANCE_C_NOT_GREATER_THAN_0_ERROR = \
-    "parameter eigentolerance_c must be greater than 0, get {} instead"
-SMOOTHENING_CUTOFF_FREQUENCY_NEGATIVE_ERROR = \
-    "parameter smoothening_cutoff_frequency must be non-negative, get {} instead"
 HYBRID_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR = \
     "parameter hybrid_mixing_parameter must be in [0, 1], get {} instead"
 HYBRID_MIXING_PARAMETER_NOT_ONE_FOR_NON_HYBRID_FUNCTIONAL_ERROR = \
     "parameter hybrid_mixing_parameter must be 1.0 for non-hybrid functional, get {} instead"
+HYBRID_MIXING_PARAMETER_NOT_ONE_ERROR = \
+    "parameter hybrid_mixing_parameter must be 1.0 for functional {}, get {} instead"
+
 DENSITY_MIXING_PARAMETER_NOT_FLOAT_ERROR = \
     "parameter density_mixing_parameter must be a float, get {} instead"
 DENSITY_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR = \
@@ -184,14 +213,10 @@ PSP_DIR_PATH_NOT_NONE_FOR_ALL_ELECTRON_CALCULATION_WARNING = \
     "WARNING: parameter psp_dir_path is not None for all-electron calculation, so it will be ignored"
 PSP_FILE_NAME_NOT_NONE_FOR_ALL_ELECTRON_CALCULATION_WARNING = \
     "WARNING: parameter psp_file_name is not None for all-electron calculation, so it will be ignored"
-FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_NONE_FOR_OEPX_AND_NONE_XC_FUNCTIONAL_WARNING = \
-    "WARNING: parameter frequency_integration_point_number is not None for XC functional `{}`, so it will be ignored"
-EIGENTOLERANCE_X_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING = \
-    "WARNING: parameter eigentolerance_x is not None for XC functional `{}`, so it will be ignored"
-EIGENTOLERANCE_C_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING = \
-    "WARNING: parameter eigentolerance_c is not None for XC functional `{}`, so it will be ignored"
-SMOOTHENING_CUTOFF_FREQUENCY_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING = \
-    "WARNING: parameter smoothening_cutoff_frequency is not None for XC functional `{}`, so it will be ignored"
+FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_NONE_FOR_OEPX_AND_NONE_XC_FUNCTIONAL_WARNING = \
+    "WARNING: parameter frequency_quadrature_point_number is not None for XC functional `{}`, so it will be ignored"
+ANGULAR_MOMENTUM_CUTOFF_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING = \
+    "WARNING: parameter angular_momentum_cutoff is not None for XC functional `{}`, so it will be ignored"
 NO_HYBRID_MIXING_PARAMETER_PROVIDED_FOR_HYBRID_FUNCTIONAL_WARNING = \
     "WARNING: hybrid_mixing_parameter not provided for {} functional, using default value {}"
 HYBRID_MIXING_PARAMETER_NOT_IN_ZERO_ONE_WARNING = \
@@ -202,10 +227,59 @@ HYBRID_MIXING_PARAMETER_NOT_FLOAT_WARNING = \
     "WARNING: hybrid_mixing_parameter for {} must be a float, got {}"
 HYBRID_MIXING_PARAMETER_NOT_IN_ZERO_ONE_WARNING = \
     "WARNING: hybrid_mixing_parameter for {} must be in [0, 1], got {}"
-HYBRID_MIXING_PARAMETER_NOT_ONE_FOR_HF_ERROR = \
-    "WARNING: hybrid_mixing_parameter for {} must be 1.0 for HF functional, got {}"
 WARM_START_NOT_CONVERGED_WARNING = \
     "WARNING: warm start calculation for {} did not converge, using intermediate result"
+ENABLE_PARALLELIZATION_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING = \
+    "WARNING: parameter enable_parallelization is not None for XC functional `{}`, so it will be ignored"
+
+NUMPY_IMPORTED_BEFORE_ATOMIC_WARNING = \
+    """
+    [ATOM WARNING] NumPy was imported before the 'atom' package.
+
+    This prevents the package from forcing BLAS libraries (MKL / OpenBLAS / NumExpr)
+    into single-thread mode. When parallel RPA calculations attempt to use
+    multiple Python threads or processes, each NumPy/SciPy linear algebra call may
+    internally spawn many BLAS threads.
+
+    This can lead to:
+        • Severe CPU oversubscription (N_threads x BLAS_threads >> CPU cores),
+        • Very slow execution or apparent freezing/hanging,
+        • Poor scaling in parallel regions.
+
+    To safely enable parallel execution, please choose ONE of the following:
+
+    1) Import 'atom' BEFORE importing NumPy/SciPy, e.g.:
+
+            import atom
+            import numpy as np
+
+    2) Configure BLAS to single-thread mode *before importing NumPy*, e.g.:
+
+            # In your shell (recommended):
+            export OMP_NUM_THREADS=1
+            export MKL_NUM_THREADS=1
+            export OPENBLAS_NUM_THREADS=1
+            export NUMEXPR_NUM_THREADS=1
+
+        or in Python BEFORE NumPy is imported:
+
+            import os
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["MKL_NUM_THREADS"] = "1"
+            os.environ["OPENBLAS_NUM_THREADS"] = "1"
+            os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+    3) Install 'threadpoolctl' in your environment, which allows the package to 
+        dynamically limit BLAS threads even if NumPy was already imported:
+
+            pip install threadpoolctl
+
+        After installation, 'atom' will automatically detect it and  
+        apply safe single-thread limits for parallel execution.
+
+    Parallel mode is disabled for this run to avoid deadlocks or CPU thrashing.
+    """
+
 
 class AtomicDFTSolver:
     """
@@ -217,95 +291,94 @@ class AtomicDFTSolver:
     """
 
     # Basic physical parameters
-    atomic_number                      : int   # Atomic number of the element to calculate (e.g., 13 for Aluminum)
-    domain_size                        : float # Radial computational domain size in atomic units (typically 10-30)
-    number_of_finite_elements          : int   # Number of finite elements in the computational domain
-    polynomial_order                   : int   # Polynomial order of basis functions within each finite element
-    quadrature_point_number            : int   # Number of quadrature points for numerical integration (recommended: 3-4x polynomial_order)
+    atomic_number                     : int   # Atomic number of the element to calculate (e.g., 13 for Aluminum)
+    domain_size                       : float # Radial computational domain size in atomic units (typically 10-30)
+    number_of_finite_elements         : int   # Number of finite elements in the computational domain
+    polynomial_order                  : int   # Polynomial order of basis functions within each finite element
+    quadrature_point_number           : int   # Number of quadrature points for numerical integration (recommended: 3-4x polynomial_order)
     
     # Exchange-correlation functional parameters
-    xc_functional                      : str   # XC functional type: 'GGA_PBE', 'RPA', 'OEPx', 'LDA_PZ', 'LDA_PW', 'SCAN', 'RSCAN', 'R2SCAN'
-    mesh_type                          : str   # Mesh distribution type: 'exponential' (higher density near nucleus), 'polynomial', or 'uniform'
-    mesh_concentration                 : float # Mesh concentration parameter (controls point density distribution)
+    xc_functional                     : str   # XC functional type: 'GGA_PBE', 'RPA', 'EXX', 'LDA_PZ', 'LDA_PW', 'SCAN', 'RSCAN', 'R2SCAN'
+    mesh_type                         : str   # Mesh distribution type: 'exponential' (higher density near nucleus), 'polynomial', or 'uniform'
+    mesh_concentration                : float # Mesh concentration parameter (controls point density distribution)
     
     # Self-consistent field (SCF) convergence parameters
-    scf_tolerance                      : float # SCF convergence tolerance (typically 1e-8)
-    all_electron_flag                  : bool  # True for all-electron calculation, False for pseudopotential calculation
-    enable_domain_size_test            : bool  # Flag for domain size convergence testing
+    scf_tolerance                     : float # SCF convergence tolerance (typically 1e-8)
+    all_electron_flag                 : bool  # True for all-electron calculation, False for pseudopotential calculation
+    use_oep                           : bool  # Enable optimized effective potential workflow in SCF
     
     # Pseudopotential parameters
-    psp_dir_path                       : str   # Path to pseudopotential files directory (required when all_electron_flag=False)
-    psp_file_name                      : str   # Name of the pseudopotential file (required when all_electron_flag=False)
+    psp_dir_path                      : str   # Path to pseudopotential files directory (required when all_electron_flag=False)
+    psp_file_name                     : str   # Name of the pseudopotential file (required when all_electron_flag=False)
     
-    # Advanced functional parameters (for OEPx, RPA, etc.)
-    frequency_integration_point_number : int   # Number of frequency integration points for RPA calculations
-    eigentolerance_x                   : float # Eigenvalue convergence tolerance for exchange term
-    eigentolerance_c                   : float # Eigenvalue convergence tolerance for correlation term
-    l_max_quantum_number               : int   # Maximum angular momentum quantum number to include
-    smoothening_cutoff_frequency       : float # Smoothing cutoff frequency for numerical stability
-    double_hybrid_flag                 : bool  # Flag for double-hybrid functional methods
-    hybrid_mixing_parameter            : float # Mixing parameter for hybrid/double-hybrid functionals (e.g., 0.25 for PBE0)
+    # Advanced functional parameters (for EXX, RPA, etc.)
+    frequency_quadrature_point_number : int   # Number of frequency quadrature points for RPA calculations
+    angular_momentum_cutoff           : int   # Maximum angular momentum quantum number to include
+    double_hybrid_flag                : bool  # Flag for double-hybrid functional methods
+    hybrid_mixing_parameter           : float # Mixing parameter for hybrid/double-hybrid functionals (e.g., 0.25 for PBE0)
+    oep_basis_number                  : int   # Basis size used in OEP calculations when enabled
+    enable_parallelization            : bool  # Flag for parallelization of RPA calculations
     
     # Grid and computational parameters
-    mesh_spacing                       : float # Minimum mesh spacing (should match output file spacing)
-    density_mixing_parameter           : float # Density mixing parameter for SCF convergence (alpha in linear mixing)
-    print_debug                        : bool  # Flag for printing debug information during calculation
+    mesh_spacing                      : float # Minimum mesh spacing (should match output file spacing)
+    density_mixing_parameter          : float # Density mixing parameter for SCF convergence (alpha in linear mixing)
+    oep_mixing_parameter              : float # Scaling parameter (λ) for OEP exchange/correlation potentials
+    print_debug                       : bool  # Flag for printing debug information during calculation
 
 
 
     def __init__(self, 
-        atomic_number                      : int,  # Only atomic_number is required, all other parameters have default values
-        domain_size                        : Optional[float] = None,   # 20.0 by default
-        number_of_finite_elements          : Optional[int]   = None,   # 17 by default
-        polynomial_order                   : Optional[int]   = None,   # 31 by default
-        quadrature_point_number            : Optional[int]   = None,   # 95 by default
-        xc_functional                      : Optional[str]   = None,   # 'GGA_PBE' by default
-        mesh_type                          : Optional[str]   = None,   # 'exponential' by default
-        mesh_concentration                 : Optional[float] = None,   # 61.0 by default
-        scf_tolerance                      : Optional[float] = None,   # 1e-8 by default
-        all_electron_flag                  : Optional[bool]  = None,   # False by default
-        enable_domain_size_test            : Optional[bool]  = None,   # False by default
-        psp_dir_path                       : Optional[str]   = None,   # ../psps by default
-        psp_file_name                      : Optional[str]   = None,   # {atomic_number}.psp8 by default
-        frequency_integration_point_number : Optional[int]   = None,   # if xc_functional is 'RPA', 1200 by default
-        eigentolerance_x                   : Optional[float] = None,   # for RPA, 1e-9 by default; for OEPx, 1e-11 by default, otherwise not needed
-        eigentolerance_c                   : Optional[float] = None,   # for RPA, 1e-9 by default; for OEPx, 1e-09 by default, otherwise not needed
-        l_max_quantum_number               : Optional[int]   = None,   # for RPA, 4 by default; for OEPx, 8 by default, otherwise 0 by default
-        smoothening_cutoff_frequency       : Optional[float] = None,   # for xc other than RPA, not needed; otherwise 0.0 for most atoms
-        double_hybrid_flag                 : Optional[bool]  = None,   # False by default
-        hybrid_mixing_parameter            : Optional[float] = None,   # 1.0 by default (0.25 for PBE0, variable for RPA)
-        mesh_spacing                       : Optional[float] = None,   # 0.1 by default
-        density_mixing_parameter           : Optional[float] = None,   # 0.5 by default (alpha in linear mixing)
-        print_debug                        : Optional[bool]  = None,   # False by default
+        atomic_number                     : int,  # Only atomic_number is required, all other parameters have default values
+        domain_size                       : Optional[float] = None,   # 20.0 by default
+        number_of_finite_elements         : Optional[int]   = None,   # 17 by default
+        polynomial_order                  : Optional[int]   = None,   # 31 by default
+        quadrature_point_number           : Optional[int]   = None,   # 95 by default
+        oep_basis_number                  : Optional[int]   = None,   # not needed by default, if needed, int(polynomial_order * 0.25) by default
+        xc_functional                     : Optional[str]   = None,   # 'GGA_PBE' by default
+        mesh_type                         : Optional[str]   = None,   # 'exponential' by default
+        mesh_concentration                : Optional[float] = None,   # 61.0 by default
+        scf_tolerance                     : Optional[float] = None,   # 1e-8 by default
+        all_electron_flag                 : Optional[bool]  = None,   # False by default
+        use_oep                           : Optional[bool]  = None,   # False by default
+        psp_dir_path                      : Optional[str]   = None,   # ../psps by default
+        psp_file_name                     : Optional[str]   = None,   # {atomic_number}.psp8 by default
+        frequency_quadrature_point_number : Optional[int]   = None,   # for RPA, 25 by default, otherwise not needed
+        angular_momentum_cutoff           : Optional[int]   = None,   # for RPA, 4 by default, otherwise not needed
+        enable_parallelization            : Optional[bool]  = None,   # for RPA, False by default, otherwise not needed
+        double_hybrid_flag                : Optional[bool]  = None,   # False by default                                                              # TODO: implement double hybrid functional, should be simple
+        hybrid_mixing_parameter           : Optional[float] = None,   # 1.0 by default (0.25 for PBE0, variable for RPA)
+        mesh_spacing                      : Optional[float] = None,   # 0.1 by default
+        density_mixing_parameter          : Optional[float] = None,   # 0.5 by default (alpha in linear mixing)
+        oep_mixing_parameter              : Optional[float] = None,   # 1.0 by default (scales OEP potentials), used for double hybrid functional only
+        print_debug                       : Optional[bool]  = None,   # False by default
         ):   
 
         """
         Initialize the AtomicDFTSolver with computational parameters.
         
         Args:
-            atomic_number                      (int)  : Atomic number of the element (e.g., 13 for Aluminum)
-            domain_size                        (float): Radial domain size in atomic units (typically 10-30)
-            number_of_finite_elements          (int)  : Number of finite elements in the domain
-            polynomial_order                   (int)  : Polynomial order of basis functions (typically 20-40)
-            quadrature_point_number            (int)  : Quadrature points for integration (3-4x polynomial_order)
-            xc_functional                      (str)  : Exchange-correlation functional ('GGA_PBE', 'RPA', 'OEPx', etc.)
-            mesh_type                          (str)  : Mesh type ('exponential', 'polynomial', 'uniform')
-            mesh_concentration                 (float): Mesh concentration parameter (controls point density)
-            scf_tolerance                      (float): SCF convergence tolerance (typically 1e-8)
-            all_electron_flag                  (bool) : True for all-electron, False for pseudopotential
-            enable_domain_size_test            (bool) : Enable domain size convergence testing
-            psp_dir_path                       (str)  : Path to pseudopotential directory (required if all_electron_flag=False)
-            psp_file_name                      (str)  : Name of pseudopotential file (required if all_electron_flag=False)
-            frequency_integration_point_number (int)  : Frequency points for RPA calculations
-            eigentolerance_x                   (float): Exchange eigenvalue convergence tolerance
-            eigentolerance_c                   (float): Correlation eigenvalue convergence tolerance
-            l_max_quantum_number               (int)  : Maximum angular momentum quantum number
-            smoothening_cutoff_frequency       (float): Smoothing cutoff for numerical stability
-            double_hybrid_flag                 (bool) : Enable double-hybrid functional methods
-            hybrid_mixing_parameter            (float): Mixing parameter for hybrid functionals (e.g., 0.25 for PBE0)
-            mesh_spacing                       (float): Minimum mesh spacing (should match output file)
-            density_mixing_parameter           (float): Density mixing parameter for SCF (alpha in linear mixing)
-            print_debug                        (bool) : Enable debug output
+            atomic_number                     (int)   : Atomic number of the element (e.g., 13 for Aluminum)
+            domain_size                       (float) : Radial domain size in atomic units (typically 10-30)
+            number_of_finite_elements         (int)   : Number of finite elements in the domain
+            polynomial_order                  (int)   : Polynomial order of basis functions (typically 20-40)
+            quadrature_point_number           (int)   : Quadrature points for integration (3-4x polynomial_order)
+            xc_functional                     (str)   : Exchange-correlation functional ('GGA_PBE', 'RPA', 'EXX', etc.)
+            mesh_type                         (str)   : Mesh type ('exponential', 'polynomial', 'uniform')
+            mesh_concentration                (float) : Mesh concentration parameter (controls point density)
+            scf_tolerance                     (float) : SCF convergence tolerance (typically 1e-8)
+            all_electron_flag                 (bool)  : True for all-electron, False for pseudopotential
+            use_oep                           (bool)  : Enable optimized effective potential calculations (default: False)
+            oep_basis_number                  (int)   : Size of OEP auxiliary basis; defaults to int(polynomial_order * 0.25) when use_oep=True
+            psp_dir_path                      (str)   : Path to pseudopotential directory (required if all_electron_flag=False)
+            psp_file_name                     (str)   : Name of pseudopotential file (required if all_electron_flag=False)
+            frequency_quadrature_point_number (int)   : Frequency quadrature points for RPA calculations, used for RPA functional only
+            angular_momentum_cutoff           (int)   : Maximum angular momentum quantum number, used for RPA functional only
+            double_hybrid_flag                (bool)  : Enable double-hybrid functional methods
+            hybrid_mixing_parameter           (float) : Mixing parameter for hybrid functionals (e.g., 0.25 for PBE0)
+            mesh_spacing                      (float) : Mesh spacing for the uniform grid, used to set the output mesh spacing
+            density_mixing_parameter          (float) : Density mixing parameter for SCF (alpha in linear mixing)
+            oep_mixing_parameter              (float) : Mixing parameter for OEP functionals (lambda in OEP)
+            print_debug                       (bool)  : Enable debug output
             
         Raises:
             ValueError: If any parameter has incorrect type
@@ -316,29 +389,29 @@ class AtomicDFTSolver:
         """
 
         # Initialize the class attributes
-        self.atomic_number                      = atomic_number
-        self.domain_size                        = domain_size
-        self.number_of_finite_elements          = number_of_finite_elements
-        self.polynomial_order                   = polynomial_order
-        self.quadrature_point_number            = quadrature_point_number
-        self.xc_functional                      = xc_functional
-        self.mesh_type                          = mesh_type
-        self.mesh_concentration                 = mesh_concentration
-        self.scf_tolerance                      = scf_tolerance
-        self.all_electron_flag                  = all_electron_flag
-        self.enable_domain_size_test            = enable_domain_size_test
-        self.psp_dir_path                       = psp_dir_path
-        self.psp_file_name                      = psp_file_name
-        self.frequency_integration_point_number = frequency_integration_point_number
-        self.eigentolerance_x                   = eigentolerance_x
-        self.eigentolerance_c                   = eigentolerance_c
-        self.l_max_quantum_number               = l_max_quantum_number
-        self.smoothening_cutoff_frequency       = smoothening_cutoff_frequency
-        self.double_hybrid_flag                 = double_hybrid_flag
-        self.hybrid_mixing_parameter            = hybrid_mixing_parameter
-        self.mesh_spacing                       = mesh_spacing
-        self.density_mixing_parameter           = density_mixing_parameter
-        self.print_debug                        = print_debug
+        self.atomic_number                     = atomic_number
+        self.domain_size                       = domain_size
+        self.number_of_finite_elements         = number_of_finite_elements
+        self.polynomial_order                  = polynomial_order
+        self.quadrature_point_number           = quadrature_point_number
+        self.xc_functional                     = xc_functional
+        self.mesh_type                         = mesh_type
+        self.mesh_concentration                = mesh_concentration
+        self.scf_tolerance                     = scf_tolerance
+        self.all_electron_flag                 = all_electron_flag
+        self.use_oep                           = use_oep
+        self.oep_basis_number                  = oep_basis_number
+        self.psp_dir_path                      = psp_dir_path
+        self.psp_file_name                     = psp_file_name
+        self.frequency_quadrature_point_number = frequency_quadrature_point_number
+        self.angular_momentum_cutoff           = angular_momentum_cutoff
+        self.enable_parallelization            = enable_parallelization
+        self.double_hybrid_flag                = double_hybrid_flag
+        self.hybrid_mixing_parameter           = hybrid_mixing_parameter
+        self.mesh_spacing                      = mesh_spacing
+        self.density_mixing_parameter          = density_mixing_parameter
+        self.oep_mixing_parameter              = oep_mixing_parameter
+        self.print_debug                       = print_debug
 
 
         # set the default parameters, if not provided
@@ -357,31 +430,36 @@ class AtomicDFTSolver:
             all_electron_flag = self.all_electron_flag)
             
 
-        # XC evaluator for delta-learning usage (to be initialized when needed)
-        self.xc_evaluator = None  # TODO: Initialize when delta-learning is implemented
-
         # Grid data and operators (initialized in __init__)
         self.grid_data_standard   : Optional[GridData] = None
         self.grid_data_dense      : Optional[GridData] = None
+        self.grid_data_oep        : Optional[GridData] = None
         self.ops_builder_standard : Optional[RadialOperatorsBuilder] = None
         self.ops_builder_dense    : Optional[RadialOperatorsBuilder] = None
+        self.ops_builder_oep      : Optional[RadialOperatorsBuilder] = None
 
         # SCF components (initialized in __init__)
-        self.hamiltonian_builder : Optional[HamiltonianBuilder] = None
-        self.density_calculator  : Optional[DensityCalculator]  = None
-        self.poisson_solver      : Optional[PoissonSolver]      = None
-        self.energy_calculator   : Optional[EnergyCalculator]   = None
-        self.scf_driver          : Optional[SCFDriver]          = None
+        self.hamiltonian_builder  : Optional[HamiltonianBuilder] = None
+        self.density_calculator   : Optional[DensityCalculator]  = None
+        self.poisson_solver       : Optional[PoissonSolver]      = None
+        self.energy_calculator    : Optional[EnergyCalculator]   = None
+        self.scf_driver           : Optional[SCFDriver]          = None
 
         # Initialize grids and operators
-        self.grid_data_standard, self.grid_data_dense = self._initialize_grids()
+        self.grid_data_standard, self.grid_data_dense, self.grid_data_oep = self._initialize_grids()
         self.ops_builder_standard = RadialOperatorsBuilder.from_grid_data(
             self.grid_data_standard, verbose=self.print_debug
         )
         self.ops_builder_dense = RadialOperatorsBuilder.from_grid_data(
             self.grid_data_dense, verbose=self.print_debug
         )
-        
+
+        if self.use_oep:
+            # Initialize OEP operators builder
+            self.ops_builder_oep = RadialOperatorsBuilder.from_grid_data(
+                self.grid_data_oep, verbose=self.print_debug
+            )
+
         # Initialize SCF components
         self._initialize_scf_components(
             ops_builder_standard = self.ops_builder_standard,
@@ -451,6 +529,7 @@ class AtomicDFTSolver:
         assert self.xc_functional in VALID_XC_FUNCTIONAL_LIST, \
             XC_FUNCTIONAL_NOT_IN_VALID_LIST_ERROR.format(VALID_XC_FUNCTIONAL_LIST, self.xc_functional)
 
+
         # mesh type
         if self.mesh_type is None:
             self.mesh_type = 'exponential'
@@ -462,9 +541,9 @@ class AtomicDFTSolver:
         # mesh concentration
         if self.mesh_concentration is None: # default value
             if self.mesh_type == 'exponential':
-                self.mesh_concentration = 61.0
+                self.mesh_concentration = 100.0
             elif self.mesh_type == 'polynomial':
-                self.mesh_concentration = 3.0
+                self.mesh_concentration = 2.0
             elif self.mesh_type == 'uniform':
                 self.mesh_concentration = None
         if self.mesh_type in ['exponential', 'polynomial']: # type check
@@ -487,9 +566,9 @@ class AtomicDFTSolver:
         if self.scf_tolerance is None:
             # For most functionals, the default tolerance is 1e-8
             self.scf_tolerance = 1e-8
-            if self.xc_functional in ['SCAN']:
-                # SCAN functional suffers from convergence issues, so we use a higher tolerance
-                self.scf_tolerance = 1e-4
+            if self.xc_functional in ['SCAN', 'RSCAN', 'R2SCAN']:
+                # SCAN, RSCAN, R2SCAN functionals suffer from convergence issues, so we use a higher tolerance
+                self.scf_tolerance = 1e-6
         try:
             self.scf_tolerance = float(self.scf_tolerance)
         except:
@@ -507,13 +586,61 @@ class AtomicDFTSolver:
         assert isinstance(self.all_electron_flag, bool), \
             ALL_ELECTRON_FLAG_NOT_BOOL_ERROR.format(type(self.all_electron_flag))
 
-        # enable domain size test
-        if self.enable_domain_size_test is None:
-            self.enable_domain_size_test = False
-        if self.enable_domain_size_test in [0, 1]:
-            self.enable_domain_size_test = False if self.enable_domain_size_test == 0 else True
-        assert isinstance(self.enable_domain_size_test, bool), \
-            ENABLE_DOMAIN_SIZE_TEST_NOT_BOOL_ERROR.format(type(self.enable_domain_size_test))
+        # use OEP flag
+        if self.use_oep in [0, 1]:
+            self.use_oep = False if self.use_oep == 0 else True
+        if self.xc_functional in VALID_XC_FUNCTIONAL_FOR_OEP_LIST:
+            # OEP functional must be used with OEP flag
+            if self.xc_functional == 'PBE0':
+                if self.use_oep is None:
+                    self.use_oep = False
+            else:
+                if self.use_oep is None:
+                    self.use_oep = True
+                assert self.use_oep is True, \
+                    USE_OEP_NOT_TRUE_FOR_OEP_FUNCTIONAL_ERROR.format(self.xc_functional, self.use_oep)
+        else:
+            # Other functionals must not be used with OEP flag, otherwise raise error
+            if self.use_oep is None:
+                self.use_oep = False
+            assert self.use_oep is False, \
+                USE_OEP_NOT_FALSE_FOR_NON_OEP_FUNCTIONAL_ERROR.format(self.xc_functional, self.use_oep)
+
+        assert isinstance(self.use_oep, bool), \
+            USE_OEP_NOT_BOOL_ERROR.format(type(self.use_oep))
+
+
+        # OEP auxiliary basis size
+        if self.oep_basis_number is None:
+            if self.use_oep:
+                default_oep_basis = max(1, int(self.polynomial_order * 0.25))
+                self.oep_basis_number = default_oep_basis
+        else:
+            if not isinstance(self.oep_basis_number, int):
+                try:
+                    self.oep_basis_number = int(self.oep_basis_number)
+                except Exception:
+                    raise ValueError(OEP_BASIS_NUMBER_NOT_INTEGER_ERROR.format(type(self.oep_basis_number)))
+            assert isinstance(self.oep_basis_number, int), \
+                OEP_BASIS_NUMBER_NOT_INTEGER_ERROR.format(type(self.oep_basis_number))
+            assert self.oep_basis_number > 0, \
+                OEP_BASIS_NUMBER_NOT_GREATER_THAN_0_ERROR.format(self.oep_basis_number)
+
+
+        # OEP mixing parameter (λ scaling for OEP potentials)
+        if self.oep_mixing_parameter is None:
+            if self.use_oep:
+                self.oep_mixing_parameter = 1.0
+        else:
+            if not isinstance(self.oep_mixing_parameter, float):
+                try:
+                    self.oep_mixing_parameter = float(self.oep_mixing_parameter)
+                except:
+                    raise ValueError(OEP_MIXING_PARAMETER_NOT_FLOAT_ERROR.format(type(self.oep_mixing_parameter)))
+            assert isinstance(self.oep_mixing_parameter, float), \
+                OEP_MIXING_PARAMETER_NOT_FLOAT_ERROR.format(type(self.oep_mixing_parameter))
+            assert self.oep_mixing_parameter > 0.0 and self.oep_mixing_parameter <= 1.0, \
+                OEP_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR.format(self.oep_mixing_parameter)
 
         # psp directory path
         if self.all_electron_flag == False:
@@ -555,78 +682,45 @@ class AtomicDFTSolver:
 
         # frequency integration point number
         if self.xc_functional in ['RPA', ]:
-            if self.frequency_integration_point_number is None:
-                self.frequency_integration_point_number = 1200
-            assert isinstance(self.frequency_integration_point_number, int), \
-                FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_INTEGER_ERROR.format(type(self.frequency_integration_point_number))
-            assert self.frequency_integration_point_number > 0, \
-                FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR.format(self.frequency_integration_point_number)
+            if self.frequency_quadrature_point_number is None:
+                self.frequency_quadrature_point_number = 25
+            assert isinstance(self.frequency_quadrature_point_number, int), \
+                FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_INTEGER_ERROR.format(type(self.frequency_quadrature_point_number))
+            assert self.frequency_quadrature_point_number > 0, \
+                FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR.format(self.frequency_quadrature_point_number)
         else:
-            if self.frequency_integration_point_number is not None:
-                print(FREQUENCY_INTEGRATION_POINT_NUMBER_NOT_NONE_FOR_OEPX_AND_NONE_XC_FUNCTIONAL_WARNING.format(self.xc_functional))
-                self.frequency_integration_point_number = None
+            if self.frequency_quadrature_point_number is not None:
+                print(FREQUENCY_QUADRATURE_POINT_NUMBER_NOT_NONE_FOR_OEPX_AND_NONE_XC_FUNCTIONAL_WARNING.format(self.xc_functional))
+                self.frequency_quadrature_point_number = None
 
-        # eigentolerance x
-        if self.xc_functional in ['OEPx', 'RPA']:  # Default value: 1e-11 for OEPx, 1e-9 for RPA
-            if self.eigentolerance_x is None:
-                self.eigentolerance_x = 1e-11 if self.xc_functional == 'OEPx' else 1e-9
-            assert isinstance(self.eigentolerance_x, float), \
-                EIGENTOLERANCE_X_NOT_FLOAT_ERROR.format(type(self.eigentolerance_x))
-            assert self.eigentolerance_x > 0., \
-                EIGENTOLERANCE_X_NOT_GREATER_THAN_0_ERROR.format(self.eigentolerance_x)
+        # angular_momentum_cutoff, used for RPA functional only 
+        if self.xc_functional in ['RPA']:
+            if self.angular_momentum_cutoff is None:
+                self.angular_momentum_cutoff = 4
+            assert isinstance(self.angular_momentum_cutoff, int), \
+                ANGULAR_MOMENTUM_CUTOFF_NOT_INTEGER_ERROR.format(type(self.angular_momentum_cutoff))
+            assert self.angular_momentum_cutoff >= 0., \
+                ANGULAR_MOMENTUM_CUTOFF_NEGATIVE_ERROR.format(self.angular_momentum_cutoff)
         else:
-            if self.eigentolerance_x is not None:
-                print(EIGENTOLERANCE_X_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING.format(self.xc_functional))
-                self.eigentolerance_x = None
-        
-        # eigentolerance c
-        if self.xc_functional in ['OEPx', 'RPA']:  # Default value: 1e-9 for OEPx, 1e-9 for RPA
-            if self.eigentolerance_c is None:
-                self.eigentolerance_c = 1e-9
-            assert isinstance(self.eigentolerance_c, float), \
-                EIGENTOLERANCE_C_NOT_FLOAT_ERROR.format(type(self.eigentolerance_c))
-            assert self.eigentolerance_c > 0., \
-                EIGENTOLERANCE_C_NOT_GREATER_THAN_0_ERROR.format(self.eigentolerance_c)
-        else:
-            if self.eigentolerance_c is not None:
-                print(EIGENTOLERANCE_C_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING.format(self.xc_functional))
-                self.eigentolerance_c = None
+            if self.angular_momentum_cutoff is not None:
+                print(ANGULAR_MOMENTUM_CUTOFF_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING.format(self.xc_functional))
+                self.angular_momentum_cutoff = None
 
-        # l_max_quantum_number
-        if self.l_max_quantum_number is None:
-            if self.xc_functional == 'OEPx':
-                self.l_max_quantum_number = 8
-            elif self.xc_functional == 'RPA':
-                self.l_max_quantum_number = 4
-            else:
-                self.l_max_quantum_number = 0
-        assert isinstance(self.l_max_quantum_number, int), \
-            L_MAX_QUANTUM_NUMBER_NOT_INTEGER_ERROR.format(type(self.l_max_quantum_number))
-        assert self.l_max_quantum_number >= 0., \
-            L_MAX_QUANTUM_NUMBER_NEGATIVE_ERROR.format(self.l_max_quantum_number)
+        # enable parallelization flag
+        if self.xc_functional in ['RPA']:
+            if self.enable_parallelization is None:
+                self.enable_parallelization = False
+            assert isinstance(self.enable_parallelization, bool), \
+                ENABLE_PARALLELIZATION_NOT_BOOL_ERROR.format(type(self.enable_parallelization))
+            if self.enable_parallelization:
+                from . import _NUMPY_IMPORTED_BEFORE_ATOMIC, _BLAS_ENV_SINGLE_THREADED, _THREADPOOLCTL_INSTALLED
+                if _NUMPY_IMPORTED_BEFORE_ATOMIC and not _BLAS_ENV_SINGLE_THREADED and not _THREADPOOLCTL_INSTALLED:
+                    print(NUMPY_IMPORTED_BEFORE_ATOMIC_WARNING)
+                    self.enable_parallelization = False
 
-        # smoothening cutoff frequency
-        if self.xc_functional in ['RPA', ]:
-            if self.smoothening_cutoff_frequency is None:
-                self.smoothening_cutoff_frequency = 60.0
-                if self.atomic_number == 2:
-                    self.smoothening_cutoff_frequency = 60.0
-                elif self.atomic_number == 4:
-                    self.smoothening_cutoff_frequency = 60.0
-                elif self.atomic_number == 10:
-                    self.smoothening_cutoff_frequency = 60.0
-                elif self.atomic_number == 12:
-                    self.smoothening_cutoff_frequency = 60.0
-                elif self.atomic_number == 18:
-                    self.smoothening_cutoff_frequency = 100.0
-            assert isinstance(self.smoothening_cutoff_frequency, float), \
-                SMOOTHENING_CUTOFF_FREQUENCY_NOT_FLOAT_ERROR.format(type(self.smoothening_cutoff_frequency))
-            assert self.smoothening_cutoff_frequency >= 0., \
-                SMOOTHENING_CUTOFF_FREQUENCY_NEGATIVE_ERROR.format(self.smoothening_cutoff_frequency)
         else:
-            if self.smoothening_cutoff_frequency is not None:
-                print(SMOOTHENING_CUTOFF_FREQUENCY_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING.format(self.xc_functional))
-                self.smoothening_cutoff_frequency = None
+            if self.enable_parallelization is not None:
+                print(ENABLE_PARALLELIZATION_NOT_NONE_FOR_XC_FUNCTIONAL_OTHER_THAN_RPA_WARNING.format(self.xc_functional))
 
         # double hybrid flag
         if self.double_hybrid_flag is None:
@@ -638,23 +732,23 @@ class AtomicDFTSolver:
 
         # hybrid mixing parameter
         # Only validate for hybrid functionals (PBE0, HF)
-        if self.xc_functional in ['PBE0', 'HF']:
+        if self.xc_functional in ['PBE0', 'HF', 'EXX', 'RPA']:
             if self.hybrid_mixing_parameter is None:
                 # Use default values based on functional
                 if self.xc_functional == 'PBE0':
                     self.hybrid_mixing_parameter = 0.25
                     # print(NO_HYBRID_MIXING_PARAMETER_PROVIDED_FOR_HYBRID_FUNCTIONAL_WARNING.format(self.xc_functional, 0.25))
-                elif self.xc_functional == 'HF':
+                elif self.xc_functional in ['HF', 'EXX', 'RPA']:
                     self.hybrid_mixing_parameter = 1.0
-
+                
             # If the hybrid mixing parameter is provided, check the type and value
             assert isinstance(self.hybrid_mixing_parameter, (float, int)), \
                 HYBRID_MIXING_PARAMETER_NOT_FLOAT_ERROR.format(type(self.hybrid_mixing_parameter))
             assert 0.0 <= self.hybrid_mixing_parameter <= 1.0, \
                 HYBRID_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR.format(self.hybrid_mixing_parameter)
-            if self.xc_functional == "HF":
+            if self.xc_functional in ["HF", "EXX", "RPA"]:
                 assert self.hybrid_mixing_parameter == 1.0, \
-                    HYBRID_MIXING_PARAMETER_NOT_ONE_FOR_HF_ERROR.format(self.hybrid_mixing_parameter)
+                HYBRID_MIXING_PARAMETER_NOT_ONE_ERROR.format(self.xc_functional, self.hybrid_mixing_parameter)
         else:
             # For non-hybrid functionals, hybrid_mixing_parameter is not used
             # Set it to None to avoid confusion
@@ -669,6 +763,7 @@ class AtomicDFTSolver:
             raise ValueError(DENSITY_MIXING_PARAMETER_NOT_FLOAT_ERROR.format(type(self.density_mixing_parameter)))
         assert 0.0 < self.density_mixing_parameter <= 1.0, \
             DENSITY_MIXING_PARAMETER_NOT_IN_ZERO_ONE_ERROR.format(self.density_mixing_parameter)
+
 
         # mesh spacing
         if self.mesh_spacing is None:
@@ -706,32 +801,31 @@ class AtomicDFTSolver:
         print("\t\t INPUT PARAMETERS")
         print("=" * 60)
 
-        print("\t atomic_number                      : {}".format(self.atomic_number))
-        print("\t domain_size                        : {}".format(self.domain_size))
-        print("\t number_of_finite_elements          : {}".format(self.number_of_finite_elements))
-        print("\t polynomial_order                   : {}".format(self.polynomial_order))
-        print("\t quadrature_point_number            : {}".format(self.quadrature_point_number))
-        print("\t xc_functional                      : {}".format(self.xc_functional))
-        print("\t mesh_type                          : {}".format(self.mesh_type))
-        print("\t mesh_concentration                 : {}".format(self.mesh_concentration))
-        print("\t scf_tolerance                      : {}".format(self.scf_tolerance))
-        print("\t all_electron_flag                  : {}".format(self.all_electron_flag))
-        print("\t enable_domain_size_test            : {}".format(self.enable_domain_size_test))
-        print("\t psp_dir_path                       : {}".format(psp_path_display))
-        print("\t psp_file_name                      : {}".format(self.psp_file_name))
-        print("\t frequency_integration_point_number : {}".format(self.frequency_integration_point_number))
-        print("\t eigentolerance_x                   : {}".format(self.eigentolerance_x))
-        print("\t eigentolerance_c                   : {}".format(self.eigentolerance_c))
-        print("\t l_max_quantum_number               : {}".format(self.l_max_quantum_number))
-        print("\t smoothening_cutoff_frequency       : {}".format(self.smoothening_cutoff_frequency))
-        print("\t double_hybrid_flag                 : {}".format(self.double_hybrid_flag))
-        print("\t hybrid_mixing_parameter            : {}".format(self.hybrid_mixing_parameter))
-        print("\t mesh_spacing                       : {}".format(self.mesh_spacing))
-        print("\t density_mixing_parameter           : {}".format(self.density_mixing_parameter))
+        print("\t atomic_number                     : {}".format(self.atomic_number))
+        print("\t xc_functional                     : {}".format(self.xc_functional))
+        print("\t domain_size                       : {}".format(self.domain_size))
+        print("\t number_of_finite_elements         : {}".format(self.number_of_finite_elements))
+        print("\t polynomial_order                  : {}".format(self.polynomial_order))
+        print("\t quadrature_point_number           : {}".format(self.quadrature_point_number))
+        print("\t oep_basis_number                  : {}".format(self.oep_basis_number))
+        print("\t mesh_type                         : {}".format(self.mesh_type))
+        print("\t mesh_concentration                : {}".format(self.mesh_concentration))
+        print("\t scf_tolerance                     : {}".format(self.scf_tolerance))
+        print("\t all_electron_flag                 : {}".format(self.all_electron_flag))
+        print("\t use_oep                           : {}".format(self.use_oep))
+        print("\t psp_dir_path                      : {}".format(psp_path_display))
+        print("\t psp_file_name                     : {}".format(self.psp_file_name))
+        print("\t frequency_quadrature_point_number : {}".format(self.frequency_quadrature_point_number))
+        print("\t angular_momentum_cutoff           : {}".format(self.angular_momentum_cutoff))
+        print("\t enable_parallelization            : {}".format(self.enable_parallelization))
+        print("\t double_hybrid_flag                : {}".format(self.double_hybrid_flag))
+        print("\t hybrid_mixing_parameter           : {}".format(self.hybrid_mixing_parameter))
+        print("\t mesh_spacing                      : {}".format(self.mesh_spacing))
+        print("\t density_mixing_parameter          : {}".format(self.density_mixing_parameter))
         print()
 
 
-    def _initialize_grids(self) -> Tuple[GridData, GridData]:
+    def _initialize_grids(self) -> Tuple[GridData, GridData, Optional[GridData]]:
         """
         Initialize finite element grids and quadrature.
         
@@ -751,25 +845,26 @@ class AtomicDFTSolver:
         
         # Generate mesh boundaries
         mesh1d = Mesh1D(
-            domain_radius = self.domain_size / 2.0,
+            domain_radius       = self.domain_size / 2.0,
             finite_elements_num = self.number_of_finite_elements,
             mesh_type           = self.mesh_type,
             clustering_param    = self.mesh_concentration,
             exp_shift           = getattr(self, 'exp_shift', None)
         )
+
         boundaries_nodes, _ = mesh1d.generate_mesh_nodes_and_width()
         
         # Generate standard FE nodes
         global_nodes = Mesh1D.generate_fe_nodes(
             boundaries_nodes = boundaries_nodes,
-            interp_nodes = interp_nodes_ref
+            interp_nodes     = interp_nodes_ref
         )
 
         # Generate refined FE nodes (for Hartree potential solver)
         refined_interp_nodes_ref = Mesh1D.refine_interpolation_nodes(interp_nodes_ref)
         refined_global_nodes = Mesh1D.generate_fe_nodes(
             boundaries_nodes = boundaries_nodes,
-            interp_nodes = refined_interp_nodes_ref
+            interp_nodes     = refined_interp_nodes_ref
         )
         
         # Generate Gauss-Legendre quadrature nodes and weights
@@ -799,15 +894,37 @@ class AtomicDFTSolver:
             quadrature_nodes          = quadrature_nodes,
             quadrature_weights        = quadrature_weights
         )
+
+        # For OEP method, extra set of grids are needed for solving the OEP equation
+        grid_data_oep : Optional[GridData] = None
+
+        if self.use_oep:
+            # Generate Lobatto interpolation nodes for OEP basis
+            oep_interp_nodes_ref, _ = Quadrature1D.lobatto(
+                self.oep_basis_number
+            )
+
+            # Generate OEP basis nodes
+            oep_global_nodes = Mesh1D.generate_fe_nodes(
+                boundaries_nodes = boundaries_nodes,
+                interp_nodes     = oep_interp_nodes_ref,
+            )
+
+            grid_data_oep = GridData(
+                number_of_finite_elements = self.number_of_finite_elements,
+                physical_nodes            = oep_global_nodes,
+                quadrature_nodes          = quadrature_nodes,
+                quadrature_weights        = quadrature_weights
+            )
         
-        return grid_data_standard, grid_data_dense
+        return grid_data_standard, grid_data_dense, grid_data_oep
 
 
     def _initialize_scf_components(
         self, 
-        ops_builder_standard: RadialOperatorsBuilder,
-        grid_data_standard: GridData,
-        ops_builder_dense: RadialOperatorsBuilder,
+        ops_builder_standard : RadialOperatorsBuilder,
+        grid_data_standard   : GridData,
+        ops_builder_dense    : RadialOperatorsBuilder,
         ) -> None:
         """
         Initialize all SCF components.
@@ -845,7 +962,7 @@ class AtomicDFTSolver:
         )
         
         # SCF Driver (create first to get xc_calculator)
-        eigensolver = EigenSolver(xc_functional=self.xc_functional)
+        eigensolver = EigenSolver(xc_functional = self.xc_functional)
         mixer = Mixer(
             tol         = self.scf_tolerance, 
             alpha_lin   = (self.density_mixing_parameter, self.density_mixing_parameter), 
@@ -855,29 +972,38 @@ class AtomicDFTSolver:
         )
         
         self.scf_driver = SCFDriver(
-            hamiltonian_builder = self.hamiltonian_builder,
-            density_calculator  = self.density_calculator,
-            poisson_solver      = self.poisson_solver,
-            eigensolver         = eigensolver,
-            mixer               = mixer,
-            occupation_info     = self.occupation_info,
-            xc_functional       = self.xc_functional,
-            hybrid_mixing_parameter = self.hybrid_mixing_parameter
+            hamiltonian_builder               = self.hamiltonian_builder,
+            density_calculator                = self.density_calculator,
+            poisson_solver                    = self.poisson_solver,
+            eigensolver                       = eigensolver,
+            mixer                             = mixer,
+            occupation_info                   = self.occupation_info,
+            xc_functional                     = self.xc_functional,
+            hybrid_mixing_parameter           = self.hybrid_mixing_parameter,
+            use_oep                           = self.use_oep,
+            ops_builder_oep                   = self.ops_builder_oep,
+            oep_mixing_parameter              = self.oep_mixing_parameter,
+            frequency_quadrature_point_number = self.frequency_quadrature_point_number,
+            angular_momentum_cutoff           = self.angular_momentum_cutoff,
+            enable_parallelization            = self.enable_parallelization,
         )
         
         # Get XC calculator and HF calculator from scf_driver
-        xc_calculator = self.scf_driver.xc_calculator if hasattr(self.scf_driver, 'xc_calculator') else None
-        hf_calculator = self.scf_driver.hf_calculator if hasattr(self.scf_driver, 'hf_calculator') else None
+        xc_calculator  = self.scf_driver.xc_calculator  if hasattr(self.scf_driver, 'xc_calculator')  else None
+        hf_calculator  = self.scf_driver.hf_calculator  if hasattr(self.scf_driver, 'hf_calculator')  else None
+        oep_calculator = self.scf_driver.oep_calculator if hasattr(self.scf_driver, 'oep_calculator') else None
         
         # Energy calculator (uses standard grid data and ops_builder, but dense derivative matrix)
         self.energy_calculator = EnergyCalculator(
+            switches           = self.scf_driver.switches,
             grid_data          = grid_data_standard,
             occupation_info    = self.occupation_info,
             ops_builder        = ops_builder_standard,
             poisson_solver     = self.poisson_solver,
             pseudo             = self.pseudo,
             xc_calculator      = xc_calculator,
-            hf_calculator      = hf_calculator,  # Pass HF calculator from SCFDriver
+            hf_calculator      = hf_calculator,   # Pass HF calculator from SCFDriver
+            oep_calculator     = oep_calculator,  # Pass OEP calculator from SCFDriver
             derivative_matrix  = ops_builder_dense.derivative_matrix  # Use dense grid derivative for accuracy
         )
         
@@ -899,7 +1025,7 @@ class AtomicDFTSolver:
         }
         
         # For functionals requiring outer loop (HF, OEP, RPA)
-        if xc_functional in ['HF', 'PBE0', 'OEPx', 'RPA']:
+        if xc_functional in ['HF', 'PBE0', 'EXX', 'RPA']:
             settings['outer_max_iter'] = 50
         
         return settings
@@ -1013,13 +1139,13 @@ class AtomicDFTSolver:
         # Create temporary SCFDriver with specified xc_functional
         # Reuse existing hamiltonian_builder, density_calculator, poisson_solver in the main SCFDriver
         scf_driver_warm = SCFDriver(
-            hamiltonian_builder = self.scf_driver.hamiltonian_builder,
-            density_calculator  = self.scf_driver.density_calculator,
-            poisson_solver      = self.scf_driver.poisson_solver,
-            eigensolver         = eigensolver_warm,
-            mixer               = self.scf_driver.mixer,
-            occupation_info     = self.scf_driver.occupation_info,
-            xc_functional       = xc_functional,  # Use specified functional
+            hamiltonian_builder     = self.scf_driver.hamiltonian_builder,
+            density_calculator      = self.scf_driver.density_calculator,
+            poisson_solver          = self.scf_driver.poisson_solver,
+            eigensolver             = eigensolver_warm,
+            mixer                   = self.scf_driver.mixer,
+            occupation_info         = self.scf_driver.occupation_info,
+            xc_functional           = xc_functional,  # Use specified functional
             hybrid_mixing_parameter = self.scf_driver.hybrid_mixing_parameter
         )
         
@@ -1045,7 +1171,13 @@ class AtomicDFTSolver:
         return rho_final, orbitals_final
 
 
-    def forward(self, orbitals) -> Dict[str, Any]:
+    def forward(
+        self, 
+        orbitals            : np.ndarray,
+        full_eigen_energies : Optional[np.ndarray] = None,
+        full_orbitals       : Optional[np.ndarray] = None,
+        full_l_terms        : Optional[np.ndarray] = None,
+        ) -> Dict[str, Any]:
         """
         Forward pass of the atomic DFT solver.
         
@@ -1056,11 +1188,15 @@ class AtomicDFTSolver:
         
         Parameters
         ----------
-        rho : np.ndarray
-            Electron density, shape (n_quad_points,)
         orbitals : np.ndarray
             Kohn-Sham orbitals (radial wavefunctions R_nl(r))
             Shape: (n_states, n_quad_points)
+        full_eigen_energies : Optional[np.ndarray]
+            Full eigenvalues of the Kohn-Sham orbitals
+        full_orbitals : Optional[np.ndarray]
+            Full orbitals of the Kohn-Sham orbitals
+        full_l_terms : Optional[np.ndarray]
+            Full l terms of the Kohn-Sham orbitals
         
         Returns
         -------
@@ -1079,6 +1215,11 @@ class AtomicDFTSolver:
         """
         # Phase 1: Get XC functional requirements
         # Note: Grids and SCF components are already initialized in __init__
+        switches = SwitchesFlags(
+            xc_functional           = self.xc_functional,
+            use_oep                 = self.use_oep,
+            hybrid_mixing_parameter = self.hybrid_mixing_parameter,
+        )
         xc_requirements = get_functional_requirements(self.xc_functional)
         
         # Phase 2: Calculate rho_nlcc (non-linear core correction for pseudopotentials)
@@ -1095,9 +1236,30 @@ class AtomicDFTSolver:
             rho_nlcc         = rho_nlcc
         )
         
-        # Phase 4: Compute XC potential data (using density_data with NLCC)
-        xc_potential : XCPotentialData = self.energy_calculator.compute_xc_potential(density_data_with_nlcc)
+        # Phase 4: Compute localized XC potential data (using density_data with NLCC)
+        n_grid = len(self.grid_data_standard.quadrature_nodes)
+        v_x = np.zeros(n_grid)
+        v_c = np.zeros(n_grid)
+        v_x_oep = np.zeros(n_grid)
+        v_c_oep = np.zeros(n_grid)
+
+        if switches.use_xc_functional:
+            v_x, v_c = self.energy_calculator.compute_local_xc_potential(density_data_with_nlcc)
+
+        if switches.use_oep:
+            v_x_oep, v_c_oep = self.oep_calculator.compute_oep_potentials(
+                full_eigen_energies = full_eigen_energies,
+                full_orbitals       = full_orbitals,
+                full_l_terms        = full_l_terms,
+            )
         
+        if switches.hybrid_mixing_parameter is not None:
+            v_x_local = v_x * (1.0 - switches.hybrid_mixing_parameter) + v_x_oep * switches.hybrid_mixing_parameter
+            v_c_local = v_c * (1.0 - switches.hybrid_mixing_parameter) + v_c_oep * switches.hybrid_mixing_parameter
+        else:
+            v_x_local = v_x + v_x_oep
+            v_c_local = v_c + v_c_oep
+
         # Phase 5: Create density_data without NLCC for energy calculation
         # Energy calculation uses valence density only (without NLCC)
         density_data_valence = self.density_calculator.create_density_data_from_orbitals(
@@ -1110,38 +1272,65 @@ class AtomicDFTSolver:
         
         # Phase 6: Compute final energy (using valence density only)
         energy_components : EnergyComponents = self.energy_calculator.compute_energy(
-            orbitals         = orbitals,
-            density_data     = density_data_valence,
-            mixing_parameter = self.hybrid_mixing_parameter
+            orbitals               = orbitals,
+            density_data           = density_data_valence,
+            mixing_parameter       = self.hybrid_mixing_parameter,
+            full_eigen_energies    = full_eigen_energies,
+            full_orbitals          = full_orbitals,
+            full_l_terms           = full_l_terms,
+            enable_parallelization = self.enable_parallelization,
         )
 
-        # Phase 7: Evaluate basis functions on uniform grid (optional, for future use)
-        # TODO: Implement this when needed
-        # Note: _evaluate_basis_on_uniform_grid expects SCFResult, which we don't have in forward pass
-        # For now, we'll skip this step as it's not essential for the forward pass
-        # If needed in the future, we can create a minimal SCFResult-like object or modify the method
+        if self.print_debug:
+            energy_components.print_info(title = f"Total Energy ({self.xc_functional})")
+            print("="*60)
+            print("\t\t Forward Pass Complete")
+            print("="*60)
+            print()
+
+        # Phase 7: Evaluate basis functions on uniform grid
         uniform_grid, orbitals_on_uniform_grid = self._evaluate_basis_on_uniform_grid(
             ops_builder_standard = self.ops_builder_standard,
             orbitals             = orbitals
         )
 
-        # Phase 10: Pack and return results
+        # evaluate local potentials on uniform grid
+        v_x_local_on_uniform_grid = self.ops_builder_standard.evaluate_single_orbital_on_given_grid(
+            given_grid = uniform_grid,
+            orbital    = v_x_local,
+        )
+        v_c_local_on_uniform_grid = self.ops_builder_standard.evaluate_single_orbital_on_given_grid(
+            given_grid = uniform_grid,
+            orbital    = v_c_local,
+        )
+
+
+        # Phase 8: Pack and return results
         final_result = {
-            'eigen_energies'    : None,  # Not computed in forward pass
-            'orbitals'          : orbitals,
-            'rho'               : density_data_valence.rho,  # Valence density
-            'density_data'      : density_data_valence,      # Density data without NLCC
-            'rho_nlcc'          : rho_nlcc,
-            'energy'            : energy_components.total,
-            'energy_components' : energy_components,
-            'converged'         : True,  # Forward pass doesn't iterate, so always "converged"
-            'iterations'        : 0,     # No iterations in forward pass
-            'rho_residual'      : 0.0,   # No residual in forward pass
-            'grid_data'         : self.grid_data_standard,
-            'occupation_info'   : self.occupation_info,
-            'xc_potential'      : xc_potential,
+            'eigen_energies'            : None,                      # Not computed in forward pass
+            'orbitals'                  : orbitals,                  # Input orbitals
+            'rho'                       : density_data_valence.rho,  # Valence density
+            'density_data'              : density_data_valence,      # Density data without NLCC
+            'rho_nlcc'                  : rho_nlcc,                  # Non-linear core correction density
+            'energy'                    : energy_components.total,   # Total energy
+            'energy_components'         : energy_components,         # Energy components, instance of the classEnergyComponents
+            'converged'                 : None,                      # Forward pass doesn't iterate, so always "converged"
+            'iterations'                : None,                      # No iterations in forward pass
+            'rho_residual'              : None,                      # No residual in forward pass
+            'grid_data'                 : self.grid_data_standard,   # Standard grid data
+            'occupation_info'           : self.occupation_info,      # Occupation info
+            'v_x_local'                 : v_x_local,                 # Local XC potential
+            'v_c_local'                 : v_c_local,                 # Local XC potential
+            'uniform_grid'              : uniform_grid,              # Uniform grid
+            'orbitals_on_uniform_grid'  : orbitals_on_uniform_grid,  # Orbitals on uniform grid
+            'v_x_local_on_uniform_grid' : v_x_local_on_uniform_grid, # Local XC potential on uniform grid
+            'v_c_local_on_uniform_grid' : v_c_local_on_uniform_grid, # Local XC potential on uniform grid
+            'full_eigen_energies'       : full_eigen_energies,       # Full eigenvalues
+            'full_orbitals'             : full_orbitals,             # Full orbitals
+            'full_l_terms'              : full_l_terms,              # Full l terms
         }
-        
+
+
         return final_result        
 
 
@@ -1165,7 +1354,7 @@ class AtomicDFTSolver:
         orbitals_initial = None
 
         # Warm start calculation for relatively expensive meta-GGA functionals
-        if self.xc_functional in ['SCAN', 'RSCAN', 'R2SCAN']:
+        if self.xc_functional in ['SCAN', 'RSCAN', 'R2SCAN'] or self.use_oep:
             rho_initial, orbitals_initial = self._get_initial_density_and_orbitals_with_warm_start(
                 xc_functional    = "GGA_PBE", 
                 rho_initial      = rho_initial, 
@@ -1179,13 +1368,23 @@ class AtomicDFTSolver:
         )
 
         # Phase 3: Compute final xc potential data
-        xc_potential : XCPotentialData = self.energy_calculator.compute_xc_potential(scf_result.density_data)
+        v_x_local, v_c_local = self.energy_calculator.compute_local_xc_potential(
+            density_data           = scf_result.density_data,
+            full_eigen_energies    = scf_result.full_eigen_energies,
+            full_orbitals          = scf_result.full_orbitals,
+            full_l_terms           = scf_result.full_l_terms,
+            enable_parallelization = self.enable_parallelization,
+        )
         
         # Phase 4: Compute final energy
         energy_components : EnergyComponents = self.energy_calculator.compute_energy(
-            orbitals         = scf_result.orbitals,
-            density_data     = scf_result.density_data,
-            mixing_parameter = self.hybrid_mixing_parameter
+            orbitals               = scf_result.orbitals,
+            density_data           = scf_result.density_data,
+            mixing_parameter       = self.hybrid_mixing_parameter,
+            full_eigen_energies    = scf_result.full_eigen_energies,
+            full_orbitals          = scf_result.full_orbitals,
+            full_l_terms           = scf_result.full_l_terms,
+            enable_parallelization = self.enable_parallelization,
         )
 
         # Phase 5: Evaluate basis functions on uniform grid
@@ -1194,24 +1393,47 @@ class AtomicDFTSolver:
             orbitals             = scf_result.orbitals
         )
 
+        # evaluate local potentials on uniform grid
+        v_x_local_on_uniform_grid = self.ops_builder_standard.evaluate_single_orbital_on_given_grid(
+            given_grid = uniform_grid,
+            orbital = v_x_local,
+        )
+        v_c_local_on_uniform_grid = self.ops_builder_standard.evaluate_single_orbital_on_given_grid(
+            given_grid = uniform_grid,
+            orbital = v_c_local,
+        )
+
+        # Print debug information
+        if self.print_debug:
+            energy_components.print_info(title = f"Total Energy ({self.xc_functional})")
+            print("="*60)
+            print("\t\t Calculation Complete")
+            print("="*60)
+            print()
 
         # Phase 6: Pack and return results
         final_result = {
-            'eigen_energies'    : scf_result.eigen_energies,
-            'orbitals'          : scf_result.orbitals,
-            'rho'               : scf_result.density_data.rho,  # Interpolate over psi and calculate rho at that site
-            'density_data'      : scf_result.density_data,      # 
-            'rho_nlcc'          : rho_nlcc,
-            'energy'            : energy_components.total,
-            'energy_components' : energy_components,
-            'converged'         : scf_result.converged,
-            'iterations'        : scf_result.iterations,
-            'rho_residual'      : scf_result.rho_residual,
-            'grid_data'         : self.grid_data_standard,
-            'occupation_info'   : self.occupation_info,
-            'xc_potential'      : xc_potential,
-            'uniform_grid'      : uniform_grid,
-            'orbitals_on_uniform_grid' : orbitals_on_uniform_grid,
+            'eigen_energies'            : scf_result.eigen_energies,
+            'orbitals'                  : scf_result.orbitals,
+            'rho'                       : scf_result.density_data.rho,  # Interpolate over psi and calculate rho at that site
+            'density_data'              : scf_result.density_data,
+            'rho_nlcc'                  : rho_nlcc,
+            'energy'                    : energy_components.total,
+            'energy_components'         : energy_components,
+            'converged'                 : scf_result.converged,
+            'iterations'                : scf_result.iterations,
+            'rho_residual'              : scf_result.rho_residual,
+            'grid_data'                 : self.grid_data_standard,
+            'occupation_info'           : self.occupation_info,
+            'v_x_local'                 : v_x_local,
+            'v_c_local'                 : v_c_local,
+            'uniform_grid'              : uniform_grid,
+            'orbitals_on_uniform_grid'  : orbitals_on_uniform_grid,
+            'v_x_local_on_uniform_grid' : v_x_local_on_uniform_grid, # Local XC potential on uniform grid
+            'v_c_local_on_uniform_grid' : v_c_local_on_uniform_grid, # Local XC potential on uniform grid
+            'full_eigen_energies'       : scf_result.full_eigen_energies,
+            'full_orbitals'             : scf_result.full_orbitals,
+            'full_l_terms'              : scf_result.full_l_terms,
         }
 
 
@@ -1226,28 +1448,112 @@ class AtomicDFTSolver:
         # Gauge for energy density (double integral -> different gauges)
         # Non-locality
 
-
-        if self.print_debug:
-            energy_components.print_info(title = f"Total Energy ({self.xc_functional})")
-            print("="*60)
-            print("\t\t Calculation Complete")
-            print("="*60)
-            print()
         
         return final_result
+
+
+    def solve_raw(self) -> Dict[str, Any]:
+        """
+        Solve the Kohn-Sham equations for the given atomic number.
+        """
+        # 1) Initialize grids
+        grid_data_standard, grid_data_dense = self._initialize_grids()
+
+        if self.print_debug:
+            print("=" * 60)
+            print("\t step 1) Grid initialization completed")
+            print("=" * 60)
+            print("    - standard grid nodes.shape       : ", grid_data_standard.physical_nodes.shape)
+            print("    - dense grid nodes.shape          : ", grid_data_dense.physical_nodes.shape)
+            print("    - quadrature_nodes.shape          : ", grid_data_standard.quadrature_nodes.shape)
+            print("    - quadrature_weights.shape        : ", grid_data_standard.quadrature_weights.shape)
+            print()
+        
+
+        # 2) Operators (Radial FE assembly)
+        rho_guess = self.pseudo.get_rho_guess(grid_data_standard.quadrature_nodes)
+        rho_nlcc  = self.pseudo.get_rho_core_correction(grid_data_standard.quadrature_nodes)
+
+        # Build operators using grid data
+        ops_builder       = RadialOperatorsBuilder.from_grid_data(grid_data_standard)
+        ops_dense_builder = RadialOperatorsBuilder.from_grid_data(grid_data_dense)
+
+        # kinetic term
+        H_kinetic = ops_builder.get_H_kinetic()
+
+        # external potential term
+        if self.all_electron_flag:
+            # All-electron: use nuclear Coulomb potential V = -Z/r
+            V_external = ops_builder.get_nuclear_coulomb_potential(self.pseudo.z_nuclear)
+        else:
+            # Pseudopotential: use local pseudopotential component
+            V_external = self.pseudo.get_v_local_component_psp(grid_data_standard.quadrature_nodes)
+        
+        H_ext = ops_builder.build_potential_matrix(V_external)
+
+        # angular momentum term, for solving the Schrödinger equation
+        H_r_inv_sq = ops_builder.get_H_r_inv_sq()
+    
+        # Inverse square root of the overlap matrix
+        S_inv_sqrt = ops_builder.get_S_inv_sqrt()
+
+        
+        # dense operators
+        lagrange_basis_dense             = ops_dense_builder.lagrange_basis
+        lagrange_basis_derivatives_dense = ops_dense_builder.lagrange_basis_derivatives
+
+
+        # dense laplacian
+        laplacian_dense = ops_dense_builder.laplacian
+        D_dense = ops_dense_builder.derivative_matrix
+
+        if self.xc_functional in ['HF', 'PBE0', 'EXX']:
+            interpolation_matrix = ops_builder.global_interpolation_matrix
+            print("interpolation_matrix.shape = ", interpolation_matrix.shape)
+            np.savetxt("interpolation_matrix.txt", interpolation_matrix.reshape(-1,))
+
+            raise NotImplementedError("Not implemented")
+
+
+        # uniform grid
+        uniform_eval_grid = np.linspace(0, self.domain_size, 
+                                        int(self.domain_size / self.mesh_spacing) + 1, 
+                                        endpoint=True)
+        
+        # Evaluate basis functions on uniform grid (with proper padding handling)
+        lagrange_basis_uniform, uniform_grid_metadata = ops_builder.evaluate_basis_on_uniform_grid(
+            uniform_grid = uniform_eval_grid
+        )
+
+        # Compute non-local pseudopotential matrices (if using pseudopotential)
+        if not self.all_electron_flag:
+            # Initialize non-local pseudopotential calculator
+            nonlocal_calculator = NonLocalPseudopotential(
+                pseudo=self.pseudo,
+                ops_builder=ops_builder
+            )
+                        
+            # Compute non-local matrices for all l channels (pre-compute once)
+            nonlocal_psp_matrices : Dict[int, np.ndarray] = nonlocal_calculator.compute_all_nonlocal_matrices(
+                l_channels=self.occupation_info.unique_l_values
+            )
+        
+        raise NotImplementedError("This function is only for testing purposes, should not be used in production code")
+
+
 
 
 
 if __name__ == "__main__":
     atomic_dft_solver = AtomicDFTSolver(
         atomic_number     = 13, 
-        print_debug       = True, 
-        xc_functional     = "GGA_PBE",
+        xc_functional     = "GGA_PBE", #'rSCAN', 'r2SCAN', "GGA_PBE", "LDA_SPW", "LDA_SVWN", "HFx", "PBE0"
         all_electron_flag = True,
-    )
+        print_debug       = True, 
+        )
 
-    results = atomic_dft_solver.solve()
-    rho = results['rho']
+    results  = atomic_dft_solver.solve()
+    rho      = results['rho']
     orbitals = results['orbitals']
-    print(rho.shape)
-    print(orbitals.shape)
+    print("rho.shape      = ", rho.shape)      # (n_grid_points,)
+    print("orbitals.shape = ", orbitals.shape) # (n_grid_points, n_orbitals)

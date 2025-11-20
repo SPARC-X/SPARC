@@ -185,7 +185,7 @@ class LocalPseudopotential:
                 self.density_nlcc, 
                 k=3
             )
-            rho_nlcc[indices_below_cutoff[0]] = rho_nlcc_interpolator(r_below_cutoff)
+            rho_nlcc[indices_below_cutoff[0]] = rho_nlcc_interpolator(r_below_cutoff).reshape(-1)
             
             return rho_nlcc
  
@@ -318,8 +318,8 @@ class LocalPseudopotential:
 
 
         # Basic atomic information
-        print(f"Valence Charge               (z_valence)             : {self.z_valence}")
-        print(f"Nuclear Charge               (z_nuclear)             : {self.z_nuclear}")
+        print(f"  Valence Charge             (z_valence)             : {self.z_valence}")
+        print(f"  Nuclear Charge             (z_nuclear)             : {self.z_nuclear}")
         print()
 
         if self.load_psp:

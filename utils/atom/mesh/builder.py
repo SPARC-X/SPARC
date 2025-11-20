@@ -131,11 +131,11 @@ class Quadrature1D:
         assert n > 0, \
             QUADRATURE_POINT_NUMBER_NOT_GREATER_THAN_0_ERROR.format(n)
 
-        beta = 0.5/np.sqrt(1 - 1 / (2*(np.arange(1,n)))**(2))
-        T = np.diag(beta,k=1) + np.diag(beta,k=-1)
-        nodes, eigvecs = np.linalg.eigh(T,UPLO='L')
+        beta = 0.5 / np.sqrt(1.0 - 1.0 / (2.0 * (np.arange(1, n)))**2)
+        T = np.diag(beta, k=1) + np.diag(beta, k=-1)
+        nodes, eigvecs = np.linalg.eigh(T, UPLO='L')
         index = np.arange(nodes.size)
-        legendre_weights = 2*(eigvecs[0,index])**2
+        legendre_weights = 2*(eigvecs[0, index])**2
         return nodes, legendre_weights
 
 
