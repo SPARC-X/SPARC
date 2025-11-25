@@ -116,8 +116,8 @@ void init_occ_mat_scf(SPARC_OBJ *pSPARC) {
                             }
                         }
                     }
+                    atmcount++;
                 }
-                atmcount++;
             }
         }
     }
@@ -273,6 +273,7 @@ void occMatExtrapolation(SPARC_OBJ *pSPARC) {
                         }
                     }
                 }
+                atmcount++;
             }
         }
 

@@ -12,9 +12,9 @@ from shutil import copyfile
 import math
 
 # Other parameters to run the test (can be changed by the user)
-nprocs_tests = 48  # In default tests are run with 24 processors per node
-nnodes_tests = 1  # In default tests are run with 1 node
-npbs = 3  # By default (number of script files the tests are distributed to)
+nprocs_tests = 12  # In default tests are run with 24 processors per node
+nnodes_tests = 4  # In default tests are run with 1 node
+npbs = 10  # By default (number of script files the tests are distributed to)
 launch_cluster_extension = ".sbatch"   # extension of the file used to launch the jobs on the cluster by default it is .sbatch
 command_launch_extension = "sbatch"   # Command to launch the script to ask for resources on the cluster (example: qsub launch.pbs)
 MPI_command = "mpirun -np 48"  # MPI command to run the executable on the given cluster
