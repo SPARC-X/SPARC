@@ -65,7 +65,7 @@ jobs:
       run: |
         echo $CONDA_PREFIX
         conda info
-        CPU_COUNT=2 rattler-build build -r .conda/
+        CPU_COUNT=2 conda build .conda/
     - name: Install local build
       run: |
         mamba install --use-local sparc
