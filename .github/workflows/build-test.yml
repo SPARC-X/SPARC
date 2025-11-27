@@ -54,13 +54,14 @@ jobs:
         miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
         channels: conda-forge,defaults
         channel-priority: true
+        
     # - name: Install boa dependencies
     #   run: |
     #     mamba install -c conda-forge pip setuptools "conda-build" "colorama=0.4.6"  "ruamel=1.0" ruamel.yaml "rich=13.9" "mamba=1.5.10" "jsonschema=4.23"
     #     pip install git+https://github.com/mamba-org/boa.git@00a11ffce59f47c0fc576f93d39baf1f8fc92f32
     - name: Install rattle build
       run: |
-        mamba install -c conda-forge rattler-build
+        mamba install -c conda-forge conda-build
     - name: Build with mambabuild
       run: |
         echo $CONDA_PREFIX
