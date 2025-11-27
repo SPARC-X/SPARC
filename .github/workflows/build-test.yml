@@ -50,7 +50,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
       with:
-        python-version: "3.12"
+        #python-version: "3.13"
         activate-environment: sparc-test
         #conda-build-version: "24.9.0"
         miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
