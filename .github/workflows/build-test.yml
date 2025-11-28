@@ -69,6 +69,7 @@ jobs:
         CPU_COUNT=2 conda build .conda/
     - name: Install local build
       run: |
+        mamba install --help
         mamba install --use-local sparc
         which sparc
         ldd $(which sparc)
