@@ -54,12 +54,8 @@ jobs:
         miniforge-version: latest # Fix according to https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-10-miniforge
         channels: conda-forge,defaults
         channel-priority: true
-        
-    # - name: Install boa dependencies
-    #   run: |
-    #     mamba install -c conda-forge pip setuptools "conda-build" "colorama=0.4.6"  "ruamel=1.0" ruamel.yaml "rich=13.9" "mamba=1.5.10" "jsonschema=4.23"
-    #     pip install git+https://github.com/mamba-org/boa.git@00a11ffce59f47c0fc576f93d39baf1f8fc92f32
-    - name: Install rattle build
+    - name: Install lasted conda build
+      # Conda build seems much stable now to be used without boa
       run: |
         mamba install -c conda-forge conda-build
     - name: Build with mambabuild
@@ -69,6 +65,7 @@ jobs:
         CPU_COUNT=2 conda build .conda/
     - name: Install local build
       run: |
+        # Change from version 2.3
         mamba install -c local sparc
         which sparc
         ldd $(which sparc)
