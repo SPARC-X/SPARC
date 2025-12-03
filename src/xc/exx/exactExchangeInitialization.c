@@ -774,38 +774,57 @@ void find_local_kpthf(SPARC_OBJ *pSPARC)
 double estimate_memory_exx(const SPARC_OBJ *pSPARC)
 {
     double memory_exx = 0.0;
-    int Nd = pSPARC->Nd * pSPARC->Nspinor;
-    int Ns = pSPARC->Nstates;
-    int Nspin = pSPARC->Nspin;
-    int Nkpts_sym = pSPARC->Nkpts_sym;
-    int npband = pSPARC->npband;
-    int npkpt = pSPARC->npkpt;
-    int Nkpts_hf_red = pSPARC->Nkpts_hf_red;
-    int Nkpts_hf = pSPARC->Nkpts_hf;
-    int Nband = pSPARC->Nband_bandcomm;
-    int type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
-    int dmcomm_size = pSPARC->npNd;
+    /* ******** The following block was changed by Sayan. For high memory estimates, there was int overflow ********** */
+    // int Nd = pSPARC->Nd * pSPARC->Nspinor;
+    // int Ns = pSPARC->Nstates;
+    // int Nspin = pSPARC->Nspin;
+    // int Nkpts_sym = pSPARC->Nkpts_sym;
+    // int npband = pSPARC->npband;
+    // int npkpt = pSPARC->npkpt;
+    // int Nkpts_hf_red = pSPARC->Nkpts_hf_red;
+    // int Nkpts_hf = pSPARC->Nkpts_hf;
+    // int Nband = pSPARC->Nband_bandcomm;
+    // int type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
+    // int dmcomm_size = pSPARC->npNd;
+    /* ***************************************************************************************************************** */
+
+    long long Nd = (long long)pSPARC->Nd * pSPARC->Nspinor; 
+    long long Ns = pSPARC->Nstates;
+    long long Nspin = pSPARC->Nspin;
+    long long Nkpts_sym = pSPARC->Nkpts_sym;
+    long long npband = pSPARC->npband;
+    long long npkpt = pSPARC->npkpt;
+    long long Nkpts_hf_red = pSPARC->Nkpts_hf_red;
+    long long Nkpts_hf = pSPARC->Nkpts_hf;
+    long long Nband = pSPARC->Nband_bandcomm;
+
+    size_t type_size = (pSPARC->isGammaPoint == 1) ? sizeof(double) : sizeof(double _Complex);
+    long long dmcomm_size = pSPARC->npNd;
 
     if (pSPARC->ExxAcc == 0) {
         // storage of psi outer
-        int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
+        // int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin; // to avoid int overflow
+        long long len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
         memory_exx += (double) len_full_tot * type_size * 2; 
         // memory for constructing Vx
         if (pSPARC->isGammaPoint == 1) {
             // int index
             memory_exx += (double) Ns * Ns * sizeof(int) * 2;
             // for poissons equations
-            int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns) : pSPARC->ExxMemBatch;
+            // int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns) : pSPARC->ExxMemBatch; // to avoid int overflow
+            long long ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         } else {
             // int index
             memory_exx += (double) Ns * Ns * sizeof(int) * Nkpts_hf * 3;
             // for poissons equations
-            int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->ExxMemBatch;
+            // int ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->ExxMemBatch; // to avoid int overflow
+            long long ncol = (pSPARC->ExxMemBatch == 0) ? (Ns * Ns * Nkpts_hf) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         }
     } else {
-        int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
+        // int len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin; // to avoid int overflow
+        long long len_full_tot = Nd * Ns * Nkpts_hf_red * Nspin;
         if (pSPARC->isGammaPoint == 1) {
             // storage of ACE operator in dmcomm and kptcomm_topo
             memory_exx += (double) len_full_tot * type_size * (npband + 1) * npkpt;
@@ -815,7 +834,8 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
             // int index
             memory_exx += (double) Nband * Ns * 2 * sizeof(int);
             // for poissons equations
-            int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband) : pSPARC->ExxMemBatch;
+            // int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband) : pSPARC->ExxMemBatch; // to avoid int overflow
+            long long ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband) : pSPARC->ExxMemBatch;
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
         } else {
             // storage of ACE operator in dmcomm and kptcomm_topo
@@ -828,7 +848,8 @@ double estimate_memory_exx(const SPARC_OBJ *pSPARC)
             // int index
             memory_exx += (double) Ns * Nband * Nkpts_sym * 3 * sizeof(int);
             // for poissons equations
-            int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->ExxMemBatch;            
+            // int ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->ExxMemBatch; // to avoid int overflow    
+            long long ncol = (pSPARC->ExxMemBatch == 0) ? (Nband * Nband * Nkpts_sym) : pSPARC->ExxMemBatch;         
             memory_exx += (double) ncol * Nd * (2 + 2*(dmcomm_size > 1)) * type_size;
 
         }
