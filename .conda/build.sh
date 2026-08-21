@@ -19,6 +19,7 @@ echo "Finish compiling sparc!"
 
 # Copy activate and deactivate scripts
 cd ../.conda/
-cp activate.sh $PREFIX/etc/conda/activate.d/activate-sparc.sh
-cp deactivate.sh $PREFIX/etc/conda/deactivate.d/deactivate-sparc.sh
+mkdir -p "$PREFIX/etc/conda/activate.d" "$PREFIX/etc/conda/deactivate.d"
+cp activate.sh "$PREFIX/etc/conda/activate.d/activate-sparc.sh"
+cp deactivate.sh "$PREFIX/etc/conda/deactivate.d/deactivate-sparc.sh"
 echo "Finish setting up activate / deactivate scripts"
