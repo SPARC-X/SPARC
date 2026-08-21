@@ -4,6 +4,13 @@
 -changes
 
 --------------
+August 21, 2026
+Name: Tian Tian
+Changes: (.conda/build.sh, .github/workflows/build-test.yml)
+1. Fixed conda packaging with newer compiler stacks by creating the activation and deactivation directories before installing SPARC's environment scripts.
+2. Updated the CI workflow to invoke the conda-build executable from the activated environment.
+
+--------------
 August 06, 2026
 Name: Qihao Cheng
 Changes: utils/pdos/, utils/atom/
