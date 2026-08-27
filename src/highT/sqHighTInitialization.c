@@ -170,10 +170,12 @@ void init_exx_SQ_highT(SPARC_OBJ *pSPARC)
     if (pSPARC->ExxAcc == 1) {
         pSQ->basis = (double *) malloc(pSQ->Nd_loc*pSQ->Nd_loc*sizeof(double));
         assert(pSQ->basis != NULL);
-        double t1 = MPI_Wtime();
-        calculate_basis(pSPARC);
-        double t2 = MPI_Wtime();
     #ifdef DEBUG
+        double t1 = MPI_Wtime();
+    #endif
+        calculate_basis(pSPARC);
+    #ifdef DEBUG
+        double t2 = MPI_Wtime();
         if (!rank) printf("SQ-hybrid calculating basis takes %.3f ms\n", (t2-t1)*1e3);
     #endif
         
@@ -189,10 +191,12 @@ void init_exx_SQ_highT(SPARC_OBJ *pSPARC)
     if (strcmpi(pSPARC->XC,"HSE") == 0) {
         pSQ->erfcR = (double *) malloc(pSQ->Nd_loc*pSQ->Nd_loc*sizeof(double));
         assert(pSQ->erfcR != NULL);
-        double t1 = MPI_Wtime();
-        calculate_erfcR(pSPARC);
-        double t2 = MPI_Wtime();
     #ifdef DEBUG
+        double t1 = MPI_Wtime();
+    #endif
+        calculate_erfcR(pSPARC);
+    #ifdef DEBUG
+        double t2 = MPI_Wtime();
         if (!rank) printf("SQ-hybrid calculating erfcR takes %.3f ms\n", (t2-t1)*1e3);
     #endif
     }

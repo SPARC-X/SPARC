@@ -47,8 +47,8 @@ void Calculate_elecDens_SQ_highT(SPARC_OBJ *pSPARC, int SCFcount)
     // communicate to get full values for PR domain        
     TransferVeff_sq2sqext(pSPARC, pSQ->Veff_loc_SQ, pSQ->Veff_PR);
 
-    // Gauss Quadrature for electron density    
-    GaussQuadrature_highT(pSPARC, SCFcount);
+    // Gauss Quadrature for electron density
+    GaussQuadrature_highT(pSPARC);
 
     // find Fermi energy (Efermi)
     find_Efermi_SQ(pSPARC, SCFcount);

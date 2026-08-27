@@ -148,11 +148,11 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
                 // get intial magnetization
                 if (pSPARC->spin_typ == 1) {
                     memcpy(pSPARC->mag, pSPARC->mag_at, DMnd * sizeof(double));
-                    Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                    Calculate_diagonal_Density(DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
                 } else if (pSPARC->spin_typ == 2) {
                     memcpy(pSPARC->mag+DMnd, pSPARC->mag_at, DMnd * 3 * sizeof(double));
-                    Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd*1, pSPARC->mag+DMnd*2, pSPARC->mag+DMnd*3, pSPARC->mag);
-                    Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                    Calculate_Magnorm(DMnd, pSPARC->mag+DMnd*1, pSPARC->mag+DMnd*2, pSPARC->mag+DMnd*3, pSPARC->mag);
+                    Calculate_diagonal_Density(DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
                 }
             }
             

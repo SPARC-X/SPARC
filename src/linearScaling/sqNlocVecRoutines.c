@@ -194,7 +194,7 @@ void GetNonlocalProjectorsForNode(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj, NL
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way.
  */
-void Vnl_vec_mult_SQ(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+void Vnl_vec_mult_SQ(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
                   NLOC_PROJ_OBJ *nlocProj, const double *x, double *Hx)
 {
     int i, np, count;
@@ -252,7 +252,7 @@ void Vnl_vec_mult_SQ(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ 
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way for force calculation.
  */
-void Vnl_vec_mult_J_SQ(const SPARC_OBJ *pSPARC, int DMnd, int nd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+void Vnl_vec_mult_J_SQ(const SPARC_OBJ *pSPARC, int nd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
                   NLOC_PROJ_OBJ *nlocProj, double *x, double *Vx)
 {
     int i, np, icol, count, counter_cp = 0, indx;
@@ -346,7 +346,7 @@ void Vnl_vec_mult_J_SQ(const SPARC_OBJ *pSPARC, int DMnd, int nd, ATOM_NLOC_INFL
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way for stress calculation.
  */
-void Vnl_vec_mult_dir_SQ(const SPARC_OBJ *pSPARC, int DMnd, int nd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+void Vnl_vec_mult_dir_SQ(const SPARC_OBJ *pSPARC, int nd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
                   NLOC_PROJ_OBJ *nlocProj, int dir, double *x, double *Vx)
 {
     int i, np, icol, count, counter_cp = 0, indx, pos;

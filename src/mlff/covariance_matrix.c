@@ -189,7 +189,7 @@ void copy_descriptors(DescriptorObj *desc_str_MLFF, DescriptorObj *desc_str){
 		desc_str_MLFF->unique_neighborList[i].capacity = desc_str->unique_neighborList[i].capacity;
 		desc_str_MLFF->unique_neighborList[i].array = (int *)malloc(desc_str->unique_neighborList[i].capacity*sizeof(int));
 		desc_str_MLFF->unique_neighborList[i].len = desc_str->unique_neighborList[i].len;
-		for (int k =0; k<desc_str->unique_neighborList[i].len; k++){
+		for (size_t k =0; k<desc_str->unique_neighborList[i].len; k++){
 			desc_str_MLFF->unique_neighborList[i].array[k] = desc_str->unique_neighborList[i].array[k];
 		}
 	}
@@ -356,7 +356,7 @@ void add_firstDFT(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str,
 
 	count=0;
 	for (int i = 0; i < nelem; i++){
-		for (int j = 0; j < (highrank_ID_descriptors[i]).len; j++){
+		for (size_t j = 0; j < (highrank_ID_descriptors[i]).len; j++){
 			mlff_str->natm_typ_train[count] = i;
 			for(int jj = 0; jj < size_X3; jj++){
 				mlff_str->X3_traindataset[count][jj] = X3_gathered_2D[cum_natm_elem[i]+(highrank_ID_descriptors[i]).array[j]][jj];
@@ -473,7 +473,7 @@ void add_firstDFT(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str,
 		for (int i=0; i < desc_str->natom_domain; i++){
 			el_type = desc_str->el_idx_domain[i];
 			atm_idx = desc_str->atom_idx_domain[i];
-			for (int iatm_el_tr = 0; iatm_el_tr < (highrank_ID_descriptors[el_type]).len; iatm_el_tr++){
+			for (size_t iatm_el_tr = 0; iatm_el_tr < (highrank_ID_descriptors[el_type]).len; iatm_el_tr++){
 				col_idx = cum_natm_elem1[el_type] + iatm_el_tr;
 				for (int istress = 0; istress < mlff_str->stress_len; istress++){
 					row_idx = 3*desc_str->natom+1+istress;
@@ -485,7 +485,7 @@ void add_firstDFT(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_str,
 		for (int i=0; i < desc_str->natom_domain; i++){
 			el_type = desc_str->el_idx_domain[i];
 			atm_idx = desc_str->atom_idx_domain[i];
-			for (int iatm_el_tr = 0; iatm_el_tr < (highrank_ID_descriptors[el_type]).len; iatm_el_tr++){
+			for (size_t iatm_el_tr = 0; iatm_el_tr < (highrank_ID_descriptors[el_type]).len; iatm_el_tr++){
 				col_idx = cum_natm_elem1[el_type] + iatm_el_tr;
 				int idx_st[3]={0,3,5};
 				for (int istress = 0; istress < 3; istress++){

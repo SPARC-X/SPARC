@@ -51,7 +51,7 @@ void  AndersonExtrapolation(
         const double beta, MPI_Comm comm
 ) 
 {
-    unsigned i;
+    int i;
     double *f_wavg = (double *)malloc( N * sizeof(double) );
     
     // find the weighted average vectors
@@ -85,9 +85,9 @@ void  AndersonExtrapWtdAvg(
     assert(Gamma != NULL); 
     
     // find extrapolation weigths Gamma = inv(F^T * F) * F^T * f_k
-    AndersonExtrapCoeff(N, m, Nspden, opt, f_k, F, Gamma, comm); 
-    
-    unsigned i;
+    AndersonExtrapCoeff(N, m, Nspden, opt, f_k, F, Gamma, comm);
+
+    int i;
     
     // find weighted average x_{k+1} = x_k - X*Gamma
     // memcpy(x_wavg, x_k, N*sizeof(*x_k)); // copy x_k into x_wavg
@@ -419,12 +419,12 @@ void Mixing_periodic_pulay(SPARC_OBJ *pSPARC, int iter_count)
         if (pSPARC->spin_typ == 1) {
             memcpy(pSPARC->electronDens, x_kp1, sizeof(double)*DMnd); // rho
             memcpy(pSPARC->mag, x_kp1+DMnd, sizeof(double)*DMnd); // magz
-            Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd); 
+            Calculate_diagonal_Density(DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
         } else if (pSPARC->spin_typ == 2) {
             memcpy(pSPARC->electronDens, x_kp1, sizeof(double)*DMnd); // rho
             memcpy(pSPARC->mag+DMnd, x_kp1+DMnd, sizeof(double)*DMnd*3); // magx magy magz
-            Calculate_Magnorm(pSPARC, DMnd, pSPARC->mag+DMnd, pSPARC->mag+2*DMnd, pSPARC->mag+3*DMnd, pSPARC->mag); 
-            Calculate_diagonal_Density(pSPARC, DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd); 
+            Calculate_Magnorm(DMnd, pSPARC->mag+DMnd, pSPARC->mag+2*DMnd, pSPARC->mag+3*DMnd, pSPARC->mag);
+            Calculate_diagonal_Density(DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
         }
     }    
 

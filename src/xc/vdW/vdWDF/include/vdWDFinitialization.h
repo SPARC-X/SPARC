@@ -39,7 +39,8 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC);
  secondq: index of the second energy ratio q
  * @param nqs: total number of q s, 20
  */
-int kernel_label(int firstq, int secondq, int nqs);
+// int kernel_label(int firstq, int secondq, int nqs);
+int kernel_label(int firstq, int secondq);
 
 // /**
 //  * @brief read kernel function and its 2nd derivative for every model energy ratios (p1, p2)

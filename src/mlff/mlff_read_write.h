@@ -4,7 +4,8 @@
 #include "mlff_types.h"
 #include "isddft.h"
 
-void intialize_print_MLFF(MLFF_Obj *mlff_str, SPARC_OBJ *pSPARC);
+// void intialize_print_MLFF(MLFF_Obj *mlff_str, SPARC_OBJ *pSPARC);
+void intialize_print_MLFF(MLFF_Obj *mlff_str);
 void print_new_ref_structure_MLFF(MLFF_Obj *mlff_str, int nstr, NeighList *nlist, double *atompos, double Etot, double *force, double *stress);
 void print_restart_MLFF(MLFF_Obj *mlff_str);
 void read_MLFF_files(MLFF_Obj *mlff_str, SPARC_OBJ *pSPARC);

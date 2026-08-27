@@ -24,7 +24,7 @@
 
 #define au2GPa 29421.02648438959
 
-void intialize_print_MLFF(MLFF_Obj *mlff_str, SPARC_OBJ *pSPARC){
+void intialize_print_MLFF(MLFF_Obj *mlff_str){
     int nprocs, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

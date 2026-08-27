@@ -203,14 +203,17 @@ double work_load_efficiency(
  *
  * @param Nk        Number of kpoints (after symmetry reduction).
  * @param Ns        Number of states.
- * @param gridsizes Number of grid points in all three directions.
+ * @param gridsizes Number of grid points in all three directions. (Sayan: Flagged as unused by compilers, hence removing it)
  * @param np        Number of processors available.
  * @param np1 (OUT) Number of kpoint groups.
  * @param np2 (OUT) Number of band groups.
  * @param np3 (OUT) Number of domain groups.
  **/
+// void dims_divide_kbd(
+//     const int Nk, const int Ns, const int *gridsizes,
+//     const int np, int *np1, int *np2, int *np3);
 void dims_divide_kbd(
-    const int Nk, const int Ns, const int *gridsizes,
+    const int Nk, const int Ns,
     const int np, int *np1, int *np2, int *np3);
 
 
@@ -256,7 +259,9 @@ void dims_divide_skbd(
  * @param rdims         Dimensions of the recv_comm.
  * @param unit_size     either sizeof(double) or sizeof(double _Complex) for the type of sdata and rdata
  */
-void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata, 
+// void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata, 
+//            MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm, int unit_size);
+void DD2DD(int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata, 
            MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm, int unit_size);
 
 

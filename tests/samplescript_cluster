@@ -7,7 +7,11 @@
 #SBATCH -t1:00:00
 cd $SLURM_SUBMIT_DIR
 
+# The modules listed below are optimized for supercomputers at GT.
+# Please contact support for your cluster to change them
 module purge
-ml intel-oneapi-compilers intel-oneapi-mkl intel-oneapi-mpi
+ml intel-oneapi-compilers intel-oneapi-mkl intel-oneapi-mpi # default mkl build
+# ml gcc/12.3.0 openmpi/4.1.5 openblas/0.3.23 netlib-scalapack/2.2.0-ompi fftw/3.3.10-ompi # ScaLAPACK+LAPACK+BLAS
+# ml gcc/12.3.0 openmpi/4.1.5 openblas/0.3.23 fftw/3.3.10-ompi # LAPACK+BLAS (USE_DP_SUBEIG = 1)
 
 echo $PWD

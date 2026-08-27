@@ -1638,14 +1638,14 @@ void dims_divide_2d(const int N1, const int N2, const int np, int *np1, int *np2
  *
  * @param Nk        Number of kpoints (after symmetry reduction).
  * @param Ns        Number of states.
- * @param gridsizes Number of grid points in all three directions.
+ * @param gridsizes Number of grid points in all three directions. (Sayan: Flagged as unused by compilers, hence removing this)
  * @param np        Number of processors available.
  * @param np1 (OUT) Number of kpoint groups.
  * @param np2 (OUT) Number of band groups.
  * @param np3 (OUT) Number of domain groups.
  **/
 void dims_divide_kbd(
-    const int Nk, const int Ns, const int *gridsizes,
+    const int Nk, const int Ns,
     const int np, int *np1, int *np2, int *np3)
 {
 #define LEN_NPDM 8
@@ -1909,7 +1909,7 @@ void dims_divide_skbd(
     int nps_1, npk_1, npb_1, npd_1;
     nps_1 = 1;
     if (!isfock) {
-        dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1);
+        dims_divide_kbd(Nk,Ns,np/(nps_1),&npk_1,&npb_1,&npd_1);
     } else {
         dims_divide_kbd_fock(Nk,Ns,gridsizes,np/(nps_1),&npk_1,&npb_1,&npd_1,minsize);
     }
@@ -1929,7 +1929,7 @@ void dims_divide_skbd(
         int nps_2, npk_2, npb_2, npd_2;
         nps_2 = 2;
         if (!isfock) {
-            dims_divide_kbd(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2);
+            dims_divide_kbd(Nk,Ns,np/(nps_2),&npk_2,&npb_2,&npd_2);
         } else {
             dims_divide_kbd_fock(Nk,Ns,gridsizes,np/(nps_2),&npk_2,&npb_2,&npd_2,minsize);
         }
@@ -2541,7 +2541,7 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
 }
 
 
-void DD2DD(SPARC_OBJ *pSPARC, int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata,
+void DD2DD(int *gridsizes, int *sDMVert, void *sdata, int *rDMVert, void *rdata,
            MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm, int unit_size)
 {
     D2D_OBJ d2d_sender, d2d_recvr;

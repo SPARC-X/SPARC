@@ -89,7 +89,8 @@ build_soapObj function calculates the SOAP descriptors and their derivatives w.r
 [Output]
 1. soap_str: pointer to the SoapObj structure
 */
-void build_soapObj(DescriptorObj *soap_str, NeighList *nlist, double* rgrid, double* h_nl, double* dh_nl, double *atompos, int Nmax, int Lmax,  double xi_3, int N_rgrid);
+// void build_soapObj(DescriptorObj *soap_str, NeighList *nlist, double* rgrid, double* h_nl, double* dh_nl, double *atompos, int Nmax, int Lmax,  double xi_3, int N_rgrid);
+void build_soapObj(DescriptorObj *soap_str, NeighList *nlist, double* rgrid, double* h_nl, double* dh_nl, double *atompos, int Nmax, int Lmax);
 
 
 /*

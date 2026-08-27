@@ -40,9 +40,15 @@ void Lap_vec_mult_kpt(
  *          at a time. So we will be calling this function ncol times
  *          if ncol is greater than 1.
  */
+// void Lap_plus_diag_vec_mult_orth_kpt(
+//         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+//         const int ncol, const double a, const double b, const double c,
+//         const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,
+//         const int *dims, int kpt
+// );
 void Lap_plus_diag_vec_mult_orth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-        const int ncol, const double a, const double b, const double c, 
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
+        const int ncol, const double a, const double b, const double c,
         const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,
         const int *dims, int kpt
 );
@@ -133,10 +139,16 @@ void Lap_vec_mult_nonorth_kpt(
  *          at a time. So we will be calling this function ncol times
  *          if ncol is greater than 1.
  */
+// void Lap_plus_diag_vec_mult_nonorth_kpt(
+//         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+//         const int ncol, const double a, const double b, const double c,
+//         const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+//         const int *dims, const int kpt
+// );
 void Lap_plus_diag_vec_mult_nonorth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
         const int ncol, const double a, const double b, const double c,
-        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm2,
         const int *dims, const int kpt
 );
 

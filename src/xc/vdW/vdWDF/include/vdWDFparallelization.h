@@ -74,7 +74,9 @@ void Exchange_send_recv_vertices(int *sDMVert, int *rDMVert, int *all_send_verti
  *          contains the number of processes to communicate with along with their ranks
  *          in the union_comm.
  */
-void Set_D2D_Target_AnyDMVert(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, int *rDMVert,
+// void Set_D2D_Target_AnyDMVert(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, int *rDMVert,
+//          MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm);
+void Set_D2D_Target_AnyDMVert(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *sDMVert, int *rDMVert,
          MPI_Comm send_comm, int *sdims, MPI_Comm recv_comm, int *rdims, MPI_Comm union_comm);
 
 void Free_D2D_Target_AnyDMVert(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, MPI_Comm send_comm, MPI_Comm recv_comm);

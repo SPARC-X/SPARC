@@ -20,7 +20,7 @@
 #define temp_tol 1.0E-10
 
 
-double compute_fcut(double r, double sigma_atom, double rcut){
+double compute_fcut(double r, double rcut){
 	double fc;
 
 	if (r >= rcut){
@@ -31,7 +31,7 @@ double compute_fcut(double r, double sigma_atom, double rcut){
 	return fc;
 }
 
-double compute_der_fcut(double r, double sigma_atom, double rcut){
+double compute_der_fcut(double r, double rcut){
 	double d_fc;
 
 	if (r >= rcut){
@@ -44,7 +44,7 @@ double compute_der_fcut(double r, double sigma_atom, double rcut){
 
 
 double compute_hnl(int n, int l, double r, double rcut, double sigma_atom){
-	double fc = compute_fcut(r, sigma_atom, rcut);
+	double fc = compute_fcut(r, rcut);
 
 	double Cr = 4.0*M_PI*fc/sqrt(2*sigma_atom*sigma_atom*M_PI);
 
@@ -99,7 +99,7 @@ double compute_hnl(int n, int l, double r, double rcut, double sigma_atom){
 }
 
 double compute_d_hnl(int n, int l, double r, double rcut, double sigma_atom){
-	double fc = compute_fcut(r, sigma_atom, rcut);
+	double fc = compute_fcut(r, rcut);
 
 	double Cr = 4.0*M_PI*fc/sqrt(2*sigma_atom*sigma_atom*M_PI);
 
@@ -138,7 +138,7 @@ double compute_d_hnl(int n, int l, double r, double rcut, double sigma_atom){
 
 	double d_fc, d_Cr, d_exp_term[N_integration_grid], d_ll_term[N_integration_grid];
 
-	d_fc = compute_der_fcut(r, sigma_atom, rcut);
+	d_fc = compute_der_fcut(r, rcut);
 	d_Cr = 4.0*M_PI*d_fc/sqrt(2*sigma_atom*sigma_atom*M_PI);
 
 	for (int i = 0; i < N_integration_grid; i++){

@@ -90,13 +90,14 @@ void Lap_vec_mult_orth(
     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
     const int ncol, const double a, const double c, const double *x, const int ldi, 
     double *y, const int ldo, MPI_Comm comm, const int *dims
-) 
-{   
-    unsigned i;
+)
+{
+    int i;
+    (void)DMnd; // DMnd is no longer forwarded now that Lap_plus_diag_vec_mult_orth doesn't take it; kept in the signature so Lap_vec_mult can keep passing it through
     // Call the function for (a*Lap+b*v+c)x with b = 0 and v = NULL
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_orth(
-            pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL, 
+            pSPARC, DMVertices, 1, a, 0.0, c, NULL,
             x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, dims
         );
     }
@@ -183,7 +184,7 @@ void stencil_3axis_thread_variable_radius(
 
 
 void stencil_3axis_thread_radius6(
-    const double *x0,    const int radius, 
+    const double *x0,     
     const int stride_y,  const int stride_y_ex, 
     const int stride_z,  const int stride_z_ex,
     const int x_spos,    const int x_epos, 
@@ -272,7 +273,7 @@ void stencil_3axis_thread_v2(
     {
         case 6:
             stencil_3axis_thread_radius6(
-                x0, radius, stride_y,  stride_y_ex, stride_z, stride_z_ex,
+                x0, stride_y,  stride_y_ex, stride_z, stride_z_ex,
                 x_spos, x_epos, y_spos, y_epos, z_spos, z_epos, x_ex_spos, y_ex_spos, z_ex_spos,
                 stencil_coefs, coef_0, b, v0, y
             );
@@ -304,7 +305,7 @@ void stencil_3axis_thread_v2(
  *          if ncol is greater than 1.
  */
 void Lap_plus_diag_vec_mult_orth(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
         const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
         const int *dims
@@ -619,14 +620,16 @@ void Lap_vec_mult_nonorth(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
         const int ncol, const double a, const double c, const double *x, const int ldi,
         double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2, const int *dims
-) 
-{   
-    unsigned i;
+)
+{
+    int i;
+    (void)DMnd; // DMnd is no longer forwarded now that Lap_plus_diag_vec_mult_nonorth doesn't take it; kept in the signature so Lap_vec_mult can keep passing it through
+    (void)comm; // comm is no longer forwarded now that Lap_plus_diag_vec_mult_nonorth only needs comm2; kept in the signature so Lap_vec_mult can keep passing it through
     // Call the function for (a*Lap+b*v+c)x with b = 0 and v = NULL
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_nonorth(
-            pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL, 
-            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, comm2, dims
+            pSPARC, DMVertices, 1, a, 0.0, c, NULL,
+            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm2, dims
         );
     }
 }
@@ -938,9 +941,9 @@ void snd_rcv_buffer(
  *          if ncol is greater than 1.
  */
 void Lap_plus_diag_vec_mult_nonorth(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
         const int ncol, const double a, const double b, const double c, 
-        const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm2,
         const int *dims
 ) 
 {

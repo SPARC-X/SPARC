@@ -66,7 +66,8 @@ void compute_Gvectors(SPARC_OBJ *pSPARC);
  * @param q: the model energy ratio index of the theta vector to compute FFT
  * @param zAxisComm: the cartesion topology communicator linking all z-axis processors (0, 0, z)
  */
-void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
+// void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
+void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm);
 
 /**
  * @brief generating thetas (ps*rho) in real space, then using FFT to transform thetas to reciprocal space. array vdWDFthetaFTs is the output.
@@ -95,7 +96,8 @@ void vdWDF_energy(SPARC_OBJ *pSPARC);
  * @param q: the model energy ratio index of the theta vector to compute FFT
  * @param zAxisComm: the cartesion topology communicator linking all z-axis processors (0, 0, z)
  */
-void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
+// void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm);
+void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm);
 
 /**
  * @brief compute u vectors in reciprocal space, then transform them back to real space by inverse FFT

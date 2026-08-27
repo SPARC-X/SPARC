@@ -94,7 +94,7 @@ t1 = MPI_Wtime();
 
     	for (int l=0; l < mlff_str->natm_train_elemwise[i]; l++){
     		count=0;
-    		for (int k = 0; k <(&highrank_ID_descriptors[i])->len; k++){
+    		for (size_t k = 0; k <(&highrank_ID_descriptors[i])->len; k++){
     			if (l==(&highrank_ID_descriptors[i])->array[k]){
     				count++;
     			}
@@ -150,8 +150,13 @@ void mlff_train_Bayesian(MLFF_Obj *mlff_str){
 	int rank, nprocs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-double t1, t2, t3, t4;
+double t1, t2;
+#ifdef DEBUG
+double t3, t4;
+#endif
+#ifdef DEBUG
 t3 = MPI_Wtime();
+#endif
 
 t1 = MPI_Wtime();
 
@@ -440,10 +445,10 @@ t2 = MPI_Wtime();
 	free(Atb_h);
 	free(b_predict);
 	free(error_b_scaled);
-t4 = MPI_Wtime();
 #ifdef DEBUG
+t4 = MPI_Wtime();
 	if (rank == 0) {
-	    printf("mlff_train_Bayesian took %.3f s.\n", t4 - t3); 
+	    printf("mlff_train_Bayesian took %.3f s.\n", t4 - t3);
 	}
 #endif
 	if (mlff_str->print_mlff_flag == 1 && rank ==0){
@@ -817,17 +822,21 @@ Input:
 Output:
 1. E, F, stress, error_bayesian: Outputs
 */
-void mlff_predict(double *K_predict, MLFF_Obj *mlff_str, double *E,  double* F, double *stress, double* error_bayesian, int natoms ){
+void mlff_predict(double *K_predict, MLFF_Obj *mlff_str, double *E,  double* F, double *stress, double* error_bayesian){
 	int rank;
 	//int quot;
 	double regul;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	int rows, cols;
 
+#ifdef DEBUG
 double t1, t2;
+#endif
 //double t3, t4;
 
+#ifdef DEBUG
 t1 = MPI_Wtime();
+#endif
 
 	if (rank==0){
 		rows = 3*mlff_str->natom_domain + 1 + mlff_str->stress_len;
@@ -864,13 +873,15 @@ t1 = MPI_Wtime();
 	            rows, 1, cols, 1.0, K_predict, rows, mlff_str->weights, cols, 0.0, b_predict, rows);
 	}
 
-t2 = MPI_Wtime();
 #ifdef DEBUG
+t2 = MPI_Wtime();
 	if (rank==0){
-		printf("b_predict calculation took %.3f s.\n", t2 - t1); 
+		printf("b_predict calculation took %.3f s.\n", t2 - t1);
 	}
 #endif
+#ifdef DEBUG
 t1 = MPI_Wtime();
+#endif
 
 	if((mlff_str->mlff_flag == 1) || (mlff_str->mlff_flag == 22)){
 		if (rows > 0){
@@ -909,13 +920,15 @@ t1 = MPI_Wtime();
 
 	}
 
-t2 = MPI_Wtime();
 #ifdef DEBUG
+t2 = MPI_Wtime();
 	if (rank==0){
-		printf("error_bayesian calculation took %.3f s.\n", t2 - t1); 
+		printf("error_bayesian calculation took %.3f s.\n", t2 - t1);
 	}
 #endif
+#ifdef DEBUG
 t1 = MPI_Wtime();
+#endif
 
 	if (rank==0){
 		E[0] = b_predict[0] * mlff_str->std_E + mlff_str->mu_E;
@@ -938,10 +951,10 @@ t1 = MPI_Wtime();
 	  		}
 		}
 	}
-t2 = MPI_Wtime();
 #ifdef DEBUG
+t2 = MPI_Wtime();
 	if (rank==0){
-		printf("E, and F calculation took %.3f s.\n", t2 - t1); 
+		printf("E, and F calculation took %.3f s.\n", t2 - t1);
 	}
 #endif
 	free(b_predict);

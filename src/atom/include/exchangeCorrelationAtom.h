@@ -74,7 +74,8 @@ void pw_spin(int DMnd, double *rho, double *ec, double *vc);
  * @brief   pz correlation - spin polarized 
  *          J.P. Perdew and A. Zunger, PRB 23, 5048 (1981).
  */
-void pz_spin(int DMnd, double *rho, double *ec, double *vc);
+// void pz_spin(int DMnd, double *rho, double *ec, double *vc);
+void pz_spin(void);
 
 
 /**

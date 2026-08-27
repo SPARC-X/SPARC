@@ -19,7 +19,8 @@
  * 
  * @param scf_iter  The scf iteration counter
  */
-void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount, int spn_i);
+// void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount, int spn_i);
+void GaussQuadrature(SPARC_OBJ *pSPARC, int spn_i);
 
 /**
  * @brief   Tridiagonal eigenvalue solver for Gauss method
@@ -141,19 +142,34 @@ void stencil_3axis_thread_sq(
  * @param y (OUT)          : Output domain with original boundary
  *
  */
+// void stencil_3axis_thread_radius6_sq(
+//     const double *x0,    const int radius,
+//     const int stride_y,  const int stride_y_ex,
+//     const int stride_z,  const int stride_z_ex,
+//     const int x_spos,    const int x_epos,
+//     const int y_spos,    const int y_epos,
+//     const int z_spos,    const int z_epos,
+//     const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for
+//     const int z_ex_spos,                       // calc inner part of Lx
+//     const double *stencil_coefs,
+//     const double coef_0, const double b, const double *v0,
+//     const int stride_y_v, const int stride_z_v,
+//     const int istart, const int jstart, const int kstart,
+//     double *y
+// );
 void stencil_3axis_thread_radius6_sq(
-    const double *x0,    const int radius, 
-    const int stride_y,  const int stride_y_ex, 
+    const double *x0,
+    const int stride_y,  const int stride_y_ex,
     const int stride_z,  const int stride_z_ex,
-    const int x_spos,    const int x_epos, 
+    const int x_spos,    const int x_epos,
     const int y_spos,    const int y_epos,
     const int z_spos,    const int z_epos,
-    const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for 
+    const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for
     const int z_ex_spos,                       // calc inner part of Lx
-    const double *stencil_coefs, 
-    const double coef_0, const double b, const double *v0, 
-    const int stride_y_v, const int stride_z_v, 
-    const int istart, const int jstart, const int kstart, 
+    const double *stencil_coefs,
+    const double coef_0, const double b, const double *v0,
+    const int stride_y_v, const int stride_z_v,
+    const int istart, const int jstart, const int kstart,
     double *y
 );
 

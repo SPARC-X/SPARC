@@ -190,7 +190,7 @@ double EentFunc(double t, double lambda_f, double bet, int type) {
  * 
  * TODO:    Add implementation from SQDFT 
  */
-void OverlapCorrection_SQ(SPARC_OBJ *pSPARC) {
+void OverlapCorrection_SQ(void) {
     return;
 }
 

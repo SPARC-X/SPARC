@@ -435,7 +435,7 @@ void compute_Gvectors(SPARC_OBJ *pSPARC)
 
 
 
-void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm)
+void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm)
 {
 #if defined(USE_MKL) // use MKL CDFT
     int rank;
@@ -608,7 +608,7 @@ void theta_generate_FT(SPARC_OBJ *pSPARC, double *rho)
             {
                 gatheredThetaCompl[rigrid] = (double _Complex)gatheredTheta[rigrid];
             }
-            parallel_FFT(gatheredThetaCompl, gatheredThetaFFT, gridsizes, FFTDMnz, q1, pSPARC->zAxisComm);
+            parallel_FFT(gatheredThetaCompl, gatheredThetaFFT, gridsizes, FFTDMnz, pSPARC->zAxisComm);
             for (rigrid = 0; rigrid < gridsizes[0] * gridsizes[1] * FFTDMnz; rigrid++)
             {
                 gatheredThetaFFT_real[rigrid] = creal(gatheredThetaFFT[rigrid]);
@@ -684,7 +684,7 @@ void interpolate_kernel(SPARC_OBJ *pSPARC)
         {
             for (q2 = 0; q2 < q1 + 1; q2++)
             {
-                qpair = kernel_label(q1, q2, nqs);
+                qpair = kernel_label(q1, q2);
                 kernelReciPoints[qpair][rigrid] = a * kernelPhi[qpair][timeOfdk - 1] + b * kernelPhi[qpair][timeOfdk] + (c * d2Phidk2[qpair][timeOfdk - 1] + d * d2Phidk2[qpair][timeOfdk]);
             }
         }
@@ -725,7 +725,7 @@ void vdWDF_energy(SPARC_OBJ *pSPARC)
     { // compose vector u s in reciprocal space
         for (q1 = 0; q1 < nqs; q1++)
         { // loop over q2 and q1 (model energy ratio pairs)
-            qpair = kernel_label(q1, q2, nqs);
+            qpair = kernel_label(q1, q2);
             for (rigrid = 0; rigrid < DMnd; rigrid++)
             {
                 uFTs[q2][rigrid] += kernelReciPoints[qpair][rigrid] * thetaFTs[q1][rigrid]; // like the previous ps array, uFTs[q2][rigrid] at here is u(rigrid, q2) in m
@@ -763,7 +763,7 @@ Functions above are related to generating thetas (ps*rho) and integrating energy
 /*
 Functions below are related to generating u vectors, transforming them to real space and computing vdW-DF potential.
 */
-void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, int q, MPI_Comm zAxisComm)
+void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm)
 {
 #if defined(USE_MKL) // use MKL CDFT
     int rank;
@@ -918,7 +918,7 @@ void u_generate_iFT(SPARC_OBJ *pSPARC)
             {
                 gathereduFT[rigrid] = gathereduFT_real[rigrid] + gathereduFT_imag[rigrid] * I;
             }
-            parallel_iFFT(gathereduFT, gathereduCompl, gridsizes, FFTDMnz, q1, pSPARC->zAxisComm);
+            parallel_iFFT(gathereduFT, gathereduCompl, gridsizes, FFTDMnz, pSPARC->zAxisComm);
             for (rigrid = 0; rigrid < gridsizes[0] * gridsizes[1] * FFTDMnz; rigrid++)
             {
                 gatheredu[rigrid] = creal(gathereduCompl[rigrid]); // MKL original iFFT functions do not divide the iFFT results by N

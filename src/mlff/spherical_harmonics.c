@@ -165,9 +165,9 @@ void sph_harmonics(const double theta, const double phi, const int LL,
 	(void)memsize_Y;
 
 	P = (double *) malloc(sizeof(double)*memsize_A_B_P);
-	for ( size_t l =2; l <= LL ; l++) {
+	for ( int l =2; l <= LL ; l++) {
 		double ls = l *l , lm1s = (l -1) *( l -1) ;
-		for ( size_t m =0; m <l -1; m ++) {
+		for ( int m =0; m <l -1; m ++) {
 			double ms = m * m ;
 			A[ PT(l, m) ] = sqrt ((4* ls -1.0) /( ls - ms ) ) ;
 			B[ PT(l, m) ] = - sqrt (( lm1s - ms ) /(4* lm1s -1.0) ) ;

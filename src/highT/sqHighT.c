@@ -50,13 +50,15 @@
  * 
  * @param scf_iter  The scf iteration counter
  */
-void GaussQuadrature_highT(SPARC_OBJ *pSPARC, int SCFCount) {
+void GaussQuadrature_highT(SPARC_OBJ *pSPARC) {
     if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return;
     int nd, rank;
-    int *nloc, DMnx, DMny, DMnz, DMnd;    
+    int *nloc, DMnx, DMny, DMnz, DMnd;
     int Nx_loc, Ny_loc;
     double lambda_min, lambda_max, *t0;
+#ifdef DEBUG
     double time1, time2;
+#endif
     SQ_OBJ  *pSQ = pSPARC->pSQ;
 
     nloc = pSQ->nloc;

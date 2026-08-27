@@ -143,6 +143,7 @@ double **submatrix(double **a, long oldrl, long oldrh, long oldcl, long oldch,
 	long newrl, long newcl)
 /* point a submatrix [newrl..][newcl..] to a[oldrl..oldrh][oldcl..oldch] */
 {
+	(void)oldch; // oldch is part of the standard Numerical Recipes submatrix() signature but is not needed to compute the submatrix
 	long i,j,nrow=oldrh-oldrl+1,ncol=oldcl-newcl;
 	double **m;
 
@@ -219,36 +220,42 @@ double ***f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
 void free_vector(double *v, long nl, long nh)
 /* free a double vector allocated with vector() */
 {
+	(void)nh; // nh mirrors vector()'s signature but is not needed to free the block
 	free((FREE_ARG) (v+nl-NR_END));
 }
 
 void free_ivector(int *v, long nl, long nh)
 /* free an int vector allocated with ivector() */
 {
+	(void)nh; // nh mirrors ivector()'s signature but is not needed to free the block
 	free((FREE_ARG) (v+nl-NR_END));
 }
 
 void free_cvector(unsigned char *v, long nl, long nh)
 /* free an unsigned char vector allocated with cvector() */
 {
+	(void)nh; // nh mirrors cvector()'s signature but is not needed to free the block
 	free((FREE_ARG) (v+nl-NR_END));
 }
 
 void free_lvector(unsigned long *v, long nl, long nh)
 /* free an unsigned long vector allocated with lvector() */
 {
+	(void)nh; // nh mirrors lvector()'s signature but is not needed to free the block
 	free((FREE_ARG) (v+nl-NR_END));
 }
 
 void free_dvector(double *v, long nl, long nh)
 /* free a double vector allocated with dvector() */
 {
+	(void)nh; // nh mirrors dvector()'s signature but is not needed to free the block
 	free((FREE_ARG) (v+nl-NR_END));
 }
 
 void free_matrix(double **m, long nrl, long nrh, long ncl, long nch)
 /* free a double matrix allocated by matrix() */
 {
+	(void)nrh; (void)nch; // nrh, nch mirror matrix()'s signature but are not needed to free the block
 	free((FREE_ARG) (m[nrl]+ncl-NR_END));
 	free((FREE_ARG) (m+nrl-NR_END));
 }
@@ -256,6 +263,7 @@ void free_matrix(double **m, long nrl, long nrh, long ncl, long nch)
 void free_dmatrix(double **m, long nrl, long nrh, long ncl, long nch)
 /* free a double matrix allocated by dmatrix() */
 {
+	(void)nrh; (void)nch; // nrh, nch mirror dmatrix()'s signature but are not needed to free the block
 	free((FREE_ARG) (m[nrl]+ncl-NR_END));
 	free((FREE_ARG) (m+nrl-NR_END));
 }
@@ -263,6 +271,7 @@ void free_dmatrix(double **m, long nrl, long nrh, long ncl, long nch)
 void free_imatrix(int **m, long nrl, long nrh, long ncl, long nch)
 /* free an int matrix allocated by imatrix() */
 {
+	(void)nrh; (void)nch; // nrh, nch mirror imatrix()'s signature but are not needed to free the block
 	free((FREE_ARG) (m[nrl]+ncl-NR_END));
 	free((FREE_ARG) (m+nrl-NR_END));
 }
@@ -270,12 +279,14 @@ void free_imatrix(int **m, long nrl, long nrh, long ncl, long nch)
 void free_submatrix(double **b, long nrl, long nrh, long ncl, long nch)
 /* free a submatrix allocated by submatrix() */
 {
+	(void)nrh; (void)ncl; (void)nch; // nrh, ncl, nch mirror submatrix()'s signature but are not needed to free the block
 	free((FREE_ARG) (b+nrl-NR_END));
 }
 
 void free_convert_matrix(double **b, long nrl, long nrh, long ncl, long nch)
 /* free a matrix allocated by convert_matrix() */
 {
+	(void)nrh; (void)ncl; (void)nch; // nrh, ncl, nch mirror convert_matrix()'s signature but are not needed to free the block
 	free((FREE_ARG) (b+nrl-NR_END));
 }
 
@@ -283,6 +294,7 @@ void free_f3tensor(double ***t, long nrl, long nrh, long ncl, long nch,
 	long ndl, long ndh)
 /* free a double f3tensor allocated by f3tensor() */
 {
+	(void)nrh; (void)nch; (void)ndh; // nrh, nch, ndh mirror f3tensor()'s signature but are not needed to free the block
 	free((FREE_ARG) (t[nrl][ncl]+ndl-NR_END));
 	free((FREE_ARG) (t[nrl]+ncl-NR_END));
 	free((FREE_ARG) (t+nrl-NR_END));

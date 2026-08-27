@@ -57,13 +57,15 @@
  * 
  * @param scf_iter  The scf iteration counter
  */
-void GaussQuadrature(SPARC_OBJ *pSPARC, int SCFCount, int spn_i) {
+void GaussQuadrature(SPARC_OBJ *pSPARC, int spn_i) {
     if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return;
     int nd, rank;
-    int *nloc, DMnx, DMny, DMnz, DMnd;    
+    int *nloc, DMnx, DMny, DMnz, DMnd;
     int Nx_loc, Ny_loc;
     double lambda_min, lambda_max, *t0;
+#ifdef DEBUG
     double time1, time2;
+#endif
     SQ_OBJ  *pSQ = pSPARC->pSQ;
 
     nloc = pSQ->nloc;
@@ -144,7 +146,7 @@ void LanczosAlgorithm_gauss(SPARC_OBJ *pSPARC, double *vkm1, double *lambda_min,
     size_t le_count = 0;
     double *lanczos_vec = (pSPARC->sqHighTFlag == 1) ? pSQ->lanczos_vec_all[nd + spn_i*DMnd_SQ] : pSQ->lanczos_vec;
 
-    size_t i;
+    int i;
     for (i = 0; i < Nd_loc; i++) {
         vkm1[i] = vkm1[i]/val;
         lanczos_vec[le_count ++] = vkm1[i];
@@ -359,7 +361,7 @@ void HsubTimesVec(SPARC_OBJ *pSPARC, const double *x, const int nd, double *Hx)
     // Apply Laplacian 
     Lap_vec_mult_orth_SQ(pSPARC, x, -0.5, pSQ->Veff_PR, nd, Hx);
     // Apply nonlocal projector
-    Vnl_vec_mult_SQ(pSPARC, pSQ->Nd_loc, pSPARC->Atom_Influence_nloc_SQ[nd], 
+    Vnl_vec_mult_SQ(pSPARC, pSPARC->Atom_Influence_nloc_SQ[nd],
                   pSPARC->nlocProj_SQ[nd], x, Hx);
     
     if ((pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0)) {
@@ -488,7 +490,7 @@ void stencil_3axis_thread_sq(
     {
         case 6:
             stencil_3axis_thread_radius6_sq(
-                x0, radius, stride_y,  stride_y_ex, stride_z, stride_z_ex,
+                x0, stride_y,  stride_y_ex, stride_z, stride_z_ex,
                 x_spos, x_epos, y_spos, y_epos, z_spos, z_epos, x_ex_spos, y_ex_spos, z_ex_spos,
                 stencil_coefs, coef_0, b, v0, stride_y_v, stride_z_v, istart, jstart, kstart, y
             );
@@ -616,18 +618,18 @@ void stencil_3axis_thread_variable_radius_sq(
  *
  */
 void stencil_3axis_thread_radius6_sq(
-    const double *x0,    const int radius, 
-    const int stride_y,  const int stride_y_ex, 
+    const double *x0,
+    const int stride_y,  const int stride_y_ex,
     const int stride_z,  const int stride_z_ex,
-    const int x_spos,    const int x_epos, 
+    const int x_spos,    const int x_epos,
     const int y_spos,    const int y_epos,
     const int z_spos,    const int z_epos,
-    const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for 
+    const int x_ex_spos, const int y_ex_spos,  // this allows us to give x as x0 for
     const int z_ex_spos,                       // calc inner part of Lx
-    const double *stencil_coefs, 
-    const double coef_0, const double b, const double *v0, 
-    const int stride_y_v, const int stride_z_v, 
-    const int istart, const int jstart, const int kstart, 
+    const double *stencil_coefs,
+    const double coef_0, const double b, const double *v0,
+    const int stride_y_v, const int stride_z_v,
+    const int istart, const int jstart, const int kstart,
     double *y
 )
 {

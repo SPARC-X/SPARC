@@ -52,8 +52,8 @@ void Calculate_elecDens_SQ(SPARC_OBJ *pSPARC, int SCFcount) {
         int spn_g = spn_i + pSPARC->spin_start_indx;
         TransferVeff_sq2sqext(pSPARC, pSQ->Veff_loc_SQ + spn_g * DMnd, pSQ->Veff_PR);
 
-        // perform Gauss Quadrature 
-        GaussQuadrature(pSPARC, SCFcount, spn_i);
+        // perform Gauss Quadrature
+        GaussQuadrature(pSPARC, spn_i);
     }
 
     // find Fermi energy (Efermi)
@@ -63,7 +63,7 @@ void Calculate_elecDens_SQ(SPARC_OBJ *pSPARC, int SCFcount) {
     Calculate_elecDens_Gauss(pSPARC);
 
     if (pSPARC->spin_typ == 1) {
-        Calculate_Magz(pSPARC, pSPARC->Nd_d, pSPARC->mag, pSPARC->electronDens+pSPARC->Nd_d, pSPARC->electronDens+2*pSPARC->Nd_d); // magz
+        Calculate_Magz(pSPARC->Nd_d, pSPARC->mag, pSPARC->electronDens+pSPARC->Nd_d, pSPARC->electronDens+2*pSPARC->Nd_d); // magz
     }
 }
 

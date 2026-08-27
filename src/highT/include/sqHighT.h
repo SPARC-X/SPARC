@@ -18,7 +18,8 @@
  * 
  * @param scf_iter  The scf iteration counter
  */
-void GaussQuadrature_highT(SPARC_OBJ *pSPARC, int SCFCount);
+// void GaussQuadrature_highT(SPARC_OBJ *pSPARC, int SCFCount);
+void GaussQuadrature_highT(SPARC_OBJ *pSPARC);
 
 
 #endif 

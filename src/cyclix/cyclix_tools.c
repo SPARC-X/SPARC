@@ -258,6 +258,7 @@ void CalculateDistance_cyclix(SPARC_OBJ *pSPARC, double x, double y, double z, d
 
 void Jacobi_preconditioner_cyclix(SPARC_OBJ *pSPARC, int N, double c, double *r, double *f, MPI_Comm comm) {
     // Warning: Assumed phi_domain communicator calls it
+    (void)comm; // comm is unused here but kept so the caller can pass it through without its own param going unused
     int i, j, k, count;
     int DMnx = pSPARC->Nx_d;
     int DMny = pSPARC->Ny_d;

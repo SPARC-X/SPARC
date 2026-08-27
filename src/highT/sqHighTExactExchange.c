@@ -827,7 +827,10 @@ void Calculate_exact_exchange_stress_SQ(SPARC_OBJ *pSPARC) {
     // exact exchange stress are calculated in SQ force calculation.
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG    
+#ifndef DEBUG
+    (void)pSPARC; // pSPARC is only used for printing under #ifdef DEBUG
+#endif
+#ifdef DEBUG
     if (!rank){
         printf("\nExact exchange contribution to stress");
         PrintStress(pSPARC, pSPARC->stress_exx, NULL);
@@ -890,7 +893,10 @@ void Calculate_exact_exchange_pressure_SQ(SPARC_OBJ *pSPARC) {
     // exact exchange pressure are calculated in SQ force calculation.
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG    
+#ifndef DEBUG
+    (void)pSPARC; // pSPARC is only used for printing under #ifdef DEBUG
+#endif
+#ifdef DEBUG
     if (!rank){
         printf("Uncounted Pressure contribution from exact exchange: %.15f Ha\n",pSPARC->pres_exx);
     } 

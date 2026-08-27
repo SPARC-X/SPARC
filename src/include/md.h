@@ -90,7 +90,7 @@ void wraparound_velocity(SPARC_OBJ *pSPARC, double shift, int dir, int loc);
 /*
  @ brief: function to write all relevant DFT quantities generated during MD simulation
 */
-void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *maxvel, double *mindis);
+void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *maxvel, double *mindis); // avgvel/maxvel needed for DEBUG-mode printout
 
 /* 
  @ brief function to evaluate the qunatities of interest in a MD simulation

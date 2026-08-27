@@ -3261,7 +3261,7 @@ double Ecut2h(double Ecut, int FDn) {
 /**
  * @brief   Calculate the weight of a given k-point.
  */
-double kpointWeight(double kx,double ky,double kz) {
+double kpointWeight(double kx) {
     /*
     * Appropriate weights for k-point sampling
     * we find the weight of the x-direction k point. If the kx has 0, then the weight is 1.0
@@ -3826,7 +3826,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                      SPARC (version August 06, 2026)                    *\n");
+    fprintf(output_fp,"*                      SPARC (version August 27, 2026)                    *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);

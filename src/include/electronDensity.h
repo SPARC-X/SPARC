@@ -33,15 +33,18 @@ void Calculate_Magx_Magy_psi(SPARC_OBJ *pSPARC, double *mag);
 /*
 @ brief: calculate magz
 */ 
-void Calculate_Magz(SPARC_OBJ *pSPARC, int DMnd, double *magz, double *rhoup, double *rhodw);
+// void Calculate_Magz(SPARC_OBJ *pSPARC, int DMnd, double *magz, double *rhoup, double *rhodw);
+void Calculate_Magz(int DMnd, double *magz, double *rhoup, double *rhodw);
 
 /*
 @ brief: calculate norm of magnetization
 */ 
-void Calculate_Magnorm(SPARC_OBJ *pSPARC, int DMnd, double *magx, double *magy, double *magz, double *magnorm);
+// void Calculate_Magnorm(SPARC_OBJ *pSPARC, int DMnd, double *magx, double *magy, double *magz, double *magnorm);
+void Calculate_Magnorm(int DMnd, double *magx, double *magy, double *magz, double *magnorm);
 
 /*
 @ brief: calculate diagnoal density
 */ 
-void Calculate_diagonal_Density(SPARC_OBJ *pSPARC, int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22);
+void Calculate_diagonal_Density(int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22);
+// void Calculate_diagonal_Density(SPARC_OBJ *pSPARC, int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22);
 #endif // ELECTRONDENSITY_H

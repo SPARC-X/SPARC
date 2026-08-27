@@ -275,7 +275,7 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         switch (pSPARC->ixc[1])
         {
         case 1:
-            pz_spin(DMnd, rho, ec, vc);
+            pz_spin();
             break;
         case 2:
             pw_spin(DMnd, rho, ec, vc);
@@ -564,7 +564,7 @@ void pbex(int DMnd, double *rho, double *sigma, int iflag, double *ex, double *v
         double coeffss = (1.0/4.0) * sixpi2m1_3 * sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
         double ss = (sigma[i]/4.0) * coeffss; // s^2
 
-        double divss, dfxdss;
+        double divss = 0.0, dfxdss = 0.0;
         if (iflag == 1 || iflag == 2 || iflag == 4) {
             divss = 1.0/(1.0 + mu_divkappa * ss);
             dfxdss = mu * (divss * divss);
@@ -869,7 +869,7 @@ void pw_spin(int DMnd, double *rho, double *ec, double *vc) {
  * @brief   pz correaltion - spin polarized 
  *          J.P. Perdew and A. Zunger, PRB 23, 5048 (1981).
  */
-void pz_spin(int DMnd, double *rho, double *ec, double *vc) {
+void pz_spin(void) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (!rank) printf("ERROR: LDA_PZ for spin polarized case is not implemented!\n");
@@ -913,7 +913,7 @@ void pbex_spin(int DMnd, double *rho, double *sigma, int iflag, double *ex, doub
             double coeffss = (1.0/4.0) * sixpi2m1_3 * sixpi2m1_3 * (rho_inv * rho_inv * rhomot * rhomot);
             double ss = sigma[DMnd + spn_i*DMnd + i] * coeffss;
             
-            double divss, dfxdss;
+            double divss = 0.0, dfxdss = 0.0;
             if (iflag == 1 || iflag == 2 || iflag == 4) {
                 divss = 1.0/(1.0 + mu_divkappa * ss);
                 dfxdss = mu * (divss * divss);

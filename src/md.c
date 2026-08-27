@@ -1235,10 +1235,11 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
         double t1, t2;
 #endif
 
-    int p, i;
     // scaling factor
-    double scal = pSPARC->scale; // the ratio between length
+	int p;
 #ifdef DEBUG
+	int i;
+	double scal = pSPARC->scale; // the ratio between length
     if(rank == 0){
     	printf("scal: %12.6f\n", scal);
     }
@@ -2848,6 +2849,7 @@ void wraparound_velocity(SPARC_OBJ *pSPARC, double shift, int dir, int loc) {
  @ brief: function to write all relevant DFT quantities generated during MD simulation
 */
 void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *maxvel, double *mindis) {
+    (void)avgvel; (void)maxvel; // only used under #ifdef DEBUG (:AVGV:/:MAXV: printout below)
     int atm;
 
     // Print Description of all variables

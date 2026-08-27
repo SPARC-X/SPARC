@@ -4,9 +4,11 @@
 #include "mlff_types.h"
 #include "isddft.h"
 
-double compute_fcut(double r, double sigma_atom, double rcut);
+// double compute_fcut(double r, double sigma_atom, double rcut);
+double compute_fcut(double r, double rcut);
 
-double compute_der_fcut(double r, double sigma_atom, double rcut);
+// double compute_der_fcut(double r, double sigma_atom, double rcut);
+double compute_der_fcut(double r, double rcut);
 
 double compute_hnl(int n, int l, double r, double rcut, double sigma_atom);
 

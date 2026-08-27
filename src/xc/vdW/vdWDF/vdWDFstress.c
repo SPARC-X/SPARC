@@ -190,8 +190,8 @@ void interpolate_dKerneldK(SPARC_OBJ *pSPARC, double **dKerneldLength) {
         ddk = ((3*b*b -1.0)/6.0) * dk;
         for (q1 = 0; q1 < nqs; q1++) {
             for (q2 = 0; q2 < q1 + 1; q2++) {
-                qpair = kernel_label(q1, q2, nqs);
-                dKerneldLength[qpair][rigrid] = adk*kernelPhi[qpair][timeOfdk - 1] + bdk*kernelPhi[qpair][timeOfdk] + 
+                qpair = kernel_label(q1, q2);
+                dKerneldLength[qpair][rigrid] = adk*kernelPhi[qpair][timeOfdk - 1] + bdk*kernelPhi[qpair][timeOfdk] +
                     (cdk*d2Phidk2[qpair][timeOfdk - 1] + ddk*d2Phidk2[qpair][timeOfdk]);
             }
         }
@@ -237,7 +237,7 @@ void vdWDF_stress_kernel(SPARC_OBJ *pSPARC, double *stressKernel) {
     double dKernelValue;
     for (q2 = 0; q2 < nqs; q2++) {
         for (q1 = 0; q1 < nqs; q1++) {
-            qpair = kernel_label(q1, q2, nqs);
+            qpair = kernel_label(q1, q2);
             for (rigrid = 0; rigrid < DMnd; rigrid++) {
                 q1riThetaFTs = thetaFTs[q1][rigrid];
                 q2riThetaFTs = thetaFTs[q2][rigrid];

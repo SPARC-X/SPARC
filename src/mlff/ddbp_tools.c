@@ -181,7 +181,7 @@ void delete_dyarray(dyArray *a)
  */
 void print_dyarray(const dyArray *a) {
     printf("([");
-    for (int i = 0; i < a->len; i++) {
+    for (size_t i = 0; i < a->len; i++) {
         if (i > 0) printf(" ");
         printf("%d", a->array[i]);
     }
@@ -201,7 +201,7 @@ void show_dyarray(const dyArray *a) {
         printf("%d", a->array[i]);
     }
     printf(" ...");
-    for (int i = a->len-5; i < a->len; i++) {
+    for (size_t i = a->len-5; i < a->len; i++) {
         if (i > 0) printf(" ");
         printf("%d", a->array[i]);
     }

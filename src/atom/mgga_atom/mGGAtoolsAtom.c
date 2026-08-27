@@ -73,7 +73,7 @@ void kineticEnergyDensityAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
     }
 
     // Extract gradient matrix
-    double *D = (double *)malloc((Nd - 1) * (Nd - 1) * sizeof(double));
+    double *D = (double *)calloc((Nd - 1) * (Nd - 1), sizeof(double));
     for (int j = 1; j < Nd; j++) {  // Iterate column-first
         for (int i = 1; i < Nd; i++) {
             D[(i - 1) + (j - 1) * (Nd - 1)] = pSPARC_ATOM->grad[i + j * (Nd+1)];  // Proper column-major indexing

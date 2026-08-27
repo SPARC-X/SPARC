@@ -334,7 +334,7 @@ void init_new_MLFF(SPARC_OBJ *pSPARC, MLFF_Obj *mlff_str) {
 	int rank;
 	double t1, t2;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	intialize_print_MLFF(mlff_str, pSPARC);
+	intialize_print_MLFF(mlff_str);
 	pSPARC->last_train_iter = -1;
 	// Puts coords into cart if MD or Relax flag = 1
 t1 = MPI_Wtime();
@@ -740,7 +740,7 @@ void pretrain_MLFF_model(
 				count++;
 			}
 		}
-		get_domain_decompose_mlff_natom(natom_data[i], pSPARC->Ntypes, pSPARC->nAtomv, nprocs, rank,  &natom_domain);
+		get_domain_decompose_mlff_natom(natom_data[i], nprocs, rank,  &natom_domain);
 		atom_idx_domain = (int *)malloc(sizeof(int)*natom_domain);
 		el_idx_domain = (int *)malloc(sizeof(int)*natom_domain);
 		get_domain_decompose_mlff_idx(natom_data[i], pSPARC->Ntypes, pSPARC->nAtomv, nprocs, rank, natom_domain, atom_idx_domain, el_idx_domain);
@@ -796,8 +796,6 @@ t2 = MPI_Wtime();
 
 void get_domain_decompose_mlff_natom(
 	int natom,
-	int nelem,
-	int *nAtomv,
 	int nprocs,
 	int rank,
 	int *natom_domain)
@@ -1167,7 +1165,7 @@ t2 = MPI_Wtime();
 	int index[] = {0,1,2,3,4,5};
 	int BC[] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
 	reshape_stress(pSPARC->cell_typ, BC, index);
-	if (pSPARC->mlff_pressure_train_flag){
+	if (pSPARC->mlff_pressure_train_flag == 0){
 		for(int i = 0; i < mlff_str->stress_len; i++){
 			pSPARC->stress[index[i]] = stress_predict[i];
 			if(pSPARC->BC == 2)
@@ -1407,7 +1405,7 @@ t1 = MPI_Wtime();
 	// Only atoms whose force error was larger than the threshold
 	X3_toadd = (double **) malloc(sizeof(double *)* (((&mlff_str->atom_idx_addtrain))->len));
 	//int atom_typ1[((&mlff_str->atom_idx_addtrain))->len];
-	for (int i =0; i<(((&mlff_str->atom_idx_addtrain))->len); i++){
+	for (size_t i =0; i<(((&mlff_str->atom_idx_addtrain))->len); i++){
 		X3_toadd[i] = (double *) malloc(sizeof(double)*size_X3);
 		//atom_typ1[i] = atomtyp[((&mlff_str->atom_idx_addtrain))->array[i]];
 		for (int j=0; j < size_X3; j++){
@@ -1439,7 +1437,7 @@ t2 = MPI_Wtime();
 t1 = MPI_Wtime();
 	int temp_idx;
 	for (int i=0; i < nelem; i++){
-		for (int j=0; j<(highrank_ID_descriptors[i]).len; j++){
+		for (size_t j=0; j<(highrank_ID_descriptors[i]).len; j++){
 			temp_idx = cum_natm_elem[i] + (highrank_ID_descriptors[i]).array[j];
 			add_newtrain_cols(X3_toadd[temp_idx], i, mlff_str);
 		}
@@ -1466,7 +1464,7 @@ t2 = MPI_Wtime();
 	for (int i=0; i <nelem; i++){
 		delete_dyarray(&highrank_ID_descriptors[i]);
 	}
-	for (int i =0; i<(((&mlff_str->atom_idx_addtrain))->len); i++){
+	for (size_t i =0; i<(((&mlff_str->atom_idx_addtrain))->len); i++){
 		free(X3_toadd[i]);
 	}
 	free(X3_toadd); 
@@ -1592,7 +1590,7 @@ t2 = MPI_Wtime();
 		fprintf(fp_mlff, "Kpredict calculation done done! Time taken: %.3f s\n", t2-t1);
 	}
 t1 = MPI_Wtime();
-	mlff_predict(K_predict_col_major, mlff_str, E_predict, F_predict_local, stress_predict, bayesian_error_local, pSPARC->n_atom);
+	mlff_predict(K_predict_col_major, mlff_str, E_predict, F_predict_local, stress_predict, bayesian_error_local);
 	MPI_Bcast(E_predict, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(stress_predict, mlff_str->stress_len, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	int local_natoms[nprocs];

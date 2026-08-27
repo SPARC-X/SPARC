@@ -66,9 +66,13 @@ void pretrain_MLFF_model(
  * @brief      Gets the number of atoms on each processor
  */
 
+  // void get_domain_decompose_mlff_natom(int natom,
+  // int nelem,
+  // int *nAtomv,
+  // int nprocs,
+  // int rank,
+  // int *natom_domain);
   void get_domain_decompose_mlff_natom(int natom,
-  int nelem,
-  int *nAtomv,
   int nprocs,
   int rank,
   int *natom_domain);

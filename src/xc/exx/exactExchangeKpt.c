@@ -272,7 +272,9 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
     assert(M != NULL);
         
     double _Complex alpha = 1.0, beta = 0.0;
+#ifdef DEBUG
     double t1, t2;
+#endif
 
     // i -- kpt_k, j -- kpt_q
     for (int kpt_k = 0; kpt_k < pSPARC->Nkpts_kptcomm; kpt_k ++) {
@@ -284,10 +286,12 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
             // in case of hydrogen 
             if (pSPARC->Nstates_occ_list[min(spinor, pSPARC->Nspin_spincomm-1)] == 0) continue;
 
+            #ifdef DEBUG
             t1 = MPI_Wtime();
+            #endif
             #ifdef ACCELGT
             if (pSPARC->useACCEL == 1) {
-                ACCEL_ZGEMM (CblasColMajor, CblasConjTrans, CblasNoTrans, 
+                ACCEL_ZGEMM (CblasColMajor, CblasConjTrans, CblasNoTrans,
                     Nstates_occ, pSPARC->Nband_bandcomm_M, DMnd, 
                     &alpha, Xi_kpt_ + spinor*DMnd, DMndsp, psi + kpt_k*size_k + spinor*DMnd, DMndsp,
                     &beta, M + pSPARC->band_start_indx*Nstates_occ, Nstates_occ);
@@ -308,15 +312,15 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
 
             gather_blacscomm_kpt(pSPARC, Nstates_occ, Nstates_occ, M);
 
-            t2 = MPI_Wtime();
         #ifdef DEBUG
-            if(!rank && !spinor) printf("rank = %2d, finding M = psi'* W took %.3f ms\n",rank,(t2-t1)*1e3); 
+            t2 = MPI_Wtime();
+            if(!rank && !spinor) printf("rank = %2d, finding M = psi'* W took %.3f ms\n",rank,(t2-t1)*1e3);
         #endif
 
             // perform Cholesky Factorization on -M
             // M = chol(-M), upper triangular matrix
-            // M = -0.5*(M + M') seems to lead to numerical issue. 
-            // TODO: Check if it's required to "symmetrize" M.             
+            // M = -0.5*(M + M') seems to lead to numerical issue.
+            // TODO: Check if it's required to "symmetrize" M.
             int info = 0;
             if (rank_dmcomm == 0) {
                 for (int i = 0; i < Nstates_occ * Nstates_occ; i++)   M[i] = -M[i];
@@ -335,13 +339,14 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
                 MPI_Bcast(M, Nstates_occ*Nstates_occ, MPI_DOUBLE_COMPLEX, 0, pSPARC->dmcomm);
             }
                         
-            t1 = MPI_Wtime();
             #ifdef DEBUG
-            if (!rank && !spinor) 
+            t1 = MPI_Wtime();
+            if (!rank && !spinor)
                 printf("==Cholesky Factorization: "
-                    "info = %d, computing Cholesky Factorization using zpotrf: %.3f ms\n", 
+                    "info = %d, computing Cholesky Factorization using zpotrf: %.3f ms\n",
                     info, (t1 - t2)*1e3);
             #endif
+            (void)info; // info is only used for printing under #ifdef DEBUG
 
             // Xi = WM^(-1)
             #ifdef ACCELGT
@@ -355,9 +360,9 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
                         CblasNonUnit, DMnd, Nstates_occ, &alpha, M, Nstates_occ, Xi_kpt_ + spinor*DMnd, DMndsp);
             }
 
-            t2 = MPI_Wtime();
             #ifdef DEBUG
-            if (!rank && !spinor) 
+            t2 = MPI_Wtime();
+            if (!rank && !spinor)
                 printf("==Triangular matrix equation: "
                     "Solving triangular matrix equation using ztrsm: %.3f ms\n", (t2 - t1)*1e3);
             #endif

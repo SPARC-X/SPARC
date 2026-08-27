@@ -760,7 +760,7 @@ void CalculateLocalInnerProductIndex(SPARC_OBJ *pSPARC)
 /**
  * @brief   Calculate Vhub times vectors in a matrix-free way.
  */
-void Vhub_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
+void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
                    LOC_PROJ_OBJ *locProj, int ncol, double *x, int ldi, double *Hx, int ldo, int spin, MPI_Comm comm)
 {
 
@@ -912,7 +912,7 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_LOC_INFLUENCE_OBJ *At
 /**
  * @brief   Calculate Vhub times vectors in a matrix-free way with Bloch factor.
  */
- void Vhub_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
+ void Vhub_vec_mult_kpt(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
     LOC_PROJ_OBJ *locProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int spin, int kpt, MPI_Comm comm)
 {
     int i, n, atm_idx;

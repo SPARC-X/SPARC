@@ -46,8 +46,7 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
     if (pSPARC->CyclixFlag) {
         Gradient_vectors_dir_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, ldi, Dx, ldo, dir, comm, dims);
     } else {
-        for (int i = 0; i < ncol; i++)
-            Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, comm, dims);    
+        for (int i = 0; i < ncol; i++) Gradient_vec_dir(pSPARC, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, comm, dims);  
     }
 }
 
@@ -58,7 +57,7 @@ void Gradient_vectors_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DM
  *
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
-void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+void Gradient_vec_dir(const SPARC_OBJ *pSPARC, const int *DMVertices,
                       const int ncol, const double c, const double *x, const int ldi,
                       double *Dx,  const int ldo, const int dir, MPI_Comm comm, const int* dims)
 {
@@ -362,7 +361,7 @@ void Calc_DX_variable_radius(
 
 void Calc_DX_radius6(
     const double *X,       double *DX,
-    const int radius,      const int stride_X,
+    const int stride_X,
     const int stride_y_X,  const int stride_y_DX,
     const int stride_z_X,  const int stride_z_DX,
     const int x_DX_spos,   const int x_DX_epos,
@@ -423,7 +422,7 @@ void Calc_DX(
     {
         case 6:
             Calc_DX_radius6(
-                X, DX, radius, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
+                X, DX, stride_X, stride_y_X, stride_y_DX, stride_z_X, stride_z_DX,
                 x_DX_spos, x_DX_epos, y_DX_spos, y_DX_epos, z_DX_spos, z_DX_epos,
                 x_X_spos, y_X_spos, z_X_spos, stencil_coefs, c
             );

@@ -83,34 +83,42 @@ void Calculate_ionic_stress_cyclix(SPARC_OBJ *pSPARC){
 
 void Calculate_electronic_stress_cyclix(SPARC_OBJ *pSPARC) {
 	int rank;
-    double t1, t2;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    // find exchange-correlation components of stress
-    t1 = MPI_Wtime();
-    Calculate_XC_stress_cyclix(pSPARC);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    double t1, t2;
+#endif
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // find exchange-correlation components of stress
+#ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    Calculate_XC_stress_cyclix(pSPARC);
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating exchange-correlation stress components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
-    
+
     // find local stress components
-    t1 = MPI_Wtime();
-    Calculate_local_stress_cyclix(pSPARC);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    Calculate_local_stress_cyclix(pSPARC);
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating local stress components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
-    
+
     // find nonlocal + kinetic stress components
+#ifdef DEBUG
     t1 = MPI_Wtime();
+#endif
     if(pSPARC->isGammaPoint) {
         Calculate_nonlocal_kinetic_stress_cyclix(pSPARC);
     } else {
-        Calculate_nonlocal_kinetic_stress_kpt_cyclix(pSPARC); 
+        Calculate_nonlocal_kinetic_stress_kpt_cyclix(pSPARC);
     }
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t2 = MPI_Wtime();
     if(!rank) printf("Time for calculating nonlocal+kinetic stress components: %.3f ms\n", (t2 - t1)*1e3);
 #endif
 

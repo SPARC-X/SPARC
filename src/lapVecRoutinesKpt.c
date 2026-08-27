@@ -68,13 +68,14 @@ void Lap_vec_mult_orth_kpt(
         const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices, 
         const int ncol, const double a, const double c, const double _Complex *x, const int ldi,
         double _Complex *y, const int ldo, MPI_Comm comm, const int *dims, const int kpt
-) 
-{   
-    unsigned i;
+)
+{
+    int i;
+    (void)DMnd; // DMnd is no longer forwarded now that Lap_plus_diag_vec_mult_orth_kpt doesn't take it; kept in the signature so Lap_vec_mult_kpt can keep passing it through
     // Call the function for (a*Lap+b*v+c)x with b = 0 and v = NULL
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_orth_kpt(
-            pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL, 
+            pSPARC, DMVertices, 1, a, 0.0, c, NULL,
             x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, dims, kpt
         );
     }
@@ -177,11 +178,11 @@ void stencil_3axis_thread_complex_v2(
  *          if ncol is greater than 1.
  */
 void Lap_plus_diag_vec_mult_orth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-        const int ncol, const double a, const double b, const double c, 
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
+        const int ncol, const double a, const double b, const double c,
         const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,
         const int *dims, int kpt
-) 
+)
 {
 #define X(n,i,j,k) x[(n)*ldi+(k)*DMnxny+(j)*DMnx+(i)]
 #define x_ex(n,i,j,k) x_ex[(n)*DMnd_ex+(k)*DMnxny_ex+(j)*DMnx_ex+(i)]
@@ -523,12 +524,14 @@ void Lap_vec_mult_nonorth_kpt(
         double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2, const int *dims, const int kpt
 )
 {
-    unsigned i;
+    int i;
+    (void)DMnd; // DMnd is no longer forwarded now that Lap_plus_diag_vec_mult_nonorth_kpt doesn't take it; kept in the signature so Lap_vec_mult_kpt can keep passing it through
+    (void)comm; // comm is no longer forwarded now that Lap_plus_diag_vec_mult_nonorth_kpt only needs comm2; kept in the signature so Lap_vec_mult_kpt can keep passing it through
     // Call the function for (a*Lap+b*v+c)x with b = 0 and v = NULL
     for (i = 0; i < ncol; i++) {
         Lap_plus_diag_vec_mult_nonorth_kpt(
-            pSPARC, DMnd, DMVertices, 1, a, 0.0, c, NULL,
-            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm, comm2, dims, kpt
+            pSPARC, DMVertices, 1, a, 0.0, c, NULL,
+            x+i*(unsigned)ldi, ldi, y+i*(unsigned)ldo, ldo, comm2, dims, kpt
         );
     }
 }
@@ -565,9 +568,9 @@ double _Complex calculate_phase_factor(double kpt_vec[3], double trans_vec[3])
  *          if ncol is greater than 1.
  */
 void Lap_plus_diag_vec_mult_nonorth_kpt(
-        const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+        const SPARC_OBJ *pSPARC, const int *DMVertices,
         const int ncol, const double a, const double b, const double c,
-        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+        const double *v, const double _Complex *x, const int ldi, double _Complex *y, const int ldo, MPI_Comm comm2,
         const int *dims, const int kpt
 )
 {

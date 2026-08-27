@@ -474,7 +474,7 @@ build_soapObj function calculates the SOAP descriptors and their derivatives w.r
 */
 //TODO: implement real spherical harmonics
 //TODO: implement spherical harmonics in Cartesian
-void build_soapObj(DescriptorObj *soap_str, NeighList *nlist, double* rgrid, double* h_nl, double* dh_nl, double *atompos, int Nmax, int Lmax,  double xi_3, int N_rgrid) {
+void build_soapObj(DescriptorObj *soap_str, NeighList *nlist, double* rgrid, double* h_nl, double* dh_nl, double *atompos, int Nmax, int Lmax) {
 
 
 	// const double PI = 3.141592653589793;

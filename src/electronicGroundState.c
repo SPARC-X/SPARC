@@ -443,8 +443,8 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         
         // TODO: Add correction term 
         if(pSPARC->SQ_correction == 1) {
-            OverlapCorrection_SQ(pSPARC);
-            OverlapCorrection_forces_SQ(pSPARC);
+            OverlapCorrection_SQ();
+            OverlapCorrection_forces_SQ();
         }
     } else if (pSPARC->OFDFTFlag == 1) {
         // Doing nothing. 
@@ -727,7 +727,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     
     int DMnd = pSPARC->Nd_d;    
-    int i, k, SCFcount;
+    int i, SCFcount;
     double error, dEtot, dEband;
     double t_scf_s, t_scf_e, t_cum_scf;
     double Veff_mean[4];
@@ -1075,6 +1075,7 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         int Ns = pSPARC->Nstates;
         int spin_maxocc = 0, k_maxocc = 0;
         double maxocc = -1.0;
+        int k;
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++){
             for (k = 0; k < Nk; k++) {
                 int ind = pSPARC->Nstates-1;

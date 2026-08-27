@@ -39,8 +39,11 @@ void Gradient_vectors_dir_kpt_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, co
 */
 
 
-void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                             const int ncol, const double c, const double *x, const double *y, const int ldi, 
+// void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+//                              const int ncol, const double c, const double *x, const double *y, const int ldi,
+//                              double *Dx, const int ldo, const int dir, MPI_Comm comm, const int* dims, const int vecdir);
+void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int *DMVertices,
+                             const int ncol, const double c, const double *x, const double *y, const int ldi,
                              double *Dx, const int ldo, const int dir, MPI_Comm comm, const int* dims, const int vecdir);
 
 

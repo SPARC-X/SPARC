@@ -146,7 +146,7 @@ void Calculate_local_kpoints(SPARC_OBJ *pSPARC);
  *
  * @param pSPARC    The pointer that points to SPARC_OBJ type structure SPARC.
  */
-double kpointWeight(double kx,double ky,double kz);
+double kpointWeight(double kx);
 
 /**
  * @brief   Estimate the memory required for the simulation.

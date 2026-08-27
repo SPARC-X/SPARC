@@ -4,6 +4,39 @@
 -changes
 
 --------------
+August 27, 2026
+Name: Sayan Bhowmik
+Changes: src/atom/electronicGroundStateAtom.c, src/atom/mgga_atom/mGGApotentialAtom.c,
+         src/atom/mgga_atom/mGGAtoolsAtom.c, src/cyclix/cyclix_gradVec.c,
+         src/cyclix/cyclix_stress.c, src/cyclix/cyclix_tools.c, src/eigenSolver.c,
+         src/eigenSolverKpt.c, src/electronDensity.c, src/electronicGroundState.c,
+         src/exchangeCorrelation.c, src/gradVecRoutines.c, src/gradVecRoutinesKpt.c,
+         src/hamiltonianVecRoutines.c, src/highT/sqHighT.c, src/highT/sqHighTDensity.c,
+         src/highT/sqHighTExactExchange.c, src/highT/sqHighTInitialization.c,
+         src/initialization.c, src/lapVecRoutines.c, src/lapVecRoutinesKpt.c,
+         src/linearAlgebra.c, src/linearScaling/sq.c, src/linearScaling/sqDensity.c,
+         src/linearScaling/sqEnergy.c, src/linearScaling/sqNlocVecRoutines.c,
+         src/linearScaling/sqProperties.c, src/md.c, src/mixing.c,
+         src/mlff/covariance_matrix.c, src/mlff/ddbp_tools.c, src/mlff/descriptor.c,
+         src/mlff/hnl_soap.c, src/mlff/mlff_read_write.c, src/mlff/nrutils.c,
+         src/mlff/regression.c, src/mlff/soap_descriptor.c, src/mlff/sparc_mlff_interface.c,
+         src/mlff/sparsification.c, src/mlff/spherical_harmonics.c, src/nlocVecRoutines.c,
+         src/occupation.c, src/ofdft/ofdft.c, src/orbitalElecDensInit.c,
+         src/parallelization.c, src/spinOrbitCoupling.c, src/tools.c,
+         src/xc/exx/exactExchange.c, src/xc/exx/exactExchangeKpt.c,
+         src/xc/exx/exactExchangePressure.c, src/xc/exx/exactExchangeStress.c,
+         src/xc/hubbard/locOrbRoutines.c, src/xc/vdW/vdWDF/vdWDFinitialization.c,
+         src/xc/vdW/vdWDF/vdWDFnonlocalCorre.c, src/xc/vdW/vdWDF/vdWDFparallelization.c,
+         src/xc/vdW/vdWDF/vdWDFstress.c,
+         tests/mlff/AlSi_mlffflag21/high_accuracy/AlSi_mlffflag21.refaimd,
+         tests/mlff/AlSi_mlffflag21/high_accuracy/AlSi_mlffflag21.refout,
+         tests/mlff/AlSi_mlffflag21/standard/AlSi_mlffflag21.refaimd,
+         tests/mlff/AlSi_mlffflag21/standard/AlSi_mlffflag21.refout,
+         tests/samplescript_cluster
+1. Eliminated all -Wall -Wextra compiler warnings (across MKL, lapack_blas_dp_subeig, and scalapack build configs).
+2. Fixed bug in MLFF_only_predict (mlff/sparc_mlff_interface.c): inverted stress/pressure unpacking branch.
+
+--------------
 August 21, 2026
 Name: Tian Tian
 Changes: (.conda/build.sh, .github/workflows/build-test.yml)

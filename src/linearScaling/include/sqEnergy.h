@@ -62,6 +62,7 @@ double Calculate_electronicEntropy_SQ_Gauss(SPARC_OBJ *pSPARC, int DMnd, MPI_Com
  * 
  * TODO:    Add implementation from SQDFT 
  */
-void OverlapCorrection_SQ(SPARC_OBJ *pSPARC);
+// void OverlapCorrection_SQ(SPARC_OBJ *pSPARC);
+void OverlapCorrection_SQ(void);
 
 #endif

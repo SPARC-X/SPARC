@@ -70,5 +70,6 @@ Input:
 Output:
 1. E, F, stress, error_bayesian: Outputs
 */
-void mlff_predict(double *K_predict, MLFF_Obj *mlff_str, double *E,  double* F, double* stress, double* error_bayesian, int natoms );
+// void mlff_predict(double *K_predict, MLFF_Obj *mlff_str, double *E,  double* F, double* stress, double* error_bayesian, int natoms );
+void mlff_predict(double *K_predict, MLFF_Obj *mlff_str, double *E,  double* F, double* stress, double* error_bayesian);
 #endif

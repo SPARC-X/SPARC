@@ -155,55 +155,55 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
             if(pSPARC->Calc_stress == 1 || pSPARC->Calc_pres == 1) {
                 double *temp;
                 temp = (double *) calloc(sizeof(double), pSPARC->n_atom);
-                Vnl_vec_mult_J_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                             pSPARC->nlocProj_SQ[nd], DMcol_loc, temp);
                 for (i = 0; i < pSPARC->n_atom; i++) 
                     energy_nl += temp[i];
                 free(temp);
             }
 
-            Vnl_vec_mult_J_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                             pSPARC->nlocProj_SQ[nd], gradx_DM, force_nloc);
 
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 1, gradx_DM, &s_nl(0,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 2, gradx_DM, &s_nl(0,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
-                                    pSPARC->nlocProj_SQ[nd], 3, gradx_DM, &s_nl(0,2));    
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
+                                    pSPARC->nlocProj_SQ[nd], 3, gradx_DM, &s_nl(0,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 1, gradx_DM, &pSPARC->pres_nl);
             }
 
-            Vnl_vec_mult_J_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                             pSPARC->nlocProj_SQ[nd], grady_DM, force_nloc + pSPARC->n_atom);
-            
+
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 1, grady_DM, &s_nl(1,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 2, grady_DM, &s_nl(1,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
-                                    pSPARC->nlocProj_SQ[nd], 3, grady_DM, &s_nl(1,2));    
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
+                                    pSPARC->nlocProj_SQ[nd], 3, grady_DM, &s_nl(1,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 2, grady_DM, &pSPARC->pres_nl);
             }
             
-            Vnl_vec_mult_J_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                             pSPARC->nlocProj_SQ[nd], gradz_DM, force_nloc + 2 * pSPARC->n_atom);
-            
+
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 1, gradz_DM, &s_nl(2,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 2, gradz_DM, &s_nl(2,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
-                                    pSPARC->nlocProj_SQ[nd], 3, gradz_DM, &s_nl(2,2));    
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
+                                    pSPARC->nlocProj_SQ[nd], 3, gradz_DM, &s_nl(2,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, pSQ->Nd_loc, nd, pSPARC->Atom_Influence_nloc_SQ[nd], 
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
                                     pSPARC->nlocProj_SQ[nd], 3, gradz_DM, &pSPARC->pres_nl);
             }
             
@@ -324,6 +324,9 @@ void Calculate_nonlocal_pressure_SQ(SPARC_OBJ *pSPARC) {
     // Nonlocal pressure term are calculated in SQ force calculation.
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#ifndef DEBUG
+    (void)pSPARC; // pSPARC is only used for printing under #ifdef DEBUG
+#endif
 #ifdef DEBUG
     if (!rank){ 
         printf("Pressure contribution from nonlocal pseudopotential: %.15f Ha\n",pSPARC->pres_nl);
@@ -339,7 +342,10 @@ void Calculate_nonlocal_kinetic_stress_SQ(SPARC_OBJ *pSPARC) {
     // Nonlocal and kinetic stress are calculated in SQ force calculation.
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#ifdef DEBUG    
+#ifndef DEBUG
+    (void)pSPARC; // pSPARC is only used for printing under #ifdef DEBUG
+#endif
+#ifdef DEBUG
     if (!rank){
         printf("\nNon-local contribution to stress");
         PrintStress(pSPARC, pSPARC->stress_nl, NULL);
@@ -356,7 +362,7 @@ void Calculate_nonlocal_kinetic_stress_SQ(SPARC_OBJ *pSPARC) {
  * 
  * TODO:    Add implementation from SQDFT 
  */
-void OverlapCorrection_forces_SQ(SPARC_OBJ *pSPARC) {
+void OverlapCorrection_forces_SQ(void) {
     return;
 }
 

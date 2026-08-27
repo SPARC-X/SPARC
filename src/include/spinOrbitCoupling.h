@@ -46,8 +46,10 @@ void CalculateNonlocalInnerProductIndexSOC(SPARC_OBJ *pSPARC);
  * 
  *          0.5*sum_{J,n,lm} m*gamma_{Jln} (sum_{J'} ChiSO_{J'lmn}>)(sum_{J'} <ChiSO_{J'lmn}|x>)
  */
-void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
                       NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int spinor, int kpt, MPI_Comm comm);
+// void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+//                       NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int spinor, int kpt, MPI_Comm comm);
 
 /**
  * @brief   Calculate Vnl SO term 1 times vectors in a matrix-free way with Bloch factor
@@ -55,8 +57,10 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OB
  *          0.5*sum_{J,n,lm} sqrt(l*(l+1)-m*(m+sigma))*gamma_{Jln} *
  *          (sum_{J'} ChiSO_{J'lm+sigma,n}>)(sum_{J'} <ChiSO_{J'lmn}|x_sigma'>)
  */
-void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
         NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *xos, int ldi, double _Complex *Hx, int ldo, int spinor, int kpt, MPI_Comm comm);
+// void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+//         NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *xos, int ldi, double _Complex *Hx, int ldo, int spinor, int kpt, MPI_Comm comm);
 
 
 #endif 

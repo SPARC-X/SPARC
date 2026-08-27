@@ -48,7 +48,7 @@ void Hamiltonian_vectors_mult(
     int ncol, double c, double *x, const int ldi, double *Hx, const int ldo, int spin, MPI_Comm comm
 )
 {
-    unsigned i;
+    int i;
     int nproc;
     MPI_Comm_size(comm, &nproc);
     
@@ -63,7 +63,7 @@ void Hamiltonian_vectors_mult(
     if (pSPARC->cell_typ == 0) { // orthogonal cell
         for (i = 0; i < ncol; i++) {
             Lap_plus_diag_vec_mult_orth(
-                pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                pSPARC, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
                 x+i*(unsigned)ldi, ldi, Hx+i*(unsigned)ldo, ldo, comm, dims
             );
         }
@@ -77,8 +77,8 @@ void Hamiltonian_vectors_mult(
   
         for (i = 0; i < ncol; i++) {
             Lap_plus_diag_vec_mult_nonorth(
-                pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
-                x+i*(unsigned)ldi, ldi, Hx+i*(unsigned)ldo, ldo, comm, comm2, dims
+                pSPARC, DMVertices, 1, -0.5, 1.0, c, Veff_loc,
+                x+i*(unsigned)ldi, ldi, Hx+i*(unsigned)ldo, ldo, comm2, dims
             );
         }
     }
@@ -97,7 +97,7 @@ void Hamiltonian_vectors_mult(
     #ifdef USE_EVA_MODULE
     t1 = MPI_Wtime();
     #endif
-    Vnl_vec_mult(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, x, ldi, Hx, ldo, comm);
+    Vnl_vec_mult(pSPARC, Atom_Influence_nloc, nlocProj, ncol, x, ldi, Hx, ldo, comm);
     #ifdef USE_EVA_MODULE
     t2 = MPI_Wtime();
     EVA_buff_timer_add(0.0, 0.0, 0.0, 0.0, 0.0, t2 - t1);
@@ -113,9 +113,9 @@ void Hamiltonian_vectors_mult(
             hub_spin = pSPARC->spincomm_index;
         }
         if (comm == pSPARC->kptcomm_topo) {
-            Vhub_vec_mult(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol, x, ldi, Hx, ldo, hub_spin, comm);
+            Vhub_vec_mult(pSPARC, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol, x, ldi, Hx, ldo, hub_spin, comm);
         } else {
-            Vhub_vec_mult(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol, x, ldi, Hx, ldo, hub_spin, comm);
+            Vhub_vec_mult(pSPARC, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol, x, ldi, Hx, ldo, hub_spin, comm);
         }
     }
 }
@@ -135,7 +135,7 @@ void Hamiltonian_vectors_mult_kpt(
     int ncol, double c, double _Complex *x, const int ldi, double _Complex *Hx, const int ldo, int spin, int kpt, MPI_Comm comm
 )
 {
-    unsigned i;
+    int i;
     int nproc;
     MPI_Comm_size(comm, &nproc);
     
@@ -153,7 +153,7 @@ void Hamiltonian_vectors_mult_kpt(
             for (spinor = 0; spinor < pSPARC->Nspinor_eig; spinor++) {
                 int shift = (pSPARC->spin_typ == 2) * spinor * DMnd;
                 Lap_plus_diag_vec_mult_orth_kpt(
-                    pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc+shift,
+                    pSPARC, DMVertices, 1, -0.5, 1.0, c, Veff_loc+shift,
                     x+i*(unsigned)ldi+spinor*DMnd, ldi,
                     Hx+i*(unsigned)ldo+spinor*DMnd, ldo, comm, dims, kpt
                 );
@@ -170,9 +170,9 @@ void Hamiltonian_vectors_mult_kpt(
             for (spinor = 0; spinor < pSPARC->Nspinor_eig; spinor++) {
                 int shift = (pSPARC->spin_typ == 2) * spinor * DMnd;
                 Lap_plus_diag_vec_mult_nonorth_kpt(
-                    pSPARC, DMnd, DMVertices, 1, -0.5, 1.0, c, Veff_loc+shift,
+                    pSPARC, DMVertices, 1, -0.5, 1.0, c, Veff_loc+shift,
                     x+i*(unsigned)ldi+spinor*DMnd, ldi,
-                    Hx+i*(unsigned)ldo+spinor*DMnd, ldo, comm, comm2, dims, kpt
+                    Hx+i*(unsigned)ldo+spinor*DMnd, ldo, comm2, dims, kpt
                 );
             }
         }
@@ -190,7 +190,7 @@ void Hamiltonian_vectors_mult_kpt(
     // apply nonlocal projectors
     for (spinor = 0; spinor < pSPARC->Nspinor_eig; spinor++) {
         // Apply scalar-relativistic part
-        Vnl_vec_mult_kpt(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+        Vnl_vec_mult_kpt(pSPARC, Atom_Influence_nloc, nlocProj, ncol, 
                             x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, kpt, comm);
         
         // apply hubbard potential if applicable
@@ -202,21 +202,21 @@ void Hamiltonian_vectors_mult_kpt(
                 hub_spin = pSPARC->spincomm_index;
             }
             if (comm == pSPARC->kptcomm_topo) {
-                Vhub_vec_mult_kpt(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol, 
+                Vhub_vec_mult_kpt(pSPARC, pSPARC->Atom_Influence_loc_orb_kptcomm, pSPARC->locProj_kptcomm, ncol,
                                     x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, hub_spin, kpt, comm);
             } else {
-                Vhub_vec_mult_kpt(pSPARC, DMnd, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol, 
+                Vhub_vec_mult_kpt(pSPARC, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, ncol,
                                     x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, hub_spin, kpt, comm);
             }
         }
         
         if (pSPARC->SOC_Flag == 0) continue;
         // Apply spin-orbit onto the same spinor
-        Vnl_vec_mult_SOC1(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+        Vnl_vec_mult_SOC1(pSPARC, Atom_Influence_nloc, nlocProj, ncol, 
                             x+spinor*DMnd, ldi, Hx+spinor*DMnd, ldo, spinor, kpt, comm);
 
         // Apply spin-orbit onto the opposite spinor
-        Vnl_vec_mult_SOC2(pSPARC, DMnd, Atom_Influence_nloc, nlocProj, ncol, 
+        Vnl_vec_mult_SOC2(pSPARC, Atom_Influence_nloc, nlocProj, ncol, 
                             x+(1-spinor)*DMnd, ldi, Hx+spinor*DMnd, ldo, spinor, kpt, comm);
     }
 

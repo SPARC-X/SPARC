@@ -47,7 +47,9 @@ void CalculateNonlocalInnerProductIndex(SPARC_OBJ *pSPARC);
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way.
  */
-void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+// void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
+//                   NLOC_PROJ_OBJ *nlocProj, int ncol, double *x, int ldi, double *Hx, int ldo, MPI_Comm comm);
+void Vnl_vec_mult(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
                   NLOC_PROJ_OBJ *nlocProj, int ncol, double *x, int ldi, double *Hx, int ldo, MPI_Comm comm);
 
 
@@ -55,7 +57,9 @@ void Vnl_vec_mult(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *At
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way with Bloch factor
  */
-void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, 
+// void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, int DMnd, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
+//                       NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int kpt, MPI_Comm comm);
+void Vnl_vec_mult_kpt(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc,
                       NLOC_PROJ_OBJ *nlocProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int kpt, MPI_Comm comm);
 #endif // NLOCVECROUTINES_H
 

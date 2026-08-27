@@ -105,7 +105,7 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
     int q1, q2, qpair;
     for (q1 = 0; q1 < nqs; q1++) {
         for (q2 = 0; q2 < q1 + 1; q2++) { // q2 is smaller than q1
-            qpair = kernel_label(q1, q2, nqs);
+            qpair = kernel_label(q1, q2);
             pSPARC->vdWDFkernelPhi[qpair] = (double*)malloc(sizeof(double)*(1 + nrpoints));
             pSPARC->vdWDFd2Phidk2[qpair] = (double*)malloc(sizeof(double)*(1 + nrpoints));
         }
@@ -186,7 +186,7 @@ void vdWDF_initial_read_kernel(SPARC_OBJ *pSPARC) {
         pSPARC->vdWDFkernelReciPoints = (double**)malloc(sizeof(double*)*numberKernel);
         for (q1 = 0; q1 < nqs; q1++) {
             for (q2 = 0; q2 < q1 + 1; q2++) {
-                qpair = kernel_label(q1, q2, nqs);
+                qpair = kernel_label(q1, q2);
                 pSPARC->vdWDFkernelReciPoints[qpair] = (double*)malloc(sizeof(double)*DMnd); assert(pSPARC->vdWDFkernelReciPoints[qpair] != NULL);
             }
         }
@@ -224,7 +224,7 @@ int domain_index1D(int locali, int localj, int localk, int DMnx, int DMny, int D
     return locali + localj*DMnx + localk*DMnx*DMny;
 }
 
-int kernel_label(int firstq, int secondq, int nqs) { // 1-D index of the kernel function of (q1, q2)
+int kernel_label(int firstq, int secondq) { // 1-D index of the kernel function of (q1, q2)
     // int answer = firstq*nqs + secondq;
     if (firstq < secondq) {
         int med = firstq;

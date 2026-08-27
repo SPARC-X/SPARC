@@ -1242,14 +1242,18 @@ void calculate_ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *Xi)
     double *M = (double *) malloc(Nstates_occ*Nstates_occ* sizeof(double));
     assert(M != NULL);
 
+#ifdef DEBUG
     double t1, t2;
+#endif
     for (int spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++ ) {
         // memset(M, 0, Nstates_occ*Nstates_occ* sizeof(double));
 
         // in case of hydrogen 
         if (pSPARC->Nstates_occ_list[min(spinor, pSPARC->Nspin_spincomm)] == 0) continue;
 
+        #ifdef DEBUG
         t1 = MPI_Wtime();
+        #endif
         #ifdef ACCELGT
         if (pSPARC->useACCEL == 1) {
             ACCEL_DGEMM( CblasColMajor, CblasTrans, CblasNoTrans, Nstates_occ, pSPARC->Nband_bandcomm_M, DMnd,
@@ -1269,9 +1273,9 @@ void calculate_ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *Xi)
         }
         gather_blacscomm(pSPARC, Nstates_occ, Nstates_occ, M);        
 
-        t2 = MPI_Wtime();
     #ifdef DEBUG
-        if(!rank && !spinor) printf("rank = %2d, finding M = psi'* W took %.3f ms\n",rank,(t2-t1)*1e3); 
+        t2 = MPI_Wtime();
+        if(!rank && !spinor) printf("rank = %2d, finding M = psi'* W took %.3f ms\n",rank,(t2-t1)*1e3);
     #endif
 
         // perform Cholesky Factorization on -M
@@ -1294,13 +1298,14 @@ void calculate_ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *Xi)
             MPI_Bcast(M, Nstates_occ*Nstates_occ, MPI_DOUBLE, 0, pSPARC->dmcomm);
         }
 
-        t1 = MPI_Wtime();
     #ifdef DEBUG
-        if (!rank && !spinor) 
+        t1 = MPI_Wtime();
+        if (!rank && !spinor)
             printf("==Cholesky Factorization: "
-                "info = %d, computing Cholesky Factorization using dpotrf: %.3f ms\n", 
+                "info = %d, computing Cholesky Factorization using dpotrf: %.3f ms\n",
                 info, (t1 - t2)*1e3);
     #endif
+        (void)info; // info is only used for printing under #ifdef DEBUG
 
         #ifdef ACCELGT
         if (pSPARC->useACCEL == 1) {
@@ -1313,9 +1318,9 @@ void calculate_ACE_operator(SPARC_OBJ *pSPARC, double *psi, double *Xi)
             cblas_dtrsm(CblasColMajor, CblasRight, CblasUpper,
                 CblasNoTrans, CblasNonUnit, DMnd, Nstates_occ, 1.0, M, Nstates_occ, Xi + spinor*DMnd, DMndsp);
         }
-        t2 = MPI_Wtime();
     #ifdef DEBUG
-        if (!rank && !spinor) 
+        t2 = MPI_Wtime();
+        if (!rank && !spinor)
             printf("==Triangular matrix equation: "
                 "Solving triangular matrix equation using dtrsm: %.3f ms\n", (t2 - t1)*1e3);
     #endif

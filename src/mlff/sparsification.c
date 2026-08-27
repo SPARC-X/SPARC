@@ -113,6 +113,7 @@ void mlff_CUR_sparsify(int kernel_typ, double **X3, int n_descriptor, int size_X
 
 
 double mlff_kernel_eval(int kernel_typ, double *X3_i, double *X3_j, double xi_3, int size_X3){
+	(void)kernel_typ; // unused here (only one kernel type implemented); kept so callers can pass it through without their own param going unused
 	double kernel_val = 0.0;
 
 	double X3_i_unit[size_X3], X3_j_unit[size_X3];

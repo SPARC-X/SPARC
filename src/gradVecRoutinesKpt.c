@@ -48,8 +48,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
     if (pSPARC->CyclixFlag) {
         Gradient_vectors_dir_kpt_cyclix(pSPARC, DMnd, DMVertices, ncol, c, x, ldi, Dx, ldo, dir, kpt_vec, comm, dims);
     } else {
-        for (int i = 0; i < ncol; i++)
-            Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, kpt_vec, comm, dims);  
+        for (int i = 0; i < ncol; i++) Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, x+i*(unsigned)ldi, ldi, Dx+i*(unsigned)ldo, ldo, dir, kpt_vec, comm, dims); 
     }
 }
 
@@ -60,7 +59,7 @@ void Gradient_vectors_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int
  *
  * @param dir   Direction of derivatives to take: 0 -- x-dir, 1 -- y-dir, 2 -- z-dir
  */
-void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int *DMVertices,
                       const int ncol, const double c, const double _Complex *x, const int ldi,
                       double _Complex *Dx, const int ldo, const int dir, const double *kpt_vec, MPI_Comm comm, const int* dims)
 {

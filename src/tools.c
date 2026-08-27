@@ -1144,7 +1144,7 @@ void c_ndgrid(int ndims, int *xs, int *xe, int *X)
 {
     if (ndims < 1) return;
     int nnodes = 1;
-    unsigned i;
+    int i;
     // find total number of nodes in the n-d space
     for (i = 0; i < ndims; i++) {
         nnodes *= xe[i] - xs[i] + 1;
@@ -2344,12 +2344,13 @@ void read_cube(int Nx_, int Ny_, int Nz_, double *rho, char *fname) {
  */
 void check_below_entries(FILE *ion_fp, char *tag) 
 {
-    int i;
+    size_t i;
     char *str = malloc(L_STRING * sizeof(char));
 
     str[0] = '\0';
     fscanf(ion_fp, "%[^\n]%*c", str);
-    for (i = 0; i < strlen(str); i++) {
+    size_t len = strlen(str);
+    for (i = 0; i < len; i++) {
         if (isdigit(str[i])) {
             printf(RED"ERROR: Please remove the data in the same line as the %s tag in the ION file. All entries should be strictly below the %s tag.\n"RESET, tag, tag);
             exit(EXIT_FAILURE);
@@ -2471,7 +2472,7 @@ void MKL_MDFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *stri
     status = DftiCreateDescriptor(&my_desc_handle,
                                   DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
     status = DftiSetValue(my_desc_handle,
-                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+                          (enum DFTI_CONFIG_PARAM)DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
     status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
     status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
 
@@ -2526,7 +2527,7 @@ void MKL_MDiFFT(double _Complex *c2c_3dinput, MKL_LONG *dim_sizes, MKL_LONG *str
     status = DftiCreateDescriptor(&my_desc_handle,
                                   DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
     status = DftiSetValue(my_desc_handle,
-                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+                          (enum DFTI_CONFIG_PARAM)DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
     status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
     status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
 
@@ -2621,7 +2622,7 @@ void MKL_MDFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_sizes
     status = DftiCreateDescriptor(&my_desc_handle,
                                   DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
     status = DftiSetValue(my_desc_handle,
-                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+                          (enum DFTI_CONFIG_PARAM)DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
     status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
     status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
     status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);
@@ -2650,7 +2651,7 @@ void MKL_MDiFFT_batch(double _Complex *c2c_3dinput, int ncol, MKL_LONG *dim_size
     status = DftiCreateDescriptor(&my_desc_handle,
                                   DFTI_DOUBLE, DFTI_COMPLEX, 3, dim_sizes);
     status = DftiSetValue(my_desc_handle,
-                          DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
+                          (enum DFTI_CONFIG_PARAM)DFTI_COMPLEX_COMPLEX, DFTI_COMPLEX_COMPLEX);
     status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
     status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
     status = DftiSetValue(my_desc_handle, DFTI_NUMBER_OF_TRANSFORMS, ncol);

@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <math.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "electronicGroundState.h"
 #include "electronDensity.h"
@@ -54,18 +55,18 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
     }
 
     if (pSPARC->spin_typ == 1) {
-        Calculate_Magz(pSPARC, DMnd, mag, rho+DMnd, rho+2*DMnd); // magz
+        Calculate_Magz(DMnd, mag, rho+DMnd, rho+2*DMnd); // magz
     }
 
     if (pSPARC->spin_typ == 2) {
         // magx, magy
         Calculate_Magx_Magy_psi(pSPARC, mag+DMnd); 
         // magz
-        Calculate_Magz(pSPARC, DMnd, mag+3*DMnd, rho+DMnd, rho+2*DMnd); 
+        Calculate_Magz(DMnd, mag+3*DMnd, rho+DMnd, rho+2*DMnd); 
         // magnorm
-        Calculate_Magnorm(pSPARC, DMnd, mag+DMnd, mag+2*DMnd, mag+3*DMnd, mag); 
+        Calculate_Magnorm(DMnd, mag+DMnd, mag+2*DMnd, mag+3*DMnd, mag);
         // update rhod11 rhod22
-        Calculate_diagonal_Density(pSPARC, DMnd, mag, rho, rho+DMnd, rho+2*DMnd); 
+        Calculate_diagonal_Density(DMnd, mag, rho, rho+DMnd, rho+2*DMnd); 
     }
 
 #ifdef DEBUG
@@ -297,7 +298,7 @@ void Calculate_Magx_Magy_psi(SPARC_OBJ *pSPARC, double *mag)
 /*
 @ brief: calculate magz
 */ 
-void Calculate_Magz(SPARC_OBJ *pSPARC, int DMnd, double *magz, double *rhoup, double *rhodw)
+void Calculate_Magz(int DMnd, double *magz, double *rhoup, double *rhodw)
 {
     for (int i = 0; i < DMnd; i++) {
         magz[i] = rhoup[i] - rhodw[i];
@@ -307,7 +308,7 @@ void Calculate_Magz(SPARC_OBJ *pSPARC, int DMnd, double *magz, double *rhoup, do
 /*
 @ brief: calculate norm of magnetization
 */ 
-void Calculate_Magnorm(SPARC_OBJ *pSPARC, int DMnd, double *magx, double *magy, double *magz, double *magnorm)
+void Calculate_Magnorm(int DMnd, double *magx, double *magy, double *magz, double *magnorm)
 {
     for (int i = 0; i < DMnd; i++) {
         magnorm[i] = sqrt(magx[i]*magx[i] + magy[i]*magy[i] + magz[i]*magz[i]);
@@ -315,7 +316,7 @@ void Calculate_Magnorm(SPARC_OBJ *pSPARC, int DMnd, double *magx, double *magy, 
 }
 
 
-void Calculate_diagonal_Density(SPARC_OBJ *pSPARC, int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22)
+void Calculate_diagonal_Density(int DMnd, double *magnorm, double *rho_tot, double *rho11, double *rho22)
 {
     for (int i = 0; i < DMnd; i++) {
         rho11[i] = 0.5*(rho_tot[i] + magnorm[i]);

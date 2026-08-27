@@ -245,12 +245,12 @@ void HamiltonianVecRoutines_OFDFT(
 
     if (pSPARC->cell_typ == 0)
         Lap_plus_diag_vec_mult_orth(
-            pSPARC, DMnd, DMVertices, 1, cst, 1.0, 0.0, 
+            pSPARC, DMVertices, 1, cst, 1.0, 0.0,
             pSPARC->Veff_loc_dmcomm_phi, u, DMnd, Hu, DMnd, comm, dims);
     else
         Lap_plus_diag_vec_mult_nonorth(
-            pSPARC, DMnd, DMVertices, 1, cst, 1.0, 0.0,
-            pSPARC->Veff_loc_dmcomm_phi, u, DMnd, Hu, DMnd, comm, pSPARC->comm_dist_graph_phi, dims);
+            pSPARC, DMVertices, 1, cst, 1.0, 0.0,
+            pSPARC->Veff_loc_dmcomm_phi, u, DMnd, Hu, DMnd, pSPARC->comm_dist_graph_phi, dims);
     return;
 }
 

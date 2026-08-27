@@ -68,12 +68,24 @@ void Lap_vec_mult_orth(
  *          at a time. So we will be calling this function ncol times
  *          if ncol is greater than 1.
  */
+// void Lap_plus_diag_vec_mult_orth(
+//     const SPARC_OBJ *pSPARC, const const int *DMVertices,
+//     const int ncol, const double a, const double b, const double c,
+//     const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
+//     const int *dims
+// );
 void Lap_plus_diag_vec_mult_orth(
-    const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-    const int ncol, const double a, const double b, const double c, 
+    const SPARC_OBJ *pSPARC, const int *DMVertices,
+    const int ncol, const double a, const double b, const double c,
     const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
     const int *dims
 );
+// void Lap_plus_diag_vec_mult_orth(
+//     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+//     const int ncol, const double a, const double b, const double c, 
+//     const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,
+//     const int *dims
+// );
 
 
 /**
@@ -210,11 +222,17 @@ void snd_rcv_buffer(
  *          if ncol is greater than 1.
  */
 void Lap_plus_diag_vec_mult_nonorth(
-    const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+    const SPARC_OBJ *pSPARC, const int *DMVertices,
     const int ncol, const double a, const double b, const double c, 
-    const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+    const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm2,
     const int *dims
 );
+// void Lap_plus_diag_vec_mult_nonorth(
+//     const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
+//     const int ncol, const double a, const double b, const double c, 
+//     const double *v, const double *x, const int ldi, double *y, const int ldo, MPI_Comm comm,  MPI_Comm comm2,
+//     const int *dims
+// );
 
 
 

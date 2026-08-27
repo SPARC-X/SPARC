@@ -46,11 +46,15 @@
  *        up the memory for the workspace, and then call the pdsyevx_ routine to
  *        do the calculation.
  */
-void automem_pdsyevx_ ( 
-	char *jobz, char *range, char *uplo, int *n, double *a, int *ia, int *ja, int *desca, 
+void automem_pdsyevx_ (
+	char *jobz, char *range, char *uplo, int *n, double *a, int *ia, int *ja, int *desca,
 	double *vl, double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double *z, int *iz, int *jz, int *descz, int *ifail, int *info)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia; (void)ja; (void)desca;
+	(void)vl; (void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -137,10 +141,13 @@ if(!grank) {
  *        up the memory for the workspace, and then call the pdsyevx_ routine to
  *        do the calculation.
  */
-void automem_pdsyev_ ( 
-	char *jobz, char *uplo, int *n, double *a, int *ia, int *ja, int *desca, 
+void automem_pdsyev_ (
+	char *jobz, char *uplo, int *n, double *a, int *ia, int *ja, int *desca,
     double *w, double *z, int *iz, int *jz, int *descz, int *info)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)jobz; (void)uplo; (void)n; (void)a; (void)ia; (void)ja; (void)desca;
+	(void)w; (void)z; (void)iz; (void)jz; (void)descz; (void)info;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -221,12 +228,17 @@ if(!grank) {
  *        up the memory for the workspace, and then call the pdsygvx_ routine to
  *        do the calculation.
  */
-void automem_pdsygvx_ ( 
+void automem_pdsygvx_ (
 	int *ibtype, char *jobz, char *range, char *uplo, int *n, double *a, int *ia,
-	int *ja, int *desca, double *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ja, int *desca, double *b, int *ib, int *jb, int *descb, double *vl,
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double *z, int *iz, int *jz, int *descz, int *ifail, int *info)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)ibtype; (void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia;
+	(void)ja; (void)desca; (void)b; (void)ib; (void)jb; (void)descb; (void)vl;
+	(void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -320,12 +332,17 @@ if(!grank) {
  *        up the memory for the workspace, and then call the pdsygvx_ routine to
  *        do the calculation.
  */
-void automem_pzhegvx_ ( 
+void automem_pzhegvx_ (
 	int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
-	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl,
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)ibtype; (void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia;
+	(void)ja; (void)desca; (void)b; (void)ib; (void)jb; (void)descb; (void)vl;
+	(void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -440,10 +457,13 @@ if(!grank) {
  *        up the memory for the workspace, and then call the pdsyevd_ routine to
  *        do the calculation.
  */
-void automem_pdsyevd_ ( 
-	char *jobz, char *uplo, int *n, double *a, int *ia, int *ja, int *desca, 
+void automem_pdsyevd_ (
+	char *jobz, char *uplo, int *n, double *a, int *ia, int *ja, int *desca,
 	double *w, double *z, int *iz, int *jz, int *descz, int *info)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)jobz; (void)uplo; (void)n; (void)a; (void)ia; (void)ja; (void)desca;
+	(void)w; (void)z; (void)iz; (void)jz; (void)descz; (void)info;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int grank;
     MPI_Comm_rank(MPI_COMM_WORLD, &grank);
@@ -520,11 +540,17 @@ if(!grank) {
  */
 void pdsygvx_subcomm_ (
     int *ibtype, char *jobz, char *range, char *uplo, int *n, double *a, int *ia,
-	int *ja, int *desca, double *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ja, int *desca, double *b, int *ib, int *jb, int *descb, double *vl,
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double *z, int *iz, int *jz, int *descz, int *ifail, int *info,
     MPI_Comm comm, int *dims, int blksz)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)ibtype; (void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia;
+	(void)ja; (void)desca; (void)b; (void)ib; (void)jb; (void)descb; (void)vl;
+	(void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
+	(void)comm; (void)dims; (void)blksz;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int rank, nproc;
     MPI_Comm_rank(comm, &rank);
@@ -658,11 +684,16 @@ void pdsygvx_subcomm_ (
  *         commmunicator with a better grid dimension.
  */
 void pdsyevx_subcomm_ (
-    char *jobz, char *range, char *uplo, int *n, double *a, int *ia, int *ja, int *desca, 
+    char *jobz, char *range, char *uplo, int *n, double *a, int *ia, int *ja, int *desca,
 	double *vl, double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double *z, int *iz, int *jz, int *descz, int *ifail, int *info,
     MPI_Comm comm, int *dims, int blksz)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia; (void)ja; (void)desca;
+	(void)vl; (void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
+	(void)comm; (void)dims; (void)blksz;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int rank, nproc;
     MPI_Comm_rank(comm, &rank);
@@ -781,11 +812,17 @@ void pdsyevx_subcomm_ (
  */
 void pzhegvx_subcomm_ (
     int *ibtype, char *jobz, char *range, char *uplo, int *n, double _Complex *a, int *ia,
-	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl, 
+	int *ja, int *desca, double _Complex *b, int *ib, int *jb, int *descb, double *vl,
 	double *vu, int *il, int *iu, double *abstol, int *m, int *nz, double *w,
 	double *orfac, double _Complex *z, int *iz, int *jz, int *descz, int *ifail, int *info,
     MPI_Comm comm, int *dims, int blksz)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)ibtype; (void)jobz; (void)range; (void)uplo; (void)n; (void)a; (void)ia;
+	(void)ja; (void)desca; (void)b; (void)ib; (void)jb; (void)descb; (void)vl;
+	(void)vu; (void)il; (void)iu; (void)abstol; (void)m; (void)nz; (void)w;
+	(void)orfac; (void)z; (void)iz; (void)jz; (void)descz; (void)ifail; (void)info;
+	(void)comm; (void)dims; (void)blksz;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int rank, nproc, grank;
     MPI_Comm_rank(comm, &rank);
@@ -977,6 +1014,10 @@ void pdgemm_subcomm(
     int *descA, const double *B, int *descB, double beta, double *C, int *descC,
     MPI_Comm comm, int max_nproc)
 {
+	// USE_MKL/USE_SCALAPACK-only function; params below unused otherwise (e.g. USE_DP_SUBEIG builds).
+	(void)transa; (void)transb; (void)M; (void)N; (void)K; (void)alpha; (void)A;
+	(void)descA; (void)B; (void)descB; (void)beta; (void)C; (void)descC;
+	(void)comm; (void)max_nproc;
 #if defined(USE_MKL) || defined(USE_SCALAPACK)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

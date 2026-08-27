@@ -33,7 +33,8 @@ void Calculate_nonlocal_kinetic_stress_SQ(SPARC_OBJ *pSPARC);
  * 
  * TODO:    Add implementation from SQDFT 
  */
-void OverlapCorrection_forces_SQ(SPARC_OBJ *pSPARC);
+// void OverlapCorrection_forces_SQ(SPARC_OBJ *pSPARC);
+void OverlapCorrection_forces_SQ(void);
 
 /**
  * @brief   Calculate second derivative of 1 point

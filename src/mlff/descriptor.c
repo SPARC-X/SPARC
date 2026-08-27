@@ -43,7 +43,7 @@ void initialize_descriptor(DescriptorObj *desc_str, MLFF_Obj *mlff_str, NeighLis
 		desc_str->unique_neighborList[i].len = nlist->unique_neighborList[i].len;
 		desc_str->unique_neighborList[i].capacity = nlist->unique_neighborList[i].capacity;
 		desc_str->unique_neighborList[i].array = (int *)malloc(sizeof(int)*nlist->unique_neighborList[i].capacity);
-		for (int k =0; k<nlist->unique_neighborList[i].len; k++){
+		for (size_t k =0; k<nlist->unique_neighborList[i].len; k++){
 			desc_str->unique_neighborList[i].array[k] = nlist->unique_neighborList[i].array[k];
 		}
 	}
@@ -103,7 +103,7 @@ void build_descriptor(DescriptorObj *desc_str, NeighList *nlist, MLFF_Obj *mlff_
 
     initialize_descriptor(desc_str, mlff_str, nlist);
     if (mlff_str->descriptor_typ < 2) {
-        build_soapObj(desc_str, nlist, mlff_str->rgrid, mlff_str->h_nl, mlff_str->dh_nl, atom_pos, mlff_str->Nmax, mlff_str->Lmax,  mlff_str->xi_3, mlff_str->N_rgrid);
+        build_soapObj(desc_str, nlist, mlff_str->rgrid, mlff_str->h_nl, mlff_str->dh_nl, atom_pos, mlff_str->Nmax, mlff_str->Lmax);
     }  // put GMP in else here
 }
 

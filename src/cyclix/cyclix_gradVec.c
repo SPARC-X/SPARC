@@ -51,8 +51,8 @@ void Gradient_vectors_dir_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, const 
     switch (dir) {
         case 0:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims);
 
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
@@ -72,8 +72,8 @@ void Gradient_vectors_dir_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, const 
             break;
         case 1:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);  
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims);
 
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
@@ -93,8 +93,8 @@ void Gradient_vectors_dir_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, const 
             break;
         case 2:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 1, comm, dims);
-                Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 2, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 1, comm, dims);
+                Gradient_vec_dir(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 2, comm, dims);
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
                     for(int j = 0; j < DMny; j++) {
@@ -144,8 +144,8 @@ void Gradient_vectors_dir_with_rotfac(const SPARC_OBJ *pSPARC, const int DMnd, c
     double xc, yc, zc;
 
     for (int n = 0; n < ncol; n++){
-        Gradient_vec_dir(pSPARC, DMnd, DMVertices, 1, c, X1+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);
-        Gradient_vec_dir_rotfac(pSPARC, DMnd, DMVertices, 1, c, X1+n*(unsigned)ldi, X2+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims, dir);
+        Gradient_vec_dir(pSPARC, DMVertices, 1, c, X1+n*(unsigned)ldi, ldi, DX1, DMnd, 0, comm, dims);
+        Gradient_vec_dir_rotfac(pSPARC, DMVertices, 1, c, X1+n*(unsigned)ldi, X2+n*(unsigned)ldi, ldi, DX2, DMnd, 1, comm, dims, dir);
 
         int count = 0;
         for(int k = 0; k < DMnz; k++) {
@@ -197,8 +197,8 @@ void Gradient_vectors_dir_kpt_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, co
     switch (dir) {
         case 0:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, &kpt_vec[0], comm, dims);
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, &kpt_vec[1], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, &kpt_vec[0], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, &kpt_vec[1], comm, dims);
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
                     double z = (k + DMVertices[4]) * dz;
@@ -217,8 +217,8 @@ void Gradient_vectors_dir_kpt_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, co
             break;
         case 1:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, &kpt_vec[0], comm, dims);
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, &kpt_vec[1], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 0, &kpt_vec[0], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 1, &kpt_vec[1], comm, dims);
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
                     double z = (k + DMVertices[4]) * dz;
@@ -237,8 +237,8 @@ void Gradient_vectors_dir_kpt_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, co
             break;
         case 2:
             for (int n = 0; n < ncol; n++){
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 1, &kpt_vec[1], comm, dims);
-                Gradient_vec_dir_kpt(pSPARC, DMnd, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 2, &kpt_vec[2], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX1, DMnd, 1, &kpt_vec[1], comm, dims);
+                Gradient_vec_dir_kpt(pSPARC, DMVertices, 1, c, X+n*(unsigned)ldi, ldi, DX2, DMnd, 2, &kpt_vec[2], comm, dims);
                 int count = 0;
                 for(int k = 0; k < DMnz; k++) {
                     for(int j = 0; j < DMny; j++) {
@@ -264,8 +264,8 @@ void Gradient_vectors_dir_kpt_cyclix(const SPARC_OBJ *pSPARC, const int DMnd, co
 /*
 @ brief: function to calculate the gradients in cartesian directions (x and y) for cyclix systems with rotational factors
 */
-void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int DMnd, const int *DMVertices,
-                             const int ncol, const double c, const double *x, const double *y, const int ldi, 
+void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int *DMVertices,
+                             const int ncol, const double c, const double *x, const double *y, const int ldi,
                              double *Dx, const int ldo, const int dir, MPI_Comm comm, const int* dims, const int vecdir)
 {
 

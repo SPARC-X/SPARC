@@ -147,7 +147,8 @@ void Calculate_exact_exchange_pressure_linear_ACE(SPARC_OBJ *pSPARC,
     double *psi, int ldp, double *occ, double *pres_exx) 
 {
     if (pSPARC->spincomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
-    
+    (void)ldp; // kept for call-site parity with the CUDA_...ACE sibling (ACCELGT, not built here)
+
     int grank, DMnd, rep, reps, NB, Ns, source, Nband_source, band_start_indx_source;
     double *psi_storage1, *psi_storage2, *sendbuff, *recvbuff;
     psi_storage1 = psi_storage2 = sendbuff = recvbuff = NULL;

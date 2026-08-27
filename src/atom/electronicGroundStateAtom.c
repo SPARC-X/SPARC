@@ -33,20 +33,26 @@
  * 
  */
 void electronicGroundState_atom(SPARC_ATOM_OBJ *pSPARC_ATOM){
-    double t1, t2;
-    // Calculate non local potential
-    t1 = MPI_Wtime();
-    compute_nonlocal_potential(pSPARC_ATOM);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    double t1, t2;
+#endif
+    // Calculate non local potential
+#ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    compute_nonlocal_potential(pSPARC_ATOM);
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     printf("\nSetting non local potential took %.3f ms\n",(t2-t1)*1000);
 #endif
 
     // Calculate local potential
-    t1 = MPI_Wtime();
-    compute_local_potential(pSPARC_ATOM);
-    t2 = MPI_Wtime();
 #ifdef DEBUG
+    t1 = MPI_Wtime();
+#endif
+    compute_local_potential(pSPARC_ATOM);
+#ifdef DEBUG
+    t2 = MPI_Wtime();
     printf("\nSetting local potential took %.3f ms\n",(t2-t1)*1000);
 #endif
     
@@ -655,7 +661,7 @@ void Calculate_Vxc_atom(SPARC_ATOM_OBJ *pSPARC_ATOM){
         switch(pSPARC_ATOM->ixc[1])
         {
             case 1:
-                pz_spin((Nd - 1), rho, ec, vc);
+                pz_spin();
                 break;
             case 2:
                 pw_spin((Nd - 1), rho, ec, vc);
@@ -863,7 +869,10 @@ void scfLoopAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
     double *mag = NULL;
 
     // Store timings
-    double t1, t2, t1_SCF, t2_SCF;
+#ifdef DEBUG
+    double t1, t2;
+#endif
+    double t1_SCF, t2_SCF;
 #ifdef DEBUG
     printf("*************************************************************\n");
     printf("\nStarting SCF loop with guess-density.\n");
@@ -875,10 +884,12 @@ void scfLoopAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
 #endif
 
         // Poisson solve
-        t1 = MPI_Wtime();
-        poissonSolve_atom(pSPARC_ATOM);
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t1 = MPI_Wtime();
+#endif
+        poissonSolve_atom(pSPARC_ATOM);
+#ifdef DEBUG
+        t2 = MPI_Wtime();
         printf("\nThe Poisson solve took %.3f ms\n",(t2-t1)*1000);
 #endif
 
@@ -888,10 +899,12 @@ void scfLoopAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
             printf("This step is PBE.\n");
 #endif
         }
-        t1 = MPI_Wtime();
-        Calculate_Vxc_atom(pSPARC_ATOM);
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t1 = MPI_Wtime();
+#endif
+        Calculate_Vxc_atom(pSPARC_ATOM);
+#ifdef DEBUG
+        t2 = MPI_Wtime();
         printf("The Vxc calculation took %.3f ms\n",(t2-t1)*1000);
 #endif
         pSPARC_ATOM->countPotentialCalculate++; // increase potential calculation counter for MGGA, etc.
@@ -904,7 +917,9 @@ void scfLoopAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
 
         // Eigen solve per azimuthal quantum number
         orb_count = 0;
+#ifdef DEBUG
         t1 = MPI_Wtime();
+#endif
         for (int l = min_l; l <= max_l; l++) {
             // printf("The min_l is %d\n",min_l); // debug
             if (l == 0) {
@@ -979,8 +994,8 @@ void scfLoopAtom(SPARC_ATOM_OBJ *pSPARC_ATOM) {
                 }
             }
         }
-        t2 = MPI_Wtime();
 #ifdef DEBUG
+        t2 = MPI_Wtime();
         printf("The Eigen solve took %.3f ms\n",(t2-t1)*1000);
 #endif
 
@@ -1334,7 +1349,7 @@ void AndersonExtrapolation_atom(
     const double *f_k, const double *X, const double *F,
     const double beta
 ) {
-    unsigned i;
+    int i;
     double *f_wavg = (double *)malloc(N * sizeof(double));
 
     // find the weighted average vectors
@@ -1363,7 +1378,7 @@ void AndersonExtrapWtdAvg_atom(
         // find extrapolation weigths Gamma = inv(F^T * F) * F^T * f_k
         AndersonExtrapCoeff_atom(N, m, f_k, F, Gamma);
 
-        unsigned i;
+        int i;
 
         // find weighted average x_{k+1} = x_k - X*Gamma
         for (i = 0; i < N; i++) x_wavg[i] = x_k[i];
