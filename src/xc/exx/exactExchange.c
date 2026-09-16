@@ -1467,8 +1467,8 @@ void transfer_orbitals_blacscomm(SPARC_OBJ *pSPARC, void *sendbuff, void *recvbu
         MPI_Irecv(recvbuff, DMnd*Nband_recv, MPI_DOUBLE, lneighbor, 111, blacscomm, &reqs[1]);
         MPI_Isend(sendbuff, DMnd*Nband_send, MPI_DOUBLE, rneighbor, 111, blacscomm, &reqs[0]);
     } else {
-        MPI_Irecv(recvbuff, DMnd*Nband_recv, MPI_DOUBLE_COMPLEX, lneighbor, 111, blacscomm, &reqs[1]);
-        MPI_Isend(sendbuff, DMnd*Nband_send, MPI_DOUBLE_COMPLEX, rneighbor, 111, blacscomm, &reqs[0]);
+        MPI_Irecv(recvbuff, DMnd*Nband_recv, MPI_C_DOUBLE_COMPLEX, lneighbor, 111, blacscomm, &reqs[1]);
+        MPI_Isend(sendbuff, DMnd*Nband_send, MPI_C_DOUBLE_COMPLEX, rneighbor, 111, blacscomm, &reqs[0]);
     }
     
 }

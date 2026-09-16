@@ -447,7 +447,7 @@ void Vnl_vec_mult_SOC1(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_In
     int commsize;
     MPI_Comm_size(comm, &commsize);
     if (commsize > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
     }
 
     spinorfac = (spinor == 0) ? 1.0 : -1.0; 
@@ -574,7 +574,7 @@ void Vnl_vec_mult_SOC2(const SPARC_OBJ *pSPARC, ATOM_NLOC_INFLUENCE_OBJ *Atom_In
     int commsize;
     MPI_Comm_size(comm, &commsize);
     if (commsize > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol, MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
     }
     
     // go over all atoms and multiply gamma_Jl to the inner product

@@ -8,6 +8,7 @@
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  *          Hua Huang <huangh223@gatech.edu>
  *          Edmond Chow <echow@cc.gatech.edu>
+ *          Alfredo Metere <alfredo.metere@metereconsulting.com>, Metere Consulting, LLC
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -23,6 +24,7 @@
 #include "tools.h"
 #include "isddft.h"
 #include "cyclix_gradVec.h"
+#include "mpi_nbr_shim.h"
 
 
 /**
@@ -137,8 +139,9 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int *DMVertices,
 
         count = 0;
         for (nbr_i = dir*2; nbr_i < dir*2+2; nbr_i++) {
-            // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
-            nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)) * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
+            // Pack the face for neighbour nbr_i, unmirrored.
+            nbrcount = nbr_i;   // MPI-4.0 Example 8.10: our block k reaches the
+                                // neighbour's block k^1, so no mirror is needed
             for (n = 0; n < ncol; n++) {
                 nshift = n * ldi;
                 for (k = kstart[nbrcount]; k < kend[nbrcount]; k++) {
@@ -154,8 +157,8 @@ void Gradient_vec_dir_kpt(const SPARC_OBJ *pSPARC, const int *DMVertices,
         }    
 
         // first transfer info. to/from neighbor processors
-        MPI_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_DOUBLE_COMPLEX, 
-                                x_in, recvcounts, rdispls, MPI_DOUBLE_COMPLEX, 
+        SPARC_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_C_DOUBLE_COMPLEX, 
+                                x_in, recvcounts, rdispls, MPI_C_DOUBLE_COMPLEX, 
                                 comm, &request); // non-blocking
     }
 

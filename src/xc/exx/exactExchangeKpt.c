@@ -307,7 +307,7 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
             if (pSPARC->npNd > 1) {
                 // sum over all processors in dmcomm
                 MPI_Allreduce(MPI_IN_PLACE, M + pSPARC->band_start_indx*Nstates_occ, 
-                            Nstates_occ*pSPARC->Nband_bandcomm_M, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+                            Nstates_occ*pSPARC->Nband_bandcomm_M, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
             }
 
             gather_blacscomm_kpt(pSPARC, Nstates_occ, Nstates_occ, M);
@@ -336,7 +336,7 @@ void calculate_ACE_operator_kpt(SPARC_OBJ *pSPARC, double _Complex *psi, double 
             }
 
             if (pSPARC->npNd > 1) {
-                MPI_Bcast(M, Nstates_occ*Nstates_occ, MPI_DOUBLE_COMPLEX, 0, pSPARC->dmcomm);
+                MPI_Bcast(M, Nstates_occ*Nstates_occ, MPI_C_DOUBLE_COMPLEX, 0, pSPARC->dmcomm);
             }
                         
             #ifdef DEBUG
@@ -563,7 +563,7 @@ void evaluate_exact_exchange_potential_ACE_kpt(SPARC_OBJ *pSPARC,
     if (size > 1) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Xi_times_psi, Nstates_occ*ncol, 
-                      MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+                      MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
     }
 
     alpha = -pSPARC->exx_frac;
@@ -692,7 +692,7 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
                             temp += (conj(rhs[k + (count-base)*DMnd]) * sol[k + (count-base)*DMnd]);
                         }
                         if (size > 1)
-                            MPI_Allreduce(MPI_IN_PLACE, &temp, 1,  MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+                            MPI_Allreduce(MPI_IN_PLACE, &temp, 1,  MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
                         pSPARC->Eexx += pSPARC->kptWts_hf * pSPARC->kptWts_loc[m] / pSPARC->Nkpts * occ_i * occ_j * creal(temp);
                     }
                 }
@@ -741,7 +741,7 @@ void evaluate_exact_exchange_energy_kpt(SPARC_OBJ *pSPARC) {
                 if (size > 1) {
                     // sum over all processors in dmcomm
                     MPI_Allreduce(MPI_IN_PLACE, Xi_times_psi, Nband_bandcomm_M*Nstates_occ, 
-                                MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+                                MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
                 }
 
                 for (i = 0; i < Nband_bandcomm_M; i++) {
@@ -826,8 +826,8 @@ void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_cons
 #ifdef DEBUG
 	t1 = MPI_Wtime();
 #endif  
-        MPI_Alltoallv(rhs, sendcounts, sdispls, MPI_DOUBLE_COMPLEX, 
-                        rhs_loc, recvcounts, rdispls, MPI_DOUBLE_COMPLEX, comm);
+        MPI_Alltoallv(rhs, sendcounts, sdispls, MPI_C_DOUBLE_COMPLEX, 
+                        rhs_loc, recvcounts, rdispls, MPI_C_DOUBLE_COMPLEX, comm);
 #ifdef DEBUG
 	t2 = MPI_Wtime();
     pSPARC->Exxtime_comm += (t2-t1);
@@ -878,8 +878,8 @@ void poissonSolve_kpt(SPARC_OBJ *pSPARC, double _Complex *rhs, double *pois_cons
 	t1 = MPI_Wtime();
 #endif  
 
-        MPI_Alltoallv(sol_loc_order, recvcounts, rdispls, MPI_DOUBLE_COMPLEX, 
-                    sol, sendcounts, sdispls, MPI_DOUBLE_COMPLEX, comm);
+        MPI_Alltoallv(sol_loc_order, recvcounts, rdispls, MPI_C_DOUBLE_COMPLEX, 
+                    sol, sendcounts, sdispls, MPI_C_DOUBLE_COMPLEX, comm);
 
 #ifdef DEBUG
 	t2 = MPI_Wtime();
@@ -1275,8 +1275,8 @@ void gather_blacscomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Complex
                 displs[i+1] = displs[i] + recvcounts[i];
         }
         sendcount = 1;
-        MPI_Allgatherv(MPI_IN_PLACE, sendcount, MPI_DOUBLE_COMPLEX, vec, 
-            recvcounts, displs, MPI_DOUBLE_COMPLEX, pSPARC->blacscomm);
+        MPI_Allgatherv(MPI_IN_PLACE, sendcount, MPI_C_DOUBLE_COMPLEX, vec, 
+            recvcounts, displs, MPI_C_DOUBLE_COMPLEX, pSPARC->blacscomm);
 
         free(recvcounts);
         free(displs); 
@@ -1308,8 +1308,8 @@ void gather_kptbridgecomm_kpt(SPARC_OBJ *pSPARC, int Nrow, int Ncol, double _Com
     }
     sendcount = 1;
 
-    MPI_Allgatherv(MPI_IN_PLACE, sendcount, MPI_DOUBLE_COMPLEX, vec, 
-        recvcounts, displs, MPI_DOUBLE_COMPLEX, pSPARC->kpt_bridge_comm);   
+    MPI_Allgatherv(MPI_IN_PLACE, sendcount, MPI_C_DOUBLE_COMPLEX, vec, 
+        recvcounts, displs, MPI_C_DOUBLE_COMPLEX, pSPARC->kpt_bridge_comm);   
 
     free(recvcounts);
     free(displs); 
@@ -1344,8 +1344,8 @@ void transfer_orbitals_kptbridgecomm(SPARC_OBJ *pSPARC,
         MPI_Irecv(recvbuff, size_k*Nkpt_hf_recv, MPI_DOUBLE, lneighbor, 111, kpt_bridge_comm, &reqs[1]);
         MPI_Isend(sendbuff, size_k*Nkpt_hf_send, MPI_DOUBLE, rneighbor, 111, kpt_bridge_comm, &reqs[0]);
     } else {
-        MPI_Irecv(recvbuff, size_k*Nkpt_hf_recv, MPI_DOUBLE_COMPLEX, lneighbor, 111, kpt_bridge_comm, &reqs[1]);
-        MPI_Isend(sendbuff, size_k*Nkpt_hf_send, MPI_DOUBLE_COMPLEX, rneighbor, 111, kpt_bridge_comm, &reqs[0]);
+        MPI_Irecv(recvbuff, size_k*Nkpt_hf_recv, MPI_C_DOUBLE_COMPLEX, lneighbor, 111, kpt_bridge_comm, &reqs[1]);
+        MPI_Isend(sendbuff, size_k*Nkpt_hf_send, MPI_C_DOUBLE_COMPLEX, rneighbor, 111, kpt_bridge_comm, &reqs[0]);
     }
 
 }

@@ -8,6 +8,7 @@
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  *          Hua Huang <huangh223@gatech.edu>
  *          Edmond Chow <echow@cc.gatech.edu>
+ *          Alfredo Metere <alfredo.metere@metereconsulting.com>, Metere Consulting, LLC
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -25,6 +26,7 @@
 #include "tools.h"
 #include "isddft.h"
 #include "cyclix_lapVec.h"
+#include "mpi_nbr_shim.h"
 
 #ifdef USE_EVA_MODULE
 #include "ExtVecAccel/ExtVecAccel.h"
@@ -273,8 +275,9 @@ void Lap_plus_diag_vec_mult_orth_kpt(
 
         int nbr_i, n, k, j, i, count = 0;
         for (nbr_i = 0; nbr_i < 6; nbr_i++) {
-            // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
-            nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)) * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
+            // Pack the face for neighbour nbr_i, unmirrored.
+            nbrcount = nbr_i;   // MPI-4.0 Example 8.10: our block k reaches the
+                                // neighbour's block k^1, so no mirror is needed
             const int k_s = kstart[nbrcount];
             const int k_e = kend  [nbrcount];
             const int j_s = jstart[nbrcount];
@@ -313,8 +316,8 @@ void Lap_plus_diag_vec_mult_orth_kpt(
         
         // first transfer info. to/from neighbor processors
         //MPI_Request request;
-        MPI_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_DOUBLE_COMPLEX, 
-                                x_in, recvcounts, rdispls, MPI_DOUBLE_COMPLEX,
+        SPARC_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_C_DOUBLE_COMPLEX, 
+                                x_in, recvcounts, rdispls, MPI_C_DOUBLE_COMPLEX,
                                 comm, &request); // non-blocking
     }
     
@@ -718,8 +721,8 @@ void Lap_plus_diag_vec_mult_nonorth_kpt(
 
         // first transfer info. to/from neighbor processors
         //MPI_Request request;
-        MPI_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_DOUBLE_COMPLEX,
-                                x_in, recvcounts, rdispls, MPI_DOUBLE_COMPLEX,
+        SPARC_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_C_DOUBLE_COMPLEX,
+                                x_in, recvcounts, rdispls, MPI_C_DOUBLE_COMPLEX,
                                 comm2, &request); // non-blocking
     }
 

@@ -484,7 +484,7 @@ void Calculate_hubbard_forces_kpt(SPARC_OBJ *pSPARC) {
     }
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol * Nk * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
 
     Compute_force_hubbard_by_integrals_kpt(pSPARC, force_hub, alpha);

@@ -7,6 +7,7 @@
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
  *          Hua Huang <huangh223@gatech.edu>
  *          Edmond Chow <echow@cc.gatech.edu>
+ *          Alfredo Metere <alfredo.metere@metereconsulting.com>, Metere Consulting, LLC
  * 
  * Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech.
  */
@@ -43,6 +44,7 @@
 #include "isddft.h"
 #include "initialization.h"
 #include "electrostatics.h"
+#include "mpi_nbr_shim.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -2379,7 +2381,7 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
             if (unit_size == 8)
                 MPI_Isend(*((double **)sendbuf+n), DMnd, MPI_DOUBLE, d2d_sender->target_ranks[n], 111, union_comm, &send_request[n]);
             else 
-                MPI_Isend(*((double _Complex **)sendbuf+n), DMnd, MPI_DOUBLE_COMPLEX, d2d_sender->target_ranks[n], 111, union_comm, &send_request[n]);
+                MPI_Isend(*((double _Complex **)sendbuf+n), DMnd, MPI_C_DOUBLE_COMPLEX, d2d_sender->target_ranks[n], 111, union_comm, &send_request[n]);
         }
     }
 #ifdef DEBUG_D2D
@@ -2450,7 +2452,7 @@ void D2D(D2D_OBJ *d2d_sender, D2D_OBJ *d2d_recvr, int *gridsizes, int *sDMVert, 
                 MPI_Irecv(*((double **)recvbuf+n), DMnd, MPI_DOUBLE, d2d_recvr->target_ranks[n], 111, union_comm, &recv_request[n]);
             } else {
                 *((double _Complex **)recvbuf+n) = malloc( DMnd * sizeof(double _Complex));
-                MPI_Irecv(*((double _Complex **)recvbuf+n), DMnd, MPI_DOUBLE_COMPLEX, d2d_recvr->target_ranks[n], 111, union_comm, &recv_request[n]);
+                MPI_Irecv(*((double _Complex **)recvbuf+n), DMnd, MPI_C_DOUBLE_COMPLEX, d2d_recvr->target_ranks[n], 111, union_comm, &recv_request[n]);
             }
         }
     }
@@ -2959,7 +2961,7 @@ void D2Dext(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, int DMnx, int D
 
     MPI_Request request;
     if (unit_size == 8) {
-        MPI_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_DOUBLE, 
+        SPARC_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_DOUBLE, 
                                 x_in, d2dext_recvr->counts, d2dext_recvr->displs, MPI_DOUBLE, comm_d2dext, &request); 
         // copy local part 
         restrict_to_subgrid(sdata, rdata,
@@ -2967,8 +2969,8 @@ void D2Dext(D2Dext_OBJ *d2dext_sender, D2Dext_OBJ *d2dext_recvr, int DMnx, int D
                     xext, xext+DMnx-1, yext, yext+DMny-1, zext, zext+DMnz-1, 
                     0, 0, 0, sizeof(double));
     } else {
-        MPI_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_DOUBLE_COMPLEX, 
-                                x_in, d2dext_recvr->counts, d2dext_recvr->displs, MPI_DOUBLE_COMPLEX, comm_d2dext, &request);         
+        SPARC_Ineighbor_alltoallv(x_out, d2dext_sender->counts, d2dext_sender->displs, MPI_C_DOUBLE_COMPLEX, 
+                                x_in, d2dext_recvr->counts, d2dext_recvr->displs, MPI_C_DOUBLE_COMPLEX, comm_d2dext, &request);         
         // copy local part 
         restrict_to_subgrid(sdata, rdata,
                     DMnx_ext, DMnx, DMnx_ext*DMny_ext, DMnx*DMny, 
@@ -3028,7 +3030,7 @@ int MPI_Allreduce_overload(const void *sendbuf, void *recvbuf, int count,
     size_t unit_size;    
     if (datatype == MPI_DOUBLE) {
         unit_size = sizeof(double);
-    } else if (datatype == MPI_DOUBLE_COMPLEX) {
+    } else if (datatype == MPI_C_DOUBLE_COMPLEX) {
         unit_size = sizeof(double _Complex);
     } else if (datatype == MPI_INT) {
         unit_size = sizeof(int);

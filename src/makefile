@@ -18,6 +18,22 @@ DEBUG_MODE    = 0
 # Set USE_SOCKET = 0 to disable compilation with socket support
 USE_SOCKET    = 0
 
+# NOTE: the halo exchange goes through SPARC_Ineighbor_alltoallv
+# (src/mpi_nbr_shim.c), which is ALWAYS ACTIVE and needs no switch. MPI
+# implementations disagree on how to pair DUPLICATE neighbour edges, which the
+# neighbour list contains whenever dims[d] <= 2 and direction d is periodic --
+# measured with tests/mpi_halo/halo_convention_test on one 2x3x3 shape:
+#     Cray MPICH 9.0.1.498 : swaps         (MPI-4.0 sec 8.6 Example 8.10)
+#     MVAPICH2 2.3.7       : list order    (pre-errata convention)
+#     Open MPI 4.1.2       : list order    (pre-errata convention)
+# so no packing of SPARC's own is correct on all of them, and SPARC does the
+# pairing itself. With no repeated rank in the neighbour list the wrapper
+# forwards to MPI_Ineighbor_alltoallv, so an all-dims>=3 decomposition keeps the
+# native path and its overlap. Building with -DSPARC_MPI_NBR_NO_SHIM restores
+# the bare library call; that is correct only where halo_convention_test passes
+# on the target machine, and it fails silently -- wrong energies, not an error
+# -- where it does not.
+
 # set USE_ELPA = 1 to use ELPA for parallel eigensolver. ELPA requires MKL or Scalapack
 USE_ELPA      = 0
 
@@ -100,7 +116,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         hamiltonianVecRoutines.o lapVecRoutines.o lapVecRoutinesKpt.o \
         linearSolver.o mixing.o exchangeCorrelation.o eigenSolver.o eigenSolverKpt.o energy.o      \
         forces.o stress.o pressure.o finalization.o spinOrbitCoupling.o printing.o \
-        linearAlgebra.o kroneckerLaplacian.o\
+        linearAlgebra.o kroneckerLaplacian.o mpi_nbr_shim.o\
         xc/vdW/d3/d3correction.o xc/vdW/d3/d3findR0ab.o xc/vdW/d3/d3copyC6.o                       \
         xc/vdW/d3/d3initialization.o xc/vdW/d3/d3finalization.o xc/vdW/d3/d3forceStress.o          \
         xc/vdW/vdWDF/vdWDFinitialization.o xc/vdW/vdWDF/vdWDFfinalization.o                        \

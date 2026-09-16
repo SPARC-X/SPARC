@@ -828,7 +828,7 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
                 } else {
                     sp = spinor;
                 }
-                MPI_Allreduce(MPI_IN_PLACE, alpha[sp], pSPARC->IP_displ_U[atm_idx] * ncol, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+                MPI_Allreduce(MPI_IN_PLACE, alpha[sp], pSPARC->IP_displ_U[atm_idx] * ncol, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
             }
         }
 
@@ -888,7 +888,7 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
             } else {
                 sp = spinor;
             }
-            MPI_Allreduce(MPI_IN_PLACE, rho_mn[sp], pSPARC->rho_mn_displ[atm_idx], MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->kpt_bridge_comm);
+            MPI_Allreduce(MPI_IN_PLACE, rho_mn[sp], pSPARC->rho_mn_displ[atm_idx], MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->kpt_bridge_comm);
         }
     }
 
@@ -900,7 +900,7 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
             } else {
                 sp = spinor;
             }
-            MPI_Allreduce(MPI_IN_PLACE, rho_mn[sp], pSPARC->rho_mn_displ[atm_idx], MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->blacscomm);
+            MPI_Allreduce(MPI_IN_PLACE, rho_mn[sp], pSPARC->rho_mn_displ[atm_idx], MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->blacscomm);
         }
     }
 
@@ -911,13 +911,13 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
         int lenbuf;
         if (rank_sp_bridge == 0) {
             lenbuf = pSPARC->rho_mn_displ[atm_idx];
-            MPI_Sendrecv(rho_mn[0], lenbuf, MPI_DOUBLE_COMPLEX, 1, 0,
-                         rho_mn[1], lenbuf, MPI_DOUBLE_COMPLEX, 1, 0,
+            MPI_Sendrecv(rho_mn[0], lenbuf, MPI_C_DOUBLE_COMPLEX, 1, 0,
+                         rho_mn[1], lenbuf, MPI_C_DOUBLE_COMPLEX, 1, 0,
                          pSPARC->spin_bridge_comm, MPI_STATUS_IGNORE);
         } else if (rank_sp_bridge == 1) {
             lenbuf = pSPARC->rho_mn_displ[atm_idx];
-            MPI_Sendrecv(rho_mn[1], lenbuf, MPI_DOUBLE_COMPLEX, 0, 0,
-                         rho_mn[0], lenbuf, MPI_DOUBLE_COMPLEX, 0, 0,
+            MPI_Sendrecv(rho_mn[1], lenbuf, MPI_C_DOUBLE_COMPLEX, 0, 0,
+                         rho_mn[0], lenbuf, MPI_C_DOUBLE_COMPLEX, 0, 0,
                          pSPARC->spin_bridge_comm, MPI_STATUS_IGNORE);
         }
     }

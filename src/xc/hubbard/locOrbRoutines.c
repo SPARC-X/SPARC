@@ -989,7 +989,7 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
     MPI_Comm_size(comm, &commsize);
     if (commsize > 1)
     {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol, MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
     }
 
     // Multiply pre-factor

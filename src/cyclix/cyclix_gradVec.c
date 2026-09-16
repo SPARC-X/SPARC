@@ -2,8 +2,9 @@
  * @file    cyclix_gradVec.c
  * @brief   This file contains the functions for performing gradient matrix times vector.
  *
- * @author  Abhiraj Sharma <asharma424@gatech.edu>
+ * @authors Abhiraj Sharma <asharma424@gatech.edu>
  *          Phanish Suryanarayana <phanish.suryanarayana@ce.gatech.edu>
+ *          Alfredo Metere <alfredo.metere@metereconsulting.com>, Metere Consulting, LLC
  *          
  * Copyright (c) 2017 Material Physics & Mechanics Group at Georgia Tech.
  */
@@ -21,6 +22,7 @@
 #include "gradVecRoutinesKpt.h"
 #include "isddft.h"
 #include "assert.h"
+#include "mpi_nbr_shim.h"
 
 
 /*
@@ -353,8 +355,9 @@ void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int *DMVertices,
 
         count = 0;
         for (nbr_i = dir*2; nbr_i < dir*2+2; nbr_i++) {
-            // if dims[i] < 3 and periods[i] == 1, switch send buffer for left and right neighbors
-            nbrcount = nbr_i + (1 - 2 * (nbr_i % 2)) * (int)(dims[nbr_i / 2] < 3 && periods[nbr_i / 2]);
+            // Pack the face for neighbour nbr_i, unmirrored.
+            nbrcount = nbr_i;   // MPI-4.0 Example 8.10: our block k reaches the
+                                // neighbour's block k^1, so no mirror is needed
             //if(rank == 0)
             //    printf("nbrcount = %d, nbr_i = %d, DMvertices[2] %d, DMvertices[3] %d\n", nbrcount, nbr_i,pSPARC->DMVertices[2], pSPARC->DMVertices[3]);
             // TODO: Start loop over n here
@@ -402,7 +405,7 @@ void Gradient_vec_dir_rotfac(const SPARC_OBJ *pSPARC, const int *DMVertices,
         }    
 
         // first transfer info. to/from neighbor processors
-        MPI_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_DOUBLE, 
+        SPARC_Ineighbor_alltoallv(x_out, sendcounts, sdispls, MPI_DOUBLE, 
                                 x_in, recvcounts, rdispls, MPI_DOUBLE, 
                                 comm, &request); // non-blocking
     }                             

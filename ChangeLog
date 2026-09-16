@@ -4,6 +4,94 @@
 -changes
 
 --------------
+September 15, 2026
+Name: Alfredo Metere
+Changes: src/gradVecRoutines.c, src/gradVecRoutinesKpt.c,
+         src/lapVecRoutines.c, src/lapVecRoutinesKpt.c,
+         src/cyclix/cyclix_gradVec.c, src/parallelization.c,
+         src/mpi_nbr_shim.c, src/include/mpi_nbr_shim.h, src/makefile,
+         utils/mpicheck/nbr_match_probe.c, src/cyclix/cyclix_stress.c,
+         src/eigenSolverKpt.c, src/forces.c, src/nlocVecRoutines.c,
+         src/spinOrbitCoupling.c, src/stress.c, src/xc/exx/exactExchange.c,
+         src/xc/exx/exactExchangeKpt.c, src/xc/hubbard/hubbardForce.c,
+         src/xc/hubbard/hubbardPressure.c, src/xc/hubbard/hubbardStress.c,
+         src/xc/hubbard/locOrbRoutines.c, src/xc/hubbard/occupationMatrix.c
+
+1. Fixed the Cartesian halo pack order for degenerate periodic dimensions.
+
+   The five Cartesian halo pack loops mirrored the send face whenever
+   dims[d] < 3 && periods[d]:
+
+       nbrcount = nbr_i + (1 - 2*(nbr_i%2)) * (dims[nbr_i/2] < 3 && periods[nbr_i/2]);
+
+   That compensation is only correct if the MPI library pairs duplicate
+   neighbour edges in list order (sender block s -> receiver block s). The
+   standard requires block s of the sender to land in block s^1 of the
+   receiver for a Cartesian communicator, degenerate dimensions included --
+   MPI-4.0 and MPI-4.1 section 8.6, Example 8.10, with the accompanying advice
+   to implementors naming the periods[d]==1 && dims[d]==1-or-2 case. The rule
+   was clarified as errata against MPI-3.1; see MPI-4.0 Annex B.1.1 item 1.
+   Under that rule the mirror inverts the halo: the low-x ghost layer receives
+   the neighbour's low-x face instead of its high-x face.
+
+   Affected any run with dims[d] <= 2 in a periodic direction, i.e. most small
+   and elongated decompositions; all-dims>=3 grids were never affected because
+   there the pairing is forced by rank matching. The mirror is removed; the
+   pack loops now use nbrcount = nbr_i. The 26-neighbour mirror in
+   snd_rcv_buffer() is NOT affected and is unchanged: graph topologies use
+   multiplicity-index order, which that mirror is correctly written against.
+
+2. Added SPARC_Ineighbor_alltoallv (src/mpi_nbr_shim.c), a drop-in wrapper for
+   MPI_Ineighbor_alltoallv, used by all 9 halo call sites.
+
+   It is always active and has no build switch. MPI implementations disagree on
+   how to pair duplicate neighbour edges, measured with
+   tests/mpi_halo/halo_convention_test on one 2x3x3 periodic decomposition:
+
+       Cray MPICH 9.0.1.498 : swaps      (MPI-4.0 sec 8.6 Example 8.10), and
+                              matches NEITHER convention with two or more
+                              periodic unit dimensions
+       MVAPICH2 2.3.7       : list order (pre-errata convention), consistently
+       Open MPI 4.1.2       : list order (pre-errata convention), consistently
+
+   The same source therefore gave different physics on different machines,
+   silently and in opposite directions. No packing of SPARC's own is correct on
+   all of them, so SPARC now performs the pairing itself and the result no
+   longer depends on the library. MPICH 4.x/5.x and derivatives additionally mismatch
+   Cartesian grids with two or more periodic unit dimensions, and every
+   duplicated edge on graph topologies; upstream fix pmodels/mpich#7945.
+
+   With no repeated rank in the neighbour list the pairing is forced by rank
+   matching and the wrapper forwards to MPI_Ineighbor_alltoallv, so an
+   all-dims>=3 decomposition keeps the native path and the compute/
+   communication overlap. Only a degenerate decomposition takes the
+   point-to-point path, which is internally blocking and returns
+   MPI_REQUEST_NULL. Building with -DSPARC_MPI_NBR_NO_SHIM restores the bare
+   library call and is correct only where halo_convention_test passes on the
+   target machine.
+
+3. Added utils/mpicheck/nbr_match_probe.c, which reports how the local MPI
+   pairs neighbour blocks on a Cartesian and on a distributed-graph
+   communicator, for deciding whether the shim is needed.
+
+4. Used the C complex datatype in the C bindings.
+
+   SPARC passed MPI_DOUBLE_COMPLEX to MPI calls made from C. That handle is a
+   Fortran datatype; the C one is MPI_C_DOUBLE_COMPLEX, added in MPI-2.2.
+   MPICH exposes the Fortran handles to C as well, so this never showed up
+   there, but Open MPI makes them valid only when the Fortran bindings are
+   built. Against an Open MPI configured with --disable-mpi-fortran, which is
+   usual for minimal and container builds, every complex code path failed at
+   the first call with MPI_ERR_TYPE, so any k-point calculation aborted.
+   tests/LiNbO2_primitive_quick_scf reproduces it; gamma-only systems were
+   unaffected because they never take the complex path.
+
+   The code already used MPI_C_DOUBLE_COMPLEX in fourteen places for the same
+   operations -- pressure.c had it right where forces.c did not, and
+   parallelization.c used both -- so this was an inconsistency rather than a
+   deliberate choice. The remaining 53 occurrences are replaced.
+
+--------------
 August 27, 2026
 Name: Sayan Bhowmik
 Changes: src/atom/electronicGroundStateAtom.c, src/atom/mgga_atom/mGGApotentialAtom.c,

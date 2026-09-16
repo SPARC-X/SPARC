@@ -1104,10 +1104,10 @@ void Calculate_nonlocal_forces_kpt(SPARC_OBJ *pSPARC)
 
         
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
         if (pSPARC->SOC_Flag == 1) {
-            MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-            MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
         }
     }
 

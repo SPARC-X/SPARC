@@ -1619,15 +1619,15 @@ void Calculate_nonlocal_kinetic_stress_kpt(SPARC_OBJ *pSPARC)
         MPI_Request req0, req1, req2, req3;
         MPI_Status  sta0, sta1, sta2, sta3;
         MPI_Iallreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
-                        MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req0);
+                        MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req0);
         MPI_Iallreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm, &req3);
         MPI_Wait(&req0, &sta0);
         MPI_Wait(&req3, &sta3);
         if (pSPARC->SOC_Flag == 1) {
             MPI_Iallreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
-                            MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req1);
+                            MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req1);
             MPI_Iallreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * Nspinor * 7, 
-                            MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req2);
+                            MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm, &req2);
             MPI_Wait(&req1, &sta1);
             MPI_Wait(&req2, &sta2);
         }

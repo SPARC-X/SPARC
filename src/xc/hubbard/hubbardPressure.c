@@ -463,7 +463,7 @@ void Calculate_hubbard_pressure_kpt(SPARC_OBJ *pSPARC) {
     }
 
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor * 4, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol * Nspinor * 4, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
 
     /* calculate hubbard pressure */

@@ -997,11 +997,11 @@ void Calculate_nonlocal_kinetic_stress_kpt_cyclix(SPARC_OBJ *pSPARC)
     }
     
     if (pSPARC->npNd > 1) {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
         MPI_Allreduce(MPI_IN_PLACE, &stress_k, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
         if (pSPARC->SOC_Flag == 1) {
-            MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
-            MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so1, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+            MPI_Allreduce(MPI_IN_PLACE, alpha_so2, pSPARC->IP_displ_SOC[pSPARC->n_atom] * ncol * Nk * 2 * Nspinor, MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
         }
     }
 

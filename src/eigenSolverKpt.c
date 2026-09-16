@@ -1182,7 +1182,7 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Complex
     if (nproc_dmcomm > 1) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Mp, pSPARC->nr_Mp_BLCYC*pSPARC->nc_Mp_BLCYC,
-                      MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+                      MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
     #ifdef DEBUG
     t2 = MPI_Wtime();
@@ -1247,7 +1247,7 @@ void Project_Hamiltonian_kpt(SPARC_OBJ *pSPARC, int *DMVertices, double _Complex
     if (nproc_dmcomm > 1) {
         // sum over all processors in dmcomm
         MPI_Allreduce(MPI_IN_PLACE, Hp, pSPARC->nr_Hp_BLCYC*pSPARC->nc_Hp_BLCYC,
-                      MPI_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
+                      MPI_C_DOUBLE_COMPLEX, MPI_SUM, pSPARC->dmcomm);
     }
 
     #ifdef DEBUG
