@@ -1,0 +1,34 @@
+<simulation verbosity='high'>
+  <output prefix='time'>
+    <properties stride='1' filename='out'>
+      [ step, time{picosecond}, time{femtosecond} ]
+    </properties>
+  </output>
+
+  <total_steps>5</total_steps>
+
+  <ffsocket mode='inet' name='sparc'>
+    <address>localhost</address>
+    <port>31423</port>
+    <latency>0.01</latency>
+    <timeout>600</timeout>
+  </ffsocket>
+
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz'> init_nve.xyz </file>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='sparc'> </force>
+    </forces>
+    <motion mode='dynamics'>
+      <dynamics mode='nve'>
+        <timestep units='femtosecond'> 1.0 </timestep>
+      </dynamics>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+    </ensemble>
+  </system>
+</simulation>

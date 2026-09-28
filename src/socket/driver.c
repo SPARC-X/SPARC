@@ -661,6 +661,11 @@ int read_socket_header(SPARC_OBJ *pSPARC, int *status)
         {
 	  *status = IPI_MSG_GETFORCE;
         }
+      else if (strncasecmp(header, "EXIT", strlen("EXIT")) == 0)
+        {
+	  /* i-PI shutdown; main_Socket already breaks cleanly on IPI_MSG_EXIT */
+	  *status = IPI_MSG_EXIT;
+        }
       /* Extra keywords for extended SPARC protocol */
       else if (strncasecmp(header, "SETPARAM", strlen("SETPARAM")) == 0)
         {
@@ -1177,19 +1182,18 @@ void main_Socket(SPARC_OBJ *pSPARC)
 	  retcode = read_setparam(pSPARC);
 	}
       /* END of SPARC protocol settings */
+      else if (status == IPI_MSG_EXIT)
+        {
+	  /* Server finished cleanly (e.g. i-PI sent EXIT). Do not treat as error. */
+	  if (rank == 0)
+	    printf("Socket server requested EXIT; closing SPARC client.\n");
+	  break;
+        }
       else if (status == IPI_MSG_OTHER)
         {
 	  if (rank == 0)
-	    perror("Getting an unknown message from server, exiting...\n");
+	    fprintf(stderr, "Getting an unknown message from server, exiting...\n");
 	  exit(EXIT_FAILURE);
-        }
-      else if (status == IPI_MSG_EXIT)
-        {
-#ifdef DEBUG
-	  if (rank == 0)
-	    printf("Server requesting SPARC to exit. Break the loop.\n");
-#endif // DEBUG
-	  break;
         }
     }
   if (print_socket_err != 0)

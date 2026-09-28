@@ -1,0 +1,21 @@
+A1 energy / force consistency
+directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/a1_energy_force
+tolerances: |dE| < 5.0e-05 Ha,  max|dF| < 1.0e-04 Ha/Bohr
+socket static: Al.static_01
+
+frame           E_ipi        E_socket            E_sp     dE_ipi-sp   Fmax_ipi-sp  Fmax_sock-sp
+-----------------------------------------------------------------------------------------------
+    0   -9.329700e+00   -9.329700e+00   -9.329700e+00  6.955198e-08  1.620388e-06  1.620385e-06
+    1   -9.329918e+00   -9.329918e+00   -9.329918e+00  -4.616794e-08  1.781817e-06  1.780691e-06
+    2   -9.330550e+00   -9.330550e+00   -9.330550e+00  -3.950820e-08  3.586440e-06  3.587335e-06
+    3   -9.331536e+00   -9.331536e+00   -9.331536e+00  -2.775050e-08  4.200175e-06  4.203954e-06
+    4   -9.332812e+00   -9.332812e+00   -9.332812e+00  1.287844e-08  1.662518e-06  1.663504e-06
+    5   -9.334338e+00   -9.334338e+00   -9.334338e+00  9.977927e-08  3.050678e-06  3.051282e-06
+
+max |E_ipi - E_sp|          = 9.977927e-08 Ha
+max |F_ipi - F_sp|          = 4.200175e-06 Ha/Bohr
+max |F_socket - F_sp|       = 4.203954e-06 Ha/Bohr
+max |E_ipi - E_socket|      = 3.740517e-09 Ha
+
+energy vs independent SPARC SP : PASS
+force  vs independent SPARC SP : PASS

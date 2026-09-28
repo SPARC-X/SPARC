@@ -18,6 +18,10 @@ DEBUG_MODE    = 0
 # Set USE_SOCKET = 0 to disable compilation with socket support
 USE_SOCKET    = 0
 
+# Set USE_PLUMED = 1 to compile with PLUMED (C API / colvars integration)
+# Set USE_PLUMED = 0 to disable
+USE_PLUMED    = 0
+
 # NOTE: the halo exchange goes through SPARC_Ineighbor_alltoallv
 # (src/mpi_nbr_shim.c), which is ALWAYS ACTIVE and needs no switch. MPI
 # implementations disagree on how to pair DUPLICATE neighbour edges, which the
@@ -107,6 +111,28 @@ LDFLAGS  += -L${ELPA_ROOT}/lib
 LDLIBS   += -lelpa_openmp 
 endif
 
+# PLUMED: link flags from installed PLUMED (Plumed.inc); empty when USE_PLUMED = 0
+# Default install: $(HOME)/opt/plumed. Override with: make USE_PLUMED=1 PLUMED_ROOT=/path
+# PLUMED_LINK = shared    # or: static | runtime (see PLUMED Plumed.inc)
+PLUMED_DRV_LIBS :=
+PLUMED_RPATH :=
+ifeq ($(USE_PLUMED), 1)
+    PLUMED_ROOT ?= $(HOME)/opt/plumed
+    PLUMED_ROOT := $(abspath $(PLUMED_ROOT))
+    PLUMED_LIB := $(PLUMED_ROOT)/lib/plumed/src/lib
+    include $(PLUMED_LIB)/Plumed.inc
+    PLUMED_LINK ?= shared
+    ifeq ($(PLUMED_LINK),static)
+        PLUMED_DRV_LIBS := $(PLUMED_STATIC_LOAD)
+    else ifeq ($(PLUMED_LINK),runtime)
+        PLUMED_DRV_LIBS := $(PLUMED_RUNTIME_LOAD)
+    else
+        PLUMED_DRV_LIBS := $(PLUMED_SHARED_LOAD)
+        PLUMED_RPATH := -Wl,-rpath,$(PLUMED_ROOT)/lib
+    endif
+    CPPFLAGS += -DUSE_PLUMED -Iplumed/ -I$(PLUMED_ROOT)/include/plumed/wrapper
+endif
+
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
 CFLAGS = -std=gnu99 -O3 -fopenmp
 
@@ -142,7 +168,8 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         atom/spectralFunctionsAtom.o atom/toolsAtom.o atom/mgga_atom/mGGApotentialAtom.o atom/mgga_atom/mGGAtoolsAtom.o \
         atom/exx_atom/exxToolsAtom.o atom/exx_atom/exxPotentialEnergyAtom.o \
         xc/hubbard/hubbardInitialization.o xc/hubbard/locOrbRoutines.o xc/hubbard/occupationMatrix.o \
-        xc/hubbard/hubbardForce.o xc/hubbard/hubbardStress.o xc/hubbard/hubbardPressure.o
+        xc/hubbard/hubbardForce.o xc/hubbard/hubbardStress.o xc/hubbard/hubbardPressure.o \
+        plumed/plumed_sparc.o
 
 # Switch the socket compilation
 # For future developers: please keep the socket options separate from the
@@ -168,7 +195,7 @@ all: sparc
 # 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 sparc: $(OBJSC)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(LIBBASE) $^ $(LDLIBS) $(PLUMED_DRV_LIBS) $(PLUMED_RPATH)
 
 .PHONY: clean
 clean:

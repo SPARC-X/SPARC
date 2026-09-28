@@ -1,0 +1,30 @@
+<simulation verbosity='high'>
+  <output prefix='simulation'>
+    <properties stride='1' filename='out'>
+      [ step, time{picosecond}, time{femtosecond}, potential{atomic_unit} ]
+    </properties>
+    <trajectory filename='pos_au' stride='1' format='xyz' cell_units='atomic_unit'> positions{atomic_unit} </trajectory>
+    <trajectory filename='pos_aa' stride='1' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
+  </output>
+
+  <total_steps>6</total_steps>
+
+  <ffsocket mode='inet' name='sparc'>
+    <address>localhost</address>
+    <port>31422</port>
+    <latency>0.01</latency>
+    <timeout>600</timeout>
+  </ffsocket>
+
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz'> init.xyz </file>
+    </initialize>
+    <forces>
+      <force forcefield='sparc'> </force>
+    </forces>
+    <motion mode='replay'>
+      <file mode='xyz'> frames.xyz </file>
+    </motion>
+  </system>
+</simulation>

@@ -1,0 +1,10 @@
+B1 NVE conserved drift
+
+ dt_fs     n    dE_cons_Ha   slope_Ha/ps    T_mean     T_std
+   0.5    21   -2.1634e-03   -2.2073e-01     335.7      18.1
+   1.0    21   -7.0356e-03   -4.6997e-01     544.1     126.6
+   2.0    21   -2.3152e-02   -6.8965e-01    1208.7    1052.7
+
+Potential + kinetic should trade off; conserved is their extended sum.
+
+overall: PASS  (|Δconserved| < 0.05 Ha)

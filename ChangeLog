@@ -4,6 +4,38 @@
 -changes
 
 --------------
+September 28, 2026
+Name: Qihao Cheng
+Changes: src/plumed/plumed_sparc.c, src/include/plumed_sparc.h,
+         src/include/isddft.h, src/initialization.c, src/readfiles.c,
+         src/md.c, src/makefile, src/socket/driver.c, utils/interface/
+
+1. Added an optional PLUMED build. Set USE_PLUMED=1 to compile the PLUMED C
+   API into SPARC molecular dynamics. The default remains USE_PLUMED=0, so a
+   normal build does not link PLUMED and the existing MD path is unchanged.
+
+2. New input tags PLUMED_FLAG and PLUMED_FILE, read only when SPARC is built
+   with USE_PLUMED. PLUMED_FLAG must be 0 or 1. PLUMED_FLAG: 1 requires
+   MD_FLAG: 1 and a PLUMED_FILE that can be opened. The PLUMED log is written
+   to <output>.plumed.
+
+3. After ionic forces are computed, NVT_NH, NVE, NVK_G, NPT_NH, and
+   NPT_NP/NPH call PLUMED. Collective variables and optional bias forces are
+   applied there. The integrator is unchanged. With PLUMED_FLAG: 0 the calls
+   return immediately.
+
+4. Added utils/interface for external molecular dynamics. It is not linked
+   into the SPARC binary. ipi/ holds the i-PI tutorial and examples: SPARC is
+   a socket force client (USE_SOCKET=1, MD_FLAG: 0) and i-PI moves the ions.
+   plumed/ holds the Python driver (plumed.Plumed() plus a short Verlet
+   stepper), its tutorial, and the A0–B2 examples. Launch scripts take SPARC,
+   NP, MPIEXEC, PLUMED_ROOT, and PLUMED_KERNEL from the environment.
+
+5. The i-PI socket client now treats an EXIT message as a clean shutdown.
+   Previously that header was an unknown message and SPARC exited with a
+   failure. main_Socket breaks the force loop and closes the socket.
+
+--------------
 September 15, 2026
 Name: Alfredo Metere
 Changes: src/gradVecRoutines.c, src/gradVecRoutinesKpt.c,

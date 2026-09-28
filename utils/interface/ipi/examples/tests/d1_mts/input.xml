@@ -1,0 +1,47 @@
+<simulation verbosity='high'>
+  <output prefix='simulation'>
+    <properties stride='1' filename='out'>
+      [ step, time{picosecond}, conserved{atomic_unit}, temperature{kelvin}, potential{atomic_unit} ]
+    </properties>
+    <trajectory filename='pos' stride='5' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
+  </output>
+  <total_steps>16</total_steps>
+  <ffsocket mode='inet' name='sparc'>
+    <address>localhost</address>
+    <port>31451</port>
+    <latency>0.01</latency>
+    <timeout>600</timeout>
+  </ffsocket>
+  <ffplumed name='plumed'>
+    <file mode='xyz'> init.xyz </file>
+    <plumed_dat> plumed.dat </plumed_dat>
+  </ffplumed>
+  <smotion mode='metad'>
+    <metad>
+      <metaff> [ plumed ] </metaff>
+    </metad>
+  </smotion>
+  <system>
+    <initialize nbeads='1'>
+      <file mode='xyz'> init.xyz </file>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='sparc'>
+        <mts_weights> [ 1, 0 ] </mts_weights>
+      </force>
+      <force forcefield='plumed'>
+        <mts_weights> [ 0, 1 ] </mts_weights>
+      </force>
+    </forces>
+    <motion mode='dynamics'>
+      <dynamics mode='nve'>
+        <timestep units='femtosecond'> 1.0 </timestep>
+        <nmts> [ 1, 4 ] </nmts>
+      </dynamics>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+    </ensemble>
+  </system>
+</simulation>

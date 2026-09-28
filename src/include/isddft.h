@@ -1219,6 +1219,13 @@ typedef struct _SPARC_OBJ{
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
     int readInitDens; // flag for reading inital density
+
+    /* PLUMED (optional; used when built with -DUSE_PLUMED) */
+    int PlumedFlag;
+    char PlumedFile[L_STRING];
+    char PlumedLogFilename[L_STRING];
+    void *PlumedHandle; /* rank 0: malloc'd plumed object (see plumed_sparc.c); other ranks: NULL */
+
    /* Socket interface
       Please keep this section as the last block in SPARC_OBJ definition,
       add new features before this block.
@@ -1560,6 +1567,10 @@ typedef struct _SPARC_INPUT_OBJ{
     char InDensDCubFilename[L_STRING]; 
     int densfilecount;
     int readInitDens; // flag for reading inital density    
+
+    /* PLUMED (optional; used when built with -DUSE_PLUMED) */
+    int PlumedFlag;
+    char PlumedFile[L_STRING];
 
     /* Socket interface
        Please keep the socket interface as the last block in the SPARC_INPUT_OBJ
