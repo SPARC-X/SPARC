@@ -772,7 +772,9 @@ int read_atoms_position_fom_socket(SPARC_OBJ *pSPARC, int init)
 /**
  * @brief Convert stress 6 vector to 9 matrix virial
  *        SPARC's stress information (in PBC) is [xx, xy, xz, yy, yz, zz] in Ha/Bohr^3, different from the common voigt stress
- *        Virial will be [xx, xy, xz, xy, yy, yz, xz, yz, zz] * -volume in Ha
+ *        Virial is -stress * volume (Ha). i-PI pressure is trace(virial)/(3V),
+ *        which then matches SPARC pres = -trace(stress)/3. Do not drop the minus:
+ *        the printed stress tensor and that pressure differ by this sign.
  *        Cell volume is given by: pSPARC->Jacbdet * pSPARC->range_x * pSPARC->range_y * pSPARC->range_z
  **/
 void stress_to_virial(SPARC_OBJ *pSPARC, double *virial)
@@ -843,7 +845,8 @@ void stress_to_virial(SPARC_OBJ *pSPARC, double *virial)
 	virial_calc[i] /= (pSPARC->range_x * pSPARC->range_z);
       }
     }
-    else if (pSPARC->BCx == 0){
+    // Periodic in z-
+    else if (pSPARC->BCz == 0){
       for (int i = 0; i < 9; i++){
 	virial_calc[i] /= (pSPARC->range_x * pSPARC->range_y);
       }

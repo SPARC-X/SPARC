@@ -197,8 +197,8 @@ void Plumed_Evaluate(SPARC_OBJ *pSPARC)
 
             double volCell = pSPARC->Jacbdet * pSPARC->range_x * pSPARC->range_y * pSPARC->range_z;
 
-            // This is the general form for the converted virial notation of the stress. For PBC (pSPARC->BC == 2) it's Ha/Bohr^3
-            // In other BCs, we should do post processing
+            // W = -σ V, same as socket/driver.c stress_to_virial. i-PI and SPARC
+            // pressure are both -trace(σ)/3; dropping the minus reverses the barostat.
             double virial_calc[9] = {
                 -pSPARC->stress[0] * volCell, -pSPARC->stress[1] * volCell, -pSPARC->stress[2] * volCell,
                 -pSPARC->stress[1] * volCell, -pSPARC->stress[3] * volCell, -pSPARC->stress[4] * volCell,

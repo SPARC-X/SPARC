@@ -14,7 +14,7 @@ Shared launcher: `_common/run_md.sh` (source from a test dir after setting `PORT
 | A3 | `a3_exit/` | Clean `EXIT` shutdown (rebuild existing source; no C edit) | **PASS** |
 | B1 | `b1_nve/` | NVE conserved quantity for 0.5 / 1 / 2 fs | **PASS** |
 | B2 | `b2_nvt/` | Langevin NVT holds ~300 K | **PASS** |
-| B3 | `b3_npt/` | Isotropic barostat uses SPARC virial | **PASS** (P→V sign deferred) |
+| B3 | `b3_npt/` | Isotropic barostat uses SPARC virial | **PASS** (pressure matches SPARC `pres`) |
 | C1 | `c1_umbrella/` | `ffplumed` restraint vs unbiased CV | **PASS** |
 | D1 | `d1_mts/` | PLUMED inner / SPARC outer MTS (~4×) | **PASS** |
 | E1 | `e1_multiclient/` | Two SPARC clients, `nbeads=2` | **PASS** |
@@ -23,7 +23,7 @@ Shared launcher: `_common/run_md.sh` (source from a test dir after setting `PORT
 
 Skipped / deferred (no SPARC C change in this pass):
 
-- **B3 directional P→V**: SPARC `.static` stress ≈ +10 GPa, i-PI `pressure_md` ≈ −10 GPa at t=0. Review `stress_to_virial` later.
+- **B3 pressure**: printed stress tensor ≈ +10 GPa; SPARC `pres` and i-PI `pressure_md` are both ≈ −10 GPa (`W = -σV`).
 - **C3** two-window WHAM
 - **D3** DFT–DFT MTS
 - **UNIX socket**: already covered by `tests/Socket/Al_singlepoint_unix`

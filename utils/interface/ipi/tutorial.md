@@ -494,9 +494,9 @@ outputs before a rerun avoids confusion.
 
 - Wire: Bohr, Hartree, Hartree/Bohr, virial in Hartree.
 - SPARC `CELL` is Bohr; i-PI xyz in the examples is Å.
-- For NPT, SPARC must return a virial (`CALC_STRESS: 1`). The **sign** of
-  SPARC printed stress versus i-PI `pressure_md` is still under review
-  (`driver.c` `stress_to_virial`); volume fluctuation still works.
+- For NPT, SPARC must return a virial (`CALC_STRESS: 1`). i-PI
+  `pressure_md` matches SPARC `pres = -trace(stress)/3` (`W = -σV` in
+  `stress_to_virial`). The printed stress tensor has the other sign.
 - 4-atom cells have huge temperature noise; short NVT tests use a wide
   window around the target T.
 
