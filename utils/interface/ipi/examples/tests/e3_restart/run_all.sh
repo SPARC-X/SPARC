@@ -16,7 +16,15 @@ t = t.replace("<total_steps>50</total_steps>", "<total_steps>55</total_steps>")
 p.write_text(t)
 PY
 cp "$B2/Al.inpt" "$B2/Al.ion" .
-PSP_SRC="$ROOT/../../../../../../psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8"
+if [[ -z "${SPARC_REPO:-}" ]]; then
+  _d="$ROOT"
+  while [[ "$_d" != "/" && ! -f "$_d/src/makefile" ]]; do
+    _d="$(dirname "$_d")"
+  done
+  export SPARC_REPO="$_d"
+fi
+unset _d
+PSP_SRC="$SPARC_REPO/psps/13_Al_3_1.9_1.9_pbe_n_v1.0.psp8"
 cp "$PSP_SRC" .
 # Continue only a few extra steps: rewrite total_steps in a sidecar if needed.
 # i-pi RESTART continues from the checkpoint as stored.
