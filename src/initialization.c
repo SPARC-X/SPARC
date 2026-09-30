@@ -1685,6 +1685,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->Exc = 0.0;
     pSPARC->Eband = 0.0;
     pSPARC->Entropy = 0.0;
+    pSPARC->Entropy_xc = 0.0;
     pSPARC->Escc = 0.0;
     pSPARC->Etot = 0.0;
 
@@ -3838,7 +3839,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                   SPARC (version September 29, 2026)                    *\n");
+    fprintf(output_fp,"*                   SPARC (version September 30, 2026)                    *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4883,6 +4884,8 @@ Exchange Correlation
                  "scanx"  SCAN exchange                  iexch=4
                  "rscanx"  rSCAN exchange                iexch=5
                  "r2scanx" r2SCAN exchange               iexch=6
+                 "ksdtx"   KSDT finite-T LDA exchange    iexch=7  (also corrKSDT: identical exchange)
+                 "kdt16x"  KDT16 finite-T GGA exchange   iexch=8
    
    Correlation:  "noc"    none                           icorr=0
                  "pz"     Perdew-Zunger                  icorr=1 
@@ -4892,6 +4895,8 @@ Exchange Correlation
                  "scanc"  SCAN correlation               icorr=4
                  "rscanc" rSCAN correlation              icorr=5
                  "r2scanc"r2SCAN correlation             icorr=6
+                 "ksdtc"  KSDT finite-T LDA correlation  icorr=7  (also corrKSDT: ksdtc with corr = 1)
+                 "kdt16c" KDT16 finite-T GGA correlation icorr=8
 
    Meta-GGA:     "nom"    none                           imeta=0
                  "scan"   SCAN-Meta-GGA                  imeta=1
@@ -4990,7 +4995,30 @@ void xc_decomposition(SPARC_OBJ *pSPARC)
         pSPARC->ixc[0] = 3; pSPARC->ixc[1] = 2; 
         pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 2;
         pSPARC->isgradient = 1;
+    } else if (strcmpi(pSPARC->XC, "KSDT") == 0) {
+        xc = 7; // pspxc of the T -> 0 limit (LDA)
+        pSPARC->ixc[0] = 7; pSPARC->ixc[1] = 7;
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+    } else if (strcmpi(pSPARC->XC, "corrKSDT") == 0) {
+        xc = 7; // pspxc of the T -> 0 limit (LDA)
+        pSPARC->ixc[0] = 7; pSPARC->ixc[1] = 7; // KSDT routines; corrKSDT parameters selected in Calculate_Vxc (corr = 1)
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        if (pSPARC->spin_typ != 0) {
+            if (!rank) printf("\nERROR: corrKSDT is only available for spin-unpolarized calculations (SPIN_TYP: 0)!\n");
+            exit(EXIT_FAILURE);
+        }
+    } else if (strcmpi(pSPARC->XC, "KDT16") == 0) {
+        xc = 11; // pspxc of the T -> 0 limit (GGA_PBE)
+        pSPARC->ixc[0] = 8; pSPARC->ixc[1] = 8;
+        pSPARC->ixc[2] = 0; pSPARC->ixc[3] = 0;
+        pSPARC->isgradient = 1;
+        if (pSPARC->spin_typ != 0) {
+            if (!rank) printf("\nERROR: KDT16 is only available for spin-unpolarized calculations (SPIN_TYP: 0)!\n");
+            exit(EXIT_FAILURE);
+        }
     }
+    if ((strcmpi(pSPARC->XC, "KSDT") == 0 || strcmpi(pSPARC->XC, "corrKSDT") == 0 || strcmpi(pSPARC->XC, "KDT16") == 0) && pSPARC->elec_T_type != 0 && !rank)
+        printf(YEL "\nWARNING: %s is an xc free energy at the electronic temperature; use ELEC_TEMP_TYPE: fermi-dirac.\n" RESET, pSPARC->XC);
     for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
         if (!pSPARC->usefock && pSPARC->psd[ityp].pspxc != xc) {
             if(!rank) printf(YEL "\nWARNING: Pseudopotential file for atom type %s has pspxc = %d,\n"

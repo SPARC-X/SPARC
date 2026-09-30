@@ -140,6 +140,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     char input_filename[L_STRING], str[L_STRING], temp[L_STRING];
     int i, Flag_smear_typ = 0, Flag_Temp = 0, Flag_elecT = 0, Flag_ionT = 0, Flag_ionT_end = 0; // Flag_eqT = 0,
     int Flag_cell = 0;
+    int Flag_elecTemp = 0; // ELEC_TEMP given (SMEARING not counted)
     int Flag_latvec_scale = 0;
     int Flag_accuracy = 0;
     int Flag_kptshift = 0;
@@ -358,6 +359,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } */else if (strcmpi(str,"ELEC_TEMP:") == 0) {
             Flag_Temp ++;
             Flag_elecT ++;
+            Flag_elecTemp ++;
             fscanf(input_fp,"%lf",&pSPARC_Input->elec_T);
             pSPARC_Input->Beta = 1./(CONST_KB * pSPARC_Input->elec_T);
             snprintf(str, L_STRING, "undefined");    // initialize str
@@ -1348,6 +1350,33 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         if(strcmpi(pSPARC_Input->MDMeth,"NVT_NH") == 0){
             if(Flag_ionT_end == 0)
                 pSPARC_Input->thermos_Tf = pSPARC_Input->ion_T;
+        }
+    }
+
+    // KSDT, corrKSDT, KDT16: the XC uses the electronic temperature
+    if (strcmpi(pSPARC_Input->XC, "KSDT") == 0 || strcmpi(pSPARC_Input->XC, "corrKSDT") == 0 || strcmpi(pSPARC_Input->XC, "KDT16") == 0) {
+        if (pSPARC_Input->MDFlag != 1) {
+            if (Flag_elecTemp == 0) {
+                printf("\nERROR: %s requires ELEC_TEMP to be specified!\n", pSPARC_Input->XC);
+                exit(EXIT_FAILURE);
+            }
+            if (pSPARC_Input->elec_T < 0) {
+                printf("\nERROR: ELEC_TEMP must be >= 0 for %s!\n", pSPARC_Input->XC);
+                exit(EXIT_FAILURE);
+            }
+            if (Flag_ionT > 0)
+                printf("\nWARNING: ION_TEMP is ignored without MD; %s uses ELEC_TEMP as its temperature.\n", pSPARC_Input->XC);
+        } else {
+            if (Flag_elecTemp == 0 && Flag_ionT == 0) {
+                printf("\nERROR: %s requires ELEC_TEMP or ION_TEMP to be specified!\n", pSPARC_Input->XC);
+                exit(EXIT_FAILURE);
+            }
+            if (pSPARC_Input->ion_elec_eqT == 1)
+                printf("\nWARNING: electronic temperature <= 0: it follows the instantaneous ionic temperature at every MD step, and %s uses it.\n", pSPARC_Input->XC);
+            else if (Flag_elecTemp > 0 && pSPARC_Input->elec_T != pSPARC_Input->ion_T)
+                printf("\nWARNING: ELEC_TEMP (%g K) and ION_TEMP (%g K) are different; %s uses ELEC_TEMP.\n", pSPARC_Input->elec_T, pSPARC_Input->ion_T, pSPARC_Input->XC);
+            else if (Flag_elecTemp == 0 && Flag_elecT > 0)
+                printf("\nWARNING: no ELEC_TEMP; %s uses the electronic temperature from SMEARING (%g K), not ION_TEMP (%g K).\n", pSPARC_Input->XC, pSPARC_Input->elec_T, pSPARC_Input->ion_T);
         }
     }
     

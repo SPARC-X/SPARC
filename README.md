@@ -4,7 +4,7 @@
 SPARC is an open-source software package for the accurate, effcient, and scalable solution of the Kohn-Sham density functional theory (DFT) problem. The main features of SPARC currently include
 
 * Applicable to isolated systems such as molecules as well as extended systems such as crystals, surfaces, and wires.
-* Local, semilocal, and nonlocal (including hybrid) exchange-correlation functionals.
+* Local, semilocal, nonlocal (including hybrid) and temperature-dependent exchange-correlation functionals.
 * Standard ONCV pseudopotentials, including nonlinear core corrections (NLCCs).
 * Calculation of ground state energy, atomic forces, and stress tensor.
 * Structural relaxation and ab initio molecular dynamics (NVE, NVTNH, NVKG, NPTNH, NPTNP and NPH).

@@ -196,6 +196,8 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
                 Etot, Eband, E1, E2, E3, pSPARC->Exc, pSPARC->Esc, pSPARC->Entropy, pSPARC->Eexx, dEtot, dEband); 
     #endif
     }
+    if (pSPARC->ixc[1] == 7 || pSPARC->ixc[1] == 8) // finite-T XC: -T*S_xc to all ranks, as Etot
+        MPI_Bcast(&pSPARC->Entropy_xc, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
 

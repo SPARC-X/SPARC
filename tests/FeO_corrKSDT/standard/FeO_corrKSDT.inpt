@@ -1,0 +1,20 @@
+# nprocs: 24
+# FeO (wustite), rock-salt, 8-atom conventional cube, a = 4.334 A (8.19 Bohr), all atoms displaced (forces),
+# finite-T LDA XC corrKSDT (spin-unpolarized; corrKSDT is defined for SPIN_TYP: 0 only) at T = 1000 K.
+# Same cell, atom positions and parameters as FeO_spin_KSDT, without spin.
+LATVEC_SCALE: 8.19 8.19 8.19
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
+MESH_SPACING: 0.25
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+EXCHANGE_CORRELATION: corrKSDT
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 1000
+TOL_SCF: 1e-6
+NSTATES: 60
+CALC_STRESS: 1
+PRINT_FORCES: 1

@@ -63,7 +63,7 @@ USE_ACCELGT = 0
 # LDFLAGS += -L$(BLASROOT)
 
 CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
-           -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include
+           -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include -IhighT/xc/include
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -169,7 +169,8 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         atom/exx_atom/exxToolsAtom.o atom/exx_atom/exxPotentialEnergyAtom.o \
         xc/hubbard/hubbardInitialization.o xc/hubbard/locOrbRoutines.o xc/hubbard/occupationMatrix.o \
         xc/hubbard/hubbardForce.o xc/hubbard/hubbardStress.o xc/hubbard/hubbardPressure.o \
-        plumed/plumed_sparc.o
+        plumed/plumed_sparc.o \
+        highT/xc/finiteTempXC.o
 
 # Switch the socket compilation
 # For future developers: please keep the socket options separate from the

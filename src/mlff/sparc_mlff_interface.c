@@ -346,11 +346,11 @@ t2 = MPI_Wtime();
 	MPI_Bcast(pSPARC->forces, 3*pSPARC->n_atom, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(pSPARC->stress, 6, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&pSPARC->pres, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot - pSPARC->Entropy;
+	mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot - pSPARC->Entropy - pSPARC->Entropy_xc;
 	mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot;
 	if (pSPARC->print_mlff_flag == 1 && rank ==0 && pSPARC->mlff_internal_energy_flag){
 		fprintf(mlff_str->fp_mlff, "Internal energy DFT data added! Free energy: %.6E Ha, Internal energy: %.6E Ha, Entropy: %.6E Ha\n",
-			mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy);
+			mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy + pSPARC->Entropy_xc);
 	}
 	mlff_str->internal_energy_DFT_count += 1;
 	if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1){
@@ -919,11 +919,11 @@ t2 = MPI_Wtime();
 		MPI_Bcast(pSPARC->forces, 3*pSPARC->n_atom, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Bcast(pSPARC->stress, 6, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&pSPARC->pres, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot-pSPARC->Entropy;
+		mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot-pSPARC->Entropy-pSPARC->Entropy_xc;
 	    mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot;
 	    if (pSPARC->print_mlff_flag == 1 && rank ==0 && mlff_str->mlff_internal_energy_flag){
 			fprintf(fp_mlff, "Internal energy DFT data added! Free energy: %.6E Ha, Internal energy: %.6E Ha, Entropy: %.6E Ha\n",
-			 mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy);
+			 mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy + pSPARC->Entropy_xc);
 		}
 	    mlff_str->internal_energy_DFT_count += 1;
 		init_dyarray(&mlff_str->atom_idx_addtrain);
@@ -1008,11 +1008,11 @@ t2 = MPI_Wtime();
 			MPI_Bcast(pSPARC->forces, 3*pSPARC->n_atom, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			MPI_Bcast(pSPARC->stress, 6, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&pSPARC->pres, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-			mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot-pSPARC->Entropy;
+			mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot-pSPARC->Entropy-pSPARC->Entropy_xc;
 		    mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot;
 		    if (pSPARC->print_mlff_flag == 1 && rank ==0 && pSPARC->mlff_internal_energy_flag){
 		    	fprintf(fp_mlff, "Internal energy DFT data added! Free energy: %.6E Ha, Internal energy: %.6E Ha, Entropy: %.6E Ha\n",
-			 	mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy);
+			 	mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count], mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count], pSPARC->Entropy + pSPARC->Entropy_xc);
 		    }
 		    mlff_str->internal_energy_DFT_count += 1;
 			double sum_square_error = 0.0;
@@ -1102,6 +1102,7 @@ t2 = MPI_Wtime();
 				E_internal = pSPARC->Etot*mlff_str->internal_energy_model_weights[1] + mlff_str->internal_energy_model_weights[0];
 				entropy = pSPARC->Etot - E_internal;
 				pSPARC->Entropy = entropy;
+				pSPARC->Entropy_xc = 0.0; // the model -TS above already holds the XC part
 			}
 			
 			if (pSPARC->mlff_pressure_train_flag==0){

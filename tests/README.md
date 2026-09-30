@@ -45,7 +45,7 @@ The systems in the testing suites are classified with a set of tags which descri
 
  * Boundary conditions: `bulk`, `surface`, `wire`, `molecule`.
  * Cell type: `orth`, `nonorth`.
- * Exchange correlation: `lda`, `gga`,`scan`,`pbe0`,`hse`,`soc`,`vdWDF`,`d3`.
+ * Exchange correlation: `lda`, `gga`,`scan`,`pbe0`,`hse`,`soc`,`vdWDF`,`d3`,`ftxc` (finite-temperature XC: KSDT, corrKSDT, KDT16).
  * SCF Mixing and preconditioner: `potmix`,`denmix`,`kerker`.
  * Calculation type: `scf`,`relax_atom`,`relax_cell`,`relax_full`,`md`.
  * Relaxation type: `nlcg`,`lbfgs`,`fire`.

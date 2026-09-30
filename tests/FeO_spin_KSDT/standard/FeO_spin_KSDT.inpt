@@ -1,0 +1,22 @@
+# nprocs: 24
+# FeO (wustite), rock-salt, 8-atom conventional cube, a = 4.334 A (8.19 Bohr), all atoms displaced (forces),
+# finite-T LDA XC KSDT (spin-polarized) at T = 1000 K. Starting Fe moments +4,+4,-4,-4 mu_B (high-spin Fe2+,
+# zero net moment): a collinear stand-in for paramagnetic FeO, as in the Earth (T >> T_Neel = 198 K).
+SPIN_TYP: 1
+LATVEC_SCALE: 8.19 8.19 8.19
+LATVEC:
+1 0 0
+0 1 0
+0 0 1
+MESH_SPACING: 0.25
+FD_ORDER: 12
+BC: P P P
+KPOINT_GRID: 1 1 1
+EXCHANGE_CORRELATION: KSDT
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 1000
+TOL_SCF: 1E-7
+NSTATES: 60
+CALC_STRESS: 1
+PRINT_FORCES: 1
+MIXING_PRECOND_MAG: kerker
