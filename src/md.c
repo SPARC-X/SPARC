@@ -2951,8 +2951,8 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 		fprintf(output_md,":KEN: %18.10E\n", pSPARC->KE);
 		fprintf(output_md,":KENIG:%18.10E\n",ken_ig/pSPARC->n_atom);
 		fprintf(output_md,":FEN: %18.10E\n", pSPARC->PE);
-		fprintf(output_md,":UEN: %18.10E\n", pSPARC->PE - pSPARC->Entropy/pSPARC->n_atom);
-		fprintf(output_md,":TSEN:%18.10E\n", pSPARC->Entropy/pSPARC->n_atom);
+		fprintf(output_md,":UEN: %18.10E\n", pSPARC->PE - (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom);
+		fprintf(output_md,":TSEN:%18.10E\n", (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom);
 		if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
 			fprintf(output_md,":TENX:%18.10E \n", pSPARC->TE_ext);
 		}
@@ -3175,8 +3175,8 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 	pSPARC->mean_TE = (mean_TE_old * (Count - 1) + pSPARC->TE)/ Count;
 	pSPARC->mean_KE = (mean_KE_old * (Count - 1) + pSPARC->KE)/ Count;
 	pSPARC->mean_PE = (mean_PE_old * (Count - 1) + pSPARC->PE)/ Count;
-	pSPARC->mean_U = (mean_U_old * (Count - 1) + pSPARC->PE - pSPARC->Entropy/pSPARC->n_atom)/ Count;
-	pSPARC->mean_Entropy = (mean_Eent_old * (Count - 1) + pSPARC->Entropy/pSPARC->n_atom)/ Count;
+	pSPARC->mean_U = (mean_U_old * (Count - 1) + pSPARC->PE - (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom)/ Count;
+	pSPARC->mean_Entropy = (mean_Eent_old * (Count - 1) + (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom)/ Count;
 	pSPARC->std_elec_T = sqrt(fabs( ((pow(pSPARC->std_elec_T,2.0) + pow(mean_Te_old,2.0)) * (Count - 1) + pow(pSPARC->elec_T,2.0))/Count - pow(pSPARC->mean_elec_T,2.0) ));
 	pSPARC->std_ion_T = sqrt(fabs( ((pow(pSPARC->std_ion_T,2.0) + pow(mean_Ti_old,2.0)) * (Count - 1) + pow(pSPARC->ion_T,2.0))/Count - pow(pSPARC->mean_ion_T,2.0) ));
 	pSPARC->std_internal_pressure = sqrt(fabs( ((pow(pSPARC->std_internal_pressure,2.0) + pow(mean_internal_pressure_old,2.0)) * (Count - 1) + pow(pSPARC->internal_pressure,2.0))/Count - pow(pSPARC->mean_internal_pressure,2.0) ));
@@ -3184,8 +3184,8 @@ void MD_QOI(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *mindis) {
 	pSPARC->std_TE = sqrt(fabs( ((pow(pSPARC->std_TE,2.0) + pow(mean_TE_old,2.0)) * (Count - 1) + pow(pSPARC->TE,2.0))/Count - pow(pSPARC->mean_TE,2.0) ));
 	pSPARC->std_KE = sqrt(fabs( ((pow(pSPARC->std_KE,2.0) + pow(mean_KE_old,2.0)) * (Count - 1) + pow(pSPARC->KE,2.0))/Count - pow(pSPARC->mean_KE,2.0) ));
 	pSPARC->std_PE = sqrt(fabs( ((pow(pSPARC->std_PE,2.0) + pow(mean_PE_old,2.0)) * (Count - 1) + pow(pSPARC->PE,2.0))/Count - pow(pSPARC->mean_PE,2.0) ));
-	pSPARC->std_U = sqrt(fabs( ((pow(pSPARC->std_U,2.0) + pow(mean_U_old,2.0)) * (Count - 1) + pow(pSPARC->PE - pSPARC->Entropy/pSPARC->n_atom,2.0))/Count - pow(pSPARC->mean_U,2.0) ));
-	pSPARC->std_Entropy = sqrt(fabs( ((pow(pSPARC->std_Entropy,2.0) + pow(mean_Eent_old,2.0)) * (Count - 1) + pow(pSPARC->Entropy/pSPARC->n_atom,2.0))/Count - pow(pSPARC->mean_Entropy,2.0) ));
+	pSPARC->std_U = sqrt(fabs( ((pow(pSPARC->std_U,2.0) + pow(mean_U_old,2.0)) * (Count - 1) + pow(pSPARC->PE - (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom,2.0))/Count - pow(pSPARC->mean_U,2.0) ));
+	pSPARC->std_Entropy = sqrt(fabs( ((pow(pSPARC->std_Entropy,2.0) + pow(mean_Eent_old,2.0)) * (Count - 1) + pow((pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom,2.0))/Count - pow(pSPARC->mean_Entropy,2.0) ));
 	if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
 		double mean_TEx_old = pSPARC->mean_TE_ext;
 		pSPARC->mean_TE_ext = (mean_TEx_old * (Count - 1) + pSPARC->TE_ext)/ Count;

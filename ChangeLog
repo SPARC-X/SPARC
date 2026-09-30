@@ -5,6 +5,37 @@
 
 
 --------------
+September 30, 2026
+Name: Shubhang Krishnakant Trivedi
+Changes: src/highT/xc/finiteTempXC.c, src/highT/xc/include/finiteTempXC.h,
+         src/exchangeCorrelation.c, src/initialization.c, src/energy.c, 
+	 src/md.c, src/electronicGroundState.c, src/readfiles.c,
+         src/include/isddft.h, src/mlff/sparc_mlff_interface.c,
+         src/cyclix/cyclix_stress.c, src/ofdft/ofdft.c, src/makefile,
+         README.md, doc/.LaTeX/Introduction.tex, doc/.LaTeX/System.tex,
+         doc/.LaTeX/cyclix/cyclix.tex, doc/Manual.pdf, doc/cyclix_Manual.pdf,
+         tests/SPARC_testing_script.py, tests/README.md, tests/FeO_corrKSDT,
+         tests/FeO_spin_KSDT, tests/Al2_tetragonal_KDT16, tests/highT/highT_He2_KDT16
+
+1. Added the finite-temperature exchange-correlation free-energy functionals
+   EXCHANGE_CORRELATION: KSDT (LDA; V.V. Karasiev et al., PRL 112, 076403 (2014)),
+   corrKSDT (LDA; corrected KSDT, V.V. Karasiev et al., PRL 120, 076401 (2018), Supplemental
+   Material Table S2) and KDT16 (GGA; V.V. Karasiev et al., PRL 120, 076401 (2018)), in
+   src/highT/xc/. They are evaluated at the electronic temperature 1/Beta. corrKSDT is a
+   separate functional from KSDT (same form and exchange, refitted spin-unpolarized
+   correlation parameters) and uses the KSDT routines with corr = 1. corrKSDT and KDT16 are
+   spin-unpolarized only, while KSDT supports spin-polarized calculations as well.
+  
+2. The exchange-correlation entropy term -T*S_xc of these functionals (Entropy_xc*T) is
+   printed in the .out file, included in the internal energy and entropy terms of the
+   .aimd file (UEN, TSEN and their averages), and in the MLFF internal-energy model.
+
+3. corrKSDT and KDT16 with SPIN_TYP != 0 stop with an error;
+   At zero electronic temperature the functionals give their T -> 0 limits: T below 1e-12 K
+   (KSDT, corrKSDT) or 1e-6 K (KDT16) is raised to that value, since the fits are 0/0 at
+   t = 0 exactly (and the KDT16 exchange-fit derivative overflows below ~1e-9 K).
+
+--------------
 September 29, 2026
 Name: Qihao Cheng
 Changes: src/plumed/plumed_sparc.c, src/include/plumed_sparc.h,

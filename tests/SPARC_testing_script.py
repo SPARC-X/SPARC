@@ -576,6 +576,27 @@ SYSTEMS["directory"].append("./")
 SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'relax_cell'])
 SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
 ##################################################################################################################
+# Finite-temperature XC functionals KSDT / corrKSDT / KDT16 (tag 'ftxc')
+SYSTEMS["systemname"].append('highT_He2_KDT16')
+SYSTEMS["directory"].append("./highT/")
+SYSTEMS["Tags"].append(['bulk', 'highT', 'orth', 'gga', 'smear_fd', 'ftxc'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('Al2_tetragonal_KDT16')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['bulk', 'gga', 'orth', 'kpt', 'smear_fd', 'nlcc', 'ftxc'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('FeO_spin_KSDT')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['bulk', 'lda', 'orth', 'kpt', 'spin', 'smear_fd', 'nlcc', 'kerker', 'ftxc'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
+SYSTEMS["systemname"].append('FeO_corrKSDT')
+SYSTEMS["directory"].append("./")
+SYSTEMS["Tags"].append(['bulk', 'lda', 'orth', 'kpt', 'smear_fd', 'nlcc', 'ftxc'])
+SYSTEMS["Tols"].append([tols["E_tol"], tols["F_tol"], tols["stress_tol"]]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)
+##################################################################################################################
 # < Uncomment 3 lines below and fill in the details for the new systems>
 # SYSTEMS["systemname"].append('??type the system name??')
 # SYSTEMS["Tols"].append([??type the E_tol, F_tol and stress_tol separated by comma??]) # E_tol(Ha/atom), F_tol(Ha/Bohr), stress_tol(%)

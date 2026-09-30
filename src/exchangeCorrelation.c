@@ -26,6 +26,7 @@
 #include "mGGAscan.h"
 #include "mGGArscan.h"
 #include "mGGAr2scan.h"
+#include "finiteTempXC.h"
 #include "cyclix_gradVec.h"
 
 #define max(x,y) ((x)>(y)?(x):(y))
@@ -110,6 +111,12 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 6:
             r2scanx(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 7:
+            ksdtx(DMnd, rho, 1.0/pSPARC->Beta, ex, vx);
+            break;
+        case 8:
+            kdt16x(DMnd, rho, sigma, 1.0/pSPARC->Beta, ex, vx, v2x);
+            break;
         default:
             memset(ex, 0, sizeof(double) * DMnd);
             memset(vx, 0, sizeof(double) * DMnd);
@@ -144,6 +151,12 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 6:
             r2scanc(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 7:
+            ksdtc(DMnd, rho, 1.0/pSPARC->Beta, strcmpi(pSPARC->XC, "corrKSDT") == 0, ec, vc);   // KSDT or corrKSDT
+            break;
+        case 8:
+            kdt16c(DMnd, rho, sigma, 1.0/pSPARC->Beta, ec, vc, v2c);
             break;
         default:
             memset(ec, 0, sizeof(double) * DMnd);
@@ -262,6 +275,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
         case 6:
             r2scanx_spin(DMnd, rho, sigma, tau, ex, vx, v2x, v3x);
             break;
+        case 7:
+            ksdtx_spin(DMnd, rho, 1.0/pSPARC->Beta, ex, vx);
+            break;
         default:
             memset(ex, 0, sizeof(double) * DMnd);
             memset(vx, 0, sizeof(double) * DMnd*2);
@@ -296,6 +312,9 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
             break;
         case 6:
             r2scanc_spin(DMnd, rho, sigma, tau, ec, vc, v2c, v3c);
+            break;
+        case 7:
+            ksdtc_spin(DMnd, rho, 1.0/pSPARC->Beta, ec, vc);
             break;
         default:
             memset(ec, 0, sizeof(double) * DMnd);
@@ -411,6 +430,23 @@ void Calculate_Vxc(SPARC_OBJ *pSPARC)
                 pSPARC->xcoption[0] = 0; pSPARC->xcoption[1] = 0;
             }
         } 
+    }
+
+    // finite-T XC (KSDT, corrKSDT, KDT16): -T*S_xc = int rho T d(f_xc)/dT, the XC part of -TS in the internal energy U = F + TS
+    if (pSPARC->ixc[1] == 7 || pSPARC->ixc[1] == 8) {
+        double *tdfdt = (double *)malloc(DMnd * sizeof(double));
+        if (pSPARC->ixc[1] == 8)
+            kdt16_TdfdT(DMnd, rho, sigma, 1.0/pSPARC->Beta, tdfdt);
+        else if (pSPARC->spin_typ == 0)
+            ksdt_TdfdT(DMnd, rho, 1.0/pSPARC->Beta, strcmpi(pSPARC->XC, "corrKSDT") == 0, tdfdt);   // KSDT or corrKSDT
+        else
+            ksdt_spin_TdfdT(DMnd, rho, 1.0/pSPARC->Beta, tdfdt);
+        double TS = 0.0;
+        for (int i = 0; i < DMnd; i++)
+            TS += rho[i] * tdfdt[i] * (pSPARC->CyclixFlag ? pSPARC->Intgwt_phi[i] : pSPARC->dV);
+        MPI_Allreduce(MPI_IN_PLACE, &TS, 1, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm_phi);
+        pSPARC->Entropy_xc = TS;
+        free(tdfdt);
     }
 
     free(rho);

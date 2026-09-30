@@ -791,6 +791,7 @@ typedef struct _SPARC_OBJ{
     double Exc_corr;       // correction in exchange-correlation energy
     double Eband;          // band structure energy
     double Entropy;        // entropy
+    double Entropy_xc;     // -T*S_xc of a finite-T XC functional (KSDT, corrKSDT, KDT16), already inside Exc; 0 otherwise
     double Etot;           // total free energy
     // double Eatom;          // free energy per atom
     double Escc;           // Self-consistency correction energy

@@ -303,7 +303,7 @@ Restricted to even integers since central finite-differences are employed. The d
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}[allowframebreaks]{\texttt{EXCHANGE\_CORRELATION}} \label{EXCHANGE_CORRELATION}
+\begin{frame}{\texttt{EXCHANGE\_CORRELATION}} \label{EXCHANGE_CORRELATION}
 \vspace*{-12pt}
 \begin{columns}
 \column{0.35\linewidth}
@@ -329,11 +329,19 @@ No unit
 Choice of exchange-correlation functional. Options are \texttt{LDA\_PW} (Perdew-Wang LDA), \texttt{LDA\_PZ} (Purdew-Zunger LDA), 
 \texttt{GGA\_PBE} (PBE GGA), \texttt{GGA\_RPBE} (revised PBE GGA), and \texttt{GGA\_PBEsol} (PBE GGA revised for solids), 
 \texttt{PBE0}, \texttt{HF} (Hartree-Fock), \texttt{HSE},
-\texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al), \texttt{SCAN} (SCAN metaGGA), \texttt{RSCAN} (rSCAN metaGGA), and \texttt{R2SCAN} (r2SCAN metaGGA).
+\texttt{vdWDF1} (van der Waals Density Functional developed by Dion et al.), \texttt{vdWDF2} (vdW Density Functional modified by Lee et al), \texttt{SCAN} (SCAN metaGGA), \texttt{RSCAN} (rSCAN metaGGA), \texttt{R2SCAN} (r2SCAN metaGGA), and the finite-temperature functionals described on the next page.
+\end{block}
+
+\end{frame}
+
+\begin{frame}{\texttt{EXCHANGE\_CORRELATION} (continued)}
+\vspace*{-12pt}
+\begin{block}{Description (continued)}
+Finite-temperature options are \texttt{KSDT} (finite-temperature LDA, Karasiev et al.), \texttt{corrKSDT} (corrected KSDT: finite-temperature LDA with the refitted parameters), and \texttt{KDT16} (finite-temperature GGA).
 \end{block}
 
 \begin{block}{Remark}
-For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ} is not available.
+For spin-polarized calculation (\hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}} = 1), \texttt{LDA\_PZ}, \texttt{corrKSDT} and \texttt{KDT16} are not available.
 
 Currently SCAN, RSCAN and R2SCAN does not support nonlinear core correction pseudopotential.
 \end{block}

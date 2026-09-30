@@ -1,0 +1,20 @@
+# fcc Al (a = 7.60 Bohr) as a 2-atom body-centred tetragonal cell a/sqrt2 x a/sqrt2 x a, both atoms
+# displaced (relative displacement 29 % of the bond, forces ~0.14 Ha/Bohr), finite-T GGA XC KDT16,
+# T = 1e4 K, spin-unpolarized. Same geometry and grid as the SPARC-vs-ABINIT KDT16 validation.
+LATVEC_SCALE: 5.374011537017761 5.374011537017761 7.60
+LATVEC:
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+BC: P P P
+FD_GRID: 36 36 54
+FD_ORDER: 12
+KPOINT_GRID: 4 4 3
+KPOINT_SHIFT: 0 0 0
+ELEC_TEMP_TYPE: fermi-dirac
+ELEC_TEMP: 10000
+EXCHANGE_CORRELATION: KDT16
+NSTATES: 20
+TOL_SCF: 1e-5
+CALC_STRESS: 1
+PRINT_FORCES: 1

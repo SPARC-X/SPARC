@@ -360,9 +360,9 @@ void Calculate_XC_stress_cyclix(SPARC_OBJ *pSPARC) {
     if (!rank) printf("Start calculating exchange-correlation components of stress ...\n");
 #endif
 
-    if(strcmp(pSPARC->XC,"LDA_PW") == 0 || strcmp(pSPARC->XC,"LDA_PZ") == 0){
+    if(strcmp(pSPARC->XC,"LDA_PW") == 0 || strcmp(pSPARC->XC,"LDA_PZ") == 0 || strcmpi(pSPARC->XC,"KSDT") == 0 || strcmpi(pSPARC->XC,"corrKSDT") == 0){
         pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
-    } else if(strcmp(pSPARC->XC,"GGA_PBE") == 0 || strcmp(pSPARC->XC,"GGA_RPBE") == 0 || strcmp(pSPARC->XC,"GGA_PBEsol") == 0){
+    } else if(strcmp(pSPARC->XC,"GGA_PBE") == 0 || strcmp(pSPARC->XC,"GGA_RPBE") == 0 || strcmp(pSPARC->XC,"GGA_PBEsol") == 0 || strcmpi(pSPARC->XC,"KDT16") == 0){
         pSPARC->stress_xc[5] = pSPARC->Exc - pSPARC->Exc_corr;
         int len_tot, i, count, DMnd;
         DMnd = pSPARC->Nd_d;

@@ -154,6 +154,8 @@ void Calculate_electronicGroundState(SPARC_OBJ *pSPARC) {
             fprintf(output_fp,"Exchange correlation energy        :%18.10E (Ha)\n", pSPARC->Exc);
             fprintf(output_fp,"Self and correction energy         :%18.10E (Ha)\n", pSPARC->Esc);
             fprintf(output_fp,"-Entropy*kb*T                      :%18.10E (Ha)\n", pSPARC->Entropy);
+            if (pSPARC->ixc[1] == 7 || pSPARC->ixc[1] == 8)
+                fprintf(output_fp,"-Entropy_xc*T                      :%18.10E (Ha)\n", pSPARC->Entropy_xc);
             fprintf(output_fp,"Fermi level                        :%18.10E (Ha)\n", pSPARC->Efermi);
         }
         if (pSPARC->d3Flag == 1) {

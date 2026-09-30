@@ -1,0 +1,15 @@
+# BCC He, 2-atom cubic cell (a = 4.48 Bohr, ~1.0 g/cm^3), both atoms displaced (forces),
+# finite-T GGA XC KDT16 at T = 1e6 K, spin-unpolarized, Spectral Quadrature (SQ)
+CELL: 4.48 4.48 4.48
+MESH_SPACING: 0.15
+FD_ORDER: 12
+BC: P P P
+ELEC_TEMP: 1000000
+ELEC_TEMP_TYPE: Fermi-Dirac
+EXCHANGE_CORRELATION: KDT16
+TOL_SCF: 1E-5
+CALC_STRESS: 1
+PRINT_FORCES: 1
+SQ_AMBIENT_FLAG: 1
+SQ_RCUT: 2
+SQ_NPL_G: 60
