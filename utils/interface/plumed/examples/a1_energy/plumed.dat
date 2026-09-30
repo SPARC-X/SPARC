@@ -1,0 +1,7 @@
+# ASE/SPARC socket uses eV, Å, fs; setMD*Units convert into PLUMED internals.
+# Literals and PRINT columns follow this UNITS line.
+UNITS LENGTH=A ENERGY=eV TIME=ps
+
+e: ENERGY
+FLUSH STRIDE=1
+PRINT ARG=e FILE=COLVAR STRIDE=1

@@ -1,0 +1,25 @@
+A2 units sanity
+directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/a2_units
+
+  1 Å = 1.889726100000 Bohr
+
+SPARC static: Al.static_04  (7 frames)
+i-PI frames: 7 au, 7 Å
+
+  iter 0: a_Å=3.99000  a_iPI=7.54001000  a_SP=7.540007139  da=-2.861e-06  max|dr|=3.570e-06
+  iter 1: a_Å=3.99000  a_iPI=7.54001000  a_SP=7.540007139  da=-2.861e-06  max|dr|=3.570e-06
+  iter 2: a_Å=4.02000  a_iPI=7.59670000  a_SP=7.596698922  da=-1.078e-06  max|dr|=5.390e-07
+  iter 3: a_Å=4.05000  a_iPI=7.65339000  a_SP=7.653390705  da=7.050e-07  max|dr|=4.648e-06
+  iter 4: a_Å=4.08000  a_iPI=7.71008000  a_SP=7.710082488  da=2.488e-06  max|dr|=1.244e-06
+  iter 5: a_Å=4.11000  a_iPI=7.76677000  a_SP=7.766774271  da=4.271e-06  max|dr|=2.864e-06
+  iter 6: a_Å=4.14000  a_iPI=7.82347000  a_SP=7.823466054  da=-3.946e-06  max|dr|=3.027e-06
+
+Numerical checks:
+  PASS: cell Å-file vs a.u.-file (both→Bohr): 4.271e-06  (tol 1.0e-05)
+  PASS: SPARC lattice Bohr vs i-PI pos_au: 4.271e-06  (tol 1.0e-05)
+  PASS: positions i-PI au vs SPARC: 4.648e-06  (tol 1.0e-04)
+
+On the wire (i-PI driver protocol) everything is atomic units.
+i-PI reads Å from xyz; SPARC prints the Bohr cell it received.
+
+overall: PASS

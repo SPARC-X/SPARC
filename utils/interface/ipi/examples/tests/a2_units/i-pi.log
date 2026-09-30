@@ -1,0 +1,110 @@
+
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-   v 3.3.0  -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Universal Force Engine
+  0 0  | |       _| |_    _| |_    #
+   #  [___]     |_____|  |_____|   #
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \
+|  #################################  |
+\____/     \____/     \____/     \____/
+
+    
+# Unable to retrieve Git information.
+#
+# Simulation information:
+#           Machine Name: Qihao
+#      Working Directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/a2_units
+#          Date and Time: 2026-09-21 07:53:15
+
+ @system: Initializing system object 
+ @simulation: Initializing simulation object 
+@ RANDOM SEED: The seed used in this calculation was 1789991595490
+ @initializer: Initializer (stage 1) parsing positions object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing masses object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing labels object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing cell object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ !W! Momenta not specified in initialize. Will start with zero velocity if they are not specified in beads.
+ --- begin input file content ---
+
+  <simulation verbosity='high'>
+    <output prefix='simulation'>
+      <properties stride='1' filename='out'>[ step, time{picosecond}, time{femtosecond}, potential{atomic_unit} ]</properties>
+      <trajectory filename='pos_au' stride='1' format='xyz' cell_units='atomic_unit'>positions{atomic_unit}</trajectory>
+      <trajectory filename='pos_aa' stride='1' format='xyz' cell_units='angstrom'>positions{angstrom}</trajectory>
+    </output>
+    <total_steps>6</total_steps>
+    <ffsocket mode='inet' name='sparc'>
+      <address>localhost</address>
+      <port>31422</port>
+      <latency>0.01</latency>
+      <timeout>600</timeout>
+    </ffsocket>
+    <system>
+      <initialize nbeads='1'>
+        <file mode='xyz'>init.xyz</file>
+      </initialize>
+      <forces>
+        <force forcefield='sparc'>
+        </force>
+      </forces>
+      <motion mode='replay'>
+        <file mode='xyz'>frames.xyz</file>
+      </motion>
+    </system>
+  </simulation>
+ ---  end input file content  ---
+ @system.bind: Binding the forces 
+ @initializer: Initializer (stage 2) parsing positions object.
+ @initializer: Initializer (stage 2) parsing masses object.
+ @initializer: Initializer (stage 2) parsing labels object.
+ @initializer: Initializer (stage 2) parsing cell object.
+ @interfacesocket.open: Created inet socket with address localhost and port number 31422
+ @ForceField (sparc): Starting the polling thread main loop.
+ @open_backup: Backup performed: simulation.out -> #simulation.out#5#
+ @open_backup: Backup performed: simulation.pos_au_0.xyz -> #simulation.pos_au_0.xyz#5#
+ @open_backup: Backup performed: simulation.pos_aa_0.xyz -> #simulation.pos_aa_0.xyz#5#
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 33366). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ !W!  @SOCKET:   Client ('127.0.0.1', 33366) died or got unresponsive(C). Removing from the list.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 45740). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:15 Assigning [ none] request id    0 to client with last-id None (  0/  1 : ('127.0.0.1', 45740))
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:21 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       0. t/step: 1.18344e+00
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:22 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       1. t/step: 4.91191e+00
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:27 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       2. t/step: 4.67669e+00
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:31 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       3. t/step: 6.79071e+00
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:53:38 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       4. t/step: 4.42846e+01
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @interfacesocket.dispatch_free_client: 26/09/21-07:54:23 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 45740))
+ @simulation.run: Average timings at MD step       5. t/step: 3.36245e+01
+ @softexit.trigger:  SOFTEXIT CALLED FROM THREAD <_MainThread(MainThread, started 137456221755200)>  @ SIMULATION: Exiting cleanly.
+ !W! Soft exit has been requested with message: ' @ SIMULATION: Exiting cleanly. I-PI reports success. Restartable as is: NO.'. Cleaning up.
+ @interfacesocket.close: Shutting down the driver interface.
+ @simulation.softexit: Saving the latest status at the end of the step
+ @open_backup: Backup performed: RESTART -> #RESTART#5#

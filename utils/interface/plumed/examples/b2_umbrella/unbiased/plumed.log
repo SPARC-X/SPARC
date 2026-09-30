@@ -1,0 +1,52 @@
+PLUMED: PLUMED is starting
+PLUMED: Version: 2.9.3 (git: Unknown) compiled on Mar 22 2026 at 18:50:09
+PLUMED: Please cite these papers when using PLUMED [1][2]
+PLUMED: For further information see the PLUMED web page at http://www.plumed.org
+PLUMED: Root: /home/qihao/opt/plumed
+PLUMED: For installed feature, see /home/qihao/opt/plumed/src/config/config.txt
+PLUMED: Molecular dynamics engine: python-SPARC-socket
+PLUMED: Precision of reals: 8
+PLUMED: Running over 1 node
+PLUMED: Number of threads: 1
+PLUMED: Cache line size: 512
+PLUMED: Number of atoms: 4
+PLUMED: File suffix: 
+PLUMED: FILE: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/01_public_sparc/SPARC/utils/interface/plumed/examples/b2_umbrella/unbiased/plumed.dat
+PLUMED: Action UNITS
+PLUMED:   with label @0
+PLUMED:   length: A = 0.1 nm
+PLUMED:   energy: eV = 96.4853 kj/mol
+PLUMED:   time: ps
+PLUMED:   charge: e
+PLUMED:   mass: amu
+PLUMED:   using physical units
+PLUMED:   inside PLUMED, Boltzmann constant is 8.61733e-05
+PLUMED: Action DISTANCE
+PLUMED:   with label d
+PLUMED:   between atoms 1 2
+PLUMED:   without periodic boundary conditions
+PLUMED: Action FLUSH
+PLUMED:   with label @2
+PLUMED:   with stride 1
+PLUMED: Action PRINT
+PLUMED:   with label @3
+PLUMED:   with stride 1
+PLUMED:   with arguments d
+PLUMED:   on file COLVAR
+PLUMED:   with format  %f
+PLUMED: END FILE: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/01_public_sparc/SPARC/utils/interface/plumed/examples/b2_umbrella/unbiased/plumed.dat
+PLUMED: Timestep: 0.001000
+PLUMED: KbT: 0.025852
+PLUMED: Relevant bibliography:
+PLUMED:   [1] The PLUMED consortium, Nat. Methods 16, 670 (2019)
+PLUMED:   [2] Tribello, Bonomi, Branduardi, Camilloni, and Bussi, Comput. Phys. Commun. 185, 604 (2014)
+PLUMED: Please read and cite where appropriate!
+PLUMED: Finished setup
+PLUMED:                                               Cycles        Total      Average      Minimum      Maximum
+PLUMED:                                                    1     0.042458     0.042458     0.042458     0.042458
+PLUMED: 1 Prepare dependencies                            16     0.000090     0.000006     0.000004     0.000023
+PLUMED: 2 Sharing data                                    16     0.000164     0.000010     0.000008     0.000017
+PLUMED: 3 Waiting for data                                16     0.000017     0.000001     0.000001     0.000002
+PLUMED: 4 Calculating (forward loop)                      16     0.000157     0.000010     0.000008     0.000015
+PLUMED: 5 Applying (backward loop)                        16     0.000103     0.000006     0.000005     0.000012
+PLUMED: 6 Update                                          16     0.014928     0.000933     0.000015     0.001870

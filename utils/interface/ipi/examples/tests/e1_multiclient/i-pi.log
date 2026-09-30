@@ -1,0 +1,125 @@
+
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-   v 3.3.0  -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Universal Force Engine
+  0 0  | |       _| |_    _| |_    #
+   #  [___]     |_____|  |_____|   #
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \
+|  #################################  |
+\____/     \____/     \____/     \____/
+
+    
+# Unable to retrieve Git information.
+#
+# Simulation information:
+#           Machine Name: Qihao
+#      Working Directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/e1_multiclient
+#          Date and Time: 2026-09-21 08:12:00
+
+ @system: Initializing system object 
+ @simulation: Initializing simulation object 
+@ RANDOM SEED: The seed used in this calculation was 1789992720734
+ @initializer: Initializer (stage 1) parsing positions object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @set_vector: Initialize is rescaling from     1 beads to     2 beads
+ @initializer: Initializer (stage 1) parsing masses object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing labels object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing cell object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing velocities object.
+ @initializer: Resampling velocities at temperature 300.0 kelvin
+Import of PyFFTW unsuccessful, using NumPy library instead. 
+ !W! Install PyFFTW to avoid slow normal-modes integration
+ --- begin input file content ---
+
+  <simulation verbosity='high'>
+    <output prefix='simulation'>
+      <properties stride='1' filename='out'>[ step, time{picosecond}, temperature{kelvin}, potential{atomic_unit} ]</properties>
+    </output>
+    <total_steps>6</total_steps>
+    <ffsocket mode='inet' name='sparc'>
+      <address>localhost</address>
+      <port>31461</port>
+      <latency>0.01</latency>
+      <timeout>600</timeout>
+    </ffsocket>
+    <system>
+      <initialize nbeads='2'>
+        <file mode='xyz'>init.xyz</file>
+        <velocities mode='thermal' units='kelvin'>300</velocities>
+      </initialize>
+      <forces>
+        <force forcefield='sparc'>
+        </force>
+      </forces>
+      <motion mode='dynamics'>
+        <dynamics mode='nvt'>
+          <thermostat mode='langevin'>
+            <tau units='femtosecond'>10</tau>
+          </thermostat>
+          <timestep units='femtosecond'>0.5</timestep>
+        </dynamics>
+      </motion>
+      <ensemble>
+        <temperature units='kelvin'>300</temperature>
+      </ensemble>
+    </system>
+  </simulation>
+ ---  end input file content  ---
+ @system.bind: Binding the forces 
+Import of PyFFTW unsuccessful, using NumPy library instead. 
+ !W! Install PyFFTW to avoid slow normal-modes integration
+ @initializer: Initializer (stage 2) parsing positions object.
+ @initializer: Initializer (stage 2) parsing masses object.
+ @initializer: Initializer (stage 2) parsing labels object.
+ @initializer: Initializer (stage 2) parsing cell object.
+ @initializer: Initializer (stage 2) parsing velocities object.
+ @interfacesocket.open: Created inet socket with address localhost and port number 31461
+ @ForceField (sparc): Starting the polling thread main loop.
+ @open_backup: Backup performed: simulation.out -> #simulation.out#1#
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 55632). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ !W!  @SOCKET:   Client ('127.0.0.1', 55632) died or got unresponsive(C). Removing from the list.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 60700). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 60708). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:02 Assigning [ none] request id    0 to client with last-id None (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:02 Assigning [ none] request id    1 to client with last-id None (  1/  2 : ('127.0.0.1', 60708))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:03 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:03 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       0. t/step: 5.66488e-01
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:03 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:03 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       1. t/step: 6.62269e-01
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:04 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:04 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       2. t/step: 8.90386e-01
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:05 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:05 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       3. t/step: 6.80964e-01
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:05 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:05 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       4. t/step: 9.70235e-01
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:06 Assigning [match] request id    0 to client with last-id    0 (  0/  2 : ('127.0.0.1', 60700))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:12:06 Assigning [match] request id    1 to client with last-id    1 (  1/  2 : ('127.0.0.1', 60708))
+ @simulation.run: Average timings at MD step       5. t/step: 7.65116e-01
+ @softexit.trigger:  SOFTEXIT CALLED FROM THREAD <_MainThread(MainThread, started 132691215341376)>  @ SIMULATION: Exiting cleanly.
+ !W! Soft exit has been requested with message: ' @ SIMULATION: Exiting cleanly. I-PI reports success. Restartable as is: NO.'. Cleaning up.
+ @interfacesocket.close: Shutting down the driver interface.
+ @simulation.softexit: Saving the latest status at the end of the step
+ @open_backup: Backup performed: RESTART -> #RESTART#0#

@@ -1,0 +1,201 @@
+
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-   v 3.3.0  -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Universal Force Engine
+  0 0  | |       _| |_    _| |_    #
+   #  [___]     |_____|  |_____|   #
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \
+|  #################################  |
+\____/     \____/     \____/     \____/
+
+    
+# Unable to retrieve Git information.
+#
+# Simulation information:
+#           Machine Name: Qihao
+#      Working Directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/b2_nvt
+#          Date and Time: 2026-09-21 08:14:18
+
+ @system: Initializing system object 
+ @simulation: Initializing simulation object 
+@ RANDOM SEED: The seed used in this calculation was 1789992858159
+ @initializer: Initializer (stage 1) parsing positions object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing masses object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing labels object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing cell object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing velocities object.
+ @initializer: Resampling velocities at temperature 300.0 kelvin
+ --- begin input file content ---
+
+  <simulation verbosity='high'>
+    <output prefix='simulation'>
+      <properties stride='1' filename='out'>[ step, time{picosecond}, conserved{atomic_unit}, temperature{kelvin}, potential{atomic_unit}, kinetic_md{atomic_unit} ]</properties>
+      <trajectory filename='pos' stride='5' format='xyz' cell_units='angstrom'>positions{angstrom}</trajectory>
+    </output>
+    <total_steps>50</total_steps>
+    <ffsocket mode='inet' name='sparc'>
+      <address>localhost</address>
+      <port>31432</port>
+      <latency>0.01</latency>
+      <timeout>600</timeout>
+    </ffsocket>
+    <system>
+      <initialize nbeads='1'>
+        <file mode='xyz'>init.xyz</file>
+        <velocities mode='thermal' units='kelvin'>300</velocities>
+      </initialize>
+      <forces>
+        <force forcefield='sparc'>
+        </force>
+      </forces>
+      <motion mode='dynamics'>
+        <dynamics mode='nvt'>
+          <thermostat mode='langevin'>
+            <tau units='femtosecond'>10</tau>
+          </thermostat>
+          <timestep units='femtosecond'>0.5</timestep>
+        </dynamics>
+      </motion>
+      <ensemble>
+        <temperature units='kelvin'>300</temperature>
+      </ensemble>
+    </system>
+  </simulation>
+ ---  end input file content  ---
+ @system.bind: Binding the forces 
+ @initializer: Initializer (stage 2) parsing positions object.
+ @initializer: Initializer (stage 2) parsing masses object.
+ @initializer: Initializer (stage 2) parsing labels object.
+ @initializer: Initializer (stage 2) parsing cell object.
+ @initializer: Initializer (stage 2) parsing velocities object.
+ @interfacesocket.open: Created inet socket with address localhost and port number 31432
+ @ForceField (sparc): Starting the polling thread main loop.
+ @open_backup: Backup performed: simulation.out -> #simulation.out#2#
+ @open_backup: Backup performed: simulation.pos_0.xyz -> #simulation.pos_0.xyz#2#
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 52970). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ !W!  @SOCKET:   Client ('127.0.0.1', 52970) died or got unresponsive(C). Removing from the list.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 52978). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:19 Assigning [ none] request id    0 to client with last-id None (  0/  1 : ('127.0.0.1', 52978))
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:24 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       0. t/step: 5.42117e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:30 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       1. t/step: 8.09417e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:38 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       2. t/step: 7.77812e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:46 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       3. t/step: 5.98811e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:52 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       4. t/step: 6.09783e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:14:58 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       5. t/step: 7.19041e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:05 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       6. t/step: 4.21765e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:09 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       7. t/step: 5.01403e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:14 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       8. t/step: 3.78451e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:18 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step       9. t/step: 5.23391e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:23 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      10. t/step: 4.85420e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:28 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      11. t/step: 4.41334e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:32 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      12. t/step: 3.61768e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:36 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      13. t/step: 5.68673e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:42 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      14. t/step: 4.95732e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:47 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      15. t/step: 3.19998e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:50 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      16. t/step: 7.27157e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:15:57 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      17. t/step: 7.84607e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:05 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      18. t/step: 8.76258e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:14 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      19. t/step: 6.55989e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:20 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      20. t/step: 8.91665e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:29 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      21. t/step: 7.80920e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:37 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      22. t/step: 6.46644e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:44 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      23. t/step: 5.99857e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:50 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      24. t/step: 9.51384e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:16:59 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      25. t/step: 7.30122e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:06 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      26. t/step: 7.80492e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:14 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      27. t/step: 8.08458e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:22 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      28. t/step: 8.07435e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:30 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      29. t/step: 4.79009e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:35 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      30. t/step: 6.92992e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:42 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      31. t/step: 5.31575e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:47 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      32. t/step: 6.80193e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:17:54 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      33. t/step: 6.53668e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:01 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      34. t/step: 6.48259e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:07 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      35. t/step: 9.40630e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:17 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      36. t/step: 6.30240e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:23 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      37. t/step: 8.07632e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:31 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      38. t/step: 7.79541e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:39 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      39. t/step: 6.92916e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:46 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      40. t/step: 8.31109e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:18:54 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      41. t/step: 8.46881e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:03 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      42. t/step: 7.19288e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:10 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      43. t/step: 6.30567e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:16 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      44. t/step: 5.06039e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:21 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      45. t/step: 7.25267e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:28 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      46. t/step: 8.90660e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:37 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      47. t/step: 7.14164e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:44 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      48. t/step: 2.84503e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-08:19:47 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 52978))
+ @simulation.run: Average timings at MD step      49. t/step: 5.98424e+00
+ @softexit.trigger:  SOFTEXIT CALLED FROM THREAD <_MainThread(MainThread, started 129364771411776)>  @ SIMULATION: Exiting cleanly.
+ !W! Soft exit has been requested with message: ' @ SIMULATION: Exiting cleanly. I-PI reports success. Restartable as is: NO.'. Cleaning up.
+ @interfacesocket.close: Shutting down the driver interface.
+ @simulation.softexit: Saving the latest status at the end of the step
+ @open_backup: Backup performed: RESTART -> #RESTART#2#

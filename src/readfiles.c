@@ -1086,6 +1086,14 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"RELAX_PRESSURE:") == 0) {    
             fscanf(input_fp,"%lf",&pSPARC_Input->relaxPrTarget); // input in GPa
             fscanf(input_fp, "%*[^\n]\n");
+#ifdef USE_PLUMED
+        } else if (strcmpi(str, "PLUMED_FLAG:") == 0) {
+            fscanf(input_fp, "%d", &pSPARC_Input->PlumedFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str, "PLUMED_FILE:") == 0) {
+            fscanf(input_fp, "%s", pSPARC_Input->PlumedFile);
+            fscanf(input_fp, "%*[^\n]\n");
+#endif
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"\n",str);
             exit(EXIT_FAILURE);
@@ -1166,6 +1174,57 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         printf("\nStructural relaxations and MD cannot be turned on simultaneously!\n");
         exit(EXIT_FAILURE);
     }
+
+#ifdef USE_PLUMED
+    /* PLUMED: validate flags and ensure PLUMED_FILE exists before the run starts. */
+    if (pSPARC_Input->PlumedFlag != 0 && pSPARC_Input->PlumedFlag != 1) {
+        printf("\nPLUMED_FLAG must be 0 or 1!\n");
+        exit(EXIT_FAILURE);
+    }
+    if (pSPARC_Input->PlumedFlag == 1) {
+        if (pSPARC_Input->MDFlag != 1) {
+            printf("\nPLUMED_FLAG: 1 requires MD_FLAG: 1.\n");
+            exit(EXIT_FAILURE);
+        }
+        if (pSPARC_Input->PlumedFile[0] == '\0') {
+            printf("\nPLUMED_FILE must be set when PLUMED_FLAG: 1.\n");
+            exit(EXIT_FAILURE);
+        }
+        char plumed_path[L_STRING + L_STRING];
+        const char *pf = pSPARC_Input->PlumedFile;
+        /* Absolute if rooted at '/'; otherwise resolve relative to the input file directory. */
+        int abs_path = (pf[0] == '/');
+        if (abs_path) {
+            snprintf(plumed_path, sizeof(plumed_path), "%s", pf);
+        } else {
+            /* Relative path: resolve against the directory of the main input file. */
+            const char *last_slash = NULL;
+            char *p;
+            for (p = input_filename; *p; p++) {
+                if (*p == '/' || *p == '\\')
+                    last_slash = p;
+            }
+            if (last_slash != NULL) {
+                size_t dlen = (size_t)(last_slash - input_filename + 1);
+                if (dlen >= sizeof(plumed_path)) {
+                    printf("\nPLUMED_FILE path is too long.\n");
+                    exit(EXIT_FAILURE);
+                }
+                memcpy(plumed_path, input_filename, dlen);
+                plumed_path[dlen] = '\0';
+                strncat(plumed_path, pf, sizeof(plumed_path) - dlen - 1);
+            } else {
+                snprintf(plumed_path, sizeof(plumed_path), "%s", pf);
+            }
+        }
+        FILE *plf = fopen(plumed_path, "r");
+        if (plf == NULL) {
+            printf("\nCannot open PLUMED_FILE \"%s\" for reading (tried \"%s\").\n", pf, plumed_path);
+            exit(EXIT_FAILURE);
+        }
+        fclose(plf);
+    }
+#endif
 
     // check if both smearing and temperature are specified
     if (Flag_Temp > 1) {

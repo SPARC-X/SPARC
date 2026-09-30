@@ -1,0 +1,248 @@
+
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-   v 3.3.0  -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Universal Force Engine
+  0 0  | |       _| |_    _| |_    #
+   #  [___]     |_____|  |_____|   #
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \
+|  #################################  |
+\____/     \____/     \____/     \____/
+
+    
+# Unable to retrieve Git information.
+#
+# Simulation information:
+#           Machine Name: Qihao
+#      Working Directory: /mnt/c/Users/10404/OneDrive/Desktop/Research/DFT/sparc/03_dev_plumed_ipi/dev_SPARC_repo/examples/ipi_sparc_tests/c1_umbrella
+#          Date and Time: 2026-09-21 10:26:23
+
++++ Loading the PLUMED kernel runtime +++
++++ PLUMED_KERNEL="/home/qihao/opt/plumed/lib/libplumedKernel.so" +++
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+PLUMED: PLUMED is starting
+PLUMED: Version: 2.9.3 (git: Unknown) compiled on Mar 22 2026 at 18:50:09
+PLUMED: Please cite these papers when using PLUMED [1][2]
+PLUMED: For further information see the PLUMED web page at http://www.plumed.org
+PLUMED: Root: /home/qihao/opt/plumed/lib/plumed
+PLUMED: For installed feature, see /home/qihao/opt/plumed/lib/plumed/src/config/config.txt
+PLUMED: Molecular dynamics engine: i-pi
+PLUMED: Precision of reals: 8
+PLUMED: Running over 1 node
+PLUMED: Number of threads: 1
+PLUMED: Cache line size: 512
+PLUMED: Number of atoms: 4
+PLUMED: File suffix: 
+PLUMED: FILE: plumed.dat
+PLUMED: Action UNITS
+PLUMED:   with label @0
+PLUMED:   length: A = 0.1 nm
+PLUMED:   energy: eV = 96.4853 kj/mol
+PLUMED:   time: ps
+PLUMED:   charge: e
+PLUMED:   mass: amu
+PLUMED:   using physical units
+PLUMED:   inside PLUMED, Boltzmann constant is 8.61733e-05
+PLUMED: Action DISTANCE
+PLUMED:   with label d
+PLUMED:   between atoms 1 2
+PLUMED:   without periodic boundary conditions
+PLUMED: Action RESTRAINT
+PLUMED:   with label @2
+PLUMED:   with arguments d
+PLUMED:   added component to this action:  @2.bias 
+PLUMED:   at 3.200000
+PLUMED:   with harmonic force constant 20.000000
+PLUMED:   and linear force constant 0.000000
+PLUMED:   added component to this action:  @2.force2 
+PLUMED: Action PRINT
+PLUMED:   with label @3
+PLUMED:   with stride 1
+PLUMED:   with arguments d
+PLUMED:   on file COLVAR
+PLUMED:   with format  %f
+PLUMED: Action FLUSH
+PLUMED:   with label @4
+PLUMED:   with stride 1
+PLUMED: END FILE: plumed.dat
+PLUMED: Timestep: 1.000000
+PLUMED: KbT has not been set by the MD engine
+PLUMED: It should be set by hand where needed
+PLUMED: Relevant bibliography:
+PLUMED:   [1] The PLUMED consortium, Nat. Methods 16, 670 (2019)
+PLUMED:   [2] Tribello, Bonomi, Branduardi, Camilloni, and Bussi, Comput. Phys. Commun. 185, 604 (2014)
+PLUMED: Please read and cite where appropriate!
+PLUMED: Finished setup
+ @system: Initializing system object 
+ @simulation: Initializing simulation object 
+@ RANDOM SEED: The seed used in this calculation was 1790000783252
+ @initializer: Initializer (stage 1) parsing positions object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing masses object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing labels object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing cell object.
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @init_file: Initializing from file init.xyz. Dimension: length, units: automatic, cell_units: automatic
+ @process_units: Interpreting input with dimension length, units angstrom and cell units angstrom
+ @initializer: Initializer (stage 1) parsing velocities object.
+ !W! Using the simulation temperature to resample velocities
+ --- begin input file content ---
+
+  <simulation verbosity='high'>
+    <output prefix='simulation'>
+      <properties stride='1' filename='out'>[ step, time{picosecond}, temperature{kelvin}, potential{atomic_unit} ]</properties>
+      <trajectory filename='pos' stride='1' format='xyz' cell_units='angstrom'>positions{angstrom}</trajectory>
+    </output>
+    <total_steps>40</total_steps>
+    <ffsocket mode='inet' name='sparc'>
+      <address>localhost</address>
+      <port>31441</port>
+      <latency>0.01</latency>
+      <timeout>600</timeout>
+    </ffsocket>
+    <ffplumed name='plumed'>
+      <file mode='xyz'>init.xyz</file>
+      <plumed_dat>plumed.dat</plumed_dat>
+    </ffplumed>
+    <system>
+      <initialize nbeads='1'>
+        <file mode='xyz'>init.xyz</file>
+        <velocities mode='thermal' units='kelvin'>0</velocities>
+      </initialize>
+      <forces>
+        <force forcefield='sparc'>
+        </force>
+        <force forcefield='plumed'>
+        </force>
+      </forces>
+      <motion mode='dynamics'>
+        <dynamics mode='nvt'>
+          <thermostat mode='langevin'>
+            <tau units='femtosecond'>2</tau>
+          </thermostat>
+          <timestep units='femtosecond'>1.0</timestep>
+        </dynamics>
+      </motion>
+      <ensemble>
+        <temperature units='kelvin'>1</temperature>
+      </ensemble>
+    </system>
+  </simulation>
+ ---  end input file content  ---
+ @system.bind: Binding the forces 
+ @initializer: Initializer (stage 2) parsing positions object.
+ @initializer: Initializer (stage 2) parsing masses object.
+ @initializer: Initializer (stage 2) parsing labels object.
+ @initializer: Initializer (stage 2) parsing cell object.
+ @initializer: Initializer (stage 2) parsing velocities object.
+ @interfacesocket.open: Created inet socket with address localhost and port number 31441
+ @ForceField (sparc): Starting the polling thread main loop.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 60314). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ !W!  @SOCKET:   Client ('127.0.0.1', 60314) died or got unresponsive(C). Removing from the list.
+ @interfacesocket.pool_update:   Client asked for connection from ('127.0.0.1', 60316). Now hand-shaking.
+ @interfacesocket.pool_update:   Handshaking was successful. Added to the client list.
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:24 Assigning [ none] request id    0 to client with last-id None (  0/  1 : ('127.0.0.1', 60316))
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:32 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       0. t/step: 2.05780e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:34 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       1. t/step: 7.07578e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:41 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       2. t/step: 6.28101e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:48 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       3. t/step: 6.70222e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:26:54 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       4. t/step: 6.67121e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:01 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       5. t/step: 4.28545e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:05 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       6. t/step: 5.61435e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:11 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       7. t/step: 6.96911e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:18 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       8. t/step: 5.45840e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:23 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step       9. t/step: 6.38193e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:30 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      10. t/step: 4.73098e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:35 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      11. t/step: 6.90539e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:41 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      12. t/step: 8.07427e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:50 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      13. t/step: 7.13304e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:27:57 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      14. t/step: 4.25905e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:01 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      15. t/step: 6.68455e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:08 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      16. t/step: 6.41731e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:14 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      17. t/step: 6.70594e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:21 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      18. t/step: 5.62255e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:26 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      19. t/step: 3.30339e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:30 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      20. t/step: 6.03553e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:36 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      21. t/step: 6.77046e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:42 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      22. t/step: 8.43775e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:51 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      23. t/step: 7.00464e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:28:58 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      24. t/step: 2.07354e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:00 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      25. t/step: 6.52360e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:07 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      26. t/step: 7.50550e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:14 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      27. t/step: 6.29569e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:20 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      28. t/step: 5.89837e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:26 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      29. t/step: 3.00546e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:29 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      30. t/step: 8.05441e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:37 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      31. t/step: 5.65497e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:43 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      32. t/step: 5.43254e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:48 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      33. t/step: 6.57752e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:29:55 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      34. t/step: 5.09060e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:30:00 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      35. t/step: 3.77191e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:30:04 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      36. t/step: 6.06167e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:30:10 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      37. t/step: 6.79337e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:30:17 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      38. t/step: 7.66205e+00
+ @interfacesocket.dispatch_free_client: 26/09/21-10:30:24 Assigning [match] request id    0 to client with last-id    0 (  0/  1 : ('127.0.0.1', 60316))
+ @simulation.run: Average timings at MD step      39. t/step: 5.60084e+00
+ @softexit.trigger:  SOFTEXIT CALLED FROM THREAD <_MainThread(MainThread, started 123640679946048)>  @ SIMULATION: Exiting cleanly.
+ !W! Soft exit has been requested with message: ' @ SIMULATION: Exiting cleanly. I-PI reports success. Restartable as is: NO.'. Cleaning up.
+PLUMED:                                               Cycles        Total      Average      Minimum      Maximum
+PLUMED:                                                    1     0.099327     0.099327     0.099327     0.099327
+PLUMED: 1 Prepare dependencies                            41     0.000248     0.000006     0.000004     0.000010
+PLUMED: 2 Sharing data                                    41     0.000455     0.000011     0.000006     0.000025
+PLUMED: 3 Waiting for data                                41     0.000057     0.000001     0.000001     0.000003
+PLUMED: 4 Calculating (forward loop)                      41     0.000665     0.000016     0.000011     0.000030
+PLUMED: 5 Applying (backward loop)                        41     0.000444     0.000011     0.000006     0.000060
+ @interfacesocket.close: Shutting down the driver interface.
+ @simulation.softexit: Saving the latest status at the end of the step
+ @open_backup: Backup performed: RESTART -> #RESTART#8#

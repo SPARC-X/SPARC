@@ -55,7 +55,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 216
+#define N_MEMBR 218
 
 
 /**
@@ -981,6 +981,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // DFT+U
     pSPARC_Input->is_hubbard = 0;
 
+    pSPARC_Input->PlumedFlag = 0;
+    memset(pSPARC_Input->PlumedFile, 0, sizeof(pSPARC_Input->PlumedFile));
+
     /* Default socket options
        Note to future developers: please keep the USE_SOCKET macro
        as the LAST PART of the initialization function!!
@@ -1613,7 +1616,10 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     strncpy(pSPARC->InDensTCubFilename, pSPARC_Input->InDensTCubFilename,sizeof(pSPARC->InDensTCubFilename));
     strncpy(pSPARC->InDensUCubFilename, pSPARC_Input->InDensUCubFilename,sizeof(pSPARC->InDensUCubFilename));
     strncpy(pSPARC->InDensDCubFilename, pSPARC_Input->InDensDCubFilename,sizeof(pSPARC->InDensDCubFilename));
-    
+    pSPARC->PlumedFlag = pSPARC_Input->PlumedFlag;
+    pSPARC->PlumedHandle = NULL;
+    strncpy(pSPARC->PlumedFile, pSPARC_Input->PlumedFile, sizeof(pSPARC->PlumedFile));
+
     /* Socket interface section
      TODO: should we move the socket to a later section?
     */
@@ -1762,6 +1768,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->AtomFilename,          L_STRING, "%s.atom",         pSPARC->filename_out);
             snprintf(pSPARC->EigenFilename,         L_STRING, "%s.eigen",        pSPARC->filename_out);
             snprintf(pSPARC->MDFilename,            L_STRING, "%s.aimd",         pSPARC->filename_out);
+            snprintf(pSPARC->PlumedLogFilename,     L_STRING, "%s.plumed",       pSPARC->filename_out);
             snprintf(pSPARC->RelaxFilename,         L_STRING, "%s.geopt",        pSPARC->filename_out);
             snprintf(pSPARC->restart_Filename,      L_STRING, "%s.restart",      pSPARC->filename_out);
             snprintf(pSPARC->restartC_Filename,     L_STRING, "%s.restart-0",    pSPARC->filename_out);
@@ -1838,6 +1845,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->EigenFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->MDFilename);
             snprintf(pSPARC->MDFilename,    L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->PlumedLogFilename);
+            snprintf(pSPARC->PlumedLogFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->RelaxFilename);
             snprintf(pSPARC->RelaxFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->DensTCubFilename);
@@ -1868,6 +1877,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
     // Not only rank 0 printing orbitals
     MPI_Bcast(pSPARC->OrbitalsFilename, L_STRING, MPI_CHAR, 0, MPI_COMM_WORLD);
+#ifdef USE_PLUMED
+    MPI_Bcast(pSPARC->PlumedLogFilename, L_STRING, MPI_CHAR, 0, MPI_COMM_WORLD);
+#endif
 
     // Initialize MD/relax variables
     pSPARC->RelaxCount = 0; // initialize current relaxation step
@@ -3826,7 +3838,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                   SPARC (version September 15, 2026)                    *\n");
+    fprintf(output_fp,"*                   SPARC (version September 29, 2026)                    *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4049,6 +4061,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
             
         }
     }
+#ifdef USE_PLUMED
+    fprintf(output_fp,"PLUMED_FLAG: %d\n",pSPARC->PlumedFlag);
+    fprintf(output_fp,"PLUMED_FILE: %s\n",pSPARC->PlumedFile);
+#endif
 
     if (pSPARC->RestartFlag == 1) {
         fprintf(output_fp,"RESTART_FLAG: %d\n",pSPARC->RestartFlag);
@@ -4367,6 +4383,12 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"MD output printed to               :  %s\n",pSPARC->MDFilename);
     }
 
+#ifdef USE_PLUMED
+    if (pSPARC->MDFlag == 1 && pSPARC->PlumedFlag == 1) {
+        fprintf(output_fp,"PLUMED log printed to              :  %s\n",pSPARC->PlumedLogFilename);
+    }
+#endif
+
     if (pSPARC->RelaxFlag == 1 && pSPARC->PrintRelaxout == 1) {
         fprintf(output_fp,"Relax output printed to            :  %s\n",pSPARC->RelaxFilename);
     }
@@ -4476,7 +4498,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT,  /* int */
+                                         MPI_INT, MPI_INT,  /* int */
 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, /* double array */
@@ -4496,7 +4518,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,/* double */
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, /* char */
-                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
+                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
+                                         MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 3, 7,      /* int array */ 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -4522,7 +4545,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1,  /* int */ 
+                          1, 1,  /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
                           L_kpoint, 6, 6,/* double array */
                           1, 1, 1, 1, 1, 
@@ -4541,7 +4564,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
-                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING};
+                          L_STRING, L_STRING, L_STRING, L_STRING, L_STRING,
+                          L_STRING};
 
     // calculating offsets in an architecture independent manner
     MPI_Aint addr[N_MEMBR],disps[N_MEMBR], base;
@@ -4674,6 +4698,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.MLFF_DFT_fq, addr + i++);
     MPI_Get_address(&sparc_input_tmp.REFERENCE_CUTOFF_FAC, addr + i++);
     MPI_Get_address(&sparc_input_tmp.is_hubbard, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PlumedFlag, addr + i++);
 
     // double array type
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
@@ -4773,6 +4798,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.InDensUCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.InDensDCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mlff_data_folder, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PlumedFile, addr + i++);
     for (i = 0; i < N_MEMBR; i++) {
         disps[i] = addr[i] - base;
     }

@@ -34,6 +34,7 @@
 #include "eigenSolver.h" // Mesh2ChebDegree
 #include "readfiles.h"
 #include "sparc_mlff_interface.h"
+#include "plumed_sparc.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 
@@ -84,6 +85,7 @@ void main_MD(SPARC_OBJ *pSPARC) {
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPARC);
 	Initialize_MD(pSPARC);
+	Plumed_Init(pSPARC);
 
 	
 	pSPARC->MD_maxStep = pSPARC->restartCount + pSPARC->MD_Nstep;
@@ -245,6 +247,7 @@ void main_MD(SPARC_OBJ *pSPARC) {
 
 	}
 
+	Plumed_Finalize(pSPARC);
 
 	if(check2){
 		pSPARC->MDCount --;
@@ -621,6 +624,8 @@ void NVT_NH(SPARC_OBJ *pSPARC) {
 	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPARC);
+	// PLUMED (PLUgin for MEtadynamics): collective variables, monitoring/output, optional ionic force bias (per input)
+	Plumed_Evaluate(pSPARC);
 	pSPARC->elecgs_Count++;
 	// Second step velocity Verlet
 	VVerlet2(pSPARC);
@@ -763,6 +768,8 @@ void NVE(SPARC_OBJ *pSPARC) {
 	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPARC);
+	// PLUMED: collective variables, monitoring/output, optional ionic force bias (per input)
+	Plumed_Evaluate(pSPARC);
 	pSPARC->elecgs_Count++;
 	// Leapfrog step (part-2)
 	Leapfrog_part2(pSPARC);
@@ -835,6 +842,8 @@ void NVK_G(SPARC_OBJ *pSPARC) {
 	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPSPARC);
+	// PLUMED: collective variables, monitoring/output, optional ionic force bias (per input)
+	Plumed_Evaluate(pSPARC);
 	pSPARC->elecgs_Count++;
 
 	// Calculate velocity at next full time step
@@ -995,6 +1004,8 @@ void NPT_NH (SPARC_OBJ *pSPARC) {
 	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPARC);
+	// PLUMED: collective variables, monitoring/output, optional ionic force bias (per input)
+	Plumed_Evaluate(pSPARC);
 	pSPARC->elecgs_Count++;
     #ifdef DEBUG
         // Calculate Hamiltonian of the system.
@@ -1466,6 +1477,8 @@ void NPT_NP_and_NPH(SPARC_OBJ *pSPARC, double *avgvel, double *maxvel, double *m
 	// Compute DFT energy and forces by solving Kohn-Sham eigenvalue problem
 	Calculate_Properties(pSPARC);
 	//Calculate_electronicGroundState(pSPARC);
+	// PLUMED: collective variables, monitoring/output, optional ionic force bias (per input)
+	Plumed_Evaluate(pSPARC);
 	pSPARC->elecgs_Count++;
 }
 
