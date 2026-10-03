@@ -146,7 +146,7 @@ The name of the input density file(s) in cube format.
 \end{block}
 
 \begin{block}{Remark}
-For spin-unpolarized systems, only the total density file is required. For spin-polarized systems, three density files are required, which are the total electron density, spin-up density, and spin-down density, respectively.
+The number of files depends on \hyperlink{SPIN_TYP}{\texttt{SPIN\_TYP}}: 1 file for spin-unpolarized systems (total electron density, .dens); 3 files for collinear spin (total, spin-up and spin-down electron density: .dens .densUp .densDwn); 4 files for noncollinear spin (total electron density and the x, y, z magnetization density: .dens .magx .magy .magz), in this order. Any other number of files stops with an error.
 \end{block}
 
 \end{frame}

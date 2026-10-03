@@ -75,8 +75,19 @@ static int sparc_nbr_lists(MPI_Comm comm, int *indeg, int *outdeg,
         int *s = (int *) malloc((*indeg  > 0 ? *indeg  : 1) * sizeof(int));
         int *d = (int *) malloc((*outdeg > 0 ? *outdeg : 1) * sizeof(int));
         if (s == NULL || d == NULL) { free(s); free(d); return 0; }
+        /* OpenMPI defines MPI_UNWEIGHTED as the sentinel (int *)2, which GCC
+         * 11+ flags with -Wstringop-overflow against the weight-array
+         * parameters of MPI_Dist_graph_neighbors. MPI never writes through it,
+         * so the warning is silenced for this call only; the code is unchanged. */
+#if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
         MPI_Dist_graph_neighbors(comm, *indeg, s, MPI_UNWEIGHTED,
                                  *outdeg, d, MPI_UNWEIGHTED);
+#if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
+#endif
         *srcs = s;
         *dsts = d;
         *is_cart = 0;
@@ -165,7 +176,13 @@ int SPARC_Ineighbor_alltoallv(
 
     int nreq = indeg + outdeg;
     MPI_Request *reqs = (MPI_Request *) malloc((nreq > 0 ? nreq : 1) * sizeof(MPI_Request));
-    if (reqs == NULL) {
+    /* A real status array rather than MPI_STATUSES_IGNORE: on MPICH-based
+     * libraries that sentinel is (MPI_Status *)1, which GCC 11+ flags with
+     * -Wstringop-overflow against the array parameter of MPI_Waitall. */
+    MPI_Status *stats = (MPI_Status *) malloc((nreq > 0 ? nreq : 1) * sizeof(MPI_Status));
+    if (reqs == NULL || stats == NULL) {
+        free(reqs);
+        free(stats);
         free(srcs);
         if (dsts != srcs) free(dsts);
         return MPI_ERR_NO_MEM;
@@ -190,8 +207,9 @@ int SPARC_Ineighbor_alltoallv(
                   SPARC_NBR_TAG_BASE + tag, comm, &reqs[indeg + k]);
     }
 
-    int err = MPI_Waitall(nreq, reqs, MPI_STATUSES_IGNORE);
+    int err = MPI_Waitall(nreq, reqs, stats);
 
+    free(stats);
     free(reqs);
     free(srcs);
     if (dsts != srcs) free(dsts);

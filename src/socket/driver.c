@@ -598,7 +598,7 @@ void map_atom_coord(SPARC_OBJ *pSPARC){
 
 
 void reassign_atoms_info(SPARC_OBJ *pSPARC, int natoms, double *atom_pos, double *lattice, double *reci_lattice)
-{
+{ (void)reci_lattice; // not used in the body
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   // For now only support natoms == n_atom
@@ -706,7 +706,7 @@ int read_socket_header(SPARC_OBJ *pSPARC, int *status)
  *
  **/
 int read_atoms_position_fom_socket(SPARC_OBJ *pSPARC, int init)
-{
+{ (void)init; // not used in the body
   int rank;
   int ret = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

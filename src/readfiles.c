@@ -121,7 +121,7 @@ int readStringInputsFromLine(char *line, const int max_nstr, char inputArgv[][L_
  * @return int Count of input arguments.
  */
 int readStringInputsFromFile(FILE *input_fp, const int max_nstr, char inputArgv[][L_STRING]) {
-    char line[L_STRING*3+20]; // Assuming a maximum length for the line
+    char line[L_STRING*4+20]; // Assuming a maximum length for the line
     // Read the entire line from the file
     if (fgets(line, sizeof(line), input_fp) == NULL) {
         fprintf(stderr, "Error reading line from file.\n");
@@ -141,6 +141,7 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     int i, Flag_smear_typ = 0, Flag_Temp = 0, Flag_elecT = 0, Flag_ionT = 0, Flag_ionT_end = 0; // Flag_eqT = 0,
     int Flag_cell = 0;
     int Flag_elecTemp = 0; // ELEC_TEMP given (SMEARING not counted)
+    int Flag_scfDensFq = 0; // PRINT_SCF_DENSITY_FQ given
     int Flag_latvec_scale = 0;
     int Flag_accuracy = 0;
     int Flag_kptshift = 0;
@@ -887,6 +888,13 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if(strcmpi(str,"PRINT_DENSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PrintElecDensFlag);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"PRINT_SCF_DENSITY:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintSCFElecDensFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"PRINT_SCF_DENSITY_FQ:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintSCFElecDens_fq);
+            fscanf(input_fp, "%*[^\n]\n");
+            Flag_scfDensFq = 1;
         } else if (strcmpi(str,"OUTPUT_FILE:") == 0) {    
             fscanf(input_fp,"%s",pSPARC_Input->filename_out);
             fscanf(input_fp, "%*[^\n]\n");
@@ -1040,8 +1048,8 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             }
             #endif
         } else if (strcmpi(str,"INPUT_DENS_FILE:") == 0) {
-            char inputDensFnames[3][L_STRING]; // at most 3 file names
-            int nInputDensFname = readStringInputsFromFile(input_fp, 3, inputDensFnames);
+            char inputDensFnames[4][L_STRING]; // at most 4 file names
+            int nInputDensFname = readStringInputsFromFile(input_fp, 4, inputDensFnames);
             pSPARC_Input->densfilecount = nInputDensFname;
             if (nInputDensFname == 1) {
                 strncpy(pSPARC_Input->InDensTCubFilename, inputDensFnames[0], L_STRING);
@@ -1049,8 +1057,13 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 strncpy(pSPARC_Input->InDensTCubFilename, inputDensFnames[0], L_STRING);
                 strncpy(pSPARC_Input->InDensUCubFilename, inputDensFnames[1], L_STRING);
                 strncpy(pSPARC_Input->InDensDCubFilename, inputDensFnames[2], L_STRING);
+            } else if (nInputDensFname == 4) { // non-collinear spin: total density, magnetization x, y, z
+                strncpy(pSPARC_Input->InDensTCubFilename, inputDensFnames[0], L_STRING);
+                strncpy(pSPARC_Input->InMagxCubFilename, inputDensFnames[1], L_STRING);
+                strncpy(pSPARC_Input->InMagyCubFilename, inputDensFnames[2], L_STRING);
+                strncpy(pSPARC_Input->InMagzCubFilename, inputDensFnames[3], L_STRING);
             } else {
-                printf(RED "[FATAL] Density file names not provided properly! (Provide 1 file w/o spin or 3 files with spin)\n" RESET);
+                printf(RED "[FATAL] Density file names not provided properly! (Provide 1 file w/o spin, 3 files with collinear spin, or 4 files with non-collinear spin)\n" RESET);
                 exit(EXIT_FAILURE);
             }
 
@@ -1174,6 +1187,20 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     // check if MD and Relaxation are turned on simultaneously
     if (pSPARC_Input->MDFlag!=0 && pSPARC_Input->RelaxFlag!=0) {
         printf("\nStructural relaxations and MD cannot be turned on simultaneously!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Check if saving density during each SCF is enabled during MD or Relaxation
+    if ((pSPARC_Input->MDFlag!=0 || pSPARC_Input->RelaxFlag!=0) && pSPARC_Input->PrintSCFElecDensFlag == 1) {
+        printf("\n Saving of electron density during each SCF step cannot be turned on during Structural relaxation or MD. It is available only during single-point calculations!\n");
+        exit(EXIT_FAILURE);
+    }
+    if (pSPARC_Input->PrintSCFElecDensFlag == 1 && pSPARC_Input->PrintSCFElecDens_fq< 1) {
+        printf("\n PRINT_SCF_DENSITY_FQ must be >= 1!\n");
+        exit(EXIT_FAILURE);
+    }
+    if (Flag_scfDensFq && pSPARC_Input->PrintSCFElecDensFlag != 1) {
+        printf("\nERROR: PRINT_SCF_DENSITY_FQ is only used with PRINT_SCF_DENSITY: 1!\n");
         exit(EXIT_FAILURE);
     }
 

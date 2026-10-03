@@ -434,9 +434,9 @@ void compute_Gvectors(SPARC_OBJ *pSPARC)
 }
 
 
-
 void parallel_FFT(double _Complex *inputDataRealSpace, double _Complex *outputDataReciSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm)
 {
+    (void)inputDataRealSpace; (void)outputDataReciSpace; (void)gridsizes; (void)DMnz; (void)zAxisComm; // only the MKL/FFTW FFTs below use these
 #if defined(USE_MKL) // use MKL CDFT
     int rank;
     MPI_Comm_rank(zAxisComm, &rank);
@@ -759,12 +759,12 @@ void vdWDF_energy(SPARC_OBJ *pSPARC)
 /*
 Functions above are related to generating thetas (ps*rho) and integrating energy.
 */
-
 /*
 Functions below are related to generating u vectors, transforming them to real space and computing vdW-DF potential.
 */
 void parallel_iFFT(double _Complex *inputDataReciSpace, double _Complex *outputDataRealSpace, int *gridsizes, int DMnz, MPI_Comm zAxisComm)
 {
+    (void)inputDataReciSpace; (void)outputDataRealSpace; (void)gridsizes; (void)DMnz; (void)zAxisComm; // only the MKL/FFTW FFTs below use these
 #if defined(USE_MKL) // use MKL CDFT
     int rank;
     MPI_Comm_rank(zAxisComm, &rank);

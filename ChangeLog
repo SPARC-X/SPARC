@@ -5,11 +5,36 @@
 
 
 --------------
+October 3, 2026
+Name: Shubhang Krishnakant Trivedi
+Changes: src/readfiles.c, src/initialization.c, src/include/isddft.h,
+         src/electronicGroundState.c, src/printing.c, src/orbitalElecDensInit.c,
+         doc/.LaTeX/Print.tex, doc/.LaTeX/Introduction.tex, doc/.LaTeX/BandStructure.tex,
+         doc/.LaTeX/SCF.tex, doc/.LaTeX/System.tex, doc/.LaTeX/MD.tex, doc/Manual.pdf,
+         README.md, src/makefile, src/mpi_nbr_shim.c, src/xc/exx/exactExchange.c,
+         src/xc/vdW/vdWDF/vdWDFnonlocalCorre.c, src/socket/driver.c
+
+New implementation features:
+- PRINT_SCF_DENSITY, PRINT_SCF_DENSITY_FQ: density written every N SCF steps (single-point) for restart.
+- Non-collinear spin: density files add .magx/.magy/.magz; INPUT_DENS_FILE takes 4 files.
+- INPUT_DENS_FILE: error if the number of files does not match SPIN_TYP (1/3/4).
+- PRINT_SCF_DENSITY: error with MD/relaxation, FQ < 1, or FQ without PRINT_SCF_DENSITY: 1.
+- RHO_TRIGGER: default 7 when the SCF is restarted from a saved density (READ_INIT_DENS: 1).
+- makefile: compiler warnings turned on (-Wall -Wextra).
+
+Bug and w fixes:
+- READ_INIT_DENS with spin: magnetization was left uninitialized.
+- SPIN_TYP 2 without SOC at the Gamma point: segfault in Calculate_Magx_Magy_psi.
+- .out file: missing new line after the INPUT_DENS_FILE names (READ_INIT_DENS).
+- Manual: broken links to the NPT/NPH and pressure/stress keywords (MD.tex).
+- Compiler warnings (-Wall -Wextra) removed in all library setups (build options: intel MKL, SCALAPACK w/wo FFTW, DP_SUBEIG) and DEBUG_MODE/SOCKET/PLUMED builds; compiled code unchanged.
+
+--------------
 September 30, 2026
 Name: Shubhang Krishnakant Trivedi
 Changes: src/highT/xc/finiteTempXC.c, src/highT/xc/include/finiteTempXC.h,
          src/exchangeCorrelation.c, src/initialization.c, src/energy.c, 
-	 src/md.c, src/electronicGroundState.c, src/readfiles.c,
+	      src/md.c, src/electronicGroundState.c, src/readfiles.c,
          src/include/isddft.h, src/mlff/sparc_mlff_interface.c,
          src/cyclix/cyclix_stress.c, src/ofdft/ofdft.c, src/makefile,
          README.md, doc/.LaTeX/Introduction.tex, doc/.LaTeX/System.tex,

@@ -943,6 +943,22 @@ void scf_loop(SPARC_OBJ *pSPARC) {
             mixing_rho_mn(pSPARC, SCFcount);
         }
 
+        
+        // Save the mixed electron density of current iteration to a file for restarting the SCF calculation from the current iteration
+        if (pSPARC->PrintSCFElecDensFlag == 1 && (SCFcount + 1) % pSPARC->PrintSCFElecDens_fq == 0) {
+                #ifdef DEBUG
+                t1 = MPI_Wtime();
+                #endif
+                printElecDens(pSPARC);
+                #ifdef DEBUG
+                t2 = MPI_Wtime();
+                if (rank == 0) printf("Time for printing density (SCF iteration %d): %.3f ms\n", SCFcount + 1, (t2-t1)*1e3);
+                #endif
+        }
+        
+
+
+
         if (pSPARC->MixingVariable == 1) { // potential mixing, add veff_mean back
             // shift the next input veff so that it's integral is
             // equal to that of the current output veff for periodic systems

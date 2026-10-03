@@ -618,7 +618,7 @@ Flag to determine whether to allow changing of angles of the cell (simulation bo
 \end{block}
 
 \begin{block}{Remark}
-Applicable to NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only when all the lattice vectors are allowed to be rescaled by setting \hyperlink{NPT\_SCALE\_VECS}{\texttt{NPT\_SCALE\_VECS}} to "123" and simultaneously no other constraints are imposed through \hyperlink{NPT\_SCALE\_CONSTRAINTS}{\texttt{NPT\_SCALE\_CONSTRAINTS}}.
+Applicable to NPT\_NP \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only when all the lattice vectors are allowed to be rescaled by setting \hyperlink{NPT_SCALE_VECS}{\texttt{NPT\_SCALE\_VECS}} to "123" and simultaneously no other constraints are imposed through \hyperlink{NPT_SCALE_CONSTRAINTS}{\texttt{NPT\_SCALE\_CONSTRAINTS}}.
 \end{block}
 
 \end{frame}
@@ -692,7 +692,7 @@ Specify which lattice vectors can be rescaled in NPH. The cell will only expand 
 \end{block}
 
 \begin{block}{Remark}
-It is similar to \hyperlink{NPT\_SCALE\_VECS}{\texttt{NPT\_SCALE\_VECS}} but meant to use when doing NPH ensemble. Only three numbers 1, 2 and 3 can be accepted. For example, if ``2 3'' is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3.
+It is similar to \hyperlink{NPT_SCALE_VECS}{\texttt{NPT\_SCALE\_VECS}} but meant to use when doing NPH ensemble. Only three numbers 1, 2 and 3 can be accepted. For example, if ``2 3'' is the input, the cell will only expand or shrink in the directions of lattice vector 2 and lattice vector 3.
 \\
 If it is set in NPH, the expansion or shrinkage on designated lattice vector will only try to keep the total internal normal stress at their direction to oscillate near the corresponding target stress component (which is the sum of external pressure and corresponding external stress component).
 \end{block}
@@ -731,7 +731,7 @@ Set the scale constraint for lattice vectors in NPH. The length ratio between th
 
 \begin{block}{Remark}
 Applicable to NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only.
-It is similar to \hyperlink{NPT\_SCALE\_VECS}{\texttt{NPT\_SCALE\_VECS}} but meant to use when doing NPH ensemble.
+It is similar to \hyperlink{NPT_SCALE_VECS}{\texttt{NPT\_SCALE\_VECS}} but meant to use when doing NPH ensemble.
 There are 4 types of available constraints. ``12'' or ``21''; ``13'' or ``31''; ``23'' or ``32''; ``123'' or ``132'' or ``213'' or ``231'' or ``312'' or ``321''.
 \end{block}
 
@@ -769,7 +769,7 @@ Flag to determine whether to allow changing of angles of the cell (simulation bo
 \end{block}
 
 \begin{block}{Remark}
-Analogous to \hyperlink{NPT\_NP\_ANGLES}{\texttt{NPT\_NP\_ANGLES}} but applicable to NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only when all the lattice vectors are allowed to be rescaled by setting \hyperlink{NPH\_SCALE\_VECS}{\texttt{NPH\_SCALE\_VECS}} to "123" and simultaneously no other constraints are imposed through \hyperlink{NPH\_SCALE\_CONSTRAINTS}{\texttt{NPH\_SCALE\_CONSTRAINTS}}.
+Analogous to \hyperlink{NPT_NP_ANGLES}{\texttt{NPT\_NP\_ANGLES}} but applicable to NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only when all the lattice vectors are allowed to be rescaled by setting \hyperlink{NPH_SCALE_VECS}{\texttt{NPH\_SCALE\_VECS}} to "123" and simultaneously no other constraints are imposed through \hyperlink{NPH_SCALE_CONSTRAINTS}{\texttt{NPH\_SCALE\_CONSTRAINTS}}.
 \end{block}
 
 \end{frame}
@@ -841,9 +841,9 @@ Gives the outer/external pressure in NPT\_NP and NPH.
 \end{block}
 
 \begin{block}{Remark}
-Applicable to NPT\_NP and NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only. In contrast to NPT\_NH governed by a single \hyperlink{TARGET\_PRESSURE}{\texttt{TARGET\_PRESSURE}} argument, the NPT\_NP and NPH are governed by two arguments: \hyperlink{EXTERNAL\_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}} and \hyperlink{EXTERNAL\_STRESS}{\texttt{EXTERNAL\_STRESS}}, the sum of which gives target stress, around which the total internal stress must oscillate.  
+Applicable to NPT\_NP and NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only. In contrast to NPT\_NH governed by a single \hyperlink{TARGET_PRESSURE}{\texttt{TARGET\_PRESSURE}} argument, the NPT\_NP and NPH are governed by two arguments: \hyperlink{EXTERNAL_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}} and \hyperlink{EXTERNAL_STRESS}{\texttt{EXTERNAL\_STRESS}}, the sum of which gives target stress, around which the total internal stress must oscillate.  
 \\
-Note that in absence of \hyperlink{EXTERNAL_STRESS}{\texttt{EXTERNAL\_STRESS}}, target stress in NPT\_NP and NPH would be isotropic and (have diagonal components) equal to \hyperlink{EXTERNAL\_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}}. 
+Note that in absence of \hyperlink{EXTERNAL_STRESS}{\texttt{EXTERNAL\_STRESS}}, target stress in NPT\_NP and NPH would be isotropic and (have diagonal components) equal to \hyperlink{EXTERNAL_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}}. 
 
 
 \end{block}
@@ -881,7 +881,7 @@ Gives the outer stress in NPT\_NP and NPH.
 \end{block}
 
 \begin{block}{Remark}
-Applicable to NPT\_NP and NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only. The format is "$\sigma_{xx} \ \sigma_{yy} \ \sigma_{zz} \ \sigma_{xy} \ \sigma_{xz} \ \sigma_{yz}$", where $\sigma$ here denotes the \hyperlink{EXTERNAL\_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}}. The target stress around which the total internal stress must oscillate in NPT\_NP and NPH ensemble is the sum of \hyperlink{EXTERNAL\_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}} and \hyperlink{EXTERNAL\_STRESS}{\texttt{EXTERNAL\_STRESS}}.
+Applicable to NPT\_NP and NPH \hyperlink{MD_METHOD}{\texttt{MD\_METHOD}} only. The format is "$\sigma_{xx} \ \sigma_{yy} \ \sigma_{zz} \ \sigma_{xy} \ \sigma_{xz} \ \sigma_{yz}$", where $\sigma$ here denotes the \hyperlink{EXTERNAL_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}}. The target stress around which the total internal stress must oscillate in NPT\_NP and NPH ensemble is the sum of \hyperlink{EXTERNAL_PRESSURE}{\texttt{EXTERNAL\_PRESSURE}} and \hyperlink{EXTERNAL_STRESS}{\texttt{EXTERNAL\_STRESS}}.
 \end{block}
 
 \end{frame}
