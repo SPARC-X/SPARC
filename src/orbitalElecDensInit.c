@@ -120,6 +120,7 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
             // read initial density from file 
             if (pSPARC->BandStructFlag == 1 ||  pSPARC->readInitDens) {
                 char inputDensFnames[3][L_STRING+L_PSD];
+                char inputMagFnames[3][L_STRING+L_PSD]; // non-collinear: magnetization x, y, z
                 // set up input density filename
                 if (rank == 0) {
                     char INPUT_DIR[L_PSD];
@@ -127,13 +128,35 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
                     combine_path_filename(INPUT_DIR, pSPARC->InDensTCubFilename, inputDensFnames[0], L_STRING+L_PSD);
                     combine_path_filename(INPUT_DIR, pSPARC->InDensUCubFilename, inputDensFnames[1], L_STRING+L_PSD);
                     combine_path_filename(INPUT_DIR, pSPARC->InDensDCubFilename, inputDensFnames[2], L_STRING+L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InMagxCubFilename, inputMagFnames[0], L_STRING+L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InMagyCubFilename, inputMagFnames[1], L_STRING+L_PSD);
+                    combine_path_filename(INPUT_DIR, pSPARC->InMagzCubFilename, inputMagFnames[2], L_STRING+L_PSD);
                 }
 
-                int nFileToRead = pSPARC->densfilecount;
-                read_cube_and_dist_vec(
-                    pSPARC, inputDensFnames, pSPARC->electronDens, nFileToRead,
-                    pSPARC->DMVertices, pSPARC->dmcomm_phi
-                );
+                if (pSPARC->spin_typ == 2) {
+                    // non-collinear spin: total density and magnetization x, y, z (the density-mixing variables)
+                    read_cube_and_dist_vec(
+                        pSPARC, inputDensFnames, pSPARC->electronDens, 1,
+                        pSPARC->DMVertices, pSPARC->dmcomm_phi
+                    );
+                    read_cube_and_dist_vec(
+                        pSPARC, inputMagFnames, pSPARC->mag+DMnd, 3,
+                        pSPARC->DMVertices, pSPARC->dmcomm_phi
+                    );
+                    // |m| and the diagonal densities, as after density mixing (mixing.c)
+                    Calculate_Magnorm(DMnd, pSPARC->mag+DMnd, pSPARC->mag+2*DMnd, pSPARC->mag+3*DMnd, pSPARC->mag);
+                    Calculate_diagonal_Density(DMnd, pSPARC->mag, pSPARC->electronDens, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                } else {
+                    int nFileToRead = pSPARC->densfilecount;
+                    read_cube_and_dist_vec(
+                        pSPARC, inputDensFnames, pSPARC->electronDens, nFileToRead,
+                        pSPARC->DMVertices, pSPARC->dmcomm_phi
+                    );
+                    // collinear spin: magnetization from the spin densities, magz = up - down
+                    if (pSPARC->spin_typ == 1)
+                        Calculate_Magz(DMnd, pSPARC->mag, pSPARC->electronDens+DMnd, pSPARC->electronDens+2*DMnd);
+                }
+
             } else {
                 // TODO: implement restart based on previous MD electron density. Things to consider:
                 // 1) Each processor stores the density in its memory in a separate file at the end of MD (same frequency as the main restart file).

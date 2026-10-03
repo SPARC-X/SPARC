@@ -353,7 +353,77 @@ No unit
 \end{columns}
 
 \begin{block}{Description}
-Flag for writing electron density into cube format. For spin-unpolarized calculation, electron density is printed into .dens file. For collinear spin calculation, total, spin-up and spin-down electron density are printed into .dens, .densUp and .densDwn file, respectively.
+Flag for writing electron density into cube format. For spin-unpolarized calculation, electron density is printed into .dens file. For collinear spin calculation, total, spin-up and spin-down electron density are printed into .dens, .densUp and .densDwn file, respectively. For noncollinear spin calculation, the x, y and z components of the magnetization density are also printed into .magx, .magy and .magz file, respectively. These files can be read back with \hyperlink{READ_INIT_DENS}{\texttt{READ\_INIT\_DENS}}.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_SCF\_DENSITY}} \label{PRINT_SCF_DENSITY}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+int
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_SCF\_DENSITY}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag for writing the electron density into cube format during the SCF, every \hyperlink{PRINT_SCF_DENSITY_FQ}{\texttt{PRINT\_SCF\_DENSITY\_FQ}} SCF steps. The files are the same as for \hyperlink{PRINT_DENSITY}{\texttt{PRINT\_DENSITY}} and are overwritten at each write. The SCF can be restarted from them with \hyperlink{READ_INIT_DENS}{\texttt{READ\_INIT\_DENS}} and \hyperlink{INPUT_DENS_FILE}{\texttt{INPUT\_DENS\_FILE}}.
+\end{block}
+
+\begin{block}{Remark}
+Only for single-point calculations: it stops with an error if \hyperlink{MD_FLAG}{\texttt{MD\_FLAG}} or \hyperlink{RELAX_FLAG}{\texttt{RELAX\_FLAG}} is set.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{PRINT\_SCF\_DENSITY\_FQ}} \label{PRINT_SCF_DENSITY_FQ}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+3
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PRINT\_SCF\_DENSITY\_FQ}: 5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Number of SCF steps between the density writes of \hyperlink{PRINT_SCF_DENSITY}{\texttt{PRINT\_SCF\_DENSITY}}.
+\end{block}
+
+\begin{block}{Remark}
+Only used with \texttt{PRINT\_SCF\_DENSITY}: 1, otherwise it stops with an error. Must be at least 1.
 \end{block}
 
 \end{frame}

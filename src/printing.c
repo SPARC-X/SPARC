@@ -88,8 +88,15 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         if (pSPARC->Nspdentd > 1) { // send rho_up, rho_down
             D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+DMnd, rDMVert, 
                 rho+Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
-            D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+2*DMnd, rDMVert, 
+            D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->electronDens+2*DMnd, rDMVert,
                 rho+2*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
+        }
+
+        if (pSPARC->spin_typ == 2) { // non-collinear: send magx, magy, magz (needed to restart with READ_INIT_DENS)
+            if (rank_dmcomm_phi == 0) mag = (double*)malloc(3 * Nd * sizeof(double));
+            for (int n = 0; n < 3; n++)
+                D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->mag+(n+1)*DMnd, rDMVert,
+                    mag+n*Nd, pSPARC->dmcomm_phi, sdims, recv_comm, rdims, pSPARC->dmcomm_phi, sizeof(double));
         }
 
         D2D(&d2d_sender, &d2d_recvr, gridsizes, pSPARC->DMVertices, pSPARC->psdChrgDens_ref, rDMVert, 
@@ -107,6 +114,7 @@ void printElecDens(SPARC_OBJ *pSPARC) {
         rho    = pSPARC->electronDens;
         b_ref  = pSPARC->psdChrgDens_ref;
         b      = pSPARC->psdChrgDens;
+        if (pSPARC->spin_typ == 2) mag = pSPARC->mag + DMnd; // magx, magy, magz
     }
     
     if (rank_dmcomm_phi == 0) {
@@ -119,6 +127,12 @@ void printElecDens(SPARC_OBJ *pSPARC) {
             printDens_cube(pSPARC, rho+Nd, pSPARC->DensUCubFilename, "Spin-up electron density");
             printDens_cube(pSPARC, rho+2*Nd, pSPARC->DensDCubFilename, "Spin-down electron density");
         }
+        if (pSPARC->spin_typ == 2) {
+            // printing magnetization density x, y, z in cube format (non-collinear spin)
+            printDens_cube(pSPARC, mag,      pSPARC->MagxCubFilename, "Magnetization density (x)");
+            printDens_cube(pSPARC, mag+Nd,   pSPARC->MagyCubFilename, "Magnetization density (y)");
+            printDens_cube(pSPARC, mag+2*Nd, pSPARC->MagzCubFilename, "Magnetization density (z)");
+        }
     }
 
     // free the collected data after printing to file
@@ -128,6 +142,7 @@ void printElecDens(SPARC_OBJ *pSPARC) {
             free(rho);
             free(b_ref);
             free(b);
+            free(mag);
         }
     }
 }

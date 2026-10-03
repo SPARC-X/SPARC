@@ -154,6 +154,10 @@ Upon successful execution of the `sparc` code, depending on the calculations per
 
   Atomic positions and atomic forces if the user chooses to print these information.
 
+- ".dens" file(s)
+
+  Electron density in cube format (".densUp"/".densDwn" for spin; ".magx"/".magy"/".magz" for noncollinear spin), written at the end with PRINT_DENSITY or every PRINT_SCF_DENSITY_FQ SCF steps with PRINT_SCF_DENSITY. Can be used to restart an SCF with READ_INIT_DENS.
+
 #### Structural relaxation calculations
 
 - ".out" file 

@@ -295,6 +295,9 @@ typedef struct _SPARC_OBJ{
     char DensTCubFilename[L_STRING];
     char DensDCubFilename[L_STRING];
     char DensUCubFilename[L_STRING];
+    char MagxCubFilename[L_STRING];   // non-collinear: magnetization density x, y, z (cube)
+    char MagyCubFilename[L_STRING];
+    char MagzCubFilename[L_STRING];
     char OrbitalsFilename[L_STRING];
     char KinEnDensTCubFilename[L_STRING];
     char KinEnDensUCubFilename[L_STRING];
@@ -1193,7 +1196,9 @@ typedef struct _SPARC_OBJ{
     int suffixNum;  // the number appended to the output filename, only used if it's greater than 0    
     int PrintPsiFlag[7];
     int PrintEnergyDensFlag;
-    
+    int PrintSCFElecDensFlag;
+    int PrintSCFElecDens_fq;
+
     /* Energy density */
     double *KineticRho;         // Kinetic energy density
     double *ExxRho;             // Exact exchange energy density
@@ -1217,7 +1222,10 @@ typedef struct _SPARC_OBJ{
     int kpt_per_line;
     char InDensTCubFilename[L_STRING];
     char InDensUCubFilename[L_STRING];
-    char InDensDCubFilename[L_STRING]; 
+    char InDensDCubFilename[L_STRING];
+    char InMagxCubFilename[L_STRING]; // non-collinear: input magnetization density x, y, z (cube)
+    char InMagyCubFilename[L_STRING];
+    char InMagzCubFilename[L_STRING];
     int densfilecount;
     int readInitDens; // flag for reading inital density
 
@@ -1378,7 +1386,9 @@ typedef struct _SPARC_INPUT_OBJ{
     int Printrestart_fq;
     int PrintPsiFlag[7];
     int PrintEnergyDensFlag;
-    
+    int PrintSCFElecDensFlag;
+    int PrintSCFElecDens_fq;
+
     /* Smearing */
     int elec_T_type;    // electronic temperature (smearing) type, 0 - fermi-dirac, 1 - gaussian
     
@@ -1565,9 +1575,12 @@ typedef struct _SPARC_INPUT_OBJ{
     int kpt_per_line;
     char InDensTCubFilename[L_STRING];
     char InDensUCubFilename[L_STRING];
-    char InDensDCubFilename[L_STRING]; 
+    char InDensDCubFilename[L_STRING];
+    char InMagxCubFilename[L_STRING]; // non-collinear: input magnetization density x, y, z (cube)
+    char InMagyCubFilename[L_STRING];
+    char InMagzCubFilename[L_STRING];
     int densfilecount;
-    int readInitDens; // flag for reading inital density    
+    int readInitDens; // flag for reading inital density
 
     /* PLUMED (optional; used when built with -DUSE_PLUMED) */
     int PlumedFlag;

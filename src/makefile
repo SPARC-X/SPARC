@@ -134,7 +134,7 @@ ifeq ($(USE_PLUMED), 1)
 endif
 
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
-CFLAGS = -std=gnu99 -O3 -fopenmp
+CFLAGS = -Wall -Wextra -std=gnu99 -O3 -fopenmp
 
 OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o      \
         electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o           \

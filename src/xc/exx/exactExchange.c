@@ -907,7 +907,7 @@ void pois_fft(SPARC_OBJ *pSPARC, double *rhs, double *pois_const, int ncol, doub
     if (ncol == 0) return;    
 
     int Nd = pSPARC->Nd;
-    (void)Nd;
+    (void)Nd; (void)rhs; (void)sol; // only the MKL/FFTW FFTs below use these
     int Nx = pSPARC->Nx, Ny = pSPARC->Ny, Nz = pSPARC->Nz;
     int Ndc = Nz * Ny * (Nx/2+1);
     double _Complex *rhs_bar = (double _Complex*) malloc(sizeof(double _Complex) * Ndc * ncol);

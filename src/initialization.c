@@ -55,7 +55,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 218
+#define N_MEMBR 223
 
 
 /**
@@ -684,6 +684,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     memset(pSPARC_Input->InDensTCubFilename, '\0', sizeof(pSPARC_Input->InDensTCubFilename));
     memset(pSPARC_Input->InDensUCubFilename, '\0', sizeof(pSPARC_Input->InDensUCubFilename));
     memset(pSPARC_Input->InDensDCubFilename, '\0', sizeof(pSPARC_Input->InDensDCubFilename));
+    memset(pSPARC_Input->InMagxCubFilename, '\0', sizeof(pSPARC_Input->InMagxCubFilename));
+    memset(pSPARC_Input->InMagyCubFilename, '\0', sizeof(pSPARC_Input->InMagyCubFilename));
+    memset(pSPARC_Input->InMagzCubFilename, '\0', sizeof(pSPARC_Input->InMagzCubFilename));
     /* default file names (unless otherwise supplied) */
     snprintf(pSPARC_Input->filename_out, L_STRING, "%s", pSPARC_Input->filename);
     snprintf(pSPARC_Input->SPARCROOT, L_STRING, "%s", "UNDEFINED");
@@ -896,7 +899,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     for (int i = 1; i < 7; i++) 
         pSPARC_Input->PrintPsiFlag[i] = -1;   // defualt spin, kpt, band start and end index for printing psi
     pSPARC_Input->PrintEnergyDensFlag = 0;    // flag for printing kinetic energy density
-    
+    pSPARC_Input->PrintSCFElecDensFlag = 0;   // flag for printing electron density at every N scf  (applicable to single-point calculations only)   
+    pSPARC_Input->PrintSCFElecDens_fq = 3;    // Frequency/intervals of printing SCF iteration density  (applicable to single-point calculations only)   
+
     /* Default pSPARC members */
     pSPARC->is_default_psd = 0;               // default pseudopotential path is disabled
 
@@ -977,7 +982,9 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
 
     // read in initial density
     pSPARC_Input->readInitDens = 0;
+    pSPARC_Input->densfilecount = 0;          // number of INPUT_DENS_FILE names (0 = none given)
 
+    
     // DFT+U
     pSPARC_Input->is_hubbard = 0;
 
@@ -1461,6 +1468,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->PrintRelaxout = pSPARC_Input->PrintRelaxout;
     pSPARC->Printrestart = pSPARC_Input->Printrestart;
     pSPARC->Printrestart_fq = pSPARC_Input->Printrestart_fq;
+    pSPARC->PrintSCFElecDensFlag = pSPARC_Input->PrintSCFElecDensFlag;
+    pSPARC->PrintSCFElecDens_fq = pSPARC_Input->PrintSCFElecDens_fq;
     pSPARC->elec_T_type = pSPARC_Input->elec_T_type;
     pSPARC->MD_Nstep = pSPARC_Input->MD_Nstep;
     pSPARC->NPTscaleVecs[0] = pSPARC_Input->NPTscaleVecs[0];
@@ -1616,6 +1625,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     strncpy(pSPARC->InDensTCubFilename, pSPARC_Input->InDensTCubFilename,sizeof(pSPARC->InDensTCubFilename));
     strncpy(pSPARC->InDensUCubFilename, pSPARC_Input->InDensUCubFilename,sizeof(pSPARC->InDensUCubFilename));
     strncpy(pSPARC->InDensDCubFilename, pSPARC_Input->InDensDCubFilename,sizeof(pSPARC->InDensDCubFilename));
+    strncpy(pSPARC->InMagxCubFilename, pSPARC_Input->InMagxCubFilename,sizeof(pSPARC->InMagxCubFilename));
+    strncpy(pSPARC->InMagyCubFilename, pSPARC_Input->InMagyCubFilename,sizeof(pSPARC->InMagyCubFilename));
+    strncpy(pSPARC->InMagzCubFilename, pSPARC_Input->InMagzCubFilename,sizeof(pSPARC->InMagzCubFilename));
     pSPARC->PlumedFlag = pSPARC_Input->PlumedFlag;
     pSPARC->PlumedHandle = NULL;
     strncpy(pSPARC->PlumedFile, pSPARC_Input->PlumedFile, sizeof(pSPARC->PlumedFile));
@@ -1648,6 +1660,21 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             exit(EXIT_FAILURE); 
         }
     }
+
+    // INPUT_DENS_FILE (READ_INIT_DENS or BAND_STRUCTURE) must list the files PRINT_DENSITY / PRINT_SCF_DENSITY write
+    if (pSPARC->readInitDens || pSPARC->BandStructFlag == 1) {
+        if (pSPARC->spin_typ == 0 && pSPARC->densfilecount != 1) {
+            if (!rank) printf("\nERROR: INPUT_DENS_FILE needs 1 file for SPIN_TYP: 0, the total electron density (.dens); %d given!\n", pSPARC->densfilecount);
+            exit(EXIT_FAILURE);
+        } else if (pSPARC->spin_typ == 1 && pSPARC->densfilecount != 3) {
+            if (!rank) printf("\nERROR: INPUT_DENS_FILE needs 3 files for SPIN_TYP: 1, in this order: total, spin-up and spin-down electron density (.dens .densUp .densDwn); %d given!\n", pSPARC->densfilecount);
+            exit(EXIT_FAILURE);
+        } else if (pSPARC->spin_typ == 2 && pSPARC->densfilecount != 4) {
+            if (!rank) printf("\nERROR: INPUT_DENS_FILE needs 4 files for SPIN_TYP: 2, in this order: total electron density and magnetization density x, y, z (.dens .magx .magy .magz); %d given!\n", pSPARC->densfilecount);
+            exit(EXIT_FAILURE);
+        }
+    }
+
     // find exchange correltaion decomposition
     xc_decomposition(pSPARC);
 
@@ -1777,6 +1804,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->DensTCubFilename,      L_STRING, "%s.dens",         pSPARC->filename_out);
             snprintf(pSPARC->DensUCubFilename,      L_STRING, "%s.densUp",       pSPARC->filename_out);
             snprintf(pSPARC->DensDCubFilename,      L_STRING, "%s.densDwn",      pSPARC->filename_out);
+            snprintf(pSPARC->MagxCubFilename,       L_STRING, "%s.magx",         pSPARC->filename_out);
+            snprintf(pSPARC->MagyCubFilename,       L_STRING, "%s.magy",         pSPARC->filename_out);
+            snprintf(pSPARC->MagzCubFilename,       L_STRING, "%s.magz",         pSPARC->filename_out);
             snprintf(pSPARC->OrbitalsFilename,      L_STRING, "%s.psi",          pSPARC->filename_out);
             snprintf(pSPARC->KinEnDensTCubFilename, L_STRING, "%s.kedens",       pSPARC->filename_out);
             snprintf(pSPARC->KinEnDensUCubFilename, L_STRING, "%s.kedensUp",     pSPARC->filename_out);
@@ -1856,6 +1886,12 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->DensUCubFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->DensDCubFilename);
             snprintf(pSPARC->DensDCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->MagxCubFilename);
+            snprintf(pSPARC->MagxCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->MagyCubFilename);
+            snprintf(pSPARC->MagyCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            snprintf(tempchar, L_STRING, "%s", pSPARC->MagzCubFilename);
+            snprintf(pSPARC->MagzCubFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->OrbitalsFilename);
             snprintf(pSPARC->OrbitalsFilename, L_STRING, "%s_%02d", tempchar, i);
             // energy density files 
@@ -2334,6 +2370,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
 
     if (pSPARC->rhoTrigger < 0) {
         pSPARC->rhoTrigger = (pSPARC->spin_typ == 2 ? 6 : 4);
+        if (pSPARC->readInitDens == 1) // SCF restarted from a saved density
+            pSPARC->rhoTrigger = 7;
         if (pSPARC->BandStructFlag == 1)
             pSPARC->rhoTrigger = 10;
     }
@@ -2729,7 +2767,8 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && fabs(pSPARC->k1[0]) < TEMP_TOL 
         && fabs(pSPARC->k2[0]) < TEMP_TOL 
         && fabs(pSPARC->k3[0]) < TEMP_TOL
-        && pSPARC->SOC_Flag == 0);
+        && pSPARC->SOC_Flag == 0
+        && pSPARC->spin_typ != 2); // non-collinear spinors are complex (off-diagonal Vxc), as with SOC
 
     if (pSPARC->ixc[3] != 0){
         if ((pSPARC->BCx)||(pSPARC->BCy)||(pSPARC->BCz)) {
@@ -3839,7 +3878,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                   SPARC (version September 30, 2026)                    *\n");
+    fprintf(output_fp,"*                     SPARC (version October 3, 2026)                     *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4225,6 +4264,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"PRINT_ATOMS: %d\n",pSPARC->PrintAtomPosFlag);
     fprintf(output_fp,"PRINT_EIGEN: %d\n",pSPARC->PrintEigenFlag);
     fprintf(output_fp,"PRINT_DENSITY: %d\n",pSPARC->PrintElecDensFlag);
+    if (pSPARC->PrintSCFElecDensFlag == 1){
+        fprintf(output_fp,"PRINT_SCF_DENSITY: %d\n",pSPARC->PrintSCFElecDensFlag);
+        fprintf(output_fp,"PRINT_SCF_DENSITY_FQ: %d\n",pSPARC->PrintSCFElecDens_fq);
+    }
     if(pSPARC->MDFlag == 1)
         fprintf(output_fp,"PRINT_MDOUT: %d\n",pSPARC->PrintMDout);
     if(pSPARC->MDFlag == 1 || pSPARC->RelaxFlag >= 1){
@@ -4263,9 +4306,11 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"BAND_STRUCTURE: %d\n",pSPARC->BandStructFlag);
         fprintf(output_fp, "INPUT_DENS_FILE: ");
         fprintf(output_fp, "%s ", pSPARC->InDensTCubFilename);
-        if (pSPARC->densfilecount > 1) {
+        if (pSPARC->densfilecount == 3) {
             fprintf(output_fp, "%s ", pSPARC->InDensUCubFilename);
             fprintf(output_fp, "%s ", pSPARC->InDensDCubFilename);
+        } else if (pSPARC->densfilecount == 4) { // non-collinear spin: magnetization x, y, z
+            fprintf(output_fp, "%s %s %s ", pSPARC->InMagxCubFilename, pSPARC->InMagyCubFilename, pSPARC->InMagzCubFilename);
         }
         fprintf(output_fp, "\n");
         fprintf(output_fp,"KPT_PER_LINE: %d\n",pSPARC->kpt_per_line);
@@ -4278,10 +4323,13 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         fprintf(output_fp,"READ_INIT_DENS: %d\n",pSPARC->readInitDens);
         fprintf(output_fp, "INPUT_DENS_FILE: ");
         fprintf(output_fp, "%s ", pSPARC->InDensTCubFilename);
-        if (pSPARC->densfilecount > 1) {
+        if (pSPARC->densfilecount == 3) {
             fprintf(output_fp, "%s ", pSPARC->InDensUCubFilename);
             fprintf(output_fp, "%s ", pSPARC->InDensDCubFilename);
+        } else if (pSPARC->densfilecount == 4) { // non-collinear spin: magnetization x, y, z
+            fprintf(output_fp, "%s %s %s ", pSPARC->InMagxCubFilename, pSPARC->InMagyCubFilename, pSPARC->InMagzCubFilename);
         }
+        fprintf(output_fp, "\n");
     }
 
 
@@ -4499,7 +4547,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT,  /* int */
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, /* int */
 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, /* double array */
@@ -4520,7 +4568,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,/* double */
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, /* char */
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
-                                         MPI_CHAR};
+                                         MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
     int blens[N_MEMBR] = {3, 3, 3, 7,      /* int array */ 
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
@@ -4546,7 +4594,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, 1,  /* int */ 
+                          1, 1, 1, 1, /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
                           L_kpoint, 6, 6,/* double array */
                           1, 1, 1, 1, 1, 
@@ -4566,7 +4614,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING, L_STRING, L_STRING, L_STRING, L_STRING,
-                          L_STRING};
+                          L_STRING, L_STRING, L_STRING, L_STRING};
 
     // calculating offsets in an architecture independent manner
     MPI_Aint addr[N_MEMBR],disps[N_MEMBR], base;
@@ -4642,6 +4690,8 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.PrintRelaxout, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Printrestart, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Printrestart_fq, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PrintSCFElecDensFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.PrintSCFElecDens_fq, addr + i++);
     MPI_Get_address(&sparc_input_tmp.elec_T_type, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MD_Nstep, addr + i++);
     MPI_Get_address(&sparc_input_tmp.ion_elec_eqT, addr + i++);
@@ -4800,6 +4850,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.InDensDCubFilename, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mlff_data_folder, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PlumedFile, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.InMagxCubFilename, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.InMagyCubFilename, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.InMagzCubFilename, addr + i++);
     for (i = 0; i < N_MEMBR; i++) {
         disps[i] = addr[i] - base;
     }
