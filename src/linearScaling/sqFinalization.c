@@ -13,6 +13,7 @@
 #include <string.h>
 #include <mpi.h>
 #include "sqFinalization.h"
+#include "sq.h"
 #include "parallelization.h"
 #include "tools.h"
 #include "electrostatics.h"
@@ -42,7 +43,8 @@ void Free_SQ(SPARC_OBJ *pSPARC) {
     free(pSQ->mineig);
     free(pSQ->lambda_max);
 
-    for (i = 0; i < pSQ->DMnd_SQ; i++) {
+    // one set per point and spin at ambient temperature, per point at high temperature (init_SQ, init_SQ_HighT)
+    for (i = 0; i < pSQ->DMnd_SQ * (pSPARC->sqHighTFlag == 1 ? 1 : pSPARC->Nspin_spincomm); i++) {
         free(pSQ->gnd[i]);
         free(pSQ->gwt[i]);
     }
@@ -52,6 +54,7 @@ void Free_SQ(SPARC_OBJ *pSPARC) {
     free(pSQ->Veff_PR);
     free(pSQ->Veff_loc_SQ);
     free(pSQ->x_ex);
+    free_SQ_lanczos(pSPARC);
 
     if (pSPARC->sqHighTFlag == 1) {
         for (i = 0; i < pSQ->DMnd_SQ; i++) {
@@ -92,8 +95,8 @@ void Free_SQ(SPARC_OBJ *pSPARC) {
  */
 void Free_scfvar_SQ(SPARC_OBJ *pSPARC) {
     SQ_OBJ *pSQ = pSPARC->pSQ;
-    int i, j, nd, ityp, n_atom, iat;
-    
+    int i, j, ityp, iat;
+
     // free atom influence struct components
     if (pSPARC->dmcomm_phi != MPI_COMM_NULL) {
         for (i = 0; i < pSPARC->Ntypes; i++) {
@@ -145,29 +148,37 @@ void Free_scfvar_SQ(SPARC_OBJ *pSPARC) {
         }
     }
     free(pSPARC->Atom_Influence_nloc_kptcomm);
+    // the current point's projectors (pSQ->nlocProj_pt) are copies: nothing points into the sets freed above
 
-    for (nd = 0; nd < pSQ->DMnd_SQ; nd++) {
-        for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            n_atom = pSPARC->Atom_Influence_nloc_SQ[nd][ityp].n_atom;
-            if (n_atom > 0){
-                free(pSPARC->Atom_Influence_nloc_SQ[nd][ityp].coords);
-                free(pSPARC->Atom_Influence_nloc_SQ[nd][ityp].atom_index);
-                free(pSPARC->Atom_Influence_nloc_SQ[nd][ityp].ndc);
-                for (iat = 0; iat < n_atom; iat++) {
-                    free(pSPARC->Atom_Influence_nloc_SQ[nd][ityp].grid_pos[iat]);
-                    free(pSPARC->nlocProj_SQ[nd][ityp].Chi[iat]);
-                }
-                free(pSPARC->Atom_Influence_nloc_SQ[nd][ityp].grid_pos);
-                free(pSPARC->nlocProj_SQ[nd][ityp].Chi);
-            }
-        }
-        free(pSPARC->nlocProj_SQ[nd]);
-        free(pSPARC->Atom_Influence_nloc_SQ[nd]);
-    }
-    free(pSPARC->nlocProj_SQ);
-    free(pSPARC->Atom_Influence_nloc_SQ);
-    
     return;
+}
+
+
+/**
+ * @brief   Free what init_SQ_lanczos allocated
+ */
+void free_SQ_lanczos(SPARC_OBJ *pSPARC) {
+    SQ_OBJ *pSQ = pSPARC->pSQ;
+    free(pSQ->Veff_box);
+    free(pSQ->lanczos_tmp);
+    free(pSQ->Lap_1D_x);
+    free(pSQ->Lap_1D_y);
+    free(pSQ->Lap_1D_z);
+    free(pSQ->eig_d); free(pSQ->eig_e); free(pSQ->eig_work); free(pSQ->eig_iwork); free(pSQ->eig_C); free(pSQ->eig_F);
+    SQ_jit_free(pSPARC);                                        // JIT kernels (MKL)
+    for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {         // the current point's projectors
+        free(pSQ->Atom_Influence_nloc_pt[ityp].coords);
+        free(pSQ->Atom_Influence_nloc_pt[ityp].atom_index);
+        free(pSQ->Atom_Influence_nloc_pt[ityp].ndc);
+        free(pSQ->Atom_Influence_nloc_pt[ityp].xs);
+        free(pSQ->Atom_Influence_nloc_pt[ityp].grid_pos);
+        free(pSQ->nlocProj_pt[ityp].Chi);
+    }
+    free(pSQ->nlocProj_pt);
+    free(pSQ->Atom_Influence_nloc_pt);
+    free(pSQ->nlpt_cap);
+    free(pSQ->nlpt_pos);
+    free(pSQ->nlpt_chi);
 }
 
 

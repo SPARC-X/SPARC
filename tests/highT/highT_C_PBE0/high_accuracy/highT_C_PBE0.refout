@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version July 25, 2024)                      *
+*                     SPARC (version October 3, 2026)                     *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Thu Jul 25 14:50:39 2024                  *
+*                   Start time: Tue Oct 13 12:10:04 2026                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -18,10 +18,11 @@ SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 3.166811563
 EXCHANGE_CORRELATION: PBE0
+HUBBARD_FLAG: 0
 SQ_HIGHT_FLAG: 1
 SQ_RCUT: 1.5
 SQ_NPL_G: 20
-SQ_GAUSS_HYBRID_MEM: LOW
+SQ_HIGHT_GAUSS_HYBRID_MEM: LOW
 SQ_TOL_OCC: 1.00E-06
 CALC_STRESS: 1
 MAXIT_SCF: 100
@@ -57,7 +58,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: highT_C_PBE0/temp_run/highT_C_PBE0
+OUTPUT_FILE: highT/highT_C_PBE0/temp_run/highT_C_PBE0
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -70,6 +71,7 @@ Density: 9.2208597461E-01 (amu/Bohr^3), 1.0332778384E+01 (g/cc)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
+NP_SPIN_PARAL: 1
 NP_DOMAIN_SQ_PARAL: 4 4 6
 NP_DOMAIN_PHI_PARAL: 2 2 2
 ***************************************************************************
@@ -78,7 +80,7 @@ NP_DOMAIN_PHI_PARAL: 2 2 2
 Number of processors               :  96
 Mesh spacing                       :  0.248996 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  highT_C_PBE0/temp_run/highT_C_PBE0.out
+Output printed to                  :  highT/highT_C_PBE0/temp_run/highT_C_PBE0.out
 Total number of atom types         :  1
 Total number of atoms              :  4
 Total number of electrons          :  16
@@ -87,58 +89,38 @@ Pseudopotential                    :  ../psps/06_C_4_1.2_1.2_pbe_n_v1.0.psp8
 Atomic mass                        :  12.0106
 Pseudocharge radii of atom type 1  :  7.47 7.47 7.47 (x, y, z dir)
 Number of atoms of type 1          :  4
-Estimated total memory usage       :  30.12 GB
-Estimated memory per processor     :  321.23 MB
+Estimated total memory usage       :  54.93 GB
+Estimated memory per processor     :  585.95 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -3.3703979106E+01        1.280E-01        0.299
-2            -3.3701666531E+01        9.089E-02        0.124
-3            -3.3699209860E+01        1.059E-03        0.075
-4            -3.3699210046E+01        3.207E-04        0.074
+1            -3.3703979106E+01        1.280E-01        0.047
+2            -3.3701666531E+01        9.089E-02        0.027
+3            -3.3699209860E+01        1.059E-03        0.030
+4            -3.3699210046E+01        3.207E-04        0.027
 Total number of SCF: 4     
-====================================================================
-                    sqDFT output quantities                    
-====================================================================
-Max. eigenvalue			:  1.6736004848E+02 (Ha)
-Min. occupation			:  8.6800325037E-24 
 
-No.1 Exx outer loop. Basis timing: 2.589 (sec)
-1            -3.3227675526E+01        6.020E-03        24.060
-2            -3.3227667535E+01        4.247E-03        23.981
-3            -3.3227659714E+01        4.855E-05        24.512
-4            -3.3227659718E+01        3.058E-07        24.006
+No.1 Exx outer loop. Basis timing: 1.414 (sec)
+1            -3.3227675526E+01        6.020E-03        12.873
+2            -3.3227667535E+01        4.247E-03        12.861
+3            -3.3227659714E+01        4.855E-05        12.848
+4            -3.3227659718E+01        3.058E-07        12.853
 Total number of SCF: 4     
-====================================================================
-                    sqDFT output quantities                    
-====================================================================
-Max. eigenvalue			:  1.6752589951E+02 (Ha)
-Min. occupation			:  8.5190458179E-24 
 Exx outer loop error: 8.3345728538e-04 
 
-No.2 Exx outer loop. Basis timing: 2.108 (sec)
-1            -3.3227666832E+01        7.449E-05        23.993
-2            -3.3227666832E+01        5.255E-05        23.989
-3            -3.3227666833E+01        6.968E-08        24.041
+No.2 Exx outer loop. Basis timing: 1.047 (sec)
+1            -3.3227666832E+01        7.449E-05        12.858
+2            -3.3227666832E+01        5.255E-05        12.861
+3            -3.3227666833E+01        6.968E-08        12.863
 Total number of SCF: 3     
-====================================================================
-                    sqDFT output quantities                    
-====================================================================
-Max. eigenvalue			:  1.6752589869E+02 (Ha)
-Min. occupation			:  8.5185390500E-24 
-Exx outer loop error: 7.1662986371e-06 
+Exx outer loop error: 7.1662986374e-06 
 
-No.3 Exx outer loop. Basis timing: 2.134 (sec)
-1            -3.3227666835E+01        1.081E-06        23.992
-2            -3.3227666834E+01        7.624E-07        24.037
+No.3 Exx outer loop. Basis timing: 1.036 (sec)
+1            -3.3227666835E+01        1.081E-06        12.852
+2            -3.3227666834E+01        7.624E-07        12.856
 Total number of SCF: 2     
-====================================================================
-                    sqDFT output quantities                    
-====================================================================
-Max. eigenvalue			:  1.6752589868E+02 (Ha)
-Min. occupation			:  8.5185349210E-24 
-Exx outer loop error: 6.9380164613e-08 
+Exx outer loop error: 6.9380164475e-08 
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
@@ -149,16 +131,16 @@ Exchange correlation energy        : -8.8861942929E+00 (Ha)
 Self and correction energy         : -4.1401224294E+01 (Ha)
 -Entropy*kb*T                      : -1.7176077920E+02 (Ha)
 Fermi level                        : -2.8895579470E+00 (Ha)
-RMS force                          :  3.8046652969E-01 (Ha/Bohr)
+RMS force                          :  3.8046652968E-01 (Ha/Bohr)
 Maximum force                      :  5.7761567424E-01 (Ha/Bohr)
-Time for force calculation         :  0.193 (sec)
+Time for force calculation         :  0.204 (sec)
 Pressure                           :  2.5149802882E+04 (GPa)
 Maximum stress                     :  2.5181751961E+04 (GPa)
-Time for stress calculation        :  0.327 (sec)
+Time for stress calculation        :  0.368 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  269.568 sec
+Total walltime                     :  120.277 sec
 ___________________________________________________________________________
 
 ***************************************************************************

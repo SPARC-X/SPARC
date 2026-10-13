@@ -1,8 +1,8 @@
 ***************************************************************************
-*                       SPARC (version June 24, 2024)                      *
+*                     SPARC (version October 3, 2026)                     *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Mon Jun 24 15:59:34 2024                  *
+*                   Start time: Tue Oct 13 12:12:06 2026                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -18,10 +18,10 @@ SPIN_TYP: 0
 ELEC_TEMP_TYPE: Fermi-Dirac
 SMEARING: 3.166811563
 EXCHANGE_CORRELATION: LDA_PZ
+HUBBARD_FLAG: 0
 SQ_AMBIENT_FLAG: 1
 SQ_RCUT: 2
 SQ_NPL_G: 60
-SQ_GAUSS_MEM: LOW
 SQ_TOL_OCC: 1.00E-06
 CALC_STRESS: 1
 MAXIT_SCF: 100
@@ -51,7 +51,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: highT_H/temp_run/highT_H
+OUTPUT_FILE: highT/highT_H/temp_run/highT_H
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -64,6 +64,7 @@ Density: 4.4900374731E-02 (amu/Bohr^3), 5.0314789971E-01 (g/cc)
 ***************************************************************************
                            Parallelization                                 
 ***************************************************************************
+NP_SPIN_PARAL: 1
 NP_DOMAIN_SQ_PARAL: 4 4 6
 NP_DOMAIN_PHI_PARAL: 3 3 3
 ***************************************************************************
@@ -72,7 +73,7 @@ NP_DOMAIN_PHI_PARAL: 3 3 3
 Number of processors               :  96
 Mesh spacing                       :  0.194697 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  highT_H/temp_run/highT_H.out
+Output printed to                  :  highT/highT_H/temp_run/highT_H.out
 Total number of atom types         :  1
 Total number of atoms              :  4
 Total number of electrons          :  4
@@ -87,21 +88,16 @@ Estimated memory per processor     :  20.48 MB
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -1.2387091358E+01        7.206E-01        1.997
-2            -1.2376467252E+01        5.448E-01        3.075
-3            -1.2360805172E+01        5.136E-02        1.765
-4            -1.2360716396E+01        8.004E-03        1.769
-5            -1.2360714768E+01        2.562E-03        1.767
-6            -1.2360714782E+01        1.308E-04        1.765
-7            -1.2360714781E+01        6.481E-05        1.762
-8            -1.2360714773E+01        8.681E-06        1.762
-9            -1.2360714776E+01        8.361E-07        1.760
+1            -1.2387091358E+01        7.206E-01        0.553
+2            -1.2376467252E+01        5.448E-01        0.488
+3            -1.2360805172E+01        5.136E-02        0.490
+4            -1.2360716396E+01        8.004E-03        0.488
+5            -1.2360714768E+01        2.562E-03        0.488
+6            -1.2360714782E+01        1.308E-04        0.486
+7            -1.2360714781E+01        6.481E-05        0.487
+8            -1.2360714773E+01        8.681E-06        0.486
+9            -1.2360714776E+01        8.361E-07        0.486
 Total number of SCF: 9     
-====================================================================
-                    sqDFT output quantities                    
-====================================================================
-Max. eigenvalue			:  2.7733388087E+02 (Ha)
-Min. occupation			:  1.0170165007E-39 
 ====================================================================
                     Energy and force calculation                    
 ====================================================================
@@ -114,14 +110,14 @@ Self and correction energy         : -5.6993875232E+00 (Ha)
 Fermi level                        : -9.1900217802E+00 (Ha)
 RMS force                          :  1.7511078344E+00 (Ha/Bohr)
 Maximum force                      :  3.4382252779E+00 (Ha/Bohr)
-Time for force calculation         :  1.868 (sec)
+Time for force calculation         :  0.793 (sec)
 Pressure                           :  3.9743299158E+03 (GPa)
 Maximum stress                     :  4.3008856188E+03 (GPa)
-Time for stress calculation        :  0.018 (sec)
+Time for stress calculation        :  0.022 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  19.495 sec
+Total walltime                     :  5.361 sec
 ___________________________________________________________________________
 
 ***************************************************************************

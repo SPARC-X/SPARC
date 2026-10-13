@@ -88,11 +88,8 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
     double *DMcol_loc = NULL;
     if (!pSPARC->usefock) DMcol_loc = (double *) calloc(sizeof(double), Nd_loc);
 
-    double *DMcol = pSQ->x_ex, *t0 = NULL;
-    // only need t0 for initial gauss guess when vectors are not saved for Gauss quadrature
-    if (pSPARC->sqHighTFlag == 0) {
-        t0 = (double *) calloc(sizeof(double), Nd_loc);
-    }
+    double *DMcol = pSQ->x_ex;
+    pSQ->forceFlag = 1;                 // the Lanczos runs keep all vectors and the eigensolve forms f(T) e1 (pSQ->eig_F)
 
 	// loop over finite difference nodes in the processor domain
     for (int spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
@@ -102,13 +99,13 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
                 restrict_to_subgrid(pSQ->Dn[nd], DMcol, Nx_ex, Nx_loc, NxNy_ex, NxNy_loc, 
                     FDn, Nx_loc+FDn-1, FDn, Ny_loc+FDn-1, FDn, Nz_loc+FDn-1, 0, 0, 0, sizeof(double));
                 DMcol_loc = pSQ->Dn[nd];
+                GetNonlocalProjectorsForOnePoint(pSPARC, nd);            // the node's projectors for the force terms below
             } else if (pSPARC->sqHighTFlag == 0) {
-                memset(t0, 0, sizeof(double) * Nd_loc);
-                int center = nloc[0] + nloc[1]*Nx_loc + nloc[2]*NxNy_loc;
-                t0[center] = 1;
                 double lambda_min, lambda_max;
-                LanczosAlgorithm_gauss(pSPARC, t0, &lambda_min, &lambda_max, nd, spn_i);
-                Gauss_density_matrix_col(pSPARC, pSQ->Nd_loc, pSPARC->SQ_npl_g, DMcol_loc, pSQ->lanczos_vec, pSQ->w, pSQ->gnd[nd+spn_i*DMnd]);
+                LanczosAlgorithm_gauss(pSPARC, nd, spn_i, &lambda_min, &lambda_max);   // also builds the node's projectors
+                // density matrix column V f(T) e1 / dV from the stored (unnormalized) Lanczos vectors and eig_F
+                cblas_dgemv(CblasColMajor, CblasNoTrans, Nd_loc, pSPARC->SQ_npl_g, 1.0/pSPARC->dV,
+                            pSQ->lanczos_vec, Nd_loc, pSQ->eig_F, 1, 0.0, DMcol_loc, 1);
 
                 restrict_to_subgrid(DMcol_loc, DMcol, Nx_ex, Nx_loc, NxNy_ex, NxNy_loc, 
                     FDn, Nx_loc+FDn-1, FDn, Ny_loc+FDn-1, FDn, Nz_loc+FDn-1, 0, 0, 0, sizeof(double));
@@ -117,6 +114,7 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
                 Gauss_density_matrix_col(pSPARC, pSQ->Nd_loc, pSPARC->SQ_npl_g, DMcol_loc, pSQ->lanczos_vec_all[nd+spn_i*DMnd], pSQ->w_all[nd+spn_i*DMnd], pSQ->gnd[nd+spn_i*DMnd]);
                 restrict_to_subgrid(DMcol_loc, DMcol, Nx_ex, Nx_loc, NxNy_ex, NxNy_loc, 
                     FDn, Nx_loc+FDn-1, FDn, Ny_loc+FDn-1, FDn, Nz_loc+FDn-1, 0, 0, 0, sizeof(double));
+                GetNonlocalProjectorsForOnePoint(pSPARC, nd);            // the node's projectors for the force terms below
             }
 
             Calc_DX( DMcol, gradx_DM, FDn, 1, Nx_ex, Nx_loc, NxNy_ex, NxNy_loc, 
@@ -155,56 +153,56 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
             if(pSPARC->Calc_stress == 1 || pSPARC->Calc_pres == 1) {
                 double *temp;
                 temp = (double *) calloc(sizeof(double), pSPARC->n_atom);
-                Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                            pSPARC->nlocProj_SQ[nd], DMcol_loc, temp);
+                Vnl_vec_mult_J_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                            pSQ->nlocProj_pt, DMcol_loc, temp);
                 for (i = 0; i < pSPARC->n_atom; i++) 
                     energy_nl += temp[i];
                 free(temp);
             }
 
-            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                            pSPARC->nlocProj_SQ[nd], gradx_DM, force_nloc);
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                            pSQ->nlocProj_pt, gradx_DM, force_nloc);
 
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 1, gradx_DM, &s_nl(0,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 2, gradx_DM, &s_nl(0,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 3, gradx_DM, &s_nl(0,2));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 1, gradx_DM, &s_nl(0,0));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 2, gradx_DM, &s_nl(0,1));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 3, gradx_DM, &s_nl(0,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 1, gradx_DM, &pSPARC->pres_nl);
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 1, gradx_DM, &pSPARC->pres_nl);
             }
 
-            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                            pSPARC->nlocProj_SQ[nd], grady_DM, force_nloc + pSPARC->n_atom);
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                            pSQ->nlocProj_pt, grady_DM, force_nloc + pSPARC->n_atom);
 
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 1, grady_DM, &s_nl(1,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 2, grady_DM, &s_nl(1,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 3, grady_DM, &s_nl(1,2));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 1, grady_DM, &s_nl(1,0));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 2, grady_DM, &s_nl(1,1));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 3, grady_DM, &s_nl(1,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 2, grady_DM, &pSPARC->pres_nl);
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 2, grady_DM, &pSPARC->pres_nl);
             }
             
-            Vnl_vec_mult_J_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                            pSPARC->nlocProj_SQ[nd], gradz_DM, force_nloc + 2 * pSPARC->n_atom);
+            Vnl_vec_mult_J_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                            pSQ->nlocProj_pt, gradz_DM, force_nloc + 2 * pSPARC->n_atom);
 
             if(pSPARC->Calc_stress == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 1, gradz_DM, &s_nl(2,0));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 2, gradz_DM, &s_nl(2,1));
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 3, gradz_DM, &s_nl(2,2));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 1, gradz_DM, &s_nl(2,0));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 2, gradz_DM, &s_nl(2,1));
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 3, gradz_DM, &s_nl(2,2));
             } else if (pSPARC->Calc_pres == 1) {
-                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSPARC->Atom_Influence_nloc_SQ[nd],
-                                    pSPARC->nlocProj_SQ[nd], 3, gradz_DM, &pSPARC->pres_nl);
+                Vnl_vec_mult_dir_SQ(pSPARC, nd, pSQ->Atom_Influence_nloc_pt,
+                                    pSQ->nlocProj_pt, 3, gradz_DM, &pSPARC->pres_nl);
             }
             
             if(pSPARC->Calc_stress == 1 && pSPARC->usefock) {
@@ -309,9 +307,7 @@ void Calculate_nonlocal_forces_SQ(SPARC_OBJ *pSPARC) {
     free(grady_DM);
     free(gradz_DM);
     if (!pSPARC->usefock) free(DMcol_loc);
-    if (pSPARC->sqHighTFlag == 0) {
-        free(t0);
-    }
+    pSQ->forceFlag = 0;
 #undef s_k
 #undef s_nl
 }

@@ -24,6 +24,11 @@ void Free_SQ(SPARC_OBJ *pSPARC);
 void Free_scfvar_SQ(SPARC_OBJ *pSPARC);
 
 /**
+ * @brief   Free what init_SQ_lanczos allocated
+ */
+void free_SQ_lanczos(SPARC_OBJ *pSPARC);
+
+/**
  * @brief   Free SCF variables for SQ-hybrid
  */
 void free_exx_SQ(SPARC_OBJ *pSPARC);
