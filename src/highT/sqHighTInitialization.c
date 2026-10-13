@@ -26,6 +26,7 @@
 #endif
 
 #include "sqHighTInitialization.h"
+#include "sqInitialization.h"
 #include "parallelization.h"
 #include "electrostatics.h"
 #include "sqHighTExactExchange.h"
@@ -79,6 +80,7 @@ void init_SQ_HighT(SPARC_OBJ *pSPARC) {
     pSQ->Veff_loc_SQ = (double *) calloc(sizeof(double), pSQ->DMnd_SQ*pSPARC->Nspden);
     pSQ->x_ex = (double *) malloc(sizeof(double)*pSQ->Nd_ex);
     memset(pSQ->x_ex, 0, sizeof(double)*pSQ->Nd_ex);
+    init_SQ_lanczos(pSPARC);
     
     // initialize for d2dext communication
     int gridsizes[3] = {pSPARC->Nx, pSPARC->Ny, pSPARC->Nz};

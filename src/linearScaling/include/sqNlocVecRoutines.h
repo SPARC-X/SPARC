@@ -12,15 +12,12 @@
 #define SQNLOCVECROUTINES_H 
 
 /**
- * @brief   This function gets the overlapping nodes of each Rcut cuboidal or spherical domain of 
- *          each FD node in current domain and atoms and their images' rc spherical domain. In current 
- *          implementation, only nloc_mem_flag in SQDFT is implemented, i.e., saving nonlocal projector 
- *          chi matrix for each FD node. 
- * 
- * @TODO     Implement the nloc_mem_flag option if memory issue happens.
+ * @brief   The nonlocal projectors of grid point nd: the rows of the PR-domain projectors (nlocProj_kptcomm) at the
+ *          nodes within the point's Rcut sphere and box, positions relative to the point's Rcut box, into
+ *          pSQ->nlocProj_pt / pSQ->Atom_Influence_nloc_pt (one point at a time, grow-only buffers). Called at the
+ *          start of each Lanczos run and in the force step.
  */
-void GetNonlocalProjectorsForNode(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ *nlocProj, NLOC_PROJ_OBJ ***nlocProj_SQ, 
-        ATOM_NLOC_INFLUENCE_OBJ *Atom_Influence_nloc, ATOM_NLOC_INFLUENCE_OBJ ***Atom_Influence_nloc_SQ, MPI_Comm comm);
+void GetNonlocalProjectorsForOnePoint(SPARC_OBJ *pSPARC, int nd);
 
 /**
  * @brief   Calculate Vnl times vectors in a matrix-free way.

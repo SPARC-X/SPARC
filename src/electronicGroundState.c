@@ -434,14 +434,8 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         t1 = MPI_Wtime();
     #endif
 
-        GetNonlocalProjectorsForNode(pSPARC, pSPARC->nlocProj_kptcomm, &pSPARC->nlocProj_SQ, 
-                        pSPARC->Atom_Influence_nloc_kptcomm, &pSPARC->Atom_Influence_nloc_SQ, pSQ->dmcomm_SQ);
-        
-    #ifdef DEBUG
-        t2 = MPI_Wtime();
-        if (rank == 0) printf("\nGetting nonlocal projectors for each node in dmcomm_SQ took %.3f ms\n",(t2-t1)*1000);
-        t1 = MPI_Wtime();
-    #endif
+        // the nonlocal projectors of each node are taken from the PR-domain set one node at a time, at the start of
+        // its Lanczos run (GetNonlocalProjectorsForOnePoint)
         
         // TODO: Add correction term 
         if(pSPARC->SQ_correction == 1) {

@@ -75,11 +75,12 @@ void init_SQ(SPARC_OBJ *pSPARC) {
     pSQ->Nd_ex = pSQ->Nx_ex * pSQ->Ny_ex * pSQ->Nz_ex;
 
     // allocate variables 
-    pSQ->Veff_PR = (double *) calloc(sizeof(double), pSQ->DMnd_PR);
+    pSQ->Veff_PR = (double *) calloc(sizeof(double), (size_t)pSQ->DMnd_PR * pSPARC->Nspin_spincomm);   // one slice per spin
     pSQ->Veff_loc_SQ = (double *) calloc(sizeof(double), pSQ->DMnd_SQ*pSPARC->Nspden);
     pSQ->x_ex = (double *) malloc(sizeof(double)*pSQ->Nd_ex);
     memset(pSQ->x_ex, 0, sizeof(double)*pSQ->Nd_ex);
-    
+    init_SQ_lanczos(pSPARC);
+
     // initialize for d2dext communication
     int gridsizes[3] = {pSPARC->Nx, pSPARC->Ny, pSPARC->Nz};
     int dims[3] = {pSPARC->npNdx_SQ, pSPARC->npNdy_SQ, pSPARC->npNdz_SQ};
@@ -121,6 +122,52 @@ void init_SQ(SPARC_OBJ *pSPARC) {
             pSQ->nloc[0], pSQ->nloc[1], pSQ->nloc[2]);
 #endif
     pSQ->forceFlag = 0;
+}
+
+
+/**
+ * @brief   Allocate what the Lanczos runs of the SQ method use (init_SQ and init_SQ_HighT): the point's Veff on its
+ *          Rcut box, the last H v of a run, the 1D Dirichlet Laplacians of the box (Kronecker form of the
+ *          Laplacian), the workspace of the tridiagonal eigensolver (dstedc), the JIT kernel tables (MKL,
+ *          created on first use) and the buffers of the current point's nonlocal projectors (grow on use)
+ */
+void init_SQ_lanczos(SPARC_OBJ *pSPARC) {
+    SQ_OBJ *pSQ = pSPARC->pSQ;
+    int FDn = pSPARC->order / 2;
+    size_t N = pSPARC->SQ_npl_g;
+
+    pSQ->Veff_box = (double *) malloc((size_t)pSQ->Nd_loc * sizeof(double));
+    pSQ->lanczos_tmp = (double *) malloc((size_t)pSQ->Nd_loc * sizeof(double));
+    assert(pSQ->Veff_box != NULL && pSQ->lanczos_tmp != NULL);
+
+    pSQ->Lap_1D_x = (double *) calloc((size_t)pSQ->Nx_loc * pSQ->Nx_loc, sizeof(double));
+    pSQ->Lap_1D_y = (double *) calloc((size_t)pSQ->Ny_loc * pSQ->Ny_loc, sizeof(double));
+    pSQ->Lap_1D_z = (double *) calloc((size_t)pSQ->Nz_loc * pSQ->Nz_loc, sizeof(double));
+    assert(pSQ->Lap_1D_x != NULL && pSQ->Lap_1D_y != NULL && pSQ->Lap_1D_z != NULL);
+    Lap_1D_Dirichlet(FDn, pSPARC->D2_stencil_coeffs_x, pSQ->Nx_loc, pSQ->Lap_1D_x);
+    Lap_1D_Dirichlet(FDn, pSPARC->D2_stencil_coeffs_y, pSQ->Ny_loc, pSQ->Lap_1D_y);
+    Lap_1D_Dirichlet(FDn, pSPARC->D2_stencil_coeffs_z, pSQ->Nz_loc, pSQ->Lap_1D_z);
+
+    pSQ->eig_lwork = 1 + 4*(long)N + (long)N*N;          // dstedc 'I'
+    pSQ->eig_liwork = 3 + 5*(long)N;
+    pSQ->eig_d = (double *) malloc(N * sizeof(double));
+    pSQ->eig_e = (double *) malloc(N * sizeof(double));
+    pSQ->eig_work = (double *) malloc((size_t)pSQ->eig_lwork * sizeof(double));
+    pSQ->eig_iwork = (int *) malloc((size_t)pSQ->eig_liwork * sizeof(int));
+    pSQ->eig_C = (double *) malloc(N * sizeof(double));
+    pSQ->eig_F = (double *) malloc(N * sizeof(double));
+    assert(pSQ->eig_d != NULL && pSQ->eig_e != NULL && pSQ->eig_work != NULL && pSQ->eig_iwork != NULL
+        && pSQ->eig_C != NULL && pSQ->eig_F != NULL);
+
+    pSQ->jit_state = pSQ->jits_state = 0;
+    pSQ->jitnl = NULL; pSQ->jitnl_n = pSQ->jitnl_cap = 0;
+
+    pSQ->nlocProj_pt = (NLOC_PROJ_OBJ *) calloc(pSPARC->Ntypes, sizeof(NLOC_PROJ_OBJ));
+    pSQ->Atom_Influence_nloc_pt = (ATOM_NLOC_INFLUENCE_OBJ *) calloc(pSPARC->Ntypes, sizeof(ATOM_NLOC_INFLUENCE_OBJ));
+    pSQ->nlpt_cap = (int *) calloc(pSPARC->Ntypes, sizeof(int));
+    assert(pSQ->nlocProj_pt != NULL && pSQ->Atom_Influence_nloc_pt != NULL && pSQ->nlpt_cap != NULL);
+    pSQ->nlpt_pos = NULL; pSQ->nlpt_chi = NULL;
+    pSQ->nlpt_pos_cap = pSQ->nlpt_chi_cap = 0;
 }
 
 

@@ -1,8 +1,8 @@
 ***************************************************************************
-*                   SPARC (version September 29, 2026)                    *
+*                     SPARC (version October 3, 2026)                     *
 *   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *
 *           Distributed under GNU General Public License 3 (GPL)          *
-*                   Start time: Tue Sep 29 21:59:45 2026                  *
+*                   Start time: Tue Oct 13 12:12:41 2026                  *
 ***************************************************************************
                            Input parameters                                
 ***************************************************************************
@@ -51,7 +51,7 @@ PRINT_ATOMS: 1
 PRINT_EIGEN: 0
 PRINT_DENSITY: 0
 PRINT_ENERGY_DENSITY: 0
-OUTPUT_FILE: highT_He2_KDT16
+OUTPUT_FILE: highT/highT_He2_KDT16/temp_run/highT_He2_KDT16
 ***************************************************************************
                                 Cell                                       
 ***************************************************************************
@@ -65,38 +65,38 @@ Density: 8.9030407608E-02 (amu/Bohr^3), 9.9766344638E-01 (g/cc)
                            Parallelization                                 
 ***************************************************************************
 NP_SPIN_PARAL: 1
-NP_DOMAIN_SQ_PARAL: 2 2 2
-NP_DOMAIN_PHI_PARAL: 2 2 2
+NP_DOMAIN_SQ_PARAL: 4 4 6
+NP_DOMAIN_PHI_PARAL: 4 4 5
 ***************************************************************************
                              Initialization                                
 ***************************************************************************
-Number of processors               :  8
+Number of processors               :  96
 Mesh spacing                       :  0.149333 (Bohr)
 Number of symmetry adapted k-points:  1
-Output printed to                  :  highT_He2_KDT16.out
+Output printed to                  :  highT/highT_He2_KDT16/temp_run/highT_He2_KDT16.out
 Total number of atom types         :  1
 Total number of atoms              :  2
 Total number of electrons          :  4
 Atom type 1  (valence electrons)   :  He 2
-Pseudopotential                    :  ../../../../psps/02_He_2_1.1_1.2_pbe_v1.0.psp8
+Pseudopotential                    :  ../psps/02_He_2_1.1_1.2_pbe_v1.0.psp8
 Atomic mass                        :  4.002602
 Pseudocharge radii of atom type 1  :  6.57 6.57 6.57 (x, y, z dir)
 Number of atoms of type 1          :  2
-Estimated total memory usage       :  1.59 GB
-Estimated memory per processor     :  203.44 MB
+Estimated total memory usage       :  3.12 GB
+Estimated memory per processor     :  33.30 MB
 ===================================================================
                     Self Consistent Field (SCF#1)                     
 ===================================================================
 Iteration     Free Energy (Ha/atom)   SCF Error        Timing (sec)
-1            -2.6161799611E+01        2.245E+00        102.920
-2            -2.6041944559E+01        1.639E+00        102.883
-3            -2.5893091548E+01        1.040E-01        102.882
-4            -2.5892230185E+01        1.576E-02        102.872
-5            -2.5892211479E+01        5.230E-03        102.874
-6            -2.5892206660E+01        1.781E-03        102.879
-7            -2.5892206505E+01        3.946E-04        102.869
-8            -2.5892206473E+01        3.073E-05        102.854
-9            -2.5892206494E+01        8.835E-06        102.849
+1            -2.6161799609E+01        2.245E+00        2.617
+2            -2.6041944559E+01        1.639E+00        2.453
+3            -2.5893091548E+01        1.040E-01        2.399
+4            -2.5892230185E+01        1.576E-02        2.398
+5            -2.5892211479E+01        5.230E-03        2.398
+6            -2.5892206660E+01        1.781E-03        2.474
+7            -2.5892206505E+01        3.946E-04        2.415
+8            -2.5892206473E+01        3.073E-05        2.409
+9            -2.5892206494E+01        8.835E-06        2.403
 Total number of SCF: 9     
 ====================================================================
                     Energy and force calculation                    
@@ -109,16 +109,16 @@ Self and correction energy         : -5.7263965087E+00 (Ha)
 -Entropy*kb*T                      : -6.6572579260E+01 (Ha)
 -Entropy_xc*T                      :  2.4950000450E-01 (Ha)
 Fermi level                        : -9.0453824985E+00 (Ha)
-RMS force                          :  7.1151813626E-02 (Ha/Bohr)
-Maximum force                      :  7.1151813626E-02 (Ha/Bohr)
-Time for force calculation         :  107.338 (sec)
+RMS force                          :  7.1151813627E-02 (Ha/Bohr)
+Maximum force                      :  7.1151813627E-02 (Ha/Bohr)
+Time for force calculation         :  3.115 (sec)
 Pressure                           :  3.7021689314E+03 (GPa)
 Maximum stress                     :  3.7070476823E+03 (GPa)
-Time for stress calculation        :  0.093 (sec)
+Time for stress calculation        :  0.038 (sec)
 ***************************************************************************
                                Timing info                                 
 ***************************************************************************
-Total walltime                     :  1034.366 sec
+Total walltime                     :  25.237 sec
 ___________________________________________________________________________
 
 ***************************************************************************

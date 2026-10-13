@@ -53,15 +53,13 @@
 void GaussQuadrature_highT(SPARC_OBJ *pSPARC) {
     if (pSPARC->pSQ->dmcomm_SQ == MPI_COMM_NULL) return;
     int nd, rank;
-    int *nloc, DMnx, DMny, DMnz, DMnd;
-    int Nx_loc, Ny_loc;
-    double lambda_min, lambda_max, *t0;
+    int DMnx, DMny, DMnz, DMnd;
+    double lambda_min, lambda_max;
 #ifdef DEBUG
     double time1, time2;
 #endif
     SQ_OBJ  *pSQ = pSPARC->pSQ;
 
-    nloc = pSQ->nloc;
     DMnx = pSQ->DMnx_SQ;
     DMny = pSQ->DMny_SQ;
     DMnz = pSQ->DMnz_SQ;
@@ -71,8 +69,6 @@ void GaussQuadrature_highT(SPARC_OBJ *pSPARC) {
     (void)DMny;
     (void)DMnz;
 
-    Nx_loc = pSQ->Nx_loc;
-    Ny_loc = pSQ->Ny_loc;    
     MPI_Comm_rank(pSQ->dmcomm_SQ, & rank);
     int flag_exxPot = (pSPARC->usefock > 0) && (pSPARC->usefock % 2 == 0) 
                    && (pSPARC->ExxAcc == 1) && (pSPARC->SQ_highT_hybrid_gauss_mem == 0);
@@ -90,26 +86,19 @@ void GaussQuadrature_highT(SPARC_OBJ *pSPARC) {
 	else
 	#endif // SPARCX_ACCEL
 	{
-    	t0 = (double *) malloc(sizeof(double) * pSQ->Nd_loc);
-    	int center = nloc[0] + nloc[1]*Nx_loc + nloc[2]*Nx_loc*Ny_loc;    
     	for (nd = 0; nd < DMnd; nd ++) {
-        	// initialize t0 as identity vector
-        	memset(t0, 0, sizeof(double)*pSQ->Nd_loc);
-        	t0[center] = 1.0;                
-            
             // calculate exx potential if not saved
-            if (flag_exxPot == 1) {                
+            if (flag_exxPot == 1) {
                 double t1 = MPI_Wtime();
                 compute_exx_potential_node_SQ(pSPARC, nd, pSQ->exxPot[0]);
                 double t2 = MPI_Wtime();
                 pSPARC->ACEtime += (t2 - t1);
             }
 
-            LanczosAlgorithm_gauss(pSPARC, t0, &lambda_min, &lambda_max, nd, 0);
+            LanczosAlgorithm_gauss(pSPARC, nd, 0, &lambda_min, &lambda_max);
         	pSQ->mineig[nd]  = lambda_min;
         	pSQ->maxeig[nd]  = lambda_max;
     	}
-		free(t0);
 	}
 
     // This barrier fixed the severe slowdown of MPI communication on hive

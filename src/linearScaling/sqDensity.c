@@ -50,7 +50,7 @@ void Calculate_elecDens_SQ(SPARC_OBJ *pSPARC, int SCFcount) {
     for (int spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
         // communicate to get full values for PR domain        
         int spn_g = spn_i + pSPARC->spin_start_indx;
-        TransferVeff_sq2sqext(pSPARC, pSQ->Veff_loc_SQ + spn_g * DMnd, pSQ->Veff_PR);
+        TransferVeff_sq2sqext(pSPARC, pSQ->Veff_loc_SQ + spn_g * DMnd, pSQ->Veff_PR + spn_i * pSQ->DMnd_PR);   // kept per spin for the force step
 
         // perform Gauss Quadrature
         GaussQuadrature(pSPARC, spn_i);

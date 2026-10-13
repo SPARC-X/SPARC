@@ -5,6 +5,41 @@
 
 
 --------------
+October 13, 2026
+Name: Shubhang Krishnakant Trivedi
+Changes: src/linearScaling/sq.c, src/linearScaling/sqInitialization.c, src/linearScaling/sqFinalization.c,
+         src/linearScaling/sqNlocVecRoutines.c, src/linearScaling/sqDensity.c, src/linearScaling/sqProperties.c,
+         src/linearScaling/include/dssq.h, src/linearScaling/include/sq.h,
+         src/linearScaling/include/sqInitialization.h, src/linearScaling/include/sqFinalization.h,
+         src/linearScaling/include/sqNlocVecRoutines.h, src/highT/sqHighT.c, src/highT/sqHighTInitialization.c,
+         src/electronicGroundState.c,
+        
+New implementation features (SQ method; no new input options, same algorithm and results):
+- Laplacian on the Rcut box in Kronecker form (dense 1D Dirichlet Laplacians, MKL JIT dgemm kernels per z-slab,
+  z stage in row chunks; plain dgemm without MKL) with the Veff product fused in, replacing the stencil Laplacian
+  and the padded copy of the vector; the point's Veff gathered once per Lanczos run (Veff_box).
+- Lanczos step and normalization fused into one row-chunked sweep with implicit normalization (the normalized
+  vectors are never formed, alpha_k and beta_k from the unnormalized ones); in the SCF only three Lanczos vectors
+  are kept (ring buffer), all of them in the force step and at high temperature (normalized once at the end).
+- Nonlocal product by a per-point plan built once per Lanczos run: runs of consecutive points, Gamma per
+  projector, JIT projection/expansion kernels per image shape, applied in last-slab order after the Laplacian.
+- Tridiagonal eigenvalue problem by LAPACK dstedc on preallocated workspace (replaces the hand-written QL
+  iteration and its iteration limit); force step: the density matrix column from f(T) e1 by one dgemv.
+- Nonlocal projectors stored for one grid point at a time: the point's rows of the PR-domain projectors are
+  taken at the start of its Lanczos run (GetNonlocalProjectorsForOnePoint, grow-only buffers) instead of one
+  copy per grid point kept through the SCF (GetNonlocalProjectorsForNode removed): memory per process reduced
+  by the number of grid points of the process (e.g. Al, 8 processes, Rcut box 121^3: 18 GB -> ~0.7 GB).
+- Hybrid functionals keep the classical Lanczos steps (exact exchange in H v) with the new Laplacian and eigensolver.
+- Measured (highT_Al, 8 processes, Gold 6226): 3.8x faster than the previous code at a 21^3 Rcut box, 1.3x at 121^3;
+  energies, forces and stress unchanged (1e-14 Ha/atom).
+- Updated the reference outputs of the standard and high accuracy SQ tests (except highT_MgSioO3_valgrind since it is not tested)
+
+Bug and warning fixes:
+- SQ force step with spin: the force step read the wrong spin's Veff (Veff_PR now one slice per spin).
+- SQ nonlocal projectors on unequal mesh spacings: projector points outside the node's Rcut box were kept.
+- Free_SQ freed only DMnd_SQ of the DMnd_SQ*Nspin_spincomm node/weight arrays at ambient temperature (leak).
+
+--------------
 October 3, 2026
 Name: Shubhang Krishnakant Trivedi
 Changes: src/readfiles.c, src/initialization.c, src/include/isddft.h,
