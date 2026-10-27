@@ -45,6 +45,8 @@ Changes: README.md, doc/.LaTeX/Introduction.tex, doc/.LaTeX/SCF.tex, doc/.LaTeX/
    Al24_SQ3.
 8. Updated manuals and README: new input variables, DFT+U citation, published DOIs for the cyclix MLFF and
    internal energy papers.
+9. Added an optional MARCH variable in src/makefile (e.g. make MARCH=cascadelake) to build for a given CPU
+   architecture via -march; empty by default (generic x86-64 build).
 
 --------------
 October 13, 2026

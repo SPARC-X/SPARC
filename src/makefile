@@ -21,6 +21,10 @@ USE_SOCKET    = 0
 # Set USE_PLUMED = 1 to compile with PLUMED (C API / colvars integration)
 # Set USE_PLUMED = 0 to disable
 USE_PLUMED    = 0
+# Set MARCH to tune the build for a CPU architecture, e.g. MARCH = cascadelake (or native when building on the
+# compute-node type that will run SPARC). Leave empty for a portable generic x86-64 build.
+# Note: a binary built for a newer CPU than the run nodes may stop with "Illegal instruction".
+MARCH         =
 
 # NOTE: the halo exchange goes through SPARC_Ineighbor_alltoallv
 # (src/mpi_nbr_shim.c), which is ALWAYS ACTIVE and needs no switch. MPI
@@ -135,6 +139,9 @@ endif
 
 # for old Intel compiler, use -qopenmp instead of -fopenmp. ICC 17 and later also accepts -fopenmp. 
 CFLAGS = -Wall -Wextra -std=gnu99 -O3 -fopenmp
+ifneq ($(MARCH),)
+CFLAGS += -march=$(MARCH)
+endif
 
 OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o tools.o md.o      \
         electrostatics.o electronicGroundState.o electronDensity.o orbitalElecDensInit.o           \
