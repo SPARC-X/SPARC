@@ -30,6 +30,7 @@
 #include "sparc_mlff_interface.h"
 #include "internal_energy_model.h"
 #include "hnl_soap.h"
+#include "yukawa.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -51,6 +52,133 @@ void MLFF_call(SPARC_OBJ* pSPARC){
 	#ifdef USE_SOCKET
 		if (pSPARC->SocketFlag == 1) calc_count = pSPARC->SocketSCFCount - 1;
 	#endif
+
+	// =========================================================================
+	// MLFF model switching and/or base model parameter training for delta-ML
+	// =========================================================================
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	int switch_step = pSPARC->mlff_switch_step;
+	int trans_len = (pSPARC->is_deltaML) ? 5 : 0;
+
+	// Switch over logic only for new simulations from scratch
+	if ((switch_step > 0) && (pSPARC->mlff_flag == 1)) {
+		
+		// Start transition - clean up the old coarse model
+		if (calc_count == switch_step) {
+			if (rank == 0) printf("\n[MLFF] Transition Started: Cleaning coarse model.\n");
+
+			if (pSPARC->mlff_str != NULL) {
+				free_MLFF(pSPARC->mlff_str);
+				free(pSPARC->mlff_str);
+				pSPARC->mlff_str = NULL;
+			}
+			// Print old sigma factor
+			if (rank == 0) printf("Old factor multiply sigma tol: %f.\n Updating it ...",pSPARC->factor_multiply_sigma_tol);
+
+			// Restore factor_multiply_sigma_tol
+			pSPARC->factor_multiply_sigma_tol = pSPARC->factor_multiply_sigma_tol_ref;
+
+			// Print new sigma factor
+			if (rank == 0) printf("Updated factor multiply sigma tol: %f.\n",pSPARC->factor_multiply_sigma_tol);
+
+			if (pSPARC->is_deltaML) {
+				if (pSPARC->Ref_struct_DFT == NULL){
+					pSPARC->Ref_struct_DFT = (DFT_FIT_OBJ *)malloc(trans_len*sizeof(DFT_FIT_OBJ));
+
+					for (int i = 0; i < trans_len; i++) {
+						pSPARC->Ref_struct_DFT[i].atom_pos = (double *)malloc(3*pSPARC->n_atom*sizeof(double));
+						pSPARC->Ref_struct_DFT[i].forces = (double *)malloc(3*pSPARC->n_atom*sizeof(double));
+					}
+				}
+				if (rank == 0) printf("\n[MLFF] Running %d DFT steps to train Yukawa parameters.\n",trans_len);
+			}
+				
+		} 
+		
+		// During transition bypass MLFF completely and run standard DFT, and return
+		if (calc_count >= switch_step && calc_count < switch_step + trans_len) {
+			// Standard DFT
+			Calculate_electronicGroundState(pSPARC);
+
+			if (pSPARC->MDFlag == 1 || pSPARC->RelaxFlag == 1) {
+				if(pSPARC->cell_typ != 0){
+					for(int i = 0; i < pSPARC->n_atom; i++)
+						nonCart2Cart_coord(pSPARC, &pSPARC->atom_pos[3*i], &pSPARC->atom_pos[3*i+1], &pSPARC->atom_pos[3*i+2]);	
+				}
+			}
+
+			int structure_count = calc_count - switch_step;
+
+			// Store DFT values in a particular struct to be used in Yukawa parameter training
+			pSPARC->Ref_struct_DFT[structure_count].energy = pSPARC->Etot;
+			for (int i = 0; i < pSPARC->n_atom; i++){
+				pSPARC->Ref_struct_DFT[structure_count].atom_pos[3*i] = pSPARC->atom_pos[3*i];
+				pSPARC->Ref_struct_DFT[structure_count].atom_pos[3*i+1] = pSPARC->atom_pos[3*i+1];
+				pSPARC->Ref_struct_DFT[structure_count].atom_pos[3*i+2] = pSPARC->atom_pos[3*i+2];
+
+				pSPARC->Ref_struct_DFT[structure_count].forces[3*i] = pSPARC->forces[3*i];
+				pSPARC->Ref_struct_DFT[structure_count].forces[3*i+1] = pSPARC->forces[3*i+1];
+				pSPARC->Ref_struct_DFT[structure_count].forces[3*i+2] = pSPARC->forces[3*i+2];
+			}
+			for (int i = 0; i < 6; i++) 
+				pSPARC->Ref_struct_DFT[structure_count].stress[i] = pSPARC->stress[i];
+
+			// Run Yukawa parameter optimization for delta-ML
+			if ((calc_count == switch_step + trans_len - 1) && (pSPARC->is_deltaML == 1)) {
+				// Optimization of Yukawa parameters on rank 0 and broadcast
+				optimize_Yukawa_broadcast(pSPARC, trans_len);
+
+				// Free the Ref_struct_DFT object memory after optimization is complete
+				if (pSPARC->Ref_struct_DFT != NULL) {
+					for (int i = 0; i < trans_len; i++) {
+						free(pSPARC->Ref_struct_DFT[i].atom_pos);
+						free(pSPARC->Ref_struct_DFT[i].forces);
+					}
+					free(pSPARC->Ref_struct_DFT);
+					pSPARC->Ref_struct_DFT = NULL;
+				}
+			}
+			return;
+		} 
+		
+		// Initialize new fine model
+		if (calc_count == switch_step + trans_len) {
+			if (rank == 0) printf("\n[MLFF] Transition Complete: Initializing new MLFF model.\n");
+
+			init_MLFF_structure(pSPARC);
+			/* Currently only Yukawa available as base model - include flags like XC later */
+			if (pSPARC->is_deltaML){
+				solve_Yukawa_broadcast(pSPARC);
+				if (rank == 0) print_output_yukawa(pSPARC);
+			}
+			init_MLFF_simulation(pSPARC);
+			return;
+		}
+	}
+	// =========================================================================
+
+	/* Delta-ML base model calculation */
+	// Currently only Yukawa available as base model - include flags like XC later  
+	if (pSPARC->is_deltaML){
+		if (pSPARC->mlff_flag == 1 && calc_count < switch_step + trans_len) {
+			// Zero everything - no need to do delta-ML during initial coarse model, 
+			// Train coarse model on dft properties as we do not care about high accuracy during that time
+			pSPARC->E_base_model = 0.0;
+
+			memset(pSPARC->F_base_model, 0, 3 * pSPARC->n_atom * sizeof(double));
+
+			for (int k = 0; k < 6; k++) pSPARC->stress_base_model[k] = 0.0;
+
+			pSPARC->pres_base_model = 0.0;
+		} else {
+			solve_Yukawa_broadcast(pSPARC);
+			if (rank == 0) print_output_yukawa(pSPARC);		
+		}
+	}
+	// =========================================================================
+
 	if (calc_count < 1) {
 		init_MLFF_structure(pSPARC);
 		init_MLFF_simulation(pSPARC);
@@ -98,11 +226,14 @@ t1 = MPI_Wtime();
         memcpy(INPUT_DIR, inpt_path, pch-inpt_path);
         INPUT_DIR[(int)(pch-inpt_path)] = '\0';
     }
-    char *merged_string    = malloc(L_PSD * sizeof(char));
-    merged_string    = malloc(L_PSD * sizeof(char));
-    snprintf(merged_string, L_PSD, "%s%s%s", INPUT_DIR, "/",pSPARC->mlff_data_folder);
-    snprintf(pSPARC->mlff_data_folder, L_STRING, "%s", merged_string);
-    free(merged_string);
+    // this function is called again at the model switch: paths are prefixed in place (do it once) and mlff.log is appended to
+    static int is_reinit = 0;
+    if (!is_reinit) {
+        char *merged_string    = malloc(L_PSD * sizeof(char));
+        snprintf(merged_string, L_PSD, "%s%s%s", INPUT_DIR, "/",pSPARC->mlff_data_folder);
+        snprintf(pSPARC->mlff_data_folder, L_STRING, "%s", merged_string);
+        free(merged_string);
+    }
     // end formatting the model folder path
 	// initialized the MLFF output print names
 	int nelem = pSPARC->Ntypes;
@@ -183,6 +314,7 @@ t1 = MPI_Wtime();
     snprintf(mlff_str->ref_str_name, L_STRING, "%s%s%s", pSPARC->mlff_data_folder, "/", str2);
     // strcpy(mlff_str->ref_str_name, str2);
     snprintf(mlff_str->restart_name, L_STRING, "%s%s%s", pSPARC->mlff_data_folder, "/", str3);
+    snprintf(mlff_str->ie_model_name, L_STRING, "%s%s%s", pSPARC->mlff_data_folder, "/", "MLFF_internal_energy.txt");
 #pragma GCC diagnostic pop
     // strcpy(mlff_str->restart_name, str3);
 	int strt = 0;
@@ -278,9 +410,9 @@ t1 = MPI_Wtime();
 	char fname_mlff_print_loc[L_STRING];
 	if (rank==0 && mlff_str->print_mlff_flag==1){
 		snprintf(fname_mlff_print_loc, L_STRING, "%s%s%s", INPUT_DIR, "/", fname_mlff_print);
-		mlff_str->fp_mlff = (FILE *) malloc(sizeof(FILE)*1);
-		mlff_str->fp_mlff = fopen(fname_mlff_print_loc,"w");
+		mlff_str->fp_mlff = fopen(fname_mlff_print_loc, is_reinit ? "a" : "w");
 	}
+	is_reinit = 1;
 	free(INPUT_DIR);
 	if (pSPARC->descriptor_typ_MLFF>1 && pSPARC->elec_T > 2000){
 		if (rank==0){
@@ -494,6 +626,14 @@ t2 = MPI_Wtime();
 	if (pSPARC->print_mlff_flag == 1 && rank ==0){
 		fprintf(mlff_str->fp_mlff, "MLFF model trained with Bayesian regression. Time taken: %.3f s\n", t2-t1);
 	}
+	if (pSPARC->mlff_internal_energy_flag) {
+		// rebuild the internal energy model from the previous run's data plus this DFT step
+		read_internal_energy_model_data(mlff_str, pSPARC->n_str_max_mlff - 1);
+		mlff_str->internal_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot - pSPARC->Entropy - pSPARC->Entropy_xc;
+		mlff_str->free_energy_DFT[mlff_str->internal_energy_DFT_count] = pSPARC->Etot;
+		mlff_str->internal_energy_DFT_count += 1;
+		train_internal_energy_model(mlff_str);
+	}
 	pSPARC->last_train_iter = 0;
 	delete_dyarray(&mlff_str->atom_idx_addtrain);
 	for (int i = 0; i < mlff_str->n_str-1; i++){
@@ -568,6 +708,11 @@ t1 = MPI_Wtime();
 t2 = MPI_Wtime();
 	if (pSPARC->print_mlff_flag == 1 && rank ==0){
 		fprintf(mlff_str->fp_mlff, "MLFF ref-atom read data broadcasted. Time taken: %.3f s\n", t2-t1);
+	}
+	if (pSPARC->mlff_internal_energy_flag) {
+		// rebuild the internal energy model from the previous run's data
+		read_internal_energy_model_data(mlff_str, pSPARC->n_str_max_mlff);
+		train_internal_energy_model(mlff_str);
 	}
 	MLFF_only_predict(pSPARC, mlff_str);
 t2 = MPI_Wtime();
@@ -960,6 +1105,28 @@ t2 = MPI_Wtime();
 		bayesian_error = (double *)malloc((3*pSPARC->n_atom+1+mlff_str->stress_len)*sizeof(double));
 t1 = MPI_Wtime();
 		sparc_mlff_interface_predict(pSPARC, mlff_str, E_predict, F_predict, stress_predict, bayesian_error); 
+		// deltaML - for now only Yukawa
+		if (pSPARC->is_deltaML){
+			// add base model energy
+			*E_predict += pSPARC->E_base_model/pSPARC->n_atom;
+
+			// add base model force
+			for (int i=0; i < pSPARC->n_atom*3; i++){
+				// F_predict is supposed to predict -(F_DFT - F_base_model)
+				// F_predict_DFT = F_predict - F_base_model ----> supposed to be -F_DFT
+				// Error in prediction = F_DFT + F_predict_DFT
+				F_predict[i] -= pSPARC->F_base_model[i];
+			}
+
+			// add base model stress (or pressure if only pressure is trained)
+			if (pSPARC->mlff_pressure_train_flag == 0){
+				for(int i = 0; i < mlff_str->stress_len; i++){
+					stress_predict[i] += pSPARC->stress_base_model[index[i]] ;
+				}
+			} else {
+				stress_predict[0] += pSPARC->pres_base_model;
+			}			
+		}
 t2 = MPI_Wtime();
 		if (pSPARC->print_mlff_flag == 1 && rank ==0){
 			fprintf(fp_mlff, "MLFF prediction made for the current step. Time taken: %.3f s\n", t2-t1);
@@ -1155,6 +1322,31 @@ void MLFF_only_predict(SPARC_OBJ *pSPARC, MLFF_Obj *mlff_str){
 	bayesian_error = (double *)malloc((3*pSPARC->n_atom+1+mlff_str->stress_len)*sizeof(double));
 t1 = MPI_Wtime();
 	sparc_mlff_interface_predict(pSPARC, mlff_str, E_predict, F_predict, stress_predict, bayesian_error); 
+	// deltaML - for now only Yukawa
+	int index[] = {0,1,2,3,4,5};
+	int BC[] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
+	reshape_stress(pSPARC->cell_typ, BC, index);
+	if (pSPARC->is_deltaML){
+		// add base model energy
+		*E_predict += pSPARC->E_base_model/pSPARC->n_atom;
+
+		// add base model force
+		for (int i=0; i < pSPARC->n_atom*3; i++){
+			// F_predict is supposed to predict -(F_DFT - F_base_model)
+			// F_predict_DFT = F_predict - F_base_model ----> supposed to be -F_DFT
+			// Error in prediction = F_DFT + F_predict_DFT
+			F_predict[i] -= pSPARC->F_base_model[i];
+		}
+
+		// add base model stress (or pressure if only pressure is trained)
+		if (pSPARC->mlff_pressure_train_flag == 0){
+			for(int i = 0; i < mlff_str->stress_len; i++){
+				stress_predict[i] += pSPARC->stress_base_model[index[i]] ;
+			}
+		} else {
+			stress_predict[0] += pSPARC->pres_base_model;
+		}		
+	}
 t2 = MPI_Wtime();
 	if (pSPARC->print_mlff_flag == 1 && rank ==0){
 		fprintf(fp_mlff, "Prediction from MLFF done! Time taken: %.3f s\n", t2-t1);
@@ -1163,9 +1355,14 @@ t2 = MPI_Wtime();
 	for (int i=0; i < pSPARC->n_atom*3; i++){
 		pSPARC->forces[i] = -1.0*F_predict[i];
 	}
-	int index[] = {0,1,2,3,4,5};
-	int BC[] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
-	reshape_stress(pSPARC->cell_typ, BC, index);
+	if (pSPARC->mlff_internal_energy_flag){
+		double E_internal = pSPARC->Etot*mlff_str->internal_energy_model_weights[1] + mlff_str->internal_energy_model_weights[0];
+		pSPARC->Entropy = pSPARC->Etot - E_internal;
+		pSPARC->Entropy_xc = 0.0; // the model -TS above already holds the XC part
+	}
+	// int index[] = {0,1,2,3,4,5};
+	// int BC[] = {pSPARC->BCx, pSPARC->BCy, pSPARC->BCz};
+	// reshape_stress(pSPARC->cell_typ, BC, index);
 	if (pSPARC->mlff_pressure_train_flag == 0){
 		for(int i = 0; i < mlff_str->stress_len; i++){
 			pSPARC->stress[index[i]] = stress_predict[i];
@@ -1238,21 +1435,49 @@ t2 = MPI_Wtime();
 	}
 t1 = MPI_Wtime();
 	double *force = (double *)malloc(3*pSPARC->n_atom*sizeof(double));
-	for (int i=0; i < 3*pSPARC->n_atom; i++){
-		force[i] = -1.0*pSPARC->forces[i];
-	}
 	double *stress = (double *)malloc(6*sizeof(double));
 	int index[6] = {0,1,2,3,4,5};
-	reshape_stress(pSPARC->cell_typ, BC, index);
-	for(int i = 0; i < 6; i++)
-		stress[i] = pSPARC->stress[index[i]];
-	if (pSPARC->mlff_pressure_train_flag){
-		for (int i = 0; i < 6; i++){
-			index[i] = i;
+
+	if (pSPARC->is_deltaML == 0) {
+		for (int i=0; i < 3*pSPARC->n_atom; i++){
+			force[i] = -1.0*pSPARC->forces[i];
 		}
-		stress[0]=pSPARC->pres;
+		// double *stress = (double *)malloc(6*sizeof(double));
+		// int index[6] = {0,1,2,3,4,5};
+		reshape_stress(pSPARC->cell_typ, BC, index);
+		for(int i = 0; i < 6; i++)
+			stress[i] = pSPARC->stress[index[i]];
+		if (pSPARC->mlff_pressure_train_flag){
+			for (int i = 0; i < 6; i++){
+				index[i] = i;
+			}
+			stress[0]=pSPARC->pres;
+		}
+		add_firstDFT(desc_str, nlist, mlff_str, pSPARC->Etot/pSPARC->n_atom, force, stress);
+	} else { // deltaML (with Yukawa for now - change these lines with base model later)
+		// delta E
+		double E_to_train = (pSPARC->Etot - pSPARC->E_base_model) / pSPARC->n_atom;
+
+		// delta Force
+		for (int i=0; i < 3*pSPARC->n_atom; i++){
+			force[i] = (-1.0 * pSPARC->forces[i]) - (-1.0 * pSPARC->F_base_model[i]); 
+		}
+
+		// delta stress
+		reshape_stress(pSPARC->cell_typ, BC, index);
+		for(int i = 0; i < 6; i++) {
+			stress[i] = pSPARC->stress[index[i]] - pSPARC->stress_base_model[index[i]];
+		}
+
+		// delta pressure
+		if (pSPARC->mlff_pressure_train_flag){
+			for (int i = 0; i < 6; i++){
+				index[i] = i;
+			}
+			stress[0]=pSPARC->pres - pSPARC->pres_base_model;
+		}
+		add_firstDFT(desc_str, nlist, mlff_str, E_to_train, force, stress);
 	}
-	add_firstDFT(desc_str, nlist, mlff_str, pSPARC->Etot/pSPARC->n_atom, force, stress);
 	if (rank==0){
 		if(pSPARC->cell_typ != 0){
 	        for(int i = 0; i < pSPARC->n_atom; i++)
@@ -1262,7 +1487,14 @@ t1 = MPI_Wtime();
 			pSPARC->stress[0] = pSPARC->pres;
 			for (int tt=1; tt<6; tt++) pSPARC->stress[tt] = 0.0;
 		}
-		print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, pSPARC->Etot, force, pSPARC->stress);
+		if (pSPARC->is_deltaML == 0) {
+			print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, pSPARC->Etot, force, pSPARC->stress);
+		} else {
+			double E_store = (pSPARC->Etot - pSPARC->E_base_model);
+			double stress_store[6];
+			for (int i = 0; i<6; i++) stress_store[i] = pSPARC->stress[i] - pSPARC->stress_base_model[i];
+			print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, E_store, force, stress_store);
+		}
 		if(pSPARC->cell_typ != 0){
 			for(int i = 0; i < pSPARC->n_atom; i++)
 				Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*i], &pSPARC->atom_pos[3*i+1], &pSPARC->atom_pos[3*i+2]);
@@ -1344,21 +1576,49 @@ t2 = MPI_Wtime();
 	}
 t1 = MPI_Wtime();
 	double *force = (double *)malloc(3*pSPARC->n_atom*sizeof(double));
-	for (int i=0; i < 3*pSPARC->n_atom; i++){
-		force[i] = -1.0*pSPARC->forces[i];
-	}
 	double *stress = (double *)malloc(6*sizeof(double));
 	int index[6] = {0,1,2,3,4,5};
-	reshape_stress(pSPARC->cell_typ, BC, index);
-	for(int i = 0; i < 6; i++)
-		stress[i] = pSPARC->stress[index[i]];
-	if (pSPARC->mlff_pressure_train_flag){
-		for (int i = 0; i < 6; i++){
-			index[i] = i;
+
+	if (pSPARC->is_deltaML == 0){
+		for (int i=0; i < 3*pSPARC->n_atom; i++){
+			force[i] = -1.0*pSPARC->forces[i];
 		}
-		stress[0]=pSPARC->pres;
+		// double *stress = (double *)malloc(6*sizeof(double));
+		// int index[6] = {0,1,2,3,4,5};
+		reshape_stress(pSPARC->cell_typ, BC, index);
+		for(int i = 0; i < 6; i++)
+			stress[i] = pSPARC->stress[index[i]];
+		if (pSPARC->mlff_pressure_train_flag){
+			for (int i = 0; i < 6; i++){
+				index[i] = i;
+			}
+			stress[0]=pSPARC->pres;
+		}
+		add_newstr_rows(desc_str, nlist, mlff_str, pSPARC->Etot/pSPARC->n_atom, force, stress);
+	} else { // deltaML (with Yukawa for now - change these lines with base model later)
+		// delta E
+		double E_to_train = (pSPARC->Etot - pSPARC->E_base_model) / pSPARC->n_atom;
+
+		// delta Force
+		for (int i=0; i < 3*pSPARC->n_atom; i++){
+			force[i] = (-1.0 * pSPARC->forces[i]) - (-1.0 * pSPARC->F_base_model[i]); 
+		}
+
+		// delta stress
+		reshape_stress(pSPARC->cell_typ, BC, index);
+		for(int i = 0; i < 6; i++) {
+			stress[i] = pSPARC->stress[index[i]] - pSPARC->stress_base_model[index[i]];
+		}
+
+		// delta pressure
+		if (pSPARC->mlff_pressure_train_flag){
+			for (int i = 0; i < 6; i++){
+				index[i] = i;
+			}
+			stress[0]=pSPARC->pres - pSPARC->pres_base_model;
+		}
+		add_newstr_rows(desc_str, nlist, mlff_str, E_to_train, force, stress);
 	}
-	add_newstr_rows(desc_str, nlist, mlff_str, pSPARC->Etot/pSPARC->n_atom, force, stress);
 t2 = MPI_Wtime();
 	if (pSPARC->print_mlff_flag == 1 && rank ==0){
 		fprintf(fp_mlff, "Covariance matrix rows updated! Time taken: %.3f s\n", t2-t1);
@@ -1456,7 +1716,14 @@ t2 = MPI_Wtime();
 			pSPARC->stress[0] = pSPARC->pres;
 			for (int tt=1; tt<6;tt++) pSPARC->stress[tt] = 0.0;
 		}
-		print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, pSPARC->Etot, force, pSPARC->stress);
+		if (pSPARC->is_deltaML == 0) {
+			print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, pSPARC->Etot, force, pSPARC->stress);
+		} else {
+			double E_store = (pSPARC->Etot - pSPARC->E_base_model);
+			double stress_store[6];
+			for (int i = 0; i<6; i++) stress_store[i] = pSPARC->stress[i] - pSPARC->stress_base_model[i];
+			print_new_ref_structure_MLFF(mlff_str, mlff_str->n_str, nlist, pSPARC->atom_pos, E_store, force, stress_store);
+		}
 		if(pSPARC->cell_typ != 0){
 			for(int i = 0; i < pSPARC->n_atom; i++)
 				Cart2nonCart_coord(pSPARC, &pSPARC->atom_pos[3*i], &pSPARC->atom_pos[3*i+1], &pSPARC->atom_pos[3*i+2]);

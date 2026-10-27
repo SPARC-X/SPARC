@@ -210,6 +210,7 @@ If you publish work using/regarding SPARC, please cite some of the following art
 * **O(N) Spectral Quadrature method**: https://doi.org/10.1016/j.cpc.2015.11.005, https://doi.org/10.1016/j.cpc.2015.11.005 (initial implementation), https://doi.org/10.1016/j.cplett.2013.08.035 (formulation), https://doi.org/10.1007/978-3-031-22340-2_12 (detailed mathematical formulation)
 * **On-the-fly MLFF**: https://doi.org/10.1063/5.0180541, https://doi.org/10.1063/5.0204229 (SQ), https://doi.org/10.1016/j.jmps.2024.105927 (Cyclix), https://doi.org/10.1063/5.0230060 (internal energy) 
 * **Atom code**: https://doi.org/10.1016/j.cpc.2024.109448 (spectral scheme)
+* **DFT+U**: https://doi.org/10.1063/5.0293995
 
 
 ### (8) Acknowledgement:

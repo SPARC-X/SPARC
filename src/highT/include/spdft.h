@@ -62,7 +62,7 @@ double partialoccupation_sp(double x, double x0, double y0);
 double entropy_sp_limx0(double x, double x0, double y0);
 double entropy_FD(double x);
 double generate_grid(double x1, double x2, int nnodes, double *nodes);
-int find_xref_entropyref(double occ, double *x, double *entropy_x);
+int find_xref_entropyref(double occ, double *x);
 double numeric_intg_trapz_uniform(int nnodes, double shift, double h, double *f);
 double numeric_intg_trapz_nonuniform(int nnodes, double h, double occ, double x_ref, double entropy_ref, double *dentropy);
 

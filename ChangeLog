@@ -5,6 +5,48 @@
 
 
 --------------
+October 27, 2026
+Name: Sayan Bhowmik
+Changes: README.md, doc/.LaTeX/Introduction.tex, doc/.LaTeX/SCF.tex, doc/.LaTeX/System.tex,
+         doc/.LaTeX/highT/Introduction.tex, doc/.LaTeX/highT/SP.tex, doc/.LaTeX/highT/highT_Manual.tex,
+         doc/.LaTeX/mlff/Introduction.tex, doc/.LaTeX/mlff/mlff.tex, doc/Manual.pdf,
+         doc/highT_Manual.pdf, doc/mlff_Manual.pdf,
+         src/cyclix/cyclix_stress.c, src/eigenSolver.c, src/eigenSolverKpt.c, src/electronDensity.c,
+         src/electronicGroundState.c, src/energy.c, src/finalization.c, src/forces.c,
+         src/highT/ff/yukawa.c, src/highT/ff/yukawa.h, src/highT/include/spdft.h, src/highT/spdft.c,
+         src/highT/mlff/internal_energy_model.c, src/highT/mlff/internal_energy_model.h,
+         src/include/isddft.h, src/include/stress.h, src/initialization.c,
+         src/linearScaling/include/spdft.h (removed), src/makefile, src/md.c, src/mlff/mlff_types.h,
+         src/mlff/sparc_mlff_interface.c, src/nlocVecRoutines.c, src/occupation.c,
+         src/orbitalElecDensInit.c, src/pressure.c, src/readfiles.c, src/sq3/sq3.c, src/sq3/sq3.h,
+         src/stress.c,
+         tests/SPARC_testing_script.py, tests/Al24_SQ3/, tests/highT/highT_Be_spDFT/,
+         tests/highT/highT_HBe_spDFT/, tests/mlff/C_sq_deltamlff/, tests/mlff/C_sq_deltamlff_restart21/,
+         tests/mlff/C_sq_deltamlff_restart22/, tests/mlff/C_sq_iemlff/, tests/mlff/C_sq_iemlff_restart21/,
+         tests/mlff/C_sq_iemlff_restart22/, tests/mlff/{AlSi_mlffflag1, AlSi_mlff_nonorth, AlSi_NPTNH_mlff,
+         C_sqmlff, HfSe2_cyclix_mlff, WSe2_cyclix_mlff}/*/*.inpt
+1. Added Delta-MLFF with a Yukawa base model (MLFF_DELTA_FLAG, YUKAWA_A, YUKAWA_MU, YUKAWA_ECONST). With MLFF_FLAG: 1
+   the Yukawa parameters are fitted on 5 DFT steps at the model switch; the MLFF learns DFT - Yukawa. Parameters are
+   written to and read from the .restart file. Only orthogonal, fully periodic cells are allowed.
+2. Added coarse-to-fine MLFF model switching (MLFF_SWITCH_STEP, default 100; MLFF_FACTOR_MULTIPLY_SIGMATOL_COARSE,
+   default 1 + 5*(MLFF_FACTOR_MULTIPLY_SIGMATOL - 1)). Existing MLFF_FLAG: 1 test inputs set the coarse factor equal
+   to MLFF_FACTOR_MULTIPLY_SIGMATOL, so their references are unchanged.
+3. Added spectral-partitioned DFT (SP_FLAG, SP_SMEARING, SP_TOL_OCC, PRINT_SPDFT, SP_ISESPLIT_CONST).
+4. Added the SQ3 method (SQ3_FLAG, SQ3_NPL). Compute_Nonlocal_Energy_by_integrals and Compute_stress_tensor_kinetic
+   take an extra argument (all callers updated).
+5. Fixed MLFF internal energy model on restart (MLFF_FLAG: 21/22 with MLFF_INTERNAL_ENERGY_FLAG: 1): the training data
+   is now stored in MLFF_internal_energy.txt and the model is rebuilt from it; MLFF_FLAG: 21 now applies the model.
+6. Bug fixes: MLFF data folder prefixed only once and mlff.log appended (not overwritten) at the model switch;
+   NULL-initialised delta-ML pointers; removed FILE and string memory leaks in MLFF initialisation; density
+   extrapolation skipped for MLFF_FLAG: 21 (removes MKL DLASCL errors); clear error when the .spDFT file needed by
+   SP_ISESPLIT_CONST is missing; .spDFT output follows the _NN file suffix; removed duplicate spdft.h; removed
+   unreachable STANDARD_EIGEN parsing branch; SQ3 pointers set to NULL after free.
+7. Added tests: C_sq_deltamlff (+ restart21/22), C_sq_iemlff (+ restart21/22), highT_Be_spDFT, highT_HBe_spDFT,
+   Al24_SQ3.
+8. Updated manuals and README: new input variables, DFT+U citation, published DOIs for the cyclix MLFF and
+   internal energy papers.
+
+--------------
 October 13, 2026
 Name: Shubhang Krishnakant Trivedi
 Changes: src/linearScaling/sq.c, src/linearScaling/sqInitialization.c, src/linearScaling/sqFinalization.c,

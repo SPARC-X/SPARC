@@ -229,6 +229,7 @@ typedef struct MLFF_Obj
   char ref_atom_name[L_STRING];
   char ref_str_name[L_STRING];
   char restart_name[L_STRING];
+  char ie_model_name[L_STRING]; // (free energy, internal energy) pairs of the internal energy model
   int stress_len;
   int mlff_flag;
   FILE *fp_mlff;

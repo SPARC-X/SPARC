@@ -276,6 +276,16 @@ typedef struct _NLOC_PROJ_OBJ {
 } LOC_PROJ_OBJ;
 
 
+typedef struct ChebComps2
+{
+    double eigmin;
+    double eigmax;
+    int sq3_npl;
+    double **Ti;
+    double *tr_Ti;
+} CHEBCOMP;
+
+
 
 typedef struct _SPARC_OBJ{
     char SPARCROOT[L_STRING]; // SPARC root directory
@@ -306,6 +316,7 @@ typedef struct _SPARC_OBJ{
     char ExxEnDensTCubFilename[L_STRING];
     char ExxEnDensUCubFilename[L_STRING];
     char ExxEnDensDCubFilename[L_STRING];
+	char spDFTFilename[L_STRING];
     
     /* Parallelizing parameters */
     int num_node;       // number of processor nodes
@@ -760,6 +771,8 @@ typedef struct _SPARC_OBJ{
     // int if_merge_mlff;
     // int n_merge_mlff;
     // char fname_merge_prefix[120];
+    int mlff_switch_step;           // The switchover step from coarse model to fine model
+    double factor_multiply_sigma_tol_ref;          // Original sigmatol factor for the fine model
     int N_max_SOAP;
     int L_max_SOAP;
     int n_str_max_mlff;
@@ -968,6 +981,36 @@ typedef struct _SPARC_OBJ{
 
     /* EigenValue problem*/
     int StandardEigenFlag;
+
+    /* SQ3 methods */
+    int SQ3Flag;
+    int sq3_npl;    
+
+    int ictxt_kptcomm;
+    int bhandle_kptcomm;
+
+    MPI_Comm SQ3comm;
+    int ictxt_SQ3;
+    int bhandle_SQ3;
+    int desc_Hp_SQ3[9];
+    int nr_Hp_SQ3;
+    int nc_Hp_SQ3;
+    double *Hp_SQ3;
+    CHEBCOMP *ChebComp;
+
+    int ictxt_cmc;
+    int bhandle_cmc;
+    int desc_Hp_cmc[9];
+    int desc_HMp_BLCYC_1blacs[9];
+    double *Hp_cmc;
+    double *Ds_cmc;
+    int cmc_cols;
+    
+    MPI_Comm Dscomm;
+    int size_Dscomm;
+    int ictxt_Ds;
+    int bhandle_Ds;
+    int desc_Ds[9];
 
     // DFT-D3 correction
     double d3Energy[4]; // total d3 energy, e6, e8, e63
@@ -1229,6 +1272,38 @@ typedef struct _SPARC_OBJ{
     int densfilecount;
     int readInitDens; // flag for reading inital density
 
+	/* Spectral-partitioned DFT variables */
+	int spDFT_Flag;       		// flag for using spDFT method
+	double spDFT_tau_s;   		// smearing for spectral-partitioning in Ha
+	double spDFT_tol_occ;          // maximum occupation allowed for the highest-energy planewave
+	int spDFT_NG;
+	double spDFT_pres_homo;
+	double *spDFT_GVec;
+	double *spDFT_Gocc1;
+	double *spDFT_Gocc2;
+	double *spDFT_Geigen;
+	double *spDFT_Geigen_kin_nl;
+	double *spDFT_Gstress_kin_nl;
+	double spDFT_stress[6];
+	double *spDFT_Gpres_nl;
+	double *spDFT_Ec;
+	int spDFT_isesplit_const;
+	int PrintspDFTFlag;
+	double *spDFT_esplit;
+
+    /* Delta ML */
+    int is_deltaML; // Flag for deltaML calculations
+    double E_base_model; // Base model energy
+    double *F_base_model; // Base model atomic force
+    double stress_base_model[6]; // Base model stress tensor
+    double pres_base_model; // Base model pressure
+
+    /* Yukawa */
+    double A_yukawa; // Pre-exponential Yukawa parameter
+    double mu_yukawa; // Yukawa mu parameter
+    double Econst_yukawa; // Yukawa constant energy shift
+    struct _DFT_FIT_OBJ *Ref_struct_DFT; // To store dft info of structures to fit Yukawa parameters (DFT_FIT_OBJ, see yukawa.h)
+
     /* PLUMED (optional; used when built with -DUSE_PLUMED) */
     int PlumedFlag;
     char PlumedFile[L_STRING];
@@ -1297,6 +1372,22 @@ typedef struct _SPARC_INPUT_OBJ{
     double stress_rel_scale[6];
     char mlff_data_folder[L_STRING];
     int MLFF_DFT_fq;
+    // Coarse model variables
+    int mlff_switch_step;
+    double factor_multiply_sigma_tol_coarse;
+
+	/* Spectral partitioned DFT */
+	int spDFT_Flag;     // flag for using spDFT method
+	int PrintspDFTFlag; // flag for printing spDFT data into .spDFT file
+	int spDFT_isesplit_const; 
+	double spDFT_tau_s; // smearing for spectral-partitioning in Ha
+	double spDFT_tol_occ; // maximum occupation allowed for the highest-energy planewave
+
+    /* Delta ML Yukawa */
+    int is_deltaML; // Flag for deltaML calculations
+    double A_yukawa; // Pre-exponential Yukawa parameter
+    double mu_yukawa; // Yukawa mu parameter
+    double Econst_yukawa; // Yukawa constant energy shift
     
     /* Parallelizing parameters */
     int num_node;       // number of processor nodes
@@ -1413,6 +1504,10 @@ typedef struct _SPARC_INPUT_OBJ{
 
     /* Eigenvalue Problem */
     int StandardEigenFlag;
+    
+    /* SQ3 methods */
+    int SQ3Flag;
+    int sq3_npl;
 
     /* Domain description */
     double range_x;

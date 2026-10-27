@@ -39,6 +39,7 @@
 #include "cyclix_stress.h"
 #include "forces.h"
 #include "exchangeCorrelation.h"
+#include "spdft.h"
 #include "hubbardStress.h"
 
 #ifdef SPARCX_ACCEL
@@ -184,6 +185,10 @@ void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC) {
         #endif
     }    
 
+	if (pSPARC->spDFT_Flag == 1) {
+		spDFT_stress(pSPARC);
+	}   
+
     // hubbard stress
     if (pSPARC->is_hubbard) {
         #ifdef DEBUG
@@ -202,6 +207,7 @@ void Calculate_electronic_stress_linear(SPARC_OBJ *pSPARC) {
             pSPARC->stress[i] = (pSPARC->stress_k[i] + pSPARC->stress_xc[i] + pSPARC->stress_nl[i] + pSPARC->stress_el[i]);
             if (pSPARC->usefock > 0) 
                 pSPARC->stress[i] += pSPARC->stress_exx[i];
+			if (pSPARC->spDFT_Flag == 1) pSPARC->stress[i] += pSPARC->spDFT_stress[i];
 
             if (pSPARC->is_hubbard) { // hubbard stress
                 pSPARC->stress[i] += pSPARC->stress_hub[i];
@@ -1176,10 +1182,57 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
     beta = alpha;
     Compute_Integral_psi_Chi(pSPARC, beta, pSPARC->Xorb);
 
+    double *alpha2 = NULL, *dpsi_full2 = NULL;    
+    if (pSPARC->SQ3Flag == 1) {
+        alpha2 = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor, sizeof(double));
+        dpsi_full2 = (double *)malloc( 3 * size_k * sizeof(double) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
+        assert(alpha2 != NULL && dpsi_full2 != NULL);
+
+        if (pSPARC->cell_typ == 0){
+            for (dim = 0; dim < 3; dim++) {
+                for (spinor = 0; spinor < Nspinor; spinor++) {
+                    // find dPsi in direction dim
+                    dpsi_xi = dpsi_full2 + dim * size_k;
+                    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
+                                        pSPARC->Yorb+spinor*DMnd, DMndsp, dpsi_xi+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+                }
+            }
+        } else {
+            double *dpsi_xi_lv = (double *)malloc( size_k * sizeof(double) );  // dpsi_x, dpsi_y, dpsi_z along lattice vecotrs
+            assert(dpsi_xi_lv != NULL);
+            dpsi_x1 = dpsi_full2;
+            dpsi_x2 = dpsi_full2 + size_k;
+            dpsi_x3 = dpsi_full2 + 2 * size_k;
+            for (dim = 0; dim < 3; dim++) {
+                for (spinor = 0; spinor < Nspinor; spinor++) {
+                    // find dPsi in direction dim along lattice vector directions
+                    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, 
+                                        pSPARC->Yorb+spinor*DMnd, DMndsp, dpsi_xi_lv+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+                }
+                // find dPsi in direction dim in cartesian coordinates
+                for (i = 0; i < size_k; i++) {
+                    if (dim == 0) {
+                        dpsi_x1[i] = pSPARC->gradT[0]*dpsi_xi_lv[i];
+                        dpsi_x2[i] = pSPARC->gradT[1]*dpsi_xi_lv[i];
+                        dpsi_x3[i] = pSPARC->gradT[2]*dpsi_xi_lv[i];
+                    } else {
+                        dpsi_x1[i] += pSPARC->gradT[0+3*dim]*dpsi_xi_lv[i];
+                        dpsi_x2[i] += pSPARC->gradT[1+3*dim]*dpsi_xi_lv[i];
+                        dpsi_x3[i] += pSPARC->gradT[2+3*dim]*dpsi_xi_lv[i];
+                    }
+                }
+            }
+            free(dpsi_xi_lv);
+        }
+        Compute_Integral_psi_Chi(pSPARC, alpha2, pSPARC->Yorb);
+    } else {
+        alpha2 = alpha; dpsi_full2 = dpsi_full;
+    }
+
     /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
     count = 1;
     for (dim = 0; dim < 3; dim++) {
-        dpsi_xi = dpsi_full + dim * size_k;
+        dpsi_xi = dpsi_full2 + dim * size_k;
         for (dim2 = dim; dim2 < 3; dim2++) {
             beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * count;
             Compute_Integral_Chi_StXmRjp_beta_Dpsi(pSPARC, dpsi_xi, beta, dim2);
@@ -1188,8 +1241,9 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
     }
     
     // Kinetic stress
-    Compute_stress_tensor_kinetic(pSPARC, dpsi_full, stress_k);
+    Compute_stress_tensor_kinetic(pSPARC, dpsi_full, dpsi_full2, stress_k);
     free(dpsi_full);
+    if (pSPARC->SQ3Flag == 1) free(dpsi_full2);
 
     if (pSPARC->npNd > 1) {
         // MPI_Allreduce will fail randomly in valgrind test for unknown reason
@@ -1200,14 +1254,17 @@ void Calculate_nonlocal_kinetic_stress_linear(SPARC_OBJ *pSPARC)
         MPI_Iallreduce(MPI_IN_PLACE, stress_k, 6, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm, &req3);
         MPI_Wait(&req0, &sta0);
         MPI_Wait(&req3, &sta3);
+        if (pSPARC->SQ3Flag == 1)
+            MPI_Allreduce(MPI_IN_PLACE, alpha2, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
     }
 
     /* calculate nonlocal stress */
     Compute_stress_tensor_nloc_by_integrals(pSPARC, stress_nl, alpha);
     
     /* calculate nonlocal energy */
-    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha);
+    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha, alpha2);
     free(alpha);
+    if (pSPARC->SQ3Flag == 1) free(alpha2);
     
     for(i = 0; i < 6; i++)
         stress_nl[i] *= pSPARC->occfac * 2.0;
@@ -1327,7 +1384,7 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, 
 /**
  * @brief   Compute kinetic stress tensor
  */
-void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *stress_k) 
+void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *dpsi_full2, double *stress_k) 
 {
     int ncol, DMnd, Ns;
     int Nspinor, DMndsp, size_k;
@@ -1345,7 +1402,7 @@ void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double 
     for (dim = 0; dim < 3; dim++) {
         dpsi_xi = dpsi_full + dim * size_k;
         for (dim2 = dim; dim2 < 3; dim2++) {
-            dpsi_xj = dpsi_full + dim2 * size_k;
+            dpsi_xj = dpsi_full2 + dim2 * size_k;
             double temp_k = 0;
             for(n = 0; n < ncol; n++){
                 for (spinor = 0; spinor < Nspinor; spinor++) {
@@ -1358,7 +1415,7 @@ void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double 
                     }
                     double *occ = pSPARC->occ;
                     if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-                    double g_nk = occ[n + pSPARC->band_start_indx];
+                    double g_nk = (pSPARC->SQ3Flag == 1) ? 1 : occ[n + pSPARC->band_start_indx];
                     temp_k += dpsii_dpsij * g_nk;
                 }
             }
@@ -1372,7 +1429,7 @@ void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double 
 /**
  * @brief   Compute nonlocal Energy with spin-orbit coupling
  */
-double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha)
+double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha, double *alpha2)
 {
     int n, np, ldispl, ityp, iat, Ns;
     int count, l, m, lmax, spinor, Nspinor;
@@ -1390,7 +1447,7 @@ double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha)
                 for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
                     double *occ = pSPARC->occ;
                     if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-                    g_nk = occ[n];
+                    g_nk = (pSPARC->SQ3Flag == 1) ? 1 : occ[n];
                     temp2_e = 0.0; 
 
                     // scalar relativistic term
@@ -1404,7 +1461,7 @@ double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha)
                         for (np = 0; np < pSPARC->psd[ityp].ppl[l]; np++) {
                             temp_e = 0.0; 
                             for (m = -l; m <= l; m++) {
-                                temp_e += alpha[count] * alpha[count];
+                                temp_e += alpha[count] * alpha2[count];
                                 count++;
                             }
                             gamma_jl = pSPARC->psd[ityp].Gamma[ldispl+np];
@@ -1452,7 +1509,7 @@ void Compute_stress_tensor_nloc_by_integrals(SPARC_OBJ *pSPARC, double *stress_n
                 for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
                     double *occ = pSPARC->occ;
                     if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-                    g_nk = occ[n];
+                    g_nk = (pSPARC->SQ3Flag == 1) ? 1 : occ[n];
 
                     for(i = 0; i < 6; i++) temp2_s[i] = 0.0;
                     ldispl = 0;

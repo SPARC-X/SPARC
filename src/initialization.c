@@ -45,6 +45,8 @@
 #include "locOrbRoutines.h"
 #include "hubbardInitialization.h"
 #include "occupationMatrix.h"
+#include "spdft.h"
+#include "sq3.h"
 
 #ifdef USE_SOCKET
 #include "driver.h" // socker driver functions
@@ -55,7 +57,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 223
+#define N_MEMBR 236
 
 
 /**
@@ -486,6 +488,10 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         if (pSPARC->SOC_Flag == 1)
             CalculateNonlocalInnerProductIndexSOC(pSPARC);
 
+        if (pSPARC->SQ3Flag == 1) {
+            init_SQ3(pSPARC);
+        }
+        
         if (pSPARC->CyclixFlag == 1) {
             init_cyclix(pSPARC);
         }
@@ -529,6 +535,22 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
         
     }
 
+    // Delta-ML pointers are tested against NULL before allocation, so they must start as NULL
+    pSPARC->F_base_model = NULL;
+    pSPARC->Ref_struct_DFT = NULL;
+
+    // Base model for delta learning
+    if (pSPARC->is_deltaML) {
+        pSPARC->E_base_model = 0.0;
+
+        // Allocate memory for forces
+        pSPARC->F_base_model = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
+
+        for (int k = 0; k < 6; k++) pSPARC->stress_base_model[k] = 0.0;
+
+        pSPARC->pres_base_model = 0.0;
+    }
+
 #ifdef DEBUG
     t1 = MPI_Wtime();
 #endif
@@ -564,6 +586,11 @@ void Initialize(SPARC_OBJ *pSPARC, int argc, char *argv[]) {
 
     // estimate memory usage
     pSPARC->memory_usage = estimate_memory(pSPARC);
+
+
+    // initialize spDFT
+	if(pSPARC->spDFT_Flag == 1)
+		spDFT_initialization(pSPARC, 0.0);
 
 
 
@@ -979,6 +1006,25 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->mlff_internal_energy_flag  = 0;
     pSPARC_Input->mlff_pressure_train_flag  = 0;
     pSPARC_Input->N_rgrid_MLFF  = 100;
+    pSPARC_Input->mlff_switch_step = 100;
+    pSPARC_Input->factor_multiply_sigma_tol_coarse = -1.0;
+    /* Delta ML default */
+    pSPARC_Input->is_deltaML = 0;            // flag for using delta-ML
+
+    /* Default Yukawa parameters */
+    pSPARC_Input->A_yukawa = 0.0;            // Yukawa pre-exponential
+    pSPARC_Input->mu_yukawa = 0.0;           // Yukawa mu
+    pSPARC_Input->Econst_yukawa = 0.0;       // Yukawa energy constant
+
+    pSPARC_Input->SQ3Flag = 0;                // default SQ3 is disabled
+    pSPARC_Input->sq3_npl = -1;               // default degree of polynomial for SQ3 method
+
+	/* Default spDFT option */
+	pSPARC_Input->spDFT_Flag = 0;             // flag for using spDFT method
+	pSPARC_Input->PrintspDFTFlag = 0;         // flag for printing spDFT data into .spDFT file
+	pSPARC_Input->spDFT_isesplit_const = 0;   // Is splitting energy to be kept constant
+	pSPARC_Input->spDFT_tau_s = 0.01;         // default smearing (in Ha) for spectral-partitioning
+	pSPARC_Input->spDFT_tol_occ = 1e-12;      // default maximum occupation of the highest-energy planewave
 
     // read in initial density
     pSPARC_Input->readInitDens = 0;
@@ -1402,7 +1448,32 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     pSPARC->stress_rel_scale[4] = pSPARC_Input->stress_rel_scale[4];
     pSPARC->stress_rel_scale[5] = pSPARC_Input->stress_rel_scale[5];
     pSPARC->MLFF_DFT_fq = pSPARC_Input->MLFF_DFT_fq;
+    pSPARC->is_deltaML = pSPARC_Input->is_deltaML;
+    // Needed for model switching at mlff_switch_step
+    pSPARC->mlff_switch_step = pSPARC_Input->mlff_switch_step;
+    if (pSPARC_Input->factor_multiply_sigma_tol_coarse < 0) {
+        pSPARC_Input->factor_multiply_sigma_tol_coarse = 1.0 + 5*(pSPARC->factor_multiply_sigma_tol-1.0);
+    }
+    pSPARC->factor_multiply_sigma_tol_ref = pSPARC->factor_multiply_sigma_tol;
+    pSPARC->factor_multiply_sigma_tol = pSPARC_Input->factor_multiply_sigma_tol_coarse;
+
+    // if restart mlff then coarse model not needed
+    if (pSPARC->mlff_flag != 1) {
+        pSPARC->mlff_switch_step = 0;
+        pSPARC->factor_multiply_sigma_tol = pSPARC->factor_multiply_sigma_tol_ref;
+    }
+    pSPARC->A_yukawa = pSPARC_Input->A_yukawa; // Yukawa A
+    pSPARC->mu_yukawa = pSPARC_Input->mu_yukawa; // Yukawa mu
+    pSPARC->Econst_yukawa = pSPARC_Input->Econst_yukawa; // Yukawa energy constant
     // MLFF end
+
+    pSPARC->SQ3Flag = pSPARC_Input->SQ3Flag;
+    pSPARC->sq3_npl = pSPARC_Input->sq3_npl;
+	pSPARC->spDFT_Flag = pSPARC_Input->spDFT_Flag;
+	pSPARC->PrintspDFTFlag = pSPARC_Input->PrintspDFTFlag;
+	pSPARC->spDFT_isesplit_const = pSPARC_Input->spDFT_isesplit_const;
+	pSPARC->spDFT_tau_s = pSPARC_Input->spDFT_tau_s;
+	pSPARC->spDFT_tol_occ = pSPARC_Input->spDFT_tol_occ;
 
     pSPARC->num_node = pSPARC_Input->num_node;
     pSPARC->num_cpu_per_node = pSPARC_Input->num_cpu_per_node;
@@ -1815,6 +1886,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->ExxEnDensTCubFilename, L_STRING, "%s.exxedens",     pSPARC->filename_out);
             snprintf(pSPARC->ExxEnDensUCubFilename, L_STRING, "%s.exxedensUp",   pSPARC->filename_out);
             snprintf(pSPARC->ExxEnDensDCubFilename, L_STRING, "%s.exxedensDwn",  pSPARC->filename_out);
+            snprintf(pSPARC->spDFTFilename,    L_STRING, "%s.spDFT",     pSPARC->filename_out);
         #pragma GCC diagnostic pop
 
 
@@ -1909,6 +1981,11 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             snprintf(pSPARC->ExxEnDensUCubFilename, L_STRING, "%s_%02d", tempchar, i);
             snprintf(tempchar, L_STRING, "%s", pSPARC->ExxEnDensDCubFilename);
             snprintf(pSPARC->ExxEnDensDCubFilename, L_STRING, "%s_%02d", tempchar, i);
+            // .spDFT is an output unless SP_ISESPLIT_CONST reads it back from a previous run
+            if (pSPARC->spDFT_isesplit_const == 0) {
+                snprintf(tempchar, L_STRING, "%s", pSPARC->spDFTFilename);
+                snprintf(pSPARC->spDFTFilename, L_STRING, "%s_%02d", tempchar, i);
+            }
             #pragma GCC diagnostic pop
         }
     }
@@ -2770,6 +2847,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         && pSPARC->SOC_Flag == 0
         && pSPARC->spin_typ != 2); // non-collinear spinors are complex (off-diagonal Vxc), as with SOC
 
+#if !defined(USE_MKL) && !defined(USE_SCALAPACK)
+    if (pSPARC_Input->SQ3Flag == 1){
+        if (rank == 0)
+            printf(RED "ERROR: To use SQ3 method, please turn on MKL or SCALAPACK in makefile!\n"
+            "Or you can use standard method by setting SQ3_FLAG: 0.\n" RESET);
+        exit(EXIT_FAILURE); 
+    }
+#endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
+
     if (pSPARC->ixc[3] != 0){
         if ((pSPARC->BCx)||(pSPARC->BCy)||(pSPARC->BCz)) {
             if (rank == 0)
@@ -2800,6 +2886,42 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->ExxMethod = 1;
     }
 #endif // #if !defined(USE_MKL) && !defined(USE_FFTW)
+
+    if (pSPARC->SQ3Flag == 1) {
+        if (pSPARC->isGammaPoint != 1) {
+            if (rank == 0) {
+                printf(RED "ERROR: Kpoint is not supported in this version of SQ3 method.\n"
+                    "Please turn it off by setting KPOINT_GRID: 1 1 1, and KPOINT_SHIFT: 0 0 0,\n"
+                    "or use standard method by setting SQ3_FLAG: 0.\n" RESET);
+            }
+            exit(EXIT_FAILURE);
+        }
+        if (pSPARC->spin_typ != 0) {
+            if (rank == 0) {
+                printf(RED "ERROR: Polarized calculation is not supported in this version of SQ3 method.\n"
+                    "Please turn it off by setting SPIN_TYP: 0, \n"
+                    "or use standard method by setting SQ3_FLAG: 0.\n" RESET);
+            }
+            exit(EXIT_FAILURE);
+        }
+        pSPARC->StandardEigenFlag = 1;    
+        if (pSPARC->sq3_npl < 0) {
+            // Default sq3_npl is built up on a curve model to get 1e-3 Ha/atom energy accuracy and 
+            // 1e-4 Ha force accuracy when electronic temperature rages from 10,000 to 250,000 K. 
+            // log10(sq3_npl) = -0.8584 * log10(Temperature (Kelvin)) + 5.6140
+            double est_npl = pow(10.0, -0.8584 * log10(pSPARC->elec_T) + 5.6140);
+            est_npl = est_npl + 0.5;
+            pSPARC->sq3_npl = max(10, (int) est_npl);                   // set minimum sq3_npl to 10
+        }
+    }
+
+    // The Yukawa base model of delta-ML handles only orthogonal, fully periodic cells
+    if (pSPARC->is_deltaML == 1 && (pSPARC->cell_typ != 0 || pSPARC->BCx || pSPARC->BCy || pSPARC->BCz)) {
+        if (rank == 0)
+            printf(RED "ERROR: MLFF_DELTA_FLAG (Yukawa base model) is only supported for orthogonal cells\n"
+                   "       with periodic boundary conditions in all three directions.\n" RESET);
+        exit(EXIT_FAILURE);
+    }
 
     if (pSPARC->ixc[2]) {
         if (pSPARC->SOC_Flag || pSPARC->usefock || pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag) {
@@ -2948,9 +3070,9 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: NSTATES is not vaild in SQ method.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        if (pSPARC->SOC_Flag || pSPARC->ixc[2]) {
+        if (pSPARC->SQ3Flag || pSPARC->SOC_Flag || pSPARC->ixc[2]) {
             if (!rank) 
-                printf(RED "ERROR: spin-orbit coupling, and SCAN are not supported in this version of SQ implementation.\n" RESET);
+                printf(RED "ERROR: SQ3, spin-orbit coupling, and SCAN are not supported in this version of SQ implementation.\n" RESET);
             exit(EXIT_FAILURE);
         }
         if (pSPARC->SQ_rcut < 0) {
@@ -3002,15 +3124,15 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
                 printf(RED "ERROR: TOL_SCF and CHEB_DEGREE are not valid in OFDFT.\n" RESET);
             exit(EXIT_FAILURE);
         }
-        if (pSPARC->usefock || pSPARC->ixc[2] || pSPARC->SOC_Flag) {
+        if (pSPARC->SQ3Flag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->SOC_Flag) {
             if (!rank) 
-                printf(RED "ERROR: hybrid, SCAN and Spin-orbit coupling are not supported in this version of OFDFT implementation.\n" RESET);
+                printf(RED "ERROR: SQ3, hybrid, SCAN and Spin-orbit coupling are not supported in this version of OFDFT implementation.\n" RESET);
             exit(EXIT_FAILURE);
         }
     }
 
     if (pSPARC->SOC_Flag == 1) {
-        if (pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->OFDFTFlag) {
+        if (pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->SQ3Flag || pSPARC->OFDFTFlag) {
             if (rank == 0) 
                 printf(RED "ERROR: SQ, Hybrid functional, SCAN, SQ3, CS, OFDFT, and SQ are not supported in this version of SOC implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -3018,7 +3140,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     if (pSPARC->spin_typ == 2) {
-        if (pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->CyclixFlag || pSPARC->OFDFTFlag) {
+        if (pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->usefock || pSPARC->ixc[2] || pSPARC->CyclixFlag || pSPARC->SQ3Flag || pSPARC->OFDFTFlag) {
             if (rank == 0) 
                 printf(RED "ERROR: SQ, Hybrid functional, SCAN, SQ3, CS, OFDFT and SQ are not supported in this version of non-collinear implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -3026,7 +3148,7 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
     }
 
     if (pSPARC->CyclixFlag == 1) {
-        if (pSPARC->usefock || pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->OFDFTFlag || pSPARC->ixc[2]) {
+        if (pSPARC->usefock || pSPARC->sqAmbientFlag || pSPARC->sqHighTFlag || pSPARC->SQ3Flag || pSPARC->OFDFTFlag || pSPARC->ixc[2]) {
             if (rank == 0) 
                 printf(RED "ERROR: Hybrid functional, SQ, SQ3, CS, OFDFT, SCAN are not supported in this version of Cyclix implementation.\n" RESET);
             exit(EXIT_FAILURE);
@@ -3878,7 +4000,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                     SPARC (version October 13, 2026)                     *\n");
+    fprintf(output_fp,"*                     SPARC (version October 27, 2026)                     *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4218,6 +4340,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     fprintf(output_fp,"RHO_TRIGGER: %d\n",pSPARC->rhoTrigger);
     fprintf(output_fp,"NUM_CHEFSI: %d\n",pSPARC->Nchefsi);
     fprintf(output_fp,"FIX_RAND: %d\n",pSPARC->FixRandSeed);
+    if (pSPARC->SQ3Flag == 1) {
+        fprintf(output_fp,"SQ3_FLAG: %d\n",pSPARC->SQ3Flag);
+        fprintf(output_fp,"SQ3_NPL: %d\n",pSPARC->sq3_npl);
+    }
     if (pSPARC->StandardEigenFlag == 1)
         fprintf(output_fp,"STANDARD_EIGEN: %d\n",pSPARC->StandardEigenFlag);
 
@@ -4247,7 +4373,8 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         // fprintf(output_fp, "MLFF_KERNEL_TYPE: %d\n", pSPARC->kernel_typ_MLFF);
         // fprintf(output_fp, "MLFF_WT_THREE_BODY_SOAP: %lf\n", pSPARC->beta_3_SOAP);
         fprintf(output_fp, "MLFF_REGUL_MIN: %.2E\n", pSPARC->condK_min);
-        fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL: %lf\n", pSPARC->factor_multiply_sigma_tol);
+        if (pSPARC->mlff_flag != 1)
+            fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL: %lf\n", pSPARC->factor_multiply_sigma_tol);
         fprintf(output_fp, "MLFF_IF_SPARSIFY_BEFORE_TRAIN: %d\n", pSPARC->if_sparsify_before_train);
         fprintf(output_fp, "MLFF_EXPONENT_SOAP: %lf\n", pSPARC->xi_3_SOAP);
         // fprintf(output_fp, "MLFF_TOL_FORCE: %.2E\n", pSPARC->F_tol_SOAP);
@@ -4256,8 +4383,22 @@ void write_output_init(SPARC_OBJ *pSPARC) {
                 pSPARC->stress_rel_scale[1], pSPARC->stress_rel_scale[2], pSPARC->stress_rel_scale[3],
                 pSPARC->stress_rel_scale[4], pSPARC->stress_rel_scale[5]);
         fprintf(output_fp, "MLFF_DFT_FQ: %d\n", pSPARC->MLFF_DFT_fq);
+        fprintf(output_fp, "MLFF_DELTA_FLAG: %d\n", pSPARC->is_deltaML);
+        if (pSPARC->mlff_flag == 1) {
+            fprintf(output_fp, "MLFF_SWITCH_STEP: %d\n", pSPARC->mlff_switch_step);
+            fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL_COARSE: %lf\n", pSPARC->factor_multiply_sigma_tol);
+            fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL: %lf\n", pSPARC->factor_multiply_sigma_tol_ref);
+        }
     }
     
+
+	if(pSPARC->spDFT_Flag == 1){
+		fprintf(output_fp,"SP_FLAG: %d\n", pSPARC->spDFT_Flag);
+		fprintf(output_fp,"PRINT_SPDFT: %d\n", pSPARC->PrintspDFTFlag);
+		fprintf(output_fp,"SP_ISESPLIT_CONST: %d\n", pSPARC->spDFT_isesplit_const);
+		fprintf(output_fp,"SP_SMEARING: %.15g\n", pSPARC->spDFT_tau_s);
+		fprintf(output_fp,"SP_TOL_OCC: %.15g\n", pSPARC->spDFT_tol_occ);
+	}
 
     fprintf(output_fp,"VERBOSITY: %d\n",pSPARC->Verbosity);
     fprintf(output_fp,"PRINT_FORCES: %d\n",pSPARC->PrintForceFlag);
@@ -4547,7 +4688,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, /* int */
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
+                                         MPI_INT, MPI_INT, /* int */
 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, /* double array */
@@ -4565,7 +4708,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,/* double */
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                         MPI_DOUBLE, MPI_DOUBLE, /* double */
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, /* char */
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                          MPI_CHAR, MPI_CHAR, MPI_CHAR, MPI_CHAR};
@@ -4594,7 +4739,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
-                          1, 1, 1, 1, /* int */ 
+                          1, 1, 1, 1,
+                          1, 1, 1, 1, 1,
+                          1, 1, /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
                           L_kpoint, 6, 6,/* double array */
                           1, 1, 1, 1, 1, 
@@ -4611,7 +4758,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, 1, /* double */
+                          1, 1, 1,
+                          1, 1, 1, 1,
+                          1, 1, /* double */
                           32, 32, 32, L_STRING, L_STRING, /* char */
                           L_STRING, L_STRING, L_STRING, L_STRING, L_STRING,
                           L_STRING, L_STRING, L_STRING, L_STRING};
@@ -4747,6 +4896,13 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.mlff_pressure_train_flag, addr + i++);
     MPI_Get_address(&sparc_input_tmp.N_rgrid_MLFF, addr + i++);
     MPI_Get_address(&sparc_input_tmp.MLFF_DFT_fq, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.is_deltaML, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mlff_switch_step, addr + i++);
+	MPI_Get_address(&sparc_input_tmp.spDFT_Flag, addr + i++);
+	MPI_Get_address(&sparc_input_tmp.PrintspDFTFlag, addr + i++);
+	MPI_Get_address(&sparc_input_tmp.spDFT_isesplit_const, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.SQ3Flag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.sq3_npl, addr + i++);
     MPI_Get_address(&sparc_input_tmp.REFERENCE_CUTOFF_FAC, addr + i++);
     MPI_Get_address(&sparc_input_tmp.is_hubbard, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PlumedFlag, addr + i++);
@@ -4836,6 +4992,12 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.F_rel_scale, addr + i++);
     MPI_Get_address(&sparc_input_tmp.relaxPrTarget, addr + i++);
     MPI_Get_address(&sparc_input_tmp.pressure_external, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.factor_multiply_sigma_tol_coarse, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.A_yukawa, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.mu_yukawa, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.Econst_yukawa, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.spDFT_tau_s, addr + i++);
+	MPI_Get_address(&sparc_input_tmp.spDFT_tol_occ, addr + i++);
     
 
     // char type

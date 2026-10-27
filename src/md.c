@@ -34,6 +34,7 @@
 #include "eigenSolver.h" // Mesh2ChebDegree
 #include "readfiles.h"
 #include "sparc_mlff_interface.h"
+#include "spdft.h"
 #include "plumed_sparc.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -1393,6 +1394,11 @@ void reinitialize_mesh_NPT(SPARC_OBJ *pSPARC)
     t2 = MPI_Wtime();
     if (rank == 0) printf("Calculating rb for all atom types took %.3f ms\n",(t2-t1)*1000);
 #endif
+
+	// Rescale planewaves for spDFT
+	if (pSPARC->spDFT_Flag == 1) {
+			spDFT_planewaves(pSPARC);
+	}
 
 
     // write reinitialized parameters into output file
@@ -3476,6 +3482,14 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
     	// Print temperature
     	fprintf(mdout,":TEL(K): %18.10E\n", pSPARC->elec_T);
     	fprintf(mdout,":TIO(K): %18.10E\n", pSPARC->ion_T);
+
+		// Print Yukawa parameters if delta-ML
+		if (pSPARC->is_deltaML) {
+			fprintf(mdout,":YUKAWA_A: %.15g\n",pSPARC->A_yukawa);
+			fprintf(mdout,":YUKAWA_MU: %.15g\n",pSPARC->mu_yukawa);
+			fprintf(mdout,":YUKAWA_ECONST: %.15g\n",pSPARC->Econst_yukawa);
+		}
+
 		fclose(mdout);
 	}
 }
@@ -3536,6 +3550,11 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 	    else {
 	    	l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + 5 + 22) * sizeof(double);
 	    }
+
+		// delta-ML
+		if (pSPARC->is_deltaML) {
+			l_buff += 3*sizeof(double);
+		}
 	}
 	else if(pSPARC->RestartFlag == -1)
 	    l_buff = 2 * sizeof(int) + (6 * pSPARC->n_atom + 3) * sizeof(double);
@@ -3701,6 +3720,16 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 					fscanf(rst_fp,"%lf", &pSPARC->stress_external[3]); fscanf(rst_fp,"%lf", &pSPARC->stress_external[4]); fscanf(rst_fp,"%lf", &pSPARC->stress_external[5]);
 				}
 			}
+			// delta-ML
+			if (pSPARC->is_deltaML) {
+				if (strcmpi(str,":YUKAWA_A:") == 0 && pSPARC->RestartFlag == 1) {
+					fscanf(rst_fp,"%lf", &pSPARC->A_yukawa);
+				} else if (strcmpi(str,":YUKAWA_MU:") == 0 && pSPARC->RestartFlag == 1) {
+					fscanf(rst_fp,"%lf", &pSPARC->mu_yukawa);
+				} else if (strcmpi(str,":YUKAWA_ECONST:") == 0 && pSPARC->RestartFlag == 1) {
+					fscanf(rst_fp,"%lf", &pSPARC->Econst_yukawa);
+				}
+			}
 		}
 		fclose(rst_fp);
 
@@ -3767,6 +3796,12 @@ void RestartMD(SPARC_OBJ *pSPARC) {
             	MPI_Pack(&pSPARC->pressure_external, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
 				MPI_Pack(pSPARC->stress_external, 6, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
             }
+			// delta-ML
+			if (pSPARC->is_deltaML) {
+				MPI_Pack(&pSPARC->A_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+				MPI_Pack(&pSPARC->mu_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+				MPI_Pack(&pSPARC->Econst_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+			}
         }
 
         // broadcast the packed buffer
@@ -3844,6 +3879,13 @@ void RestartMD(SPARC_OBJ *pSPARC) {
             	MPI_Unpack(buff, l_buff, &position, &pSPARC->pressure_external, 1, MPI_DOUBLE, MPI_COMM_WORLD);
 				MPI_Unpack(buff, l_buff, &position, pSPARC->stress_external, 6, MPI_DOUBLE, MPI_COMM_WORLD);
             }
+
+			// delta-ML
+			if (pSPARC->is_deltaML) {
+				MPI_Unpack(buff, l_buff, &position, &pSPARC->A_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+				MPI_Unpack(buff, l_buff, &position, &pSPARC->mu_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+				MPI_Unpack(buff, l_buff, &position, &pSPARC->Econst_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+			}
         }
 
 	}

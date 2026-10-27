@@ -17,6 +17,8 @@
 
 #include "occupation.h"
 #include "isddft.h"
+#include "spdft.h"
+#include "sq3.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -55,43 +57,56 @@ double Calculate_occupation(SPARC_OBJ *pSPARC, double x1, double x2, double tol,
     Nk = pSPARC->Nkpts_kptcomm;
     
     // find fermi level using Brent's method
-    // Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint);
-    int totalLambdaNumber = pSPARC->Nspin * pSPARC->Nkpts_sym * Ns;
-    double *totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));     
+    if (pSPARC->SQ3Flag == 1) {
+        Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint_SQ3);
+    } else if (pSPARC->spDFT_Flag == 1) {
+        Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint_spDFT);
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+        #endif
+    } else {
+        // Efermi = Calculate_FermiLevel(pSPARC, x1, x2, tol, max_iter, occ_constraint);
+        int totalLambdaNumber = pSPARC->Nspin * pSPARC->Nkpts_sym * Ns;
+        double *totalLambdaArray = (double *)calloc(totalLambdaNumber, sizeof(double));     
 
-    #ifdef DEBUG
-    t1 = MPI_Wtime();
-    #endif
+        #ifdef DEBUG
+        t1 = MPI_Wtime();
+        #endif
 
-    collect_all_lambda(pSPARC, totalLambdaArray);
+        collect_all_lambda(pSPARC, totalLambdaArray);
 
-    #ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (rank == 0)
-        printf("collect_all_lambda took: %.3f ms\n",(t2-t1)*1000);
-    t1 = MPI_Wtime();
-    #endif
+        #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (rank == 0)
+            printf("collect_all_lambda took: %.3f ms\n",(t2-t1)*1000);
+        t1 = MPI_Wtime();
+        #endif
 
-    Efermi = local_Calculate_FermiLevel(pSPARC, x1, x2, totalLambdaArray, tol, max_iter, local_occ_constraint);
-    free(totalLambdaArray);
+        Efermi = local_Calculate_FermiLevel(pSPARC, x1, x2, totalLambdaArray, tol, max_iter, local_occ_constraint);
+        free(totalLambdaArray);
 
-    #ifdef DEBUG
-    t2 = MPI_Wtime();
-    if (rank == 0)
-        printf("Calculate Efermi locally took: %.3f ms\n",(t2-t1)*1000);
-    t1 = MPI_Wtime();
-    #endif
+        #ifdef DEBUG
+        t2 = MPI_Wtime();
+        if (rank == 0)
+            printf("Calculate Efermi locally took: %.3f ms\n",(t2-t1)*1000);
+        t1 = MPI_Wtime();
+        #endif
+    }
 
-    // find occupations
-    for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-        for (k = 0; k < Nk; k++) {
-            for (n = 0; n < Ns; n++) {
-                g_nk = smearing_function(
-                    pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], Efermi, pSPARC->elec_T_type
-                );
-                pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] = g_nk;
+    if (pSPARC->spDFT_Flag == 0){
+        // find occupations
+        for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+            for (k = 0; k < Nk; k++) {
+                for (n = 0; n < Ns; n++) {
+                    g_nk = smearing_function(
+                        pSPARC->Beta, pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns], Efermi, pSPARC->elec_T_type
+                    );
+                    pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] = g_nk;
+                }
             }
         }
+    } else {
+        spDFT_occupation(pSPARC, Efermi);
     }
 
     #ifdef DEBUG

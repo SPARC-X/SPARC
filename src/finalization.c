@@ -29,6 +29,8 @@
 #include "cyclix_tools.h"
 #include "electrostatics.h"
 #include "sparc_mlff_interface.h"
+#include "spdft.h"
+#include "sq3.h"
 
 /* ScaLAPACK routines */
 #ifdef USE_MKL
@@ -333,6 +335,12 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free_MLFF(pSPARC->mlff_str);
         free(pSPARC->mlff_str);
     }
+
+    // free base model arrays
+    if (pSPARC->is_deltaML) {
+        // deallocate memory for forces
+        free(pSPARC->F_base_model);
+    }
 }
 
 /**
@@ -408,6 +416,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
         Free_D2D_Target(&pSPARC->d2d_dmcomm_lanczos, &pSPARC->d2d_kptcomm_topo,
                        pSPARC->bandcomm_index == 0 ? pSPARC->dmcomm : MPI_COMM_NULL, pSPARC->kptcomm_topo);
     }
+    
+    if (pSPARC->SQ3Flag == 1){
+        free_SQ3(pSPARC);
+    }
 
     if (pSPARC->d3Flag == 1) {
         free_D3_coefficients(pSPARC); // this function is moved from electronicGroundState.c
@@ -427,6 +439,10 @@ void Free_SPARC(SPARC_OBJ *pSPARC) {
     if (pSPARC->CyclixFlag) {
         free_cyclix(pSPARC);
     }
+
+	if (pSPARC->spDFT_Flag) {
+		spDFT_finalization(pSPARC);
+	}
 
     // free atom solve stuff
     if (!rank) {
@@ -503,6 +519,8 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
 	
 	int iat, ityp;
 	if (pSPARC->isGammaPoint){
+		if (pSPARC->spDFT_Flag == 1 && (pSPARC->MDCount == 0 || strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0))
+			spDFT_free_scfvar(pSPARC);
         // deallocate nonlocal projectors in psi-domain
         if (pSPARC->dmcomm != MPI_COMM_NULL && pSPARC->bandcomm_index >= 0) {
             for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 

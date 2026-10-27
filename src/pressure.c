@@ -40,6 +40,7 @@
 #include "forces.h"
 #include "stress.h"
 #include "exchangeCorrelation.h"
+#include "spdft.h"
 #include "hubbardPressure.h"
 
 #ifdef SPARCX_ACCEL
@@ -108,6 +109,10 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
     #endif
     }    
 
+	if (pSPARC->spDFT_Flag == 1) {
+		spDFT_pressure_homo(pSPARC);
+	}   
+
     // hubbard pressure
     if (pSPARC->is_hubbard) {
         #ifdef DEBUG
@@ -133,6 +138,7 @@ void Calculate_electronic_pressure(SPARC_OBJ *pSPARC) {
         		
  		pSPARC->pres = (-2 * (pSPARC->Eband + pSPARC->Escc) + pSPARC->pres_xc + pSPARC->pres_el + pSPARC->pres_nl);
         if (pSPARC->usefock > 0) pSPARC->pres += pSPARC->pres_exx; 
+		if (pSPARC->spDFT_Flag == 1) pSPARC->pres += pSPARC->spDFT_pres_homo;
         if (pSPARC->is_hubbard) pSPARC->pres += pSPARC->pres_hub; // hubbard
  		pSPARC->pres /= (-3 * cell_measure); // measure = volume for 3D, area for 2D, and length for 1D.
  	}
@@ -819,12 +825,13 @@ void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     int ncol, DMnd;
-    int dim, count, spinor, DMndsp, Nspinor;
+    int dim, count, size_k, spinor, DMndsp, Nspinor;
     ncol = pSPARC->Nband_bandcomm; // number of bands assigned
     DMnd = pSPARC->Nd_d_dmcomm;
     Nspinor = pSPARC->Nspinor_spincomm;
     DMndsp = DMnd * Nspinor;    
-    
+    size_k = DMndsp * ncol;
+
     double *alpha, *beta;    
     double pressure_nloc = 0.0, energy_nl;
 
@@ -839,21 +846,45 @@ void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
     beta = alpha;
     Compute_Integral_psi_Chi(pSPARC, beta, pSPARC->Xorb);
 
+    double *alpha2 = NULL;
+    if (pSPARC->SQ3Flag == 1) {
+        alpha2 = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor, sizeof(double));
+        Compute_Integral_psi_Chi(pSPARC, alpha2, pSPARC->Yorb);
+    } else {
+        alpha2 = alpha;
+    }
+
     /* find inner product <Chi_Jlm, dPsi_n.(x-R_J)> */
     count = 1;
     for (dim = 0; dim < 3; dim++) {
+        double *dpsi_full = NULL;
+        if (pSPARC->SQ3Flag == 1) {
+            dpsi_full = (double *)malloc( size_k * sizeof(double) );  // dpsi_x, dpsi_y, dpsi_z in cartesian coordinates
+        }
         for (spinor = 0; spinor < Nspinor; spinor++) {
             // find dPsi in direction dim along lattice vector directions
-            Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, 
-                                pSPARC->Yorb+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+            if (pSPARC->SQ3Flag == 1) {
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Yorb+spinor*DMnd, DMndsp, 
+                                    dpsi_full+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+            } else {
+                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, 
+                                    pSPARC->Yorb+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+            }
         }
         beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * count;
-        Compute_Integral_Chi_XmRjp_beta_Dpsi(pSPARC, pSPARC->Yorb, beta, dim);
+        if (pSPARC->SQ3Flag == 1) {
+            Compute_Integral_Chi_XmRjp_beta_Dpsi(pSPARC, dpsi_full, beta, dim);
+            free(dpsi_full);
+        } else {
+            Compute_Integral_Chi_XmRjp_beta_Dpsi(pSPARC, pSPARC->Yorb, beta, dim);
+        }
         count ++;
     }
 
     if (pSPARC->npNd > 1) {
         MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 4, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
+        if (pSPARC->SQ3Flag == 1)
+            MPI_Allreduce(MPI_IN_PLACE, alpha2, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
     }
 
     /* calculate nonlocal pressure */
@@ -861,8 +892,9 @@ void Calculate_nonlocal_pressure_linear(SPARC_OBJ *pSPARC)
     Compute_pressure_nloc_by_integrals(pSPARC, &pressure_nloc, alpha);
     pressure_nloc *= pSPARC->occfac;
 
-    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha);
+    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha, alpha2);
     free(alpha);
+    if (pSPARC->SQ3Flag == 1) free(alpha2);
     energy_nl *= pSPARC->occfac/pSPARC->dV;
     pressure_nloc -= energy_nl;
     
@@ -970,7 +1002,7 @@ void Compute_pressure_nloc_by_integrals(SPARC_OBJ *pSPARC, double *pressure_nloc
                 for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
                     double *occ = pSPARC->occ;
                     if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-                    g_nk = occ[n];
+                    g_nk = (pSPARC->SQ3Flag == 1) ? 1 : occ[n];
 
                     temp_p = 0.0;
                     ldispl = 0;

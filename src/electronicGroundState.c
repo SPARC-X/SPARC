@@ -54,6 +54,7 @@
 #include "ofdft.h"
 #include "printing.h"
 #include "sparc_mlff_interface.h"
+#include "spdft.h"
 #include "locOrbRoutines.h"
 #include "occupationMatrix.h"
 
@@ -576,6 +577,15 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         init_occ_mat_scf(pSPARC);
     }
 
+	// Calculate kinetic and nonlocal contribution to plane wave band energy in spDFT
+	if (pSPARC->spDFT_Flag == 1 && (pSPARC->MDCount == 0 || strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0)) {
+		if (pSPARC->isGammaPoint){
+            CalculateNonlocalProjectors_kpt(pSPARC, &pSPARC->nlocProj, pSPARC->Atom_Influence_nloc, 
+                                        	pSPARC->DMVertices_dmcomm, pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);
+		}
+		spDFT_eigen_kinetic_nonlocal(pSPARC);
+	}
+
     if (pSPARC->OFDFTFlag == 1) {
         OFDFT_NLCG_TETER(pSPARC);
     } else {
@@ -1016,6 +1026,10 @@ void scf_loop(SPARC_OBJ *pSPARC) {
 
         // STOP scf if scf error is less than the given tolerance
         if (scf_conv && SCFcount >= pSPARC->MINIT_SCF) break;
+
+		if (pSPARC->spDFT_Flag == 1) // Check for minocc of highest PW to incorporate more PWs if needed in the next scf to bring minocc below the tol
+			spDFT_occcheck(pSPARC, rank);
+
     }
     
     if (!rank) {
@@ -1081,7 +1095,72 @@ void scf_loop(SPARC_OBJ *pSPARC) {
         		fclose(output_fp);
 			}
 		}
-    } else {
+    } else if (pSPARC->spDFT_Flag == 1) {
+		if(pSPARC->PrintspDFTFlag)
+			spDFT_write(pSPARC, rank);
+
+		if(pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL || pSPARC->bandcomm_index < 0) {
+		
+		} else {
+			int Nspin = pSPARC->Nspin_spincomm;
+			int Nkpt = pSPARC->Nkpts_kptcomm;
+			int Ns = pSPARC->Nstates;
+    		int NG = pSPARC->spDFT_NG;
+			
+			double eigmax_pw = pSPARC->spDFT_Geigen[NG-1];
+			double eigmax_ks = pSPARC->lambda_sorted[Ns-1];
+			double occmin_pw = pSPARC->spDFT_Gocc1[NG-1] - pSPARC->spDFT_Gocc2[NG-1];
+			double occmin_ks = pSPARC->occ_sorted[Ns-1];
+			for(int spn = 0; spn < Nspin; spn++) {
+       			int spn_disp_pw = spn*Nkpt*NG;
+				int spn_disp_ks = spn*Nkpt*Ns;
+       			for(int kpt = 0; kpt < Nkpt; kpt++){
+					int disp_pw = spn_disp_pw + (kpt+1)*NG-1;
+					int disp_ks = spn_disp_ks + (kpt+1)*Ns-1;
+           			if(pSPARC->spDFT_Geigen[disp_pw] > eigmax_pw){
+               			eigmax_pw = pSPARC->spDFT_Geigen[disp_pw];
+						occmin_pw = pSPARC->spDFT_Gocc1[disp_pw] - pSPARC->spDFT_Gocc2[disp_pw];
+					}
+					if(pSPARC->lambda_sorted[disp_ks] > eigmax_ks){
+               			eigmax_ks = pSPARC->lambda_sorted[disp_ks];
+						occmin_ks = pSPARC->occ_sorted[disp_ks];
+					}
+
+    			}
+    		}
+
+			if (pSPARC->npspin != 1) {
+        		MPI_Allreduce(MPI_IN_PLACE, &eigmax_pw, 1, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &occmin_pw, 1, MPI_DOUBLE, MPI_MIN, pSPARC->spin_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &eigmax_ks, 1, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &occmin_ks, 1, MPI_DOUBLE, MPI_MIN, pSPARC->spin_bridge_comm);
+    		}
+        
+    		if (pSPARC->npkpt != 1) { 
+        		MPI_Allreduce(MPI_IN_PLACE, &eigmax_pw, 1, MPI_DOUBLE, MPI_MAX, pSPARC->kpt_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &occmin_pw, 1, MPI_DOUBLE, MPI_MIN, pSPARC->kpt_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &eigmax_ks, 1, MPI_DOUBLE, MPI_MAX, pSPARC->kpt_bridge_comm);
+				MPI_Allreduce(MPI_IN_PLACE, &occmin_ks, 1, MPI_DOUBLE, MPI_MIN, pSPARC->kpt_bridge_comm);
+
+    		}
+
+			if (!rank && pSPARC->Verbosity) {
+        		output_fp = fopen(pSPARC->OutFilename,"a");
+	    		if (output_fp == NULL) {
+            		printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+            		exit(EXIT_FAILURE);
+        		}
+        		fprintf(output_fp,"====================================================================\n");
+        		fprintf(output_fp,"                    spDFT output quantities                    \n");
+        		fprintf(output_fp,"====================================================================\n");
+        		fprintf(output_fp,"Max. KS eigenvalue			:%18.10E (Ha)\n", eigmax_ks);
+        		fprintf(output_fp,"Min. KS Occupation			:%18.10E \n", occmin_ks);
+				fprintf(output_fp,"Max. PW eigenvalue			:%18.10E (Ha)\n", eigmax_pw);
+        		fprintf(output_fp,"Min. PW Occupation			:%18.10E \n", occmin_pw);
+        		fclose(output_fp);
+			}
+		}
+	} else {
         int spn_i;
         int Nk = pSPARC->Nkpts_kptcomm;
         int Ns = pSPARC->Nstates;
