@@ -758,7 +758,7 @@ void Calculate_nonlocal_kinetic_stress_cyclix(SPARC_OBJ *pSPARC)
     /* calculate nonlocal stress */
     Compute_stress_tensor_nloc_by_integrals_cyclix(pSPARC, &stress_nl, alpha);
 
-    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha);
+    energy_nl = Compute_Nonlocal_Energy_by_integrals(pSPARC, alpha, alpha);
     free(alpha);
 
     stress_nl *= pSPARC->occfac * 2.0;    

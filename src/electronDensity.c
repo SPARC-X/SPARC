@@ -20,6 +20,8 @@
 
 #include "electronicGroundState.h"
 #include "electronDensity.h"
+#include "spdft.h"
+#include "sq3.h"
 #include "eigenSolver.h"
 #include "eigenSolverKpt.h" 
 #include "isddft.h"
@@ -41,11 +43,19 @@ void Calculate_elecDens(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error)
     // Currently only involves Chebyshev filtering eigensolver
     if (pSPARC->isGammaPoint){
         eigSolve_CheFSI(rank, pSPARC, SCFcount, error);
+        if (pSPARC->SQ3Flag == 1) {
+            SubDensMat(pSPARC, pSPARC->Ds_cmc, pSPARC->Efermi, pSPARC->ChebComp);
+        }
     } else {
         eigSolve_CheFSI_kpt(rank, pSPARC, SCFcount, error);
     }
 
     CalculateDensity_psi(pSPARC, rho + (pSPARC->Nspinor-1)*DMnd);
+
+	// Add homogenous electron density in spDFT method
+	if (pSPARC->spDFT_Flag == 1) {
+		spDFT_electrondensity_homo(pSPARC, rho + (pSPARC->Nspinor-1)*DMnd);
+	}
 
     if (pSPARC->Nspinor > 1) {
         // calculate total electron density
@@ -122,27 +132,31 @@ void CalculateDensity_psi(SPARC_OBJ *pSPARC, double *rho)
     t1 = MPI_Wtime();
 #endif
 
-    // calculate rho based on local bands
-    count = 0;
-    for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
-        for (n = nstart; n <= nend; n++) {
-            double woccfac = pSPARC->occfac * (pSPARC->kptWts_loc[k] / pSPARC->Nkpts);
-            for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++) {
-                int spinor_g = spinor + pSPARC->spinor_start_indx;
-                double *occ = pSPARC->occ + k*Ns; 
-                if (pSPARC->spin_typ == 1) occ += spinor*Ns*pSPARC->Nkpts_kptcomm;
-                g_nk = woccfac * occ[n];
+    if (pSPARC->SQ3Flag == 1) {
+        update_rho_sq3(pSPARC, rho);
+    } else {
+        // calculate rho based on local bands
+        count = 0;
+        for (k = 0; k < pSPARC->Nkpts_kptcomm; k++) {
+            for (n = nstart; n <= nend; n++) {
+                double woccfac = pSPARC->occfac * (pSPARC->kptWts_loc[k] / pSPARC->Nkpts);
+                for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor ++) {
+                    int spinor_g = spinor + pSPARC->spinor_start_indx;
+                    double *occ = pSPARC->occ + k*Ns; 
+                    if (pSPARC->spin_typ == 1) occ += spinor*Ns*pSPARC->Nkpts_kptcomm;
+                    g_nk = woccfac * occ[n];
 
-                if (pSPARC->isGammaPoint) {
-                    for (i = 0; i < DMnd; i++) {
-                        rho[i+spinor_g*DMnd] += g_nk * pSPARC->Xorb[count] * pSPARC->Xorb[count];
-                        count++;
-                    }
-                } else {
-                    for (i = 0; i < DMnd; i++) {
-                        rho[i+spinor_g*DMnd] += g_nk * (creal(pSPARC->Xorb_kpt[count]) * creal(pSPARC->Xorb_kpt[count])
-                                                      + cimag(pSPARC->Xorb_kpt[count]) * cimag(pSPARC->Xorb_kpt[count]));
-                        count++;
+                    if (pSPARC->isGammaPoint) {
+                        for (i = 0; i < DMnd; i++) {
+                            rho[i+spinor_g*DMnd] += g_nk * pSPARC->Xorb[count] * pSPARC->Xorb[count];
+                            count++;
+                        }
+                    } else {
+                        for (i = 0; i < DMnd; i++) {
+                            rho[i+spinor_g*DMnd] += g_nk * (creal(pSPARC->Xorb_kpt[count]) * creal(pSPARC->Xorb_kpt[count])
+                                                          + cimag(pSPARC->Xorb_kpt[count]) * cimag(pSPARC->Xorb_kpt[count]));
+                            count++;
+                        }
                     }
                 }
             }

@@ -47,6 +47,8 @@
 #include "parallelization.h"
 #include "linearAlgebra.h"
 #include "cyclix_tools.h"
+#include "spdft.h"
+#include "sq3.h"
 
 #ifdef SPARCX_ACCEL
 #include "accel.h"
@@ -190,6 +192,10 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
         // 4) Solve projected eigenproblem, 5) Subspace rotation
         for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++)
             CheFSI(pSPARC, lambda_cutoff, x0, count, 0, spn_i);
+
+		if (pSPARC->spDFT_Flag == 1) {
+			spDFT_eigen_total(pSPARC);
+		}
         
         #ifdef DEBUG
         t1 = MPI_Wtime();
@@ -215,19 +221,31 @@ void eigSolve_CheFSI(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error) {
             if(pSPARC->lambda_sorted[(spn_i+1)*pSPARC->Nstates - 1] > eigmax_g)
                 eigmax_g = pSPARC->lambda_sorted[(spn_i+1)*pSPARC->Nstates - 1];
         }
+
+
+		if (pSPARC->spDFT_Flag == 1) {
+			spDFT_eigen_minmax(pSPARC, &eigmin_g, &eigmax_g);
+		}
         
         if (pSPARC->npspin != 1) { // find min/max over processes with the same rank in spincomm
             MPI_Allreduce(MPI_IN_PLACE, &eigmin_g, 1, MPI_DOUBLE, MPI_MIN, pSPARC->spin_bridge_comm);
             MPI_Allreduce(MPI_IN_PLACE, &eigmax_g, 1, MPI_DOUBLE, MPI_MAX, pSPARC->spin_bridge_comm);
         }
         
-        pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
+        if (pSPARC->SQ3Flag == 1){
+            if (pSPARC->Dscomm != MPI_COMM_NULL)
+                pSPARC->Efermi = Calculate_FermiLevel(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100, occ_constraint_SQ3); 
+            
+            MPI_Bcast(&pSPARC->Efermi, 1, MPI_DOUBLE, 0, pSPARC->kptcomm);
+        } else {
+            pSPARC->Efermi = Calculate_occupation(pSPARC, eigmin_g-1.0, eigmax_g+1.0, 1e-12, 100); 
 
-        if (pSPARC->CyclixFlag) {
-            // Find occupations corresponding to sorted eigenvalues
-            for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
-                for (ns = 0; ns < pSPARC->Nstates; ns++) {
-                    pSPARC->occ_sorted[ns+spn_i*pSPARC->Nstates] = smearing_function(pSPARC->Beta, pSPARC->lambda_sorted[ns+spn_i*pSPARC->Nstates], pSPARC->Efermi, pSPARC->elec_T_type);
+            if (pSPARC->CyclixFlag) {
+                // Find occupations corresponding to sorted eigenvalues
+                for (spn_i = 0; spn_i < pSPARC->Nspin_spincomm; spn_i++) {
+                    for (ns = 0; ns < pSPARC->Nstates; ns++) {
+                        pSPARC->occ_sorted[ns+spn_i*pSPARC->Nstates] = smearing_function(pSPARC->Beta, pSPARC->lambda_sorted[ns+spn_i*pSPARC->Nstates], pSPARC->Efermi, pSPARC->elec_T_type);
+                    }
                 }
             }
         }
@@ -356,7 +374,7 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #endif
     // ** calculate projected Hamiltonian and overlap matrix ** //
     #ifdef USE_DP_SUBEIG
-    if (pSPARC->StandardEigenFlag == 1) {
+    if (pSPARC->StandardEigenFlag == 1) { // SQ3 sets StandardEigenFlag = 1
         DP_Project_Hamiltonian_std(
             pSPARC, pSPARC->DMVertices_dmcomm, pSPARC->Yorb + spn_i*DMnd, DMndsp, pSPARC->Xorb + spn_i*DMnd, DMndsp, 
             spn_i
@@ -388,13 +406,17 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     #ifdef DEBUG
     t1 = MPI_Wtime();
     #endif
-    // ** solve the subspace eigenvalue problem Hp * Q = Mp * Q * Lambda **//
-    // ** or Hp * Q = Q * Lambda, if StandardEigenFlag = 1 ** //
-    #ifdef USE_DP_SUBEIG
-    DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
-    #else
-    Solve_Generalized_EigenProblem(pSPARC, spn_i);
-    #endif
+    if (pSPARC->SQ3Flag == 1) {
+        SQ3(pSPARC, spn_i);        
+    } else {
+        // ** solve the subspace eigenvalue problem Hp * Q = Mp * Q * Lambda **//
+        // ** or Hp * Q = Q * Lambda, if StandardEigenFlag = 1 ** //
+        #ifdef USE_DP_SUBEIG
+        DP_Solve_Generalized_EigenProblem(pSPARC, spn_i);
+        #else
+        Solve_Generalized_EigenProblem(pSPARC, spn_i);
+        #endif
+    }
     #ifdef DEBUG
     t3 = MPI_Wtime();
     #endif
@@ -438,12 +460,19 @@ void CheFSI(SPARC_OBJ *pSPARC, double lambda_cutoff, double *x0, int count, int 
     t1 = MPI_Wtime();
     #endif
     // ** subspace rotation ** //
-    #ifdef USE_DP_SUBEIG
-    DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*DMnd);
-    #else
-    // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
-    Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q,
-                        pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*DMnd, spn_i);
+    if (pSPARC->SQ3Flag == 1) {
+        // nothing to do here, but need to skip subspace rotation
+    } else {
+        #ifdef USE_DP_SUBEIG
+        DP_Subspace_Rotation(pSPARC, pSPARC->Xorb + spn_i*DMnd);
+        #else
+        // find Y * Q, store the result in Xorb (band+domain) and Xorb_BLCYC (block cyclic format)
+        Subspace_Rotation(pSPARC, pSPARC->Yorb_BLCYC, pSPARC->Q,
+                            pSPARC->Xorb_BLCYC, pSPARC->Xorb + spn_i*DMnd, spn_i);
+        #endif
+    }
+
+    #ifndef USE_DP_SUBEIG
     if (pSPARC->npband > 1 || pSPARC->Nspinor_eig != pSPARC->Nspinor_spincomm) {
         free(pSPARC->Xorb_BLCYC); pSPARC->Xorb_BLCYC = NULL;
         free(pSPARC->Yorb_BLCYC); pSPARC->Yorb_BLCYC = NULL;
@@ -1786,6 +1815,13 @@ void Project_Hamiltonian(SPARC_OBJ *pSPARC, int *DMVertices, double *Y, int ldi,
     et = MPI_Wtime();
     if (rank == 0 && spn_i == 0) printf("Rank 0, Project_Hamiltonian used %.3lf ms\n", 1000.0 * (et - st)); 
     #endif
+    
+    // To ensure final orbitals are stored in Xorb
+    if (pSPARC->SQ3Flag == 1){
+        double *temp = pSPARC->Xorb;
+        pSPARC->Xorb = pSPARC->Yorb;
+        pSPARC->Yorb = temp;
+    }
 #endif // #if defined(USE_MKL) || defined(USE_SCALAPACK)
 }
 

@@ -72,4 +72,61 @@ void train_internal_energy_model(MLFF_Obj *mlff_str){
         fprintf(fp_mlff, "Internal energy model trained on %d data points! R^2: %f\n", N, mlff_str->internal_energy_model_R2);
         fprintf(fp_mlff, "Internal energy model weights: y = %f + %fx\n", alpha, beta);
     }
+
+    // store the training data so that restarts (MLFF_FLAG 21/22) can rebuild the same model
+    print_internal_energy_model_data(mlff_str);
+}
+
+/*
+Write the (free energy, internal energy) training pairs to mlff_str->ie_model_name (rank 0)
+*/
+void print_internal_energy_model_data(MLFF_Obj *mlff_str){
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank != 0) return;
+
+    FILE *fptr = fopen(mlff_str->ie_model_name, "w");
+    if (fptr == NULL) {
+        printf("Error opening the file %s!\n", mlff_str->ie_model_name);
+        exit(1);
+    }
+    fprintf(fptr, "SPARC MLFF internal energy model data: free energy (Ha), internal energy (Ha)\n");
+    fprintf(fptr, "N_data:\n");
+    fprintf(fptr, "%d\n", mlff_str->internal_energy_DFT_count);
+    for (int i = 0; i < mlff_str->internal_energy_DFT_count; i++) {
+        fprintf(fptr, "%.15e %.15e\n", mlff_str->free_energy_DFT[i], mlff_str->internal_energy_DFT[i]);
+    }
+    fclose(fptr);
+}
+
+/*
+Read the training pairs of a previous run from mlff_str->ie_model_name and broadcast them
+*/
+void read_internal_energy_model_data(MLFF_Obj *mlff_str, int n_max){
+    int rank, N = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+        FILE *fptr = fopen(mlff_str->ie_model_name, "r");
+        if (fptr == NULL) {
+            printf("\nERROR: MLFF_INTERNAL_ENERGY_FLAG: 1 needs the internal energy model data \"%s\" of the previous run, which cannot be opened.\n", mlff_str->ie_model_name);
+            exit(EXIT_FAILURE);
+        }
+        char str[L_STRING];
+        if (fgets(str, L_STRING, fptr) == NULL || fscanf(fptr, "%s %d", str, &N) != 2 || N < 2 || N > n_max) {
+            printf("\nERROR: invalid internal energy model data in \"%s\" (need 2 to %d data points).\n", mlff_str->ie_model_name, n_max);
+            exit(EXIT_FAILURE);
+        }
+        for (int i = 0; i < N; i++) {
+            if (fscanf(fptr, "%lf %lf", &mlff_str->free_energy_DFT[i], &mlff_str->internal_energy_DFT[i]) != 2) {
+                printf("\nERROR: could not read data point %d from \"%s\".\n", i+1, mlff_str->ie_model_name);
+                exit(EXIT_FAILURE);
+            }
+        }
+        fclose(fptr);
+    }
+    MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mlff_str->free_energy_DFT, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mlff_str->internal_energy_DFT, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    mlff_str->internal_energy_DFT_count = N;
 }

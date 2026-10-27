@@ -21,6 +21,8 @@
 #include "occupation.h"
 #include "tools.h"
 #include "isddft.h"
+#include "spdft.h"
+#include "sq3.h"
 #include "sqProperties.h"
 #include "sqEnergy.h"
 #include "occupationMatrix.h"
@@ -58,7 +60,9 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     Calculate_Exc(pSPARC, electronDens);
     
     // band structure energy
-    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
+    if (pSPARC->SQ3Flag == 1) {
+        Eband = Calculate_Eband_SQ3(pSPARC, pSPARC->ChebComp);
+    } else if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         Eband = Calculate_Eband_SQ(pSPARC);
     } else {
         Eband = Calculate_Eband(pSPARC);
@@ -71,7 +75,9 @@ void Calculate_Free_Energy(SPARC_OBJ *pSPARC, double *electronDens)
     pSPARC->Eband = Eband;
     
     // calculate entropy
-    if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
+    if (pSPARC->SQ3Flag == 1) {
+        pSPARC->Entropy = Calculate_electronicEntropy_SQ3(pSPARC, pSPARC->ChebComp);
+    } else if (pSPARC->sqAmbientFlag == 1 || pSPARC->sqHighTFlag == 1) {
         pSPARC->Entropy = Calculate_electronicEntropy_SQ(pSPARC);
     } else {
         pSPARC->Entropy = Calculate_electronicEntropy(pSPARC);
@@ -224,6 +230,13 @@ double Calculate_Eband(SPARC_OBJ *pSPARC)
             for (n = 0; n < Ns; n++) {
                 Eband += woccfac * pSPARC->occ[n+k*Ns+spn_i*Nk*Ns] * pSPARC->lambda[n+k*Ns+spn_i*Nk*Ns];
             }
+
+            if (pSPARC->spDFT_Flag == 1) {
+                int shift = k*pSPARC->spDFT_NG + spn_i*Nk*pSPARC->spDFT_NG;
+                for (n = 0; n < pSPARC->spDFT_NG; n++){
+                    Eband += woccfac * (pSPARC->spDFT_Gocc1[n+shift] - pSPARC->spDFT_Gocc2[n+shift])  * pSPARC->spDFT_Geigen[n+shift];
+                }
+            }
         }
     }    
     Eband /= pSPARC->Nkpts;
@@ -250,10 +263,15 @@ double Calculate_electronicEntropy(SPARC_OBJ *pSPARC)
     double Entropy = 0.0;
     for (spn_i = 0; spn_i < Nspin; spn_i++) {
         for (k = 0; k < Nk; k++) {
-            double Entropy_k = Calculate_entropy_term (
-                pSPARC->lambda+k*Ns+spn_i*Nk*Ns, pSPARC->occ+k*Ns+spn_i*Nk*Ns, pSPARC->Efermi, 0, Ns-1, 
-                pSPARC->Beta, pSPARC->elec_T_type
-            );
+            double Entropy_k;
+            if (pSPARC->spDFT_Flag == 1) {
+                Entropy_k = spDFT_entropy(pSPARC, k, spn_i);
+            } else {
+                Entropy_k = Calculate_entropy_term (
+                    pSPARC->lambda+k*Ns+spn_i*Nk*Ns, pSPARC->occ+k*Ns+spn_i*Nk*Ns, pSPARC->Efermi, 0, Ns-1, 
+                    pSPARC->Beta, pSPARC->elec_T_type
+                );
+            }
             Entropy += Entropy_k * pSPARC->kptWts_loc[k]; // multiply by the kpoint weights
         }
     }    

@@ -727,3 +727,102 @@ Input variable to set the frequency at which DFT must be performed during on-the
 
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_SWITCH\_STEP}}} \label{MLFF_SWITCH_STEP}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+100
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_SWITCH\_STEP}: 500
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Input variable to set the switch over step after which the initial coarse MLFF model is deleted and the production on-the-fly MD starts.
+\end{block}
+
+\begin{block}{Remark}
+This is relevant only for starting a on-the-fly MLFF MD from scratch.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL\_COARSE}}} \label{MLFF_FACTOR_MULTIPLY_SIGMATOL_COARSE}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\end{columns}
+
+\begin{block}{Default}
+$1.0 + 5\times(\texttt{{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL}} - 1.0)$
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL\_COARSE}: 1.05
+\end{block}
+
+\begin{block}{Description}
+Prefactor multiplied with maximum Bayesian error while updating $\sigma_{\text{tol}}$ for the initial coarse model. Ideally, it is greater than \texttt{MLFF\_FACTOR\_MULTIPLY\_SIGMATOL} to skip more DFT steps. This is relevant only for starting a on-the-fly MLFF MD from scratch.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{MLFF\_DELTA\_FLAG}}} \label{MLFF_DELTA_FLAG}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{MLFF\_DELTA\_FLAG}: 1
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Flag to switch on $\Delta-$MLFF scheme with respect to some base model.
+\end{block}
+
+\begin{block}{Remark}
+Currently, the only available base model is Yukawa potential which is the default.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

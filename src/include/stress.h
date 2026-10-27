@@ -57,13 +57,13 @@ void Compute_Integral_Chi_StXmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, 
  * @brief   Compute kinetic stress tensor
  */
 void Compute_stress_tensor_kinetic_kpt(SPARC_OBJ *pSPARC, double _Complex * dpsi_full, double *stress_k);
-void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *stress_k);
+void Compute_stress_tensor_kinetic(SPARC_OBJ *pSPARC, double *dpsi_full, double *dpsi_full2, double *stress_k);
 
 /**
  * @brief   Compute nonlocal Energy with spin-orbit coupling
  */
 double Compute_Nonlocal_Energy_by_integrals_kpt(SPARC_OBJ *pSPARC, double _Complex *alpha, char *option);
-double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha);
+double Compute_Nonlocal_Energy_by_integrals(SPARC_OBJ *pSPARC, double *alpha, double *alpha2);
 
 /**
  * @brief   Compute nonlocal stress tensor with spin-orbit coupling

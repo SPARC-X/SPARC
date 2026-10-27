@@ -50,6 +50,7 @@
 #include "parallelization.h"
 #include "linearAlgebra.h"
 #include "cyclix_tools.h"
+#include "spdft.h"
 
 #ifdef SPARCX_ACCEL
 #include "accel_kpt.h"
@@ -112,6 +113,11 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
                 CheFSI_kpt(pSPARC, lambda_cutoff, x0, count, kpt, spn_i);
             }
         }
+
+		if (pSPARC->spDFT_Flag == 1) {
+			spDFT_eigen_total(pSPARC);
+		}
+
         #ifdef DEBUG
         t1 = MPI_Wtime();
         #endif
@@ -143,6 +149,11 @@ void eigSolve_CheFSI_kpt(int rank, SPARC_OBJ *pSPARC, int SCFcount, double error
                     eigmax_g = pSPARC->lambda_sorted[spn_disp + (kpt+1)*pSPARC->Nstates-1];
             }
         }
+
+
+		if (pSPARC->spDFT_Flag == 1) {
+			spDFT_eigen_minmax(pSPARC, &eigmin_g, &eigmax_g);
+		}
         
         if (pSPARC->npspin != 1) { // find min/max over processes with the same rank in spincomm
             MPI_Allreduce(MPI_IN_PLACE, &eigmin_g, 1, MPI_DOUBLE, MPI_MIN, pSPARC->spin_bridge_comm);

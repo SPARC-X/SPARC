@@ -734,9 +734,23 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%lf %lf %lf %lf %lf %lf", &pSPARC_Input->stress_rel_scale[0], &pSPARC_Input->stress_rel_scale[1], &pSPARC_Input->stress_rel_scale[2],
                                                        &pSPARC_Input->stress_rel_scale[3], &pSPARC_Input->stress_rel_scale[4], &pSPARC_Input->stress_rel_scale[5]);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"MLFF_DFT_FQ:") == 0) {    // MLFF end
+        } else if (strcmpi(str,"MLFF_DFT_FQ:") == 0) {
             fscanf(input_fp,"%d", &pSPARC_Input->MLFF_DFT_fq);
             fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MLFF_DELTA_FLAG:") == 0) { // MLFF Delta Learning Flag
+            fscanf(input_fp,"%d",&pSPARC_Input->is_deltaML);
+        } else if (strcmpi(str,"MLFF_SWITCH_STEP:") == 0) { // MLFF Switch ML Model step
+            fscanf(input_fp,"%d", &pSPARC_Input->mlff_switch_step);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"MLFF_FACTOR_MULTIPLY_SIGMATOL_COARSE:") == 0) { // MLFF Coarse Sigma factor if input
+            fscanf(input_fp,"%lf", &pSPARC_Input->factor_multiply_sigma_tol_coarse);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"YUKAWA_A:") == 0) { // pre-exponential Yukawa parameter
+            fscanf(input_fp,"%lf",&pSPARC_Input->A_yukawa);
+        } else if (strcmpi(str,"YUKAWA_MU:") == 0) { // exponential Yukawa parameter
+            fscanf(input_fp,"%lf",&pSPARC_Input->mu_yukawa);
+        } else if (strcmpi(str,"YUKAWA_ECONST:") == 0) { // Constant shift in Yukawa energy (MLFF end)
+            fscanf(input_fp,"%lf",&pSPARC_Input->Econst_yukawa);
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");
@@ -867,8 +881,11 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp,"%lf %lf %lf %lf %lf %lf",&pSPARC_Input->stress_external[0], &pSPARC_Input->stress_external[1], &pSPARC_Input->stress_external[2]
                                                      ,&pSPARC_Input->stress_external[3], &pSPARC_Input->stress_external[4], &pSPARC_Input->stress_external[5]);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"STANDARD_EIGEN:") == 0) {    
-            fscanf(input_fp,"%d",&pSPARC_Input->StandardEigenFlag);
+        } else if (strcmpi(str,"SQ3_FLAG:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->SQ3Flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SQ3_NPL:") == 0) {    
+            fscanf(input_fp,"%d",&pSPARC_Input->sq3_npl);
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"VERBOSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->Verbosity);
@@ -1095,6 +1112,21 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"PRINT_ENERGY_DENSITY:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->PrintEnergyDensFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if(strcmpi(str,"SP_FLAG:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->spDFT_Flag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SP_SMEARING:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->spDFT_tau_s);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SP_TOL_OCC:") == 0) {
+            fscanf(input_fp,"%lf",&pSPARC_Input->spDFT_tol_occ);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"PRINT_SPDFT:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->PrintspDFTFlag);
+            fscanf(input_fp, "%*[^\n]\n");
+        } else if (strcmpi(str,"SP_ISESPLIT_CONST:") == 0) {
+            fscanf(input_fp,"%d",&pSPARC_Input->spDFT_isesplit_const);
             fscanf(input_fp, "%*[^\n]\n");
         } else if(strcmpi(str,"HUBBARD_FLAG:") == 0) {
             fscanf(input_fp,"%d",&pSPARC_Input->is_hubbard);

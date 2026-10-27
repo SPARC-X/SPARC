@@ -62,8 +62,8 @@ USE_ACCELGT = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
-           -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include -IhighT/xc/include
+CPPFLAGS = -Iinclude/ -Isq3/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
+           -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include -IhighT/xc/include -IhighT/ff/
 LDLIBS   = -lrt
 
 ifeq ($(USE_MKL), 1)
@@ -156,7 +156,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/exx/exactExchangePressure.o xc/exx/exactExchangeEnergyDensity.o \
         linearScaling/sq.o linearScaling/sqInitialization.o linearScaling/sqFinalization.o linearScaling/sqEnergy.o\
         linearScaling/sqDensity.o linearScaling/sqNlocVecRoutines.o linearScaling/sqParallelization.o linearScaling/sqProperties.o\
-        highT/sqHighTExactExchange.o highT/sqHighT.o highT/sqHighTDensity.o highT/sqHighTInitialization.o\
+        highT/spdft.o highT/sqHighTExactExchange.o highT/sqHighT.o highT/sqHighTDensity.o highT/sqHighTInitialization.o\
         cyclix/cyclix_tools.o cyclix/cyclix_forces.o cyclix/cyclix_gradVec.o cyclix/cyclix_lapVec.o \
         cyclix/cyclix_stress.o \
         ofdft/ofdft.o\
@@ -170,7 +170,9 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         xc/hubbard/hubbardInitialization.o xc/hubbard/locOrbRoutines.o xc/hubbard/occupationMatrix.o \
         xc/hubbard/hubbardForce.o xc/hubbard/hubbardStress.o xc/hubbard/hubbardPressure.o \
         plumed/plumed_sparc.o \
-        highT/xc/finiteTempXC.o
+        highT/xc/finiteTempXC.o \
+        highT/ff/yukawa.o \
+        sq3/sq3.o
 
 # Switch the socket compilation
 # For future developers: please keep the socket options separate from the

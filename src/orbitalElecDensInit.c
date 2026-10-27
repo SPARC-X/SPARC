@@ -233,6 +233,8 @@ void Init_electronDensity(SPARC_OBJ *pSPARC) {
  */
 // TODO: Check if the FtF matrix is singular and if it is then decide on how to do extrapolation or not to do at all
 void elecDensExtrapolation(SPARC_OBJ *pSPARC) {
+    // MLFF prediction-only runs never solve for the density, so there is nothing to extrapolate
+    if (pSPARC->mlff_flag == 21) return;
     // if hubbard calculation then call the occupation matrix extrapolation function
     if (pSPARC->is_hubbard) occMatExtrapolation(pSPARC);
     // processors that are not in the dmcomm_phi will remain idle

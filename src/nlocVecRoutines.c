@@ -611,7 +611,11 @@ void CalculateNonlocalProjectors_kpt(SPARC_OBJ *pSPARC, NLOC_PROJ_OBJ **nlocProj
         }
     }
 
-    (*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
+     if (pSPARC->isGammaPoint && pSPARC->spDFT_Flag == 1) {
+	} else {
+    	(*nlocProj) = (NLOC_PROJ_OBJ *)malloc( sizeof(NLOC_PROJ_OBJ) * pSPARC->Ntypes ); // TODO: deallocate!!
+	}
+
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) { 
         // allocate memory for projectors
         (*nlocProj)[ityp].Chi_c = (double _Complex **)malloc( sizeof(double _Complex *) * Atom_Influence_nloc[ityp].n_atom);

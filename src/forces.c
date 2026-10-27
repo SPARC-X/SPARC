@@ -763,7 +763,12 @@ void Calculate_nonlocal_forces_linear(SPARC_OBJ *pSPARC)
     double *force_nloc, *alpha, *beta, *beta_x, *beta_y, *beta_z;
     force_nloc = (double *)calloc(3 * pSPARC->n_atom, sizeof(double));
     alpha = (double *)calloc( pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 4, sizeof(double));
-    
+    double *dpsi = NULL;
+    if (pSPARC->SQ3Flag == 1) {
+        dpsi = (double *) calloc( size_k, sizeof(double));
+        assert(dpsi != NULL);
+    }
+
 #ifdef DEBUG 
     if (!rank) printf("Start Calculating nonlocal forces\n");
 #endif
@@ -794,12 +799,22 @@ void Calculate_nonlocal_forces_linear(SPARC_OBJ *pSPARC)
         for (dim = 0; dim < 3; dim++) {
             for (spinor = 0; spinor < Nspinor; spinor++) {
                 // find dPsi in direction dim
-                Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, pSPARC->Yorb+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+                if (pSPARC->SQ3Flag == 1) {
+                    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Yorb+spinor*DMnd, DMndsp, dpsi+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);                    
+                } else {
+                    Gradient_vectors_dir(pSPARC, DMnd, pSPARC->DMVertices_dmcomm, ncol, 0.0, pSPARC->Xorb+spinor*DMnd, DMndsp, pSPARC->Yorb+spinor*DMnd, DMndsp, dim, pSPARC->dmcomm);
+                }
             }
             beta = alpha + pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * (dim + 1);
-            Compute_Integral_Chi_Dpsi(pSPARC, pSPARC->Yorb, beta);
+            if (pSPARC->SQ3Flag == 1) {
+                Compute_Integral_Chi_Dpsi(pSPARC, dpsi, beta);
+            } else {
+                Compute_Integral_Chi_Dpsi(pSPARC, pSPARC->Yorb, beta);
+            }
         }
     }
+    
+    if (pSPARC->SQ3Flag == 1) free(dpsi);
 
     if (pSPARC->npNd > 1) {
         MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ[pSPARC->n_atom] * ncol * Nspinor * 4, MPI_DOUBLE, MPI_SUM, pSPARC->dmcomm);
@@ -951,7 +966,7 @@ void Compute_force_nloc_by_integrals(SPARC_OBJ *pSPARC, double *force_nloc, doub
                 for (n = pSPARC->band_start_indx; n <= pSPARC->band_end_indx; n++) {
                     double *occ = pSPARC->occ;
                     if (pSPARC->spin_typ == 1) occ += spinor * Ns;
-                    g_nk = occ[n];
+                    g_nk = (pSPARC->SQ3Flag == 1) ? 1 : occ[n];
                     val2_x = val2_y = val2_z = 0.0;
                     ldispl = 0;
                     for (l = 0; l <= lmax; l++) {
