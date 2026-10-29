@@ -772,8 +772,8 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->precond_resta_q0 = 1.36;
     pSPARC_Input->precond_resta_Rs = 2.76;
 
-    pSPARC_Input->REFERENCE_CUTOFF = 0.5;     // default reference cutoff radius for nonlocal pseudopotential
-    pSPARC_Input->REFERENCE_CUTOFF_FAC = 0; // default reference cutoff radius relative to mesh size for nonlocal pseudopotential
+    pSPARC_Input->REFERENCE_CUTOFF = 0.5;     // default cutoff radius (Bohr) of the reference potential for the overlapping pseudocharge correction
+    pSPARC_Input->REFERENCE_CUTOFF_FAC = 0; // default: off; if > 0, REFERENCE_CUTOFF = REFERENCE_CUTOFF_FAC * max(dx, dy, dz)
 
     /* default mixing */
     pSPARC_Input->MixingVariable = -1;        // default mixing variabl (will be set to 'density' mixing)
@@ -4000,7 +4000,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                     SPARC (version October 27, 2026)                     *\n");
+    fprintf(output_fp,"*                     SPARC (version October 29, 2026)                     *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
