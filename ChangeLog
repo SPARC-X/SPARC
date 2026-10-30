@@ -5,6 +5,14 @@
 
 
 --------------
+October 29, 2026
+Name: Sayan Bhowmik
+Changes: doc/.LaTeX/Electrostatics.tex, doc/.LaTeX/Introduction.tex, doc/Manual.pdf, src/initialization.c
+1. Documented REFERENCE_CUTOFF_FAC (integer, default 0) in the manual. If > 0, REFERENCE_CUTOFF is set to
+   REFERENCE_CUTOFF_FAC * max(dx, dy, dz); this overrides REFERENCE_CUTOFF.
+2. Corrected the comments on the REFERENCE_CUTOFF and REFERENCE_CUTOFF_FAC defaults.
+
+--------------
 October 27, 2026
 Name: Sayan Bhowmik
 Changes: README.md, doc/.LaTeX/Introduction.tex, doc/.LaTeX/SCF.tex, doc/.LaTeX/System.tex,

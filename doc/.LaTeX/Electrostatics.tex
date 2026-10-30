@@ -141,7 +141,43 @@ The cutoff radius of the reference potential used for evaluating the electrostat
 \end{block}
 
 \begin{block}{Remark}
-This number should be smaller than half the smallest interatomic distance.
+This number should be smaller than half the smallest interatomic distance. It is overridden by \hyperlink{REFERENCE_CUTOFF_FAC}{\texttt{REFERENCE\_CUTOFF\_FAC}} when the latter is greater than 0.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{REFERENCE\_CUTOFF\_FAC}} \label{REFERENCE_CUTOFF_FAC}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Integer
+\end{block}
+
+\begin{block}{Default}
+0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{REFERENCE\_CUTOFF\_FAC}: 2
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+If greater than 0, \hyperlink{REFERENCE_CUTOFF}{\texttt{REFERENCE\_CUTOFF}} is set to \texttt{REFERENCE\_CUTOFF\_FAC} $\times \max(\Delta x, \Delta y, \Delta z)$, where $\Delta x$, $\Delta y$, $\Delta z$ are the mesh spacings. The default 0 disables this option.
+\end{block}
+
+\begin{block}{Remark}
+Overrides \hyperlink{REFERENCE_CUTOFF}{\texttt{REFERENCE\_CUTOFF}} when greater than 0.
 \end{block}
 
 \end{frame}
