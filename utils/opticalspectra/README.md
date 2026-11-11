@@ -134,10 +134,6 @@ Files are named after the SPARC run. They are numbered like SPARC's `.out_NN`: i
 
 ## Notes
 
-- Converge the spectrum in `N_BANDS`/`NSTATES`, mesh and k-points. The top few Chebyshev-filtered bands are the least accurate.
+- Converge the spectrum in `N_BANDS`/`NSTATES`, mesh and k-points.
 - The DC conductivity of metals needs `DRUDE True`. Gaussian broadening gives the wrong low-ω/DC limit.
 - `.psi` files are memory-mapped and read one k-point at a time.
-- Checked against [ABINIT](https://www.abinit.org) 9.8.3 (conducti and optic) for Si₂, Al, bcc Fe (spin) and N₂ (Dirichlet, bound states); see [tests/KG_testing](../../tests/KG_testing).
-- Spin–orbit is tested internally but not yet against another code.
-- Meta-GGA is tested internally (operator exact to 1e-11, V_τ = numerical ∂(ρε_xc)/∂τ to 1e-8). Comparison with SPARC SCAN/rSCAN/r2SCAN runs is pending.
-- ABINIT 9.8.3 conducti returns 2σ↑ for `nsppol 2`, a bug in ABINIT. Compare spin-polarized results with care.
