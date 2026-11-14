@@ -16,10 +16,10 @@ Kubo-Greenwood Optical Spectra Calculator for SPARC Output Files
 """
 
 # --- SPARC output files of ONE run (SPARC flags: PRINT_ORBITAL: 1, PRINT_EIGEN: 1, PRINT_ATOMS: 1) ---
-OUT_FILE    = '../../pdos/examples/Si2_nmag/Si2_nmag.out'
-EIGEN_FILE  = '../../pdos/examples/Si2_nmag/Si2_nmag.eigen'
-PSI_FILE    = '../../pdos/examples/Si2_nmag/Si2_nmag.psi'
-STATIC_FILE = '../../pdos/examples/Si2_nmag/Si2_nmag.static'
+OUT_FILE    = 'examples/Si2/Si2.out'
+EIGEN_FILE  = 'examples/Si2/Si2.eigen'
+PSI_FILE    = 'examples/Si2/Si2.psi'
+STATIC_FILE = 'examples/Si2/Si2.static'
 PSP_DIR     = None              # .psp8 path in the .out: absolute as is, relative from PSP_DIR (SPARC's run folder);
                                 # if no file there, the file of that name in PSP_DIR (None: folder of OUT_FILE)
 

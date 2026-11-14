@@ -1,0 +1,82 @@
+***************************************************************************
+*      opticalspectra: Kubo-Greenwood optical spectra of a SPARC run      *
+*   Copyright (c) 2026 Material Physics & Mechanics Group, Georgia Tech   *
+*                   Start time: Sat Nov 14 12:44:15 2026                  *
+***************************************************************************
+                              Input parameters
+***************************************************************************
+OUT_FILE: Fe_spin.out
+EIGEN_FILE: Fe_spin.eigen
+PSI_FILE: Fe_spin.psi
+STATIC_FILE: Fe_spin.static
+PSP_DIR: ../../../../psps
+OMEGA_MIN: 0.0
+OMEGA_MAX: 1.0
+N_OMEGA: 1001
+ETA: 0.005
+FORMULA: exact
+BROADENING: lorentzian
+DRUDE: True
+VELOCITY: gradient+nonlocal
+N_BANDS: 24
+OUT_DIR: KG_output
+PLOT: False
+REF_FILES: 
+N_THREADS: 1
+***************************************************************************
+                                   System
+***************************************************************************
+SPARC run                          :  Fe_spin
+Exchange correlation               :  GGA_PBE
+Spin type                          :  SPIN_TYP 1
+Number of k-points                 :  1
+Number of bands used               :  24
+FD grid                            :  19 19 19
+FD order                           :  12
+Boundary conditions                :  P P P
+Volume                             :  1.5922008800E+02 (Bohr^3)
+Total number of electrons          :  32
+Smearing (fermi-dirac)             :  1.0000000000E-02 (Ha)
+Fermi level                        :  2.3697544669E-01 (Ha)
+Pseudopotentials                   :  ../../../../psps/26_Fe_16_2.0_2.5_pbe_n_v1.0.psp8
+Velocity terms                     :  kinetic, nonlocal
+K-point-spin threads               :  1
+BLAS threads                       :  not set (library default)
+Estimated peak memory usage        :  32.94 MB
+***************************************************************************
+                        DC conductivity (omega = 0)
+***************************************************************************
+Conductivity tensor (a.u.):
+ 1.4605714604E+00  1.1035837017E+00  1.1035836848E+00
+ 1.1035837017E+00  1.4605714536E+00  1.1035836894E+00
+ 1.1035836848E+00  1.1035836894E+00  1.4605714231E+00
+Conductivity, Tr/3                 :  1.4605714457E+00 (a.u.)
+Conductivity, Tr/3                 :  6.7184066435E+06 (S/m)
+Resistivity                        :  1.4884481590E+01 (micro-Ohm cm)
+Intraband part, Tr/3               :  1.3348152435E+00 (a.u.)
+Degenerate-pair part, Tr/3         :  1.1504375445E-01 (a.u.)
+Interband part, Tr/3               :  1.0712447762E-02 (a.u.)
+***************************************************************************
+                                 Sum rules
+***************************************************************************
+f-sum rule, all pairs              :  3.0835350951E-01
+f-sum rule, interband pairs        :  2.7228371619E-01
+***************************************************************************
+                                Output files
+***************************************************************************
+Conductivity printed to            :  Fe_spin.sigma
+Dielectric function printed to     :  Fe_spin.epsilon
+Messages and checks printed to     :  Fe_spin.kglog (warnings: 0)
+***************************************************************************
+                                Timing info
+***************************************************************************
+Setup                              :  0.233 sec
+k-point and spin sums              :  0.072 sec
+CPU time, k-point and spin sums    :  0.268 sec (all threads)
+Total walltime                     :  0.346 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*    Method: L. Calderin et al., Comput. Phys. Commun. 221, 118 (2017)    *
+***************************************************************************

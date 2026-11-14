@@ -1,0 +1,22 @@
+***************************************************************************
+*      opticalspectra: Kubo-Greenwood optical spectra of a SPARC run      *
+*   Copyright (c) 2026 Material Physics & Mechanics Group, Georgia Tech   *
+*                   Start time: Sat Nov 14 12:44:14 2026                  *
+***************************************************************************
+                                  Messages
+***************************************************************************
+Estimated peak memory usage: 16.04 MB (orbitals 1.26 MB, velocity 10.06 MB, omega sums 161.88 kB, projectors 2.85 MB, other 423.80 kB)
+Si2: SPIN_TYP 0, 4 k-points, 12 bands, grid [19, 19, 19], 1 k-point-spin thread (setup 0.13 s)
+  k-point 1/4, spin 0: 0.03 s
+  k-point 2/4, spin 0: 0.02 s
+  k-point 3/4, spin 0: 0.02 s
+  k-point 4/4, spin 0: 0.02 s
+k-point and spin sums: 0.08 s, CPU time 0.26 s (cores busy on average: 3.1; 1 k-point-spin thread, BLAS threads not set (library default))
+NOTE: exact Kubo-Greenwood options, no approximations.
+NOTE: the f-sum rule equals 1 only for complete bands and a local potential (Calderin Eqs. 41-44).
+***************************************************************************
+                                   Checks
+***************************************************************************
+Max |psi^H psi dV - I|             :  1.7763568394E-15
+Max |v - v^H|                      :  3.3378920798E-16
+Printed occupation factor          :  2.000000 (expected 2/Nspin/Nspinor)

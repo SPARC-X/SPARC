@@ -1,0 +1,82 @@
+***************************************************************************
+*      opticalspectra: Kubo-Greenwood optical spectra of a SPARC run      *
+*   Copyright (c) 2026 Material Physics & Mechanics Group, Georgia Tech   *
+*                   Start time: Sat Nov 14 12:44:14 2026                  *
+***************************************************************************
+                              Input parameters
+***************************************************************************
+OUT_FILE: Si2.out
+EIGEN_FILE: Si2.eigen
+PSI_FILE: Si2.psi
+STATIC_FILE: Si2.static
+PSP_DIR: ../../../../psps
+OMEGA_MIN: 0.0
+OMEGA_MAX: 1.0
+N_OMEGA: 1001
+ETA: 0.005
+FORMULA: exact
+BROADENING: lorentzian
+DRUDE: True
+VELOCITY: gradient+nonlocal
+N_BANDS: 12
+OUT_DIR: KG_output
+PLOT: False
+REF_FILES: 
+N_THREADS: 1
+***************************************************************************
+                                   System
+***************************************************************************
+SPARC run                          :  Si2
+Exchange correlation               :  GGA_PBE
+Spin type                          :  SPIN_TYP 0
+Number of k-points                 :  4
+Number of bands used               :  12
+FD grid                            :  19 19 19
+FD order                           :  12
+Boundary conditions                :  P P P
+Volume                             :  2.9831067331E+02 (Bohr^3)
+Total number of electrons          :  8
+Smearing (fermi-dirac)             :  1.0000000000E-03 (Ha)
+Fermi level                        :  1.2964640916E-01 (Ha)
+Pseudopotentials                   :  ../../../../psps/14_Si_4_1.9_1.9_pbe_n_v1.0.psp8
+Velocity terms                     :  kinetic, nonlocal
+K-point-spin threads               :  1
+BLAS threads                       :  not set (library default)
+Estimated peak memory usage        :  16.04 MB
+***************************************************************************
+                        DC conductivity (omega = 0)
+***************************************************************************
+Conductivity tensor (a.u.):
+ 1.0537266560E-02 -4.9874287528E-03 -4.9874490431E-03
+-4.9874287528E-03  1.0536993170E-02 -4.9874524930E-03
+-4.9874490431E-03 -4.9874524930E-03  1.0537215010E-02
+Conductivity, Tr/3                 :  1.0537158247E-02 (a.u.)
+Conductivity, Tr/3                 :  4.8469326286E+04 (S/m)
+Resistivity                        :  2.0631605112E+03 (micro-Ohm cm)
+Intraband part, Tr/3               :  3.7401371102E-10 (a.u.)
+Degenerate-pair part, Tr/3         :  2.2118543680E-10 (a.u.)
+Interband part, Tr/3               :  1.0537157651E-02 (a.u.)
+***************************************************************************
+                                 Sum rules
+***************************************************************************
+f-sum rule, all pairs              :  1.1468179850E+00
+f-sum rule, interband pairs        :  1.1468179849E+00
+***************************************************************************
+                                Output files
+***************************************************************************
+Conductivity printed to            :  Si2.sigma
+Dielectric function printed to     :  Si2.epsilon
+Messages and checks printed to     :  Si2.kglog (warnings: 0)
+***************************************************************************
+                                Timing info
+***************************************************************************
+Setup                              :  0.132 sec
+k-point and spin sums              :  0.082 sec
+CPU time, k-point and spin sums    :  0.259 sec (all threads)
+Total walltime                     :  0.259 sec
+___________________________________________________________________________
+
+***************************************************************************
+*             Material Physics & Mechanics Group, Georgia Tech            *
+*    Method: L. Calderin et al., Comput. Phys. Commun. 221, 118 (2017)    *
+***************************************************************************

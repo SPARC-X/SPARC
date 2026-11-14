@@ -1,0 +1,22 @@
+# Si2: diamond Si, primitive cell (non-orthogonal), spin-unpolarized, 2x2x2 k-points.
+# Demonstration only: mesh, k-points and NSTATES are not converged.
+
+LATVEC:
+ 0.5  0.5  0.0
+ 0.0  0.5  0.5
+ 0.5  0.0  0.5
+LATVEC_SCALE: 10.606601717798211 10.606601717798211 10.606601717798211
+BC: P P P
+MESH_SPACING: 0.40
+KPOINT_GRID: 2 2 2
+
+SPIN_TYP: 0
+EXCHANGE_CORRELATION: GGA_PBE
+ELEC_TEMP_TYPE: fd
+SMEARING: 0.001
+NSTATES: 12
+TOL_SCF: 1e-6
+
+PRINT_EIGEN: 1
+PRINT_ORBITAL: 1
+PRINT_ATOMS: 1
