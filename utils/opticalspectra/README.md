@@ -1,4 +1,4 @@
-# opticalspectraparallel
+# opticalspectra
 
 Calculates the linear-response optical spectra of one [SPARC](https://github.com/SPARC-X/SPARC) run with the Kubo–Greenwood method: the optical conductivity σ(ω) and the dielectric function ε(ω), as full tensors.
 
@@ -68,7 +68,7 @@ Inherent to any Kubo–Greenwood calculation:
   - `<name>.psi`
   - `<name>.static`
   - the `.psp8` files it used (in the `.out` folder, or set `PSP_DIR`)
-- The SPARC run needs these flags in its `.inpt` file ([SPARC manual](../../../doc/Manual.pdf)):
+- The SPARC run needs these flags in its `.inpt` file ([SPARC manual](../../doc/Manual.pdf)):
   ```
   PRINT_ORBITAL: 1
   PRINT_EIGEN: 1
@@ -94,6 +94,8 @@ Inherent to any Kubo–Greenwood calculation:
    `S` holds all results.
 
 **Results** are written to `KG_output/` next to the `.out` file (see [Outputs](#outputs)). Relative paths are taken from the folder you run in.
+
+**Examples:** [`examples/`](examples/) has two small demonstration runs, Si₂ (k-points, non-orthogonal cell) and bcc Fe (collinear spin, metal). Run one with `python run.py` in its folder; its README shows the serial and threaded runs. The default inputs in [`inputparams.py`](inputparams.py) run `examples/Si2`.
 
 ### Parallelism
 

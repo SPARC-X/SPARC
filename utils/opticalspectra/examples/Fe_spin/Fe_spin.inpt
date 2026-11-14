@@ -1,0 +1,21 @@
+# Fe_spin: bcc Fe, conventional cubic cell (2 atoms), collinear spin, one k-point (1/4, 1/4, 1/4).
+# Demonstration only: mesh, k-points and NSTATES are not converged.
+
+CELL: 5.42 5.42 5.42
+BC: P P P
+MESH_SPACING: 0.30
+KPOINT_GRID: 1 1 1
+KPOINT_SHIFT: 0.25 0.25 0.25
+
+SPIN_TYP: 1
+NP_SPIN_PARAL: 1
+EXCHANGE_CORRELATION: GGA_PBE
+ELEC_TEMP_TYPE: fermi-dirac
+SMEARING: 0.01
+NSTATES: 24
+TOL_SCF: 1e-6
+MIXING_PRECOND_MAG: kerker
+
+PRINT_EIGEN: 1
+PRINT_ORBITAL: 1
+PRINT_ATOMS: 1
