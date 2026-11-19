@@ -4000,7 +4000,7 @@ void write_output_init(SPARC_OBJ *pSPARC) {
     }
 
     fprintf(output_fp,"***************************************************************************\n");
-    fprintf(output_fp,"*                     SPARC (version November 14, 2026)                    *\n");
+    fprintf(output_fp,"*                     SPARC (version November 19, 2026)                    *\n");
     fprintf(output_fp,"*   Copyright (c) 2020 Material Physics & Mechanics Group, Georgia Tech   *\n");
     fprintf(output_fp,"*           Distributed under GNU General Public License 3 (GPL)          *\n");
     fprintf(output_fp,"*                   Start time: %s                  *\n",c_time_str);
@@ -4594,6 +4594,9 @@ void write_output_init(SPARC_OBJ *pSPARC) {
         // fprintf(output_fp,"lloc                               :  %d\n",pSPARC->localPsd[i]);
         fprintf(output_fp,"Atomic mass                        :  %.15g\n",pSPARC->Mass[i]);
         fprintf(output_fp,"Pseudocharge radii of atom type %-2d :  %.2f %.2f %.2f (x, y, z dir)\n",i+1,pSPARC->CUTOFF_x[i],pSPARC->CUTOFF_y[i],pSPARC->CUTOFF_z[i]);
+        if (pSPARC->is_hubbard && pSPARC->atom_solve_flag[i])
+            fprintf(output_fp,"Hubbard orbital cutoff of type %-2d  :  %.3f (Bohr), %s, orbital weight outside %.2e\n", i+1,
+                    pSPARC->AtmU[i].rc_used, pSPARC->AtmU[i].rcut_user > 0.0 ? "from U_RCUT" : "default rule", pSPARC->AtmU[i].rc_wout);
         fprintf(output_fp,"Number of atoms of type %-2d         :  %d\n",i+1,pSPARC->nAtomv[i]);
         // if (pSPARC->PrintAtomPosFlag == 1 && pSPARC->MDFlag == 0 && pSPARC->RelaxFlag == 0) {
         //     fprintf(output_fp,"Fractional coordinates of atoms of type %-2d    :\n",i+1);

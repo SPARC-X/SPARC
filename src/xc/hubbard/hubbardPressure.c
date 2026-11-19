@@ -6,6 +6,9 @@
  * 
  * Reference:   Dudarev, S. L., et al. "Electron-energy-loss spectra and the structural stability of nickel oxide:  An LSDA+U study"
  *              Phys. Rev. B 57, 1505
+ *
+ * The projections for the pressure use the folded orbitals of locOrbRoutines.c (Vhub_inner_product_bands). The per-image
+ * formulation used before is in SPARC commit a44cc61.
  */
 
 #include <complex.h>
@@ -28,6 +31,7 @@
 #include "lapVecRoutines.h"
 #include "tools.h" 
 #include "isddft.h"
+#include "locOrbRoutines.h"
 #include "hubbardForce.h"
 #include "stress.h"
 #include "hubbardStress.h"
@@ -43,6 +47,7 @@ void Calculate_hubbard_pressure(SPARC_OBJ *pSPARC) {
     } else {
         Calculate_hubbard_pressure_kpt(pSPARC);
     }
+    Vhub_free_weighted();
 }
 
 /**
@@ -149,64 +154,9 @@ void Calculate_hubbard_pressure_linear(SPARC_OBJ *pSPARC) {
  * @brief   Calculate <Orb_Jlm, (x-RJ')_beta, DPsi_n> for spinor psi
  */
 void Compute_Integral_Orb_XmRjp_beta_Dpsi(SPARC_OBJ *pSPARC, double *dpsi_xi, double *beta, int dim2) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp, spinorshift;
-    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-
-    double *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
-    double R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->atom_solve_flag[ityp]) continue;
-
-        if (! pSPARC->locProj[ityp].nproj) continue; 
-
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            R1 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3];
-            R2 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+1];
-            R3 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+2];
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat];
-            dpsi_xi_rc = (double *)malloc( ndc * ncol * sizeof(double));
-            assert(dpsi_xi_rc);
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                for (n = 0; n < ncol; n++) {
-                    dpsi_ptr = dpsi_xi + n * DMndsp + spinor * DMnd;
-                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
-
-                    for (i = 0; i < ndc; i++) {
-                        indx = pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i];
-                        k_DM = indx / (DMnx * DMny);
-                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                        i_DM = indx % DMnx;
-                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
-                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
-                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
-                        XmRjp = (dim2 == 0) ? x1_R1 : ((dim2 == 1) ? x2_R2 :x3_R3);
-                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * XmRjp;
-                    }
-                }
-                spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->locProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->locProj[ityp].Orb[iat], ndc, 
-                            dpsi_xi_rc, ndc, 1.0, beta+spinorshift+pSPARC->IP_displ_U[atom_index]*ncol, pSPARC->locProj[ityp].nproj);
-            }
-            free(dpsi_xi_rc);
-        }
-    }
+    // folded orbitals weighted by (x - R_J')_dim2
+    double e[3] = {dim2 == 0, dim2 == 1, dim2 == 2};
+    Vhub_inner_product_bands(pSPARC, dpsi_xi, -1, e, 1.0, 0, beta);
 }
 
 /**
@@ -516,82 +466,9 @@ void Calculate_hubbard_pressure_kpt(SPARC_OBJ *pSPARC) {
  * @brief Calculate <orb_Jlm, (x-RJ')_beta, DPsi_n> for spinor pressure
  */
 void Compute_Integral_Orb_XmRjp_beta_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi_xi, double _Complex *beta, int kpt, int dim2) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp, spinorshift, nproj, ispinor, *IP_displ_U;
-    int indx, i_DM, j_DM, k_DM, DMnx, DMny;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    DMnx = pSPARC->Nx_d_dmcomm;
-    DMny = pSPARC->Ny_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-
-    double _Complex *dpsi_xi_rc, *dpsi_ptr, *dpsi_xi_rc_ptr;
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, R1, R2, R3, x1_R1, x2_R2, x3_R3, XmRjp;
-    double _Complex bloch_fac, b, **Orb = NULL;
-    
-    k1 = pSPARC->k1_loc[kpt];
-    k2 = pSPARC->k2_loc[kpt];
-    k3 = pSPARC->k3_loc[kpt];
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    IP_displ_U = pSPARC->IP_displ_U;
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->atom_solve_flag[ityp]) continue;
-
-        nproj = pSPARC->locProj[ityp].nproj;
-
-        Orb = pSPARC->locProj[ityp].Orb_c;
-
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            R1 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3  ];
-            R2 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+1];
-            R3 = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(R1/Lx) * Lx) - k2 * (floor(R2/Ly) * Ly) - k3 * (floor(R3/Lz) * Lz);
-            bloch_fac = cos(theta) + sin(theta) * I;
-            b = 1.0;
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat];
-            dpsi_xi_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-            assert(dpsi_xi_rc);
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                ispinor = spinor;
-
-                for (n = 0; n < ncol; n++) {
-                    dpsi_ptr = dpsi_xi + n * DMndsp + ispinor * DMnd;
-                    dpsi_xi_rc_ptr = dpsi_xi_rc + n * ndc;
-
-                    for (i = 0; i < ndc; i++) {
-                        indx = pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i];
-                        k_DM = indx / (DMnx * DMny);
-                        j_DM = (indx - k_DM * (DMnx * DMny)) / DMnx;
-                        i_DM = indx % DMnx;
-                        x1_R1 = (i_DM + pSPARC->DMVertices_dmcomm[0]) * pSPARC->delta_x - R1;
-                        x2_R2 = (j_DM + pSPARC->DMVertices_dmcomm[2]) * pSPARC->delta_y - R2;
-                        x3_R3 = (k_DM + pSPARC->DMVertices_dmcomm[4]) * pSPARC->delta_z - R3;
-                        XmRjp = (dim2 == 0) ? x1_R1 : ((dim2 == 1) ? x2_R2 :x3_R3);
-                        *(dpsi_xi_rc_ptr + i) = *(dpsi_ptr + indx) * XmRjp;
-                    }
-                }
-
-                spinorshift = IP_displ_U[atm_idx] * ncol * spinor;
-                // No need to multiply dV, accounted for in Compute_Integral_psi_Orb_kpt
-                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Orb[iat], ndc, 
-                    dpsi_xi_rc, ndc, &b, beta+spinorshift+IP_displ_U[atom_index]*ncol, nproj); 
-            }
-            free(dpsi_xi_rc);
-        }
-    }
+    // folded orbitals weighted by (x - R_J')_dim2
+    double e[3] = {dim2 == 0, dim2 == 1, dim2 == 2};
+    Vhub_inner_product_bands(pSPARC, (double *)dpsi_xi, kpt, e, 1.0, 0, (double *)beta);
 }
 
 /**

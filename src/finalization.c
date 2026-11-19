@@ -31,6 +31,7 @@
 #include "sparc_mlff_interface.h"
 #include "spdft.h"
 #include "sq3.h"
+#include "locOrbRoutines.h"
 
 /* ScaLAPACK routines */
 #ifdef USE_MKL
@@ -518,6 +519,7 @@ void Free_scfvar(SPARC_OBJ *pSPARC) {
 	int i, j;
 	
 	int iat, ityp;
+	if (pSPARC->is_hubbard) Vhub_free_plans(); // folded orbitals of the Hubbard product
 	if (pSPARC->isGammaPoint){
 		if (pSPARC->spDFT_Flag == 1 && (pSPARC->MDCount == 0 || strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0))
 			spDFT_free_scfvar(pSPARC);

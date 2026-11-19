@@ -6,6 +6,9 @@
  * 
  * Reference:   Dudarev, S. L., et al. "Electron-energy-loss spectra and the structural stability of nickel oxide:  An LSDA+U study"
  *              Phys. Rev. B 57, 1505
+ *
+ * The projections <Psi|Phi> and <Phi|dPsi> use the folded orbitals of locOrbRoutines.c (Vhub_inner_product_bands). The per-image
+ * formulation used before is in SPARC commit a44cc61.
  */
 
 #include <complex.h>
@@ -27,6 +30,7 @@
 #include "lapVecRoutines.h"
 #include "tools.h" 
 #include "isddft.h"
+#include "locOrbRoutines.h"
 #include "initialization.h"
 // #include "hubbardInitialization.h"
 // #include "locOrbRoutines.h"
@@ -129,98 +133,14 @@ void Calculate_hubbard_forces_linear(SPARC_OBJ *pSPARC) {
  * @brief Compute < Psi_n | Phi_m >
  */
 void Compute_Integral_psi_Orb(SPARC_OBJ *pSPARC, double *beta, double *Xorb) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp, *IP_displ_U, spinorshift;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-
-    double *x_ptr, *x_rc, *x_rc_ptr;
-    IP_displ_U = pSPARC->IP_displ_U;
-    double alpha = pSPARC->dV;
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if(!pSPARC->atom_solve_flag[ityp]) continue;
-        if (! pSPARC->locProj[ityp].nproj) continue; // this is typical for hydrogen
-        double **Orb = pSPARC->locProj[ityp].Orb;
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat]; 
-            x_rc = (double *)malloc( ndc * ncol * sizeof(double));
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            /* first find inner product <Psi_n, Orb_Jlm>, here we calculate <Orb_Jlm, Psi_n> instead */
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                for (n = 0; n < ncol; n++) {
-                    x_ptr = Xorb + n * DMndsp + spinor * DMnd;
-                    x_rc_ptr = x_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(x_rc_ptr + i) = *(x_ptr + pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i]);
-                    }
-                }
-                spinorshift = IP_displ_U[atm_idx] * ncol * spinor;
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->locProj[ityp].nproj, ncol, ndc, alpha, Orb[iat], ndc, 
-                            x_rc, ndc, 1.0, beta+spinorshift+IP_displ_U[atom_index]*ncol, pSPARC->locProj[ityp].nproj); // multiply dV to get inner-product
-            }
-            free(x_rc);
-        }
-    }
+    Vhub_inner_product_bands(pSPARC, Xorb, -1, NULL, pSPARC->dV, 0, beta);
 }
 
 /**
  * @brief Calculate < Phi_m | \nabla Psi_n >
  */
 void Compute_Integral_Orb_Dpsi(SPARC_OBJ *pSPARC, double *dpsi, double *beta) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-    double *dx_ptr, *dx_rc, *dx_rc_ptr;
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if(!pSPARC->atom_solve_flag[ityp]) continue;
-        if (! pSPARC->locProj[ityp].nproj) continue; // this is typical for hydrogen
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat]; 
-            dx_rc = (double *)malloc( ndc * ncol * sizeof(double));
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                for (n = 0; n < ncol; n++) {
-                    dx_ptr = dpsi + n * DMndsp + spinor * DMnd;
-                    dx_rc_ptr = dx_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i]);
-                    }
-                }
-                /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                */
-                int spinorshift = pSPARC->IP_displ_U[atm_idx] * ncol * spinor;
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, pSPARC->locProj[ityp].nproj, ncol, ndc, 1.0, pSPARC->locProj[ityp].Orb[iat], ndc, 
-                            dx_rc, ndc, 1.0, beta+spinorshift+pSPARC->IP_displ_U[atom_index]*ncol, pSPARC->locProj[ityp].nproj); 
-            }
-            free(dx_rc);
-        }
-    }
+    Vhub_inner_product_bands(pSPARC, dpsi, -1, NULL, 1.0, 0, beta);
 }
 
 /**
@@ -526,145 +446,15 @@ void Calculate_hubbard_forces_kpt(SPARC_OBJ *pSPARC) {
  * @brief Calculate < Psi_nk | Phi_m > for k-pts
  */
 void Compute_Integral_psi_Orb_kpt(SPARC_OBJ *pSPARC, double _Complex *beta, double _Complex *Xorb_kpt, int kpt) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp, nproj, spinorshift, *IP_displ_U;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-
-    double _Complex *x_ptr, *x_rc, *x_rc_ptr;
-
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double _Complex bloch_fac, a, b, **Orb = NULL;
-
-    k1 = pSPARC->k1_loc[kpt];
-    k2 = pSPARC->k2_loc[kpt];
-    k3 = pSPARC->k3_loc[kpt];
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    IP_displ_U = pSPARC->IP_displ_U;
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->atom_solve_flag[ityp]) continue;
-
-        nproj = pSPARC->locProj[ityp].nproj;
-
-        Orb = pSPARC->locProj[ityp].Orb_c;
-
-        if(!nproj) continue;
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            x0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3  ];
-            y0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+1];
-            z0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-            bloch_fac = cos(theta) - sin(theta) * I;
-            a = (bloch_fac * pSPARC->dV);
-            b = 1.0;
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat];
-            x_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            /* first find inner product <Psi_n, orb_Jlm>, here we calculate <Orb_Jlm, Psi_n> instead */
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                for (n = 0; n < ncol; n++) {
-                    x_ptr = Xorb_kpt + n * DMndsp + spinor * DMnd;
-                    x_rc_ptr = x_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(x_rc_ptr + i) = conj(*(x_ptr + pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i]));
-                    }
-                }
-
-                spinorshift = IP_displ_U[atm_idx] * ncol * spinor;
-                cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, nproj, ncol, ndc, &a, Orb[iat], ndc, 
-                            x_rc, ndc, &b, beta+spinorshift+IP_displ_U[atom_index]*ncol, nproj); // multiply dV to get inner-product
-            }
-            free(x_rc);
-        }
-    }
+    // complex conjugate of the projection
+    Vhub_inner_product_bands(pSPARC, (double *)Xorb_kpt, kpt, NULL, pSPARC->dV, 1, (double *)beta);
 }
 
 /**
  * @brief Calculate < Phi_m | \nabla Psi_nk > for k points.
  */
 void Compute_Integral_Orb_Dpsi_kpt(SPARC_OBJ *pSPARC, double _Complex *dpsi, double _Complex *beta, int kpt) {
-    int i, n, ndc, ityp, iat, ncol, DMnd, atom_index;
-    int spinor, Nspinor, DMndsp, spinorshift, *IP_displ_U, nproj;
-    ncol = pSPARC->Nband_bandcomm; // number of bands assigned
-    DMnd = pSPARC->Nd_d_dmcomm;
-    Nspinor = pSPARC->Nspinor_spincomm;
-    DMndsp = DMnd * Nspinor;
-
-    double _Complex *dx_ptr, *dx_rc, *dx_rc_ptr;
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1, k2, k3, theta, x0_i, y0_i, z0_i;
-    double _Complex bloch_fac, b, **Orb = NULL;
-
-    k1 = pSPARC->k1_loc[kpt];
-    k2 = pSPARC->k2_loc[kpt];
-    k3 = pSPARC->k3_loc[kpt];
-
-    int atm_idx = -1;
-    for (int JJ = pSPARC->n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    IP_displ_U = pSPARC->IP_displ_U;
-
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->atom_solve_flag[ityp]) continue;
-
-        nproj = pSPARC->locProj[ityp].nproj;
-
-        Orb = pSPARC->locProj[ityp].Orb_c;
-
-        if(!nproj) continue;
-
-        for (iat = 0; iat < pSPARC->Atom_Influence_loc_orb[ityp].n_atom; iat++) {
-            x0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3  ];
-            y0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+1];
-            z0_i = pSPARC->Atom_Influence_loc_orb[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-            bloch_fac = cos(theta) + sin(theta) * I;
-            b = 1.0;
-            ndc = pSPARC->Atom_Influence_loc_orb[ityp].ndc[iat]; 
-            dx_rc = (double _Complex *)malloc( ndc * ncol * sizeof(double _Complex));
-            atom_index = pSPARC->Atom_Influence_loc_orb[ityp].atom_index[iat];
-            for (spinor = 0; spinor < Nspinor; spinor++) {
-                for (n = 0; n < ncol; n++) {
-                    dx_ptr = dpsi + n * DMndsp + spinor * DMnd;
-                    dx_rc_ptr = dx_rc + n * ndc;
-                    for (i = 0; i < ndc; i++) {
-                        *(dx_rc_ptr + i) = *(dx_ptr + pSPARC->Atom_Influence_loc_orb[ityp].grid_pos[iat][i]);
-                    }
-                }
-
-                /* Note: in principle we need to multiply dV to get inner-product, however, since Psi is normalized 
-                *       in the l2-norm instead of L2-norm, each psi value has to be multiplied by 1/sqrt(dV) to
-                *       recover the actual value. Considering this, we only multiply dV in one of the inner product
-                *       and the other dV is canceled by the product of two scaling factors, 1/sqrt(dV) and 1/sqrt(dV).
-                */
-                spinorshift = IP_displ_U[atm_idx] * ncol * spinor;
-                cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, nproj, ncol, ndc, &bloch_fac, Orb[iat], ndc, 
-                    dx_rc, ndc, &b, beta+spinorshift+IP_displ_U[atom_index]*ncol, nproj);
-            }
-            free(dx_rc);
-        }
-    }
+    Vhub_inner_product_bands(pSPARC, (double *)dpsi, kpt, NULL, 1.0, 0, (double *)beta);
 }
 
 /**

@@ -5,6 +5,34 @@
 
 
 --------------
+November 19, 2026
+Name: Sayan Bhowmik
+Changes: doc/.LaTeX/Introduction.tex, doc/.LaTeX/System.tex, doc/Manual.pdf,
+         src/electronicGroundState.c, src/finalization.c, src/include/isddft.h, src/initialization.c,
+         src/parallelization.c, src/readfiles.c, src/xc/hubbard/hubbardForce.c,
+         src/xc/hubbard/hubbardInitialization.c, src/xc/hubbard/hubbardPressure.c,
+         src/xc/hubbard/hubbardStress.c,
+         src/xc/hubbard/include/hubbardInitialization.h, src/xc/hubbard/include/locOrbRoutines.h,
+         src/xc/hubbard/locOrbRoutines.c, src/xc/hubbard/occupationMatrix.c,
+         tests/SPARC_testing_script.py, tests/TiCrO4_kpt_hubbard/
+1. Faster DFT+U (same results): the periodic images of each U atom are folded into one orbital and applied in bricks of
+   8 x 8 x 4 grid points, at the Gamma point and at k-points. The Hubbard potential, the occupation matrix and the
+   Hubbard forces, stress and pressure all use this product (Vhub_inner_product, Vhub_inner_product_bands); the
+   per-image loops are removed. Folded orbitals are kept per geometry (at most 1024 MB per process) and freed on every
+   geometry change.
+2. DFT+U-aware default band/domain layout at the Gamma point (hubbard_default_layout).
+3. Added U_RCUT (optional, per U atom type, in the HUBBARD block of the .ion file): cutoff radius of the Hubbard
+   orbitals in Bohr. Without it the previous default applies. The .out file prints the cutoff of each U type and the orbital
+   weight outside it; a warning is printed above 1%.
+4. Bug fixes, both with two or more U atom types: the U values were packed with stride 3 instead of 4 before the
+   broadcast, so one type's values overwrote part of another's; in non-orthogonal cells the lattice matrix was
+   overwritten by dgesvd after the first type, giving wrong orbital bounds for the later types.
+5. Clear errors at startup for DFT+U with spin-orbit coupling, cyclix or hybrid functionals (not supported).
+6. TiCrO4_kpt_hubbard test re-enabled: U 0.05 Ha (Ti) and 0.1 Ha (Cr), U_RCUT 10, TOL_SCF 1e-6, mesh 0.26 (standard);
+   new references; stress tolerance 1% in SPARC_testing_script.py (stress components 0.05-0.2 GPa).
+7. Documented U_RCUT in the manual.
+
+--------------
 November 14, 2026
 Name: Shubhang Krishnakant Trivedi
 Changes: utils/opticalspectra, utils/opticalspectra/examples, src/initialization.c

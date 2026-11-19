@@ -6,6 +6,9 @@
  * 
  * Reference:   Dudarev, S. L., et al. "Electron-energy-loss spectra and the structural stability of nickel oxide:  An LSDA+U study"
  *              Phys. Rev. B 57, 1505
+ *
+ * The projections <Orb_Jlm, x_n> use the folded orbitals of locOrbRoutines.c (Vhub_inner_product). The per-image
+ * formulation used before is in SPARC commit a44cc61.
  */
 
 #include <complex.h>
@@ -25,6 +28,7 @@
 #endif
 
 #include "occupationMatrix.h"
+#include "locOrbRoutines.h"
 #include "isddft.h"
 #include "tools.h"
 #include "electronDensity.h"
@@ -438,8 +442,7 @@ void Calculate_occMat(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_
     double **alpha = (double **)calloc((pSPARC->Nspinor), sizeof(double*));
     double **alpha_gn = (double **)calloc((pSPARC->Nspinor), sizeof(double*));
     double **rho_mn = (double **)calloc((pSPARC->Nspinor), sizeof(double*));
-    int sp, ndc, atom_index;
-    double *x_rc;
+    int sp;
 
     for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
         if (pSPARC->Nspinor_spincomm == 1) {
@@ -455,43 +458,15 @@ void Calculate_occMat(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_
         rho_mn[spinor] = (double *)calloc(pSPARC->rho_mn_displ[atm_idx], sizeof(double));
     }
 
-    for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-        if (!pSPARC->atom_solve_flag[ityp]) {
-            continue;
+    // < Orb_Jlm, x_n > for each J (size: m x Ns_loc), with the folded orbitals (Vhub_inner_product); X / sqrt(dV) times dV
+    for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
+        if (pSPARC->Nspinor_spincomm == 1) {
+            sp = pSPARC->spincomm_index;
+        } else {
+            sp = spinor;
         }
-
-        if (!locProj[ityp].nproj)
-            continue;
-
-        for (int iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-        {
-            for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-                if (pSPARC->Nspinor_spincomm == 1) {
-                    sp = pSPARC->spincomm_index;
-                } else {
-                    sp = spinor;
-                }
-
-                ndc = Atom_Influence_loc[ityp].ndc[iat];
-                x_rc = (double *)malloc(ndc * ncol * sizeof(double));
-                atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-                for (n = 0; n < ncol; n++)
-                {
-                    for (i = 0; i < ndc; i++)
-                    {
-                        x_rc[n * ndc + i] = X[sp][n * DMnd + Atom_Influence_loc[ityp].grid_pos[iat][i]];
-                        x_rc[n * ndc + i] /= sqrt(pSPARC->dV);
-                    }
-                }
-                // < Orb_Jlm, x_n > for each J (size: m x Ns_loc)
-                cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, locProj[ityp].nproj, ncol, ndc,
-                            pSPARC->dV, locProj[ityp].Orb[iat], ndc, x_rc, ndc, 1.0,
-                            alpha[sp] + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj);
-                free(x_rc);
-            }
-
-        }
-    }   
+        Vhub_inner_product(pSPARC, Atom_Influence_loc, locProj, ncol, X[sp], DMnd, sqrt(pSPARC->dV), alpha[sp], -1, pSPARC->dmcomm);
+    }
     
     // if there are domain parallelization over each band then sum over all processes over dmcomm
     // < Orb_Jlm, x_n > but reduced over domain
@@ -644,10 +619,6 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
     if (pSPARC->spincomm_index < 0 || pSPARC->kptcomm_index < 0 || pSPARC->bandcomm_index < 0 || pSPARC->dmcomm == MPI_COMM_NULL) return;
 
     int i, n, k, Ns, count, nstart, nend, spinor, DMnd;
-    double x0_i, y0_i, z0_i, theta, k1, k2, k3;
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
 
     double **g_nk;
     DMnd = pSPARC->Nd_d_dmcomm;
@@ -733,9 +704,8 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
     double _Complex **alpha = (double _Complex **)calloc((pSPARC->Nspinor), sizeof(double _Complex *));
     double _Complex **alpha_gnk = (double _Complex **)calloc((pSPARC->Nspinor), sizeof(double _Complex *));
     double _Complex **rho_mn = (double _Complex **)calloc((pSPARC->Nspinor), sizeof(double _Complex *));
-    int sp, ndc, atom_index;
-    double _Complex *x_rc;
-    double _Complex a, b, bloch_fac;
+    int sp;
+    double _Complex a, b;
 
     for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
         if (pSPARC->Nspinor_spincomm == 1) {
@@ -752,9 +722,6 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
     }
 
     for (k = 0; k < Nkpts; k++) {
-        k1 = pSPARC->k1_loc[k];
-        k2 = pSPARC->k2_loc[k];
-        k3 = pSPARC->k3_loc[k];
         // Set memory of alpha and alpha_gnk to 0
         for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
             if (pSPARC->Nspinor_spincomm == 1) {
@@ -767,54 +734,15 @@ void Calculate_occMat_kpt(SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influe
 
         }
 
-        for (int ityp = 0; ityp < pSPARC->Ntypes; ityp++) {
-            if (!pSPARC->atom_solve_flag[ityp]) {
-                continue;
+        // < Orb_Jlm, x_n > for each J (size: m x Ns_loc), with the folded orbitals of this k-point; X / sqrt(dV) times dV
+        for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
+            if (pSPARC->Nspinor_spincomm == 1) {
+                sp = pSPARC->spincomm_index;
+            } else {
+                sp = spinor;
             }
-
-            if (!locProj[ityp].nproj)
-                continue;
-
-            for (int iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-            {
-                for (spinor = 0; spinor < pSPARC->Nspinor_spincomm; spinor++) {
-                    if (pSPARC->Nspinor_spincomm == 1) {
-                        sp = pSPARC->spincomm_index;
-                    } else {
-                        sp = spinor;
-                    }
-
-                    x0_i = Atom_Influence_loc[ityp].coords[iat*3  ];
-                    y0_i = Atom_Influence_loc[ityp].coords[iat*3+1];
-                    z0_i = Atom_Influence_loc[ityp].coords[iat*3+2];
-                    theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-                    bloch_fac = cos(theta) + sin(theta) * I;
-
-                    // theta = k1 * (floor(x0_i/Lx) * Lx) + k2 * (floor(y0_i/Ly) * Ly) + k3 * (floor(z0_i/Lz) * Lz);
-                    // bloch_fac = cos(theta) - sin(theta) * I;
-
-                    a = bloch_fac * pSPARC->dV;
-                    b = 1.0;
-
-                    ndc = Atom_Influence_loc[ityp].ndc[iat];
-                    x_rc = (double _Complex *)malloc(ndc * ncol * sizeof(double _Complex));
-                    atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-                    for (n = 0; n < ncol; n++)
-                    {
-                        for (i = 0; i < ndc; i++)
-                        {
-                            x_rc[n * ndc + i] = X[sp][k*ncol*DMnd + n * DMnd + Atom_Influence_loc[ityp].grid_pos[iat][i]];
-                            x_rc[n * ndc + i] /= sqrt(pSPARC->dV);
-                        }
-                    }
-                    // < Orb_Jlm, x_n > for each J (size: m x Ns_loc)
-                    cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, locProj[ityp].nproj, ncol, ndc,
-                                &a, locProj[ityp].Orb_c[iat], ndc, x_rc, ndc, &b,
-                                alpha[sp] + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj);
-                    free(x_rc);
-                }
-
-            }
+            Vhub_inner_product(pSPARC, Atom_Influence_loc, locProj, ncol, (double *)(X[sp] + k*ncol*DMnd), DMnd, sqrt(pSPARC->dV),
+                               (double *)alpha[sp], k, pSPARC->dmcomm);
         }
 
         // if there are domain parallelization over each band then sum over all processes over dmcomm
