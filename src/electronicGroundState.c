@@ -479,6 +479,7 @@ void Calculate_EGS_elecDensEnergy(SPARC_OBJ *pSPARC) {
         
         // hubbard block in psi-domain
         if (pSPARC->is_hubbard) {
+            Vhub_free_plans(); // the folded orbitals depend on the geometry: rebuild them
             // find atoms that have local influence the process domain (of psi-domain)
             GetInfluencingAtoms_loc(pSPARC, &pSPARC->Atom_Influence_loc_orb, pSPARC->DMVertices_dmcomm, 
                                     pSPARC->bandcomm_index < 0 ? MPI_COMM_NULL : pSPARC->dmcomm);

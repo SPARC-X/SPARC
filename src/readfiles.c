@@ -1981,6 +1981,8 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             fscanf(ion_fp, "%*[^\n]\n"); // skip current line
         } else if(strcmpi(str, "U_VAL:") == 0) { // atom solve spin typ
             fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "U_RCUT:") == 0) { // Hubbard orbital cutoff, read in the HUBBARD block
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
         } else {
             printf("\nCannot recognize input variable identifier: \"%s\"",str);
             exit(EXIT_FAILURE);
@@ -2107,6 +2109,7 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
             atm_flag = 1;
             // pSPARC->is_hubbard = 1;
             pSPARC->AtmU = (HUB_DUDAREV_OBJ *)malloc(pSPARC->Ntypes*sizeof(HUB_DUDAREV_OBJ)); // initialise the AtmU object
+            for (int JJ = 0; JJ < pSPARC->Ntypes; JJ++) pSPARC->AtmU[JJ].rcut_user = -1.0; // U_RCUT not given
             fscanf(ion_fp, "%*[^\n]\n"); 
         } else if (strcmpi(str, "U_ATOM_TYPE:") == 0) {
             fscanf(ion_fp, "%s", atm_str);
@@ -2151,6 +2154,17 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
                 exit(EXIT_FAILURE);
             }
 
+            fscanf(ion_fp, "%*[^\n]\n"); // skip current line
+        } else if(strcmpi(str, "U_RCUT:") == 0) {
+            // optional cutoff radius (bohr) of the Hubbard orbitals of the current U_ATOM_TYPE; without it the default rule applies
+            if (typcnt < 0) {
+                printf("\nError: U_RCUT must follow U_ATOM_TYPE in the HUBBARD block.\n");
+                exit(EXIT_FAILURE);
+            }
+            if (fscanf(ion_fp, "%lf", &pSPARC->AtmU[id_OG].rcut_user) != 1 || pSPARC->AtmU[id_OG].rcut_user <= 0.0) {
+                printf("\nError: U_RCUT must be a positive radius in bohr.\n");
+                exit(EXIT_FAILURE);
+            }
             fscanf(ion_fp, "%*[^\n]\n"); // skip current line
         }
         else {

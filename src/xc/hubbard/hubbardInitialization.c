@@ -27,6 +27,7 @@
 #include "hubbardInitialization.h"
 #include "isddft.h"
 #include "tools.h"
+#include "parallelization.h"
 
 #define TEMP_TOL 1e-12
 
@@ -74,7 +75,7 @@ void bcast_SPARC_Atom_Soln(SPARC_OBJ *pSPARC) {
     sizev = (int *)malloc(atmcount*sizeof(int));
     nspinorv = (int *)malloc(atmcount*sizeof(int));
     vallenv = (int *)malloc(atmcount*sizeof(int));
-    Uarr = (double *)malloc(4*atmcount*sizeof(double));
+    Uarr = (double *)malloc(5*atmcount*sizeof(double)); // per type: U of s, p, d, f and U_RCUT
     ppl_sdispl = (int *)malloc((atmcount+1)*sizeof(int));
     tempbuff = (int *)malloc((4*atmcount)*sizeof(int));
     assert(lmaxv != NULL && sizev != NULL && ppl_sdispl != NULL && tempbuff != NULL);
@@ -90,8 +91,9 @@ void bcast_SPARC_Atom_Soln(SPARC_OBJ *pSPARC) {
                 nspinorv[atmcount2] = pSPARC->AtmU[i].nspinor;
                 vallenv[atmcount2] = pSPARC->AtmU[i].val_len;
                 for (l = 0; l <= 3; l++) {
-                    Uarr[atmcount2*3 + l] = pSPARC->AtmU[i].U[l];
+                    Uarr[atmcount2*5 + l] = pSPARC->AtmU[i].U[l];
                 }
+                Uarr[atmcount2*5 + 4] = pSPARC->AtmU[i].rcut_user;
 
                 tempbuff[atmcount2] = lmaxv[atmcount2];
                 tempbuff[atmcount2 + atmcount] = sizev[atmcount2];
@@ -106,7 +108,7 @@ void bcast_SPARC_Atom_Soln(SPARC_OBJ *pSPARC) {
         MPI_Bcast(tempbuff, 4*atmcount, MPI_INT, 0, MPI_COMM_WORLD);
 
         // Send U
-        MPI_Bcast(Uarr, 4*atmcount, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(Uarr, 5*atmcount, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         // pack AtmU[i].ppl[l] and bcast
         ppl_sdispl[0] = 0;
@@ -136,7 +138,7 @@ void bcast_SPARC_Atom_Soln(SPARC_OBJ *pSPARC) {
         t1 = MPI_Wtime();
 #endif
         MPI_Bcast(tempbuff, 4*atmcount, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(Uarr, 4*atmcount, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(Uarr, 5*atmcount, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 #ifdef DEBUG
         t2 = MPI_Wtime();
@@ -161,8 +163,9 @@ void bcast_SPARC_Atom_Soln(SPARC_OBJ *pSPARC) {
             pSPARC->AtmU[i].nspinor = nspinorv[atmcount2];
             pSPARC->AtmU[i].val_len = vallenv[atmcount2];
             for (l = 0; l <= 3; l++) {
-                pSPARC->AtmU[i].U[l] = Uarr[atmcount2*3 + l];
+                pSPARC->AtmU[i].U[l] = Uarr[atmcount2*5 + l];
             }
+            pSPARC->AtmU[i].rcut_user = Uarr[atmcount2*5 + 4];
             atmcount2++;
         }
 
@@ -348,25 +351,48 @@ void set_rc_loc_orbitals(SPARC_OBJ *pSPARC) {
     double row_norm_LV[3], col_norm_LV_inv[3];
     int num_bins;
 
-    for (int JJ = 0; JJ < 9; JJ++) {
-        LatVec[JJ] = pSPARC->LatVec[JJ];
-    }
-
     for (ityp = 0; ityp < Ntypes; ityp++) {
         if (!pSPARC->atom_solve_flag[ityp])
             continue;
 
-        pSPARC->AtmU[ityp].rc2 = rc*rc;
+        // cutoff of this type: U_RCUT if given (used as is), otherwise the default rule (rc above)
+        double rct = (pSPARC->AtmU[ityp].rcut_user > 0.0) ? pSPARC->AtmU[ityp].rcut_user : rc;
+        double *rg = pSPARC->AtmU[ityp].RadialGrid; int len = pSPARC->AtmU[ityp].size;
+        if (rct > rg[len - 1]) {
+            if (!rank) printf("WARNING: Hubbard orbital cutoff %.3f bohr of atom type %s exceeds the radial grid (%.3f bohr); using %.3f.\n",
+                              rct, &pSPARC->atomType[ityp * L_ATMTYPE], rg[len - 1], rg[len - 1]);
+            rct = rg[len - 1];
+        }
+        // largest orbital weight outside the cutoff, int_rc^inf R^2 r^2 dr (trapezoid), over the U orbitals of this type
+        double wout_max = 0.0; int lc = 0;
+        for (l = 0; l <= pSPARC->AtmU[ityp].max_l; l++) {
+            for (int pp = 0; pp < pSPARC->AtmU[ityp].ppl[l]; pp++, lc++) {
+                if (pSPARC->AtmU[ityp].U[l] == 0) continue;
+                double *orb = pSPARC->AtmU[ityp].orbitals + lc * len, win = 0.0, wall = 0.0;
+                for (j = 1; j < len; j++) {
+                    double a = orb[j-1]*orb[j-1]*rg[j-1]*rg[j-1], b = orb[j]*orb[j]*rg[j]*rg[j], seg = 0.5*(a+b)*(rg[j]-rg[j-1]);
+                    wall += seg; if (rg[j] <= rct) win += seg;
+                }
+                if (wall - win > wout_max) wout_max = wall - win;
+            }
+        }
+        pSPARC->AtmU[ityp].rc_used = rct; pSPARC->AtmU[ityp].rc_wout = wout_max;
+        if (!rank && wout_max > 1e-2)
+            printf("WARNING: more than 1%% of the Hubbard orbital weight of atom type %s lies outside its cutoff (%.3f bohr).\n",
+                   &pSPARC->atomType[ityp * L_ATMTYPE], rct);
+
+        pSPARC->AtmU[ityp].rc2 = rct*rct;
         if (pSPARC->cell_typ == 0) {
-            pSPARC->AtmU[ityp].rc[0] = rc;
-            pSPARC->AtmU[ityp].rc[1] = rc;
-            pSPARC->AtmU[ityp].rc[2] = rc;
+            pSPARC->AtmU[ityp].rc[0] = rct;
+            pSPARC->AtmU[ityp].rc[1] = rct;
+            pSPARC->AtmU[ityp].rc[2] = rct;
         } else if (pSPARC->cell_typ >= 20) {
             printf("\nThis cell type is not supported in Hubbard calculations.\n");
             exit(EXIT_FAILURE);
         } else {
             /* Calculating pinv(LatVec): This is necessary because for extremely skewed LV, the LV maybe close to singular */
             // Compute SVD of LatVec(LV) first: LV = U * S * V^T
+            for (int JJ = 0; JJ < 9; JJ++) LatVec[JJ] = pSPARC->LatVec[JJ];   // dgesvd overwrites its input: fresh copy per type
             LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', m, m, LatVec, m, S, U, m, VT, m, superb);
 
             // First compute S^{-1}
@@ -396,7 +422,7 @@ void set_rc_loc_orbitals(SPARC_OBJ *pSPARC) {
             // Note: Nx = ceil(rc * ||a*||), Ny = ceil(rc * ||b*||), Nz = ceil(rc * ||c*||)
             //       rc_x = Nx * ||a||, rc_y = Ny * ||b||, rc_z = Nx * ||c||
             for (i = 0; i < 3; i++) {
-                num_bins = (int) ceil(rc*col_norm_LV_inv[i]);
+                num_bins = (int) ceil(rct*col_norm_LV_inv[i]);
                 pSPARC->AtmU[ityp].rc[i] = ceil(num_bins * row_norm_LV[i]);
             }
         }
@@ -448,6 +474,24 @@ void init_occ_mat(SPARC_OBJ *pSPARC) {
     // ERROR: If non collinear spin is invoked
     if (pSPARC->spin_typ == 2) {
         printf("\nERROR: Hubbard calculations with non collinear spin currently not supported.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // ERROR: If spin-orbit coupling is invoked
+    if (pSPARC->SOC_Flag == 1) {
+        printf("\nERROR: Hubbard calculations with spin-orbit coupling currently not supported.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // ERROR: If cyclix is invoked
+    if (pSPARC->CyclixFlag == 1) {
+        printf("\nERROR: Hubbard calculations with cyclix currently not supported.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // ERROR: If a hybrid functional is invoked
+    if (pSPARC->usefock > 0) {
+        printf("\nERROR: Hubbard calculations with hybrid functionals not supported.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -657,4 +701,50 @@ void init_occ_mat(SPARC_OBJ *pSPARC) {
             atmcount++;
         }
     }
+}
+
+#define LAYOUT_BANDS 30      // target bands per band group for the default layout
+#define LAYOUT_MIN_EDGE 24   // smallest subdomain edge (grid points) the default layout creates
+#define LAYOUT_MIN_COVER 3.0 // apply the layout only if the U-atom spheres cover each grid point this often on average
+#define LAYOUT_RC 7.0        // nominal orbital cutoff (bohr) for that estimate (the real cutoffs are set later)
+
+/**
+ * @brief   DFT+U-aware default layout, called from Setup_Comms (parallelization.c) after SPARC's own search. That search
+ *          puts as many processes as possible into band groups; the Hubbard product (locOrbRoutines.c) has a fixed cost per
+ *          call that only domains reduce. Among the splits of the same processes into (band groups) x (domains), pick the
+ *          one with bands per band group closest to LAYOUT_BANDS (on a log scale; ties go to more band groups), never more
+ *          band groups than SPARC chose, and only domain grids SPARC_Dims_create accepts with every subdomain edge
+ *          >= LAYOUT_MIN_EDGE points. Applied only at the Gamma point and when the Hubbard product is a large part of the
+ *          work: the U-atom spheres (nominal radius LAYOUT_RC) cover each grid point at least LAYOUT_MIN_COVER times on
+ *          average (rutile TiO2: 6.8; one Mo in a 1385 bohr^3 MoO3 cell: 1.0).
+ */
+void hubbard_default_layout(const SPARC_OBJ *pSPARC, int *npband, int *npNd, const int *gridsizes, int minsize)
+{
+    if (!pSPARC->is_hubbard || !pSPARC->isGammaPoint || pSPARC->usefock || pSPARC->CyclixFlag) return;
+    int world_rank; MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    // At this point only rank 0 holds atom_solve_flag (the other ranks receive it in the Hubbard set-up), so rank 0
+    // computes the coverage and broadcasts it; every rank of MPI_COMM_WORLD runs SPARC's default layout search.
+    double cover = 0.0;
+    if (world_rank == 0) {
+        int nU = 0;
+        for (int t = 0; t < pSPARC->Ntypes; t++) if (pSPARC->atom_solve_flag[t]) nU += pSPARC->nAtomv[t];
+        double vol = pSPARC->Jacbdet * pSPARC->range_x * pSPARC->range_y * pSPARC->range_z;   // cell volume (any cell shape)
+        cover = vol > 0 ? nU * (4.0 / 3.0) * M_PI * pow(LAYOUT_RC, 3) / vol : 0.0;
+    }
+    MPI_Bcast(&cover, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (cover < LAYOUT_MIN_COVER) return;
+    int Pk = (*npband) * (*npNd), Ns = pSPARC->Nstates, best = *npband;
+    double score_best = fabs(log((double)Ns / best / LAYOUT_BANDS));
+    for (int d = 1; d <= Pk && d <= Ns && d <= *npband; d++) {
+        if (Pk % d) continue;
+        int nd = Pk / d, dims[3], ierr = 0;
+        if (nd > 1) {
+            SPARC_Dims_create(nd, 3, gridsizes, minsize, dims, &ierr);
+            if (ierr || gridsizes[0] / dims[0] < LAYOUT_MIN_EDGE || gridsizes[1] / dims[1] < LAYOUT_MIN_EDGE
+                || gridsizes[2] / dims[2] < LAYOUT_MIN_EDGE) continue;
+        }
+        double score = fabs(log((double)Ns / d / LAYOUT_BANDS));
+        if (score < score_best - 1e-12 || (fabs(score - score_best) <= 1e-12 && d > best)) { score_best = score; best = d; }
+    }
+    *npNd = Pk / best; *npband = best;
 }

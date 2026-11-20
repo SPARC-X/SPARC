@@ -169,6 +169,9 @@ typedef struct _HUB_DUDAREV_OBJ {
     double *Uval;           // store Hubbard U values for each orbital, could be used to store any scalar multiplier to the projectors/orbitals
     double rc[3];           // This is a cutoff set to cutoff orbitals beyond this point for cells in x, y, and z direction
     double rc2;
+    double rcut_user;       // U_RCUT of this type from the .ion file (bohr); <= 0: not given, the default rule applies
+    double rc_used;         // orbital cutoff radius used for this type (bohr)
+    double rc_wout;         // largest weight of this type's U orbitals outside rc_used
     // double ***rho_mn_init;    // Storing initial rho_mn[spinor][iat][angnum x angnum]
 } HUB_DUDAREV_OBJ;
 

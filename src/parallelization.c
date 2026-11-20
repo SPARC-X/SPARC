@@ -40,6 +40,7 @@
 #endif
 
 #include "parallelization.h"
+#include "hubbardInitialization.h"
 #include "tools.h"
 #include "isddft.h"
 #include "initialization.h"
@@ -80,6 +81,8 @@ void Setup_Comms(SPARC_OBJ *pSPARC) {
     {
         dims_divide_skbd(pSPARC->Nspin, pSPARC->Nkpts_sym, pSPARC->Nstates, 
             gridsizes, nproc, &pSPARC->npspin, &pSPARC->npkpt, &pSPARC->npband, &npNd, minsize, pSPARC->usefock);
+        // DFT+U at the Gamma point: about 30 bands per band group, the other processes in domains (hubbardInitialization.c)
+        hubbard_default_layout(pSPARC, &pSPARC->npband, &npNd, gridsizes, minsize);
         SPARC_Dims_create(npNd, 3, gridsizes, minsize, dims, &ierr);
         pSPARC->npNdx = dims[0];
         pSPARC->npNdy = dims[1];

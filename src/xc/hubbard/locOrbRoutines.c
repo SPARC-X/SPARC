@@ -6,6 +6,9 @@
  * 
  * Reference:   Dudarev, S. L., et al. "Electron-energy-loss spectra and the structural stability of nickel oxide:  An LSDA+U study"
  *              Phys. Rev. B 57, 1505
+ *
+ * The Hubbard product applies the periodic images of each U atom folded into one orbital, brick by brick (see Vhub_vec_mult
+ * below). The per-image formulation used before is in SPARC commit a44cc61.
  */
 
 #include <complex.h>
@@ -757,77 +760,426 @@ void CalculateLocalInnerProductIndex(SPARC_OBJ *pSPARC)
     }
 }
 
-/**
- * @brief   Calculate Vhub times vectors in a matrix-free way.
+/*
+ * Hubbard product V_U X = sum_a Phi_a U (1/2 I - rho_a) (dV Phi_a^T X), in two steps (exact, since X is (Bloch-)periodic):
+ * 1. Fold: sum the periodic images of each U atom once, Phi~_a = sum_R w_R Phi_{a,R}, with w_R = 1 at the Gamma point and
+ *    w_R = e^{-i theta_R} at a k-point (one set per k-point).
+ * 2. Bricks: cut the local grid into HUB_BRICK_NX x HUB_BRICK_NY x HUB_BRICK_NZ bricks; per brick, the folded orbitals of
+ *    all atoms touching it form one dense matrix Phi_b. Then alpha = dV sum_b Phi_b^H X_b, beta = U (1/2 I - rho) alpha,
+ *    HX_b += Phi_b beta.
+ * Real (Gamma) and complex (k-point) values share one code path with w = 1 or 2 doubles per value. The same projection
+ * gives the occupation matrix and the forces; the stress and pressure use orbitals folded with an extra weight
+ * e . (x - R_image) per image. The folded orbitals of a geometry are kept as "plans", one per (influence, projectors,
+ * k-point). The per-image formulation used before is in SPARC commit a44cc61 (Vhub_vec_mult, Vhub_vec_mult_kpt).
  */
-void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
-                   LOC_PROJ_OBJ *locProj, int ncol, double *x, int ldi, double *Hx, int ldo, int spin, MPI_Comm comm)
+
+#define HUB_BRICK_NX 8       // brick extent in x (contiguous in memory)
+#define HUB_BRICK_NY 8       // brick extent in y
+#define HUB_BRICK_NZ 4       // brick extent in z
+#define HUB_PLAN_MB 1024.0   // memory for the plans of one process (MB); least recently used plans are freed beyond it
+
+typedef struct {
+    int atom_index, nproj;   // global atom index, orbitals per atom
+    long nu;                 // set-up only: grid points of the folded support, sorted,
+    int *idx;                //   their local grid indices
+    double _Complex *Phiu;   //   and the folded orbitals on them (nu x nproj, column-major)
+} HUB_ATOM;
+
+typedef struct {
+    int x0, y0, z0, nx, ny, nz;   // corner and size in the local grid
+    int na, S;                    // atoms touching the brick, orbital columns
+    int *slot, *coff;             // atom j: plan->at[slot[j]], columns coff[j] .. coff[j] + nproj - 1
+    double *Phi;                  // R x S values, R = nx * ny * nz; w doubles per value
+} HUB_BRICK;
+
+typedef struct {
+    const void *infl, *proj;      // the Atom_Influence / locProj pair this plan was built for
+    int kpt;                      // local k-point index, -1 at the Gamma point
+    int weighted; double e[3];    // stress/pressure: each image weighted by e . (x - R_image)
+    int w;                        // doubles per value: 1 (Gamma, real) or 2 (k-point, complex)
+    int Nx, Ny, Nz;               // local grid
+    int gx0, gy0, gz0;            // its first point in the global grid
+    int nat; HUB_ATOM *at;        // U atoms touching the local grid
+    int nbrick; HUB_BRICK *brk;   // non-empty bricks
+    int maxR, maxS;               // largest brick (points, columns)
+    double mb;                    // memory of the brick orbitals
+    long last_use;                // for freeing the least recently used plan
+} HUB_PLAN;
+
+static HUB_PLAN *hub_plans = NULL;
+static int hub_nplans = 0, hub_cap_plans = 0;
+static long hub_use_count = 0;
+static double *hub_buf_x = NULL, *hub_buf_c = NULL, *hub_alpha = NULL, *hub_beta = NULL;   // brick of X, brick coefficients
+static long hub_nbuf_x = 0, hub_nbuf_c = 0, hub_nalpha = 0;                                // their sizes in doubles
+
+static void free_plan(HUB_PLAN *pl)
 {
+    for (int q = 0; q < pl->nat; q++) { free(pl->at[q].idx); free(pl->at[q].Phiu); }
+    for (int b = 0; b < pl->nbrick; b++) { free(pl->brk[b].slot); free(pl->brk[b].coff); free(pl->brk[b].Phi); }
+    free(pl->at); free(pl->brk);
+    memset(pl, 0, sizeof(HUB_PLAN));
+}
 
-    int i, n, atm_idx;
-    //int np, count;
-    /* compute hubbard operator times vector(s) */
-    int ityp, iat, ndc, atom_index;
-    //int l, m, ldispl, lmax, nproj;
-    double *alpha, *pre_fac_alpha, *x_rc, *Vhub;
+/**
+ * @brief   Free the folded orbitals and work space of the Hubbard product (on every change of geometry).
+ */
+void Vhub_free_plans(void)
+{
+    for (int i = 0; i < hub_nplans; i++) free_plan(&hub_plans[i]);
+    free(hub_plans); hub_plans = NULL; hub_nplans = hub_cap_plans = 0;
+    free(hub_buf_x); free(hub_buf_c); free(hub_alpha); free(hub_beta);
+    hub_buf_x = hub_buf_c = hub_alpha = hub_beta = NULL; hub_nbuf_x = hub_nbuf_c = hub_nalpha = 0;
+}
 
-    int n_atom = pSPARC->n_atom;
-    atm_idx = -1;
-    for (int JJ = n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
+static int cmp_int(const void *a, const void *b) { return (*(const int *)a > *(const int *)b) - (*(const int *)a < *(const int *)b); }
 
-    int rank;
-    MPI_Comm_rank(comm, &rank);
+/**
+ * @brief   Weight of image iat in the fold: 1 at the Gamma point, e^{-i theta} at a k-point, theta = -k . (lattice shift).
+ */
+static double _Complex image_phase(const SPARC_OBJ *pSPARC, const ATOM_LOC_INFLUENCE_OBJ *infl, int iat, int kpt)
+{
+    if (kpt < 0) return 1.0;
+    double Lx = pSPARC->range_x, Ly = pSPARC->range_y, Lz = pSPARC->range_z;
+    double x0 = infl->coords[iat * 3], y0 = infl->coords[iat * 3 + 1], z0 = infl->coords[iat * 3 + 2];
+    double theta = -pSPARC->k1_loc[kpt] * (floor(x0 / Lx) * Lx) - pSPARC->k2_loc[kpt] * (floor(y0 / Ly) * Ly)
+                   - pSPARC->k3_loc[kpt] * (floor(z0 / Lz) * Lz);
+    return cos(theta) - sin(theta) * I;
+}
 
-    alpha = (double *)calloc(pSPARC->IP_displ_U[atm_idx] * ncol, sizeof(double));
+/**
+ * @brief   Stress and pressure weight of image iat at local grid point g: e . (x_g - R_image). 1 for an unweighted plan.
+ */
+static double image_weight(const SPARC_OBJ *pSPARC, const HUB_PLAN *pl, const ATOM_LOC_INFLUENCE_OBJ *infl, int iat, long g)
+{
+    if (!pl->weighted) return 1.0;
+    long NxNy = (long)pl->Nx * pl->Ny;
+    double x1 = ((g % pl->Nx) + pl->gx0) * pSPARC->delta_x - infl->coords[iat * 3];
+    double x2 = (((g % NxNy) / pl->Nx) + pl->gy0) * pSPARC->delta_y - infl->coords[iat * 3 + 1];
+    double x3 = ((g / NxNy) + pl->gz0) * pSPARC->delta_z - infl->coords[iat * 3 + 2];
+    return pl->e[0] * x1 + pl->e[1] * x2 + pl->e[2] * x3;
+}
 
-    pre_fac_alpha = (double *)calloc(pSPARC->IP_displ_U[atm_idx] * ncol, sizeof(double));
-
-    // first find inner product
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++)
-    {
-        if (!pSPARC->atom_solve_flag[ityp]) {
-            continue;
-        }
-
-        if (!locProj[ityp].nproj)
-            continue;
-        for (iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-        {
-            ndc = Atom_Influence_loc[ityp].ndc[iat];
-            x_rc = (double *)malloc(ndc * ncol * sizeof(double));
-            atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-
-            for (n = 0; n < ncol; n++)
-            {
-                for (i = 0; i < ndc; i++)
-                {
-                    x_rc[n * ndc + i] = x[n * ldi + Atom_Influence_loc[ityp].grid_pos[iat][i]];
+/**
+ * @brief   Step 1: Phi~_a = sum_R w_R Phi_{a,R} on the local grid, for every U atom with an image touching it, stored per
+ *          atom on its support (the grid points any image touches), sorted by grid index.
+ */
+static void Vhub_fold_orbitals(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc, LOC_PROJ_OBJ *locProj, HUB_PLAN *pl)
+{
+    long Nd = (long)pl->Nx * pl->Ny * pl->Nz;
+    int npmax = 1;
+    for (int t = 0; t < pSPARC->Ntypes; t++) if (pSPARC->atom_solve_flag[t] && locProj[t].nproj > npmax) npmax = locProj[t].nproj;
+    double _Complex *acc = calloc((size_t)Nd * npmax, sizeof(double _Complex));   // folded orbitals of the current atom
+    unsigned char *mark = calloc(Nd > 0 ? Nd : 1, 1);                             // points already in its support
+    int *pts = malloc((Nd > 0 ? Nd : 1) * sizeof(int));                           // its support
+    pl->at = calloc(pSPARC->n_atom, sizeof(HUB_ATOM)); pl->nat = 0;
+    for (int t = 0; t < pSPARC->Ntypes; t++) {
+        if (!pSPARC->atom_solve_flag[t] || !locProj[t].nproj) continue;
+        int np = locProj[t].nproj;
+        for (int i0 = 0; i0 < Atom_Influence_loc[t].n_atom; i0++) {
+            int a = Atom_Influence_loc[t].atom_index[i0], seen = 0;
+            for (int q = 0; q < pl->nat; q++) if (pl->at[q].atom_index == a) { seen = 1; break; }
+            if (seen) continue;
+            // sum the images of atom a, each with its weight
+            long nu = 0;
+            for (int iat = 0; iat < Atom_Influence_loc[t].n_atom; iat++) {
+                if (Atom_Influence_loc[t].atom_index[iat] != a) continue;
+                int ndc = Atom_Influence_loc[t].ndc[iat]; const int *gp = Atom_Influence_loc[t].grid_pos[iat];
+                double _Complex wR = image_phase(pSPARC, &Atom_Influence_loc[t], iat, pl->kpt);
+                for (int i = 0; i < ndc; i++) {
+                    long g = gp[i]; if (!mark[g]) { mark[g] = 1; pts[nu++] = (int)g; }
+                    for (int p = 0; p < np; p++) {
+                        size_t k = (size_t)p * ndc + i;   // Gamma: real projectors (Orb); k-point: complex ones (Orb_c)
+                        acc[(size_t)p * Nd + g] += (pl->kpt < 0) ? locProj[t].Orb[iat][k] : wR * locProj[t].Orb_c[iat][k];
+                    }
                 }
             }
-
-            // No cyclix
-            cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, locProj[ityp].nproj, ncol, ndc,
-                        pSPARC->dV, locProj[ityp].Orb[iat], ndc, x_rc, ndc, 1.0,
-                        alpha + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj);
-            
-            free(x_rc);
+            qsort(pts, nu, sizeof(int), cmp_int);
+            HUB_ATOM *A = &pl->at[pl->nat++]; A->atom_index = a; A->nproj = np; A->nu = nu;
+            A->idx = malloc((nu > 0 ? nu : 1) * sizeof(int));
+            A->Phiu = malloc((size_t)(nu > 0 ? nu : 1) * np * sizeof(double _Complex));
+            for (long i = 0; i < nu; i++) A->idx[i] = pts[i];
+            for (int p = 0; p < np; p++) for (long i = 0; i < nu; i++) A->Phiu[(size_t)p * nu + i] = acc[(size_t)p * Nd + A->idx[i]];
+            for (long i = 0; i < nu; i++) { long g = pts[i]; mark[g] = 0; for (int p = 0; p < np; p++) acc[(size_t)p * Nd + g] = 0.0; }
         }
     }
+    free(acc); free(mark); free(pts);
+}
 
-    // if there are domain parallelization over each band, we need to sum over all processes over domain comm
-    int commsize;
-    MPI_Comm_size(comm, &commsize);
-    if (commsize > 1)
-    {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol, MPI_DOUBLE, MPI_SUM, comm);
+/**
+ * @brief   Step 2: cut the local grid into bricks and store, per non-empty brick, the folded orbitals of the atoms touching
+ *          it as one dense matrix. Frees the per-atom copies afterwards.
+ */
+static void Vhub_build_bricks(HUB_PLAN *pl)
+{
+    int Nx = pl->Nx, Ny = pl->Ny, Nz = pl->Nz, w = pl->w; long NxNy = (long)Nx * Ny;
+    int nbx = (Nx + HUB_BRICK_NX - 1) / HUB_BRICK_NX, nby = (Ny + HUB_BRICK_NY - 1) / HUB_BRICK_NY, nbz = (Nz + HUB_BRICK_NZ - 1) / HUB_BRICK_NZ;
+    long nb = (long)nbx * nby * nbz;
+    #define BRICK_OF(g) ((((g) / NxNy) / HUB_BRICK_NZ) * (long)nby * nbx + ((((g) % NxNy) / Nx) / HUB_BRICK_NY) * (long)nbx + (((g) % Nx) / HUB_BRICK_NX))
+    int *cnt = calloc(nb, sizeof(int)), *S = calloc(nb, sizeof(int)), *cur = malloc(nb * sizeof(int)), *curoff = malloc(nb * sizeof(int));
+    long *map = malloc(nb * sizeof(long));
+    for (long b = 0; b < nb; b++) cur[b] = -1;
+    // pass 1: atoms and orbital columns per brick
+    for (int q = 0; q < pl->nat; q++) {
+        const HUB_ATOM *A = &pl->at[q];
+        for (long i = 0; i < A->nu; i++) { long b = BRICK_OF((long)A->idx[i]); if (cur[b] != q) { cur[b] = q; cnt[b]++; S[b] += A->nproj; } }
     }
+    int nbk = 0;
+    for (long b = 0; b < nb; b++) map[b] = cnt[b] ? nbk++ : -1;
+    pl->brk = calloc(nbk > 0 ? nbk : 1, sizeof(HUB_BRICK)); pl->nbrick = nbk; pl->maxR = 0; pl->maxS = 0;
+    for (long b = 0; b < nb; b++) {
+        if (map[b] < 0) continue;
+        HUB_BRICK *K = &pl->brk[map[b]];
+        int bz = (int)(b / ((long)nbx * nby)), by = (int)((b / nbx) % nby), bx = (int)(b % nbx);
+        K->x0 = bx * HUB_BRICK_NX; K->y0 = by * HUB_BRICK_NY; K->z0 = bz * HUB_BRICK_NZ;
+        K->nx = (K->x0 + HUB_BRICK_NX <= Nx) ? HUB_BRICK_NX : Nx - K->x0;
+        K->ny = (K->y0 + HUB_BRICK_NY <= Ny) ? HUB_BRICK_NY : Ny - K->y0;
+        K->nz = (K->z0 + HUB_BRICK_NZ <= Nz) ? HUB_BRICK_NZ : Nz - K->z0;
+        K->S = S[b]; K->na = 0;
+        K->slot = malloc(cnt[b] * sizeof(int)); K->coff = malloc(cnt[b] * sizeof(int));
+        int R = K->nx * K->ny * K->nz;
+        K->Phi = calloc((size_t)R * K->S * w, sizeof(double));
+        if (R > pl->maxR) pl->maxR = R;
+        if (K->S > pl->maxS) pl->maxS = K->S;
+        cur[b] = -1; curoff[b] = 0;
+    }
+    // pass 2: copy each atom's folded orbitals into the bricks its support meets
+    double stored = 0;
+    for (int q = 0; q < pl->nat; q++) {
+        const HUB_ATOM *A = &pl->at[q];
+        for (long i = 0; i < A->nu; i++) {
+            long g = A->idx[i], b = BRICK_OF(g); HUB_BRICK *K = &pl->brk[map[b]];
+            if (cur[b] != q) { cur[b] = q; K->slot[K->na] = q; K->coff[K->na] = curoff[b]; K->na++; curoff[b] += A->nproj; }
+            int off = K->coff[K->na - 1];
+            int lx = (int)(g % Nx) - K->x0, ly = (int)((g % NxNy) / Nx) - K->y0, lz = (int)(g / NxNy) - K->z0;
+            long r = ((long)lz * K->ny + ly) * K->nx + lx, R = (long)K->nx * K->ny * K->nz;
+            for (int p = 0; p < A->nproj; p++) {
+                double _Complex v = A->Phiu[(size_t)p * A->nu + i]; double *dst = K->Phi + ((size_t)(off + p) * R + r) * w;
+                dst[0] = creal(v); if (w == 2) dst[1] = cimag(v);
+            }
+        }
+    }
+    #undef BRICK_OF
+    for (int k = 0; k < nbk; k++) stored += (double)pl->brk[k].nx * pl->brk[k].ny * pl->brk[k].nz * pl->brk[k].S;
+    pl->mb = stored * 8 * w / 1e6;
+    free(cnt); free(S); free(cur); free(curoff); free(map);
+    for (int q = 0; q < pl->nat; q++) { free(pl->at[q].idx); free(pl->at[q].Phiu); pl->at[q].idx = NULL; pl->at[q].Phiu = NULL; }
+}
 
-    // Multiply pre-factor
+static int same_weight(const HUB_PLAN *pl, const double *e)
+{
+    if (!e) return !pl->weighted;
+    return pl->weighted && pl->e[0] == e[0] && pl->e[1] == e[1] && pl->e[2] == e[2];
+}
+
+/**
+ * @brief   Free the weighted (stress/pressure) folded orbitals; call after the stress or pressure.
+ */
+void Vhub_free_weighted(void)
+{
+    for (int i = 0; i < hub_nplans; ) {
+        if (hub_plans[i].weighted) { free_plan(&hub_plans[i]); hub_plans[i] = hub_plans[--hub_nplans]; } else i++;
+    }
+}
+
+/**
+ * @brief   A weighted plan (stress, pressure) has the bricks, atoms and columns of the unweighted plan of the same k-point;
+ *          only the values differ. So copy that layout and add each image's weighted orbital straight into the bricks.
+ */
+static void Vhub_build_weighted_bricks(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc, LOC_PROJ_OBJ *locProj,
+                                       const HUB_PLAN *base, HUB_PLAN *pl)
+{
+    int Nx = base->Nx, Ny = base->Ny, Nz = base->Nz, w = base->w; long NxNy = (long)Nx * Ny;
+    pl->nat = base->nat; pl->nbrick = base->nbrick; pl->maxR = base->maxR; pl->maxS = base->maxS; pl->mb = base->mb;
+    pl->at = calloc(pl->nat > 0 ? pl->nat : 1, sizeof(HUB_ATOM));
+    for (int q = 0; q < pl->nat; q++) { pl->at[q].atom_index = base->at[q].atom_index; pl->at[q].nproj = base->at[q].nproj; }
+    pl->brk = calloc(pl->nbrick > 0 ? pl->nbrick : 1, sizeof(HUB_BRICK));
+    int nbx = (Nx + HUB_BRICK_NX - 1) / HUB_BRICK_NX, nby = (Ny + HUB_BRICK_NY - 1) / HUB_BRICK_NY, nbz = (Nz + HUB_BRICK_NZ - 1) / HUB_BRICK_NZ;
+    long nb = (long)nbx * nby * nbz, *map = malloc(nb * sizeof(long));   // brick of the grid -> brick of the plan
+    for (long b = 0; b < nb; b++) map[b] = -1;
+    for (int k = 0; k < pl->nbrick; k++) {
+        const HUB_BRICK *B = &base->brk[k]; HUB_BRICK *K = &pl->brk[k];
+        *K = *B;
+        K->slot = malloc(B->na * sizeof(int)); K->coff = malloc(B->na * sizeof(int));
+        memcpy(K->slot, B->slot, B->na * sizeof(int)); memcpy(K->coff, B->coff, B->na * sizeof(int));
+        K->Phi = calloc((size_t)B->nx * B->ny * B->nz * B->S * w, sizeof(double));
+        map[((long)(B->z0 / HUB_BRICK_NZ) * nby + B->y0 / HUB_BRICK_NY) * nbx + B->x0 / HUB_BRICK_NX] = k;
+    }
+    int *qof = malloc(pSPARC->n_atom * sizeof(int));   // global atom index -> atom of the plan
+    for (int a = 0; a < pSPARC->n_atom; a++) qof[a] = -1;
+    for (int q = 0; q < pl->nat; q++) qof[pl->at[q].atom_index] = q;
+    double **dst = NULL, *wx = NULL; long *step = NULL; int ndc_max = 0;   // per point of an image: where column 0 goes,
+    for (int t = 0; t < pSPARC->Ntypes; t++) {                             // the column stride, the weight
+        if (!pSPARC->atom_solve_flag[t] || !locProj[t].nproj) continue;
+        int np = locProj[t].nproj;
+        for (int iat = 0; iat < Atom_Influence_loc[t].n_atom; iat++) {
+            int q = qof[Atom_Influence_loc[t].atom_index[iat]], ndc = Atom_Influence_loc[t].ndc[iat], off = 0; long R = 0;
+            const int *gp = Atom_Influence_loc[t].grid_pos[iat];
+            double _Complex wR = image_phase(pSPARC, &Atom_Influence_loc[t], iat, pl->kpt);
+            if (ndc > ndc_max) {
+                ndc_max = ndc; free(dst); free(wx); free(step);
+                dst = malloc(ndc * sizeof(double *)); wx = malloc(ndc * sizeof(double)); step = malloc(ndc * sizeof(long));
+            }
+            HUB_BRICK *K = NULL; long lastb = -1;
+            for (int i = 0; i < ndc; i++) {
+                long g = gp[i], b = map[(((g / NxNy) / HUB_BRICK_NZ) * nby + ((g % NxNy) / Nx) / HUB_BRICK_NY) * nbx + (g % Nx) / HUB_BRICK_NX];
+                if (b != lastb) {   // the atom's columns in this brick
+                    K = &pl->brk[b]; lastb = b; R = (long)K->nx * K->ny * K->nz;
+                    for (int j = 0; j < K->na; j++) if (K->slot[j] == q) { off = K->coff[j]; break; }
+                }
+                long r = ((long)((g / NxNy) - K->z0) * K->ny + ((g % NxNy) / Nx - K->y0)) * K->nx + (g % Nx - K->x0);
+                dst[i] = K->Phi + ((size_t)off * R + r) * w; step[i] = R * w;
+                wx[i] = image_weight(pSPARC, pl, &Atom_Influence_loc[t], iat, g);
+            }
+            for (int p = 0; p < np; p++) {   // column by column: Orb is read in order
+                if (w == 1) {
+                    const double *o = locProj[t].Orb[iat] + (size_t)p * ndc;
+                    for (int i = 0; i < ndc; i++) dst[i][p * step[i]] += wx[i] * o[i];
+                } else {
+                    const double _Complex *o = locProj[t].Orb_c[iat] + (size_t)p * ndc;
+                    for (int i = 0; i < ndc; i++) {
+                        double _Complex v = wx[i] * wR * o[i]; double *d = dst[i] + p * step[i];
+                        d[0] += creal(v); d[1] += cimag(v);
+                    }
+                }
+            }
+        }
+    }
+    free(map); free(qof); free(dst); free(wx); free(step);
+}
+
+/**
+ * @brief   The plan for (Atom_Influence_loc, locProj, kpt, weight e; e = NULL: unweighted), built on first use. Only one
+ *          weighted plan is kept at a time; it is built from the unweighted plan and not counted in HUB_PLAN_MB.
+ */
+static HUB_PLAN *Vhub_get_plan(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc, LOC_PROJ_OBJ *locProj,
+                               int kpt, const double *e, MPI_Comm comm)
+{
+    hub_use_count++;
+    for (int i = 0; i < hub_nplans; i++)
+        if (hub_plans[i].infl == Atom_Influence_loc && hub_plans[i].proj == locProj && hub_plans[i].kpt == kpt && same_weight(&hub_plans[i], e)) {
+            hub_plans[i].last_use = hub_use_count; return &hub_plans[i];
+        }
+    if (e) {
+        Vhub_free_weighted();
+        long ib = Vhub_get_plan(pSPARC, Atom_Influence_loc, locProj, kpt, NULL, comm) - hub_plans;
+        if (hub_nplans == hub_cap_plans) { hub_cap_plans = hub_cap_plans ? 2 * hub_cap_plans : 4; hub_plans = realloc(hub_plans, hub_cap_plans * sizeof(HUB_PLAN)); }
+        HUB_PLAN *base = &hub_plans[ib], *pl = &hub_plans[hub_nplans++]; memset(pl, 0, sizeof(HUB_PLAN));
+        pl->infl = base->infl; pl->proj = base->proj; pl->kpt = kpt; pl->w = base->w; pl->last_use = hub_use_count;
+        pl->Nx = base->Nx; pl->Ny = base->Ny; pl->Nz = base->Nz; pl->gx0 = base->gx0; pl->gy0 = base->gy0; pl->gz0 = base->gz0;
+        pl->weighted = 1; pl->e[0] = e[0]; pl->e[1] = e[1]; pl->e[2] = e[2];
+        Vhub_build_weighted_bricks(pSPARC, Atom_Influence_loc, locProj, base, pl);
+        return pl;
+    }
+    for (;;) {   // free the least recently used plans beyond HUB_PLAN_MB
+        double total = 0; int lru = -1;
+        for (int i = 0; i < hub_nplans; i++) { total += hub_plans[i].mb; if (lru < 0 || hub_plans[i].last_use < hub_plans[lru].last_use) lru = i; }
+        if (hub_nplans == 0 || total <= HUB_PLAN_MB) break;
+        free_plan(&hub_plans[lru]); hub_plans[lru] = hub_plans[--hub_nplans];
+    }
+    if (hub_nplans == hub_cap_plans) { hub_cap_plans = hub_cap_plans ? 2 * hub_cap_plans : 4; hub_plans = realloc(hub_plans, hub_cap_plans * sizeof(HUB_PLAN)); }
+    const int *DMV = (comm == pSPARC->kptcomm_topo) ? pSPARC->DMVertices_kptcomm : pSPARC->DMVertices_dmcomm;
+    HUB_PLAN *pl = &hub_plans[hub_nplans++]; memset(pl, 0, sizeof(HUB_PLAN));
+    pl->infl = Atom_Influence_loc; pl->proj = locProj; pl->kpt = kpt; pl->w = (kpt < 0) ? 1 : 2; pl->last_use = hub_use_count;
+    pl->Nx = DMV[1] - DMV[0] + 1; pl->Ny = DMV[3] - DMV[2] + 1; pl->Nz = DMV[5] - DMV[4] + 1;
+    pl->gx0 = DMV[0]; pl->gy0 = DMV[2]; pl->gz0 = DMV[4];
+    Vhub_fold_orbitals(pSPARC, Atom_Influence_loc, locProj, pl);
+    Vhub_build_bricks(pl);
+    return pl;
+}
+
+static void grow(double **p, long *n, long need)
+{
+    if (need > *n) { free(*p); *n = need; *p = malloc((size_t)need * sizeof(double)); }
+}
+
+// brick <-> grid copies by x-runs (each run is contiguous in X and HX); w doubles per value
+static void brick_gather(const HUB_PLAN *pl, const HUB_BRICK *K, int ncol, const double *x, int ldi, double *buf)
+{
+    long NxNy = (long)pl->Nx * pl->Ny; int R = K->nx * K->ny * K->nz, w = pl->w, run = K->nx * w;
+    for (int n = 0; n < ncol; n++) {
+        const double *xn = x + (size_t)n * ldi * w; double *d = buf + (size_t)n * R * w;
+        for (int lz = 0; lz < K->nz; lz++) for (int ly = 0; ly < K->ny; ly++) {
+            double *dst = d + ((size_t)lz * K->ny + ly) * run;
+            const double *src = xn + ((K->z0 + lz) * NxNy + (long)(K->y0 + ly) * pl->Nx + K->x0) * w;
+            for (int i = 0; i < run; i++) dst[i] = src[i];
+        }
+    }
+}
+static void brick_scatter_add(const HUB_PLAN *pl, const HUB_BRICK *K, int ncol, const double *buf, double *y, int ldo)
+{
+    long NxNy = (long)pl->Nx * pl->Ny; int R = K->nx * K->ny * K->nz, w = pl->w, run = K->nx * w;
+    for (int n = 0; n < ncol; n++) {
+        double *yn = y + (size_t)n * ldo * w; const double *s = buf + (size_t)n * R * w;
+        for (int lz = 0; lz < K->nz; lz++) for (int ly = 0; ly < K->ny; ly++) {
+            double *dst = yn + ((K->z0 + lz) * NxNy + (long)(K->y0 + ly) * pl->Nx + K->x0) * w;
+            const double *src = s + ((size_t)lz * K->ny + ly) * run;
+            for (int i = 0; i < run; i++) dst[i] += src[i];
+        }
+    }
+}
+
+/**
+ * @brief   out_a += scale * sum_b Phi_b^H (R_b X) for every atom a (out at IP_displ_U[a] * ncol, nproj x ncol per atom).
+ */
+static void Vhub_project(const SPARC_OBJ *pSPARC, const HUB_PLAN *pl, int ncol, const double *x, int ldi, double scale, double *out)
+{
+    int w = pl->w;
+    grow(&hub_buf_x, &hub_nbuf_x, (long)pl->maxR * ncol * w); grow(&hub_buf_c, &hub_nbuf_c, (long)pl->maxS * ncol * w);
+    for (int b = 0; b < pl->nbrick; b++) {
+        const HUB_BRICK *K = &pl->brk[b]; int R = K->nx * K->ny * K->nz;
+        brick_gather(pl, K, ncol, x, ldi, hub_buf_x);
+        if (w == 1) {
+            cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, K->S, ncol, R, scale, K->Phi, R, hub_buf_x, R, 0.0, hub_buf_c, K->S);
+        } else {
+            double _Complex a = scale, z = 0.0;
+            cblas_zgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, K->S, ncol, R, &a, K->Phi, R, hub_buf_x, R, &z, hub_buf_c, K->S);
+        }
+        for (int j = 0; j < K->na; j++) {
+            const HUB_ATOM *A = &pl->at[K->slot[j]]; double *al = out + (size_t)pSPARC->IP_displ_U[A->atom_index] * ncol * w;
+            for (int n = 0; n < ncol; n++) for (int p = 0; p < A->nproj * w; p++)
+                al[p + (size_t)n * A->nproj * w] += hub_buf_c[K->coff[j] * w + p + (size_t)n * K->S * w];
+        }
+    }
+}
+
+/**
+ * @brief   R_b HX += Phi_b beta_b for every brick (beta laid out as out in Vhub_project).
+ */
+static void Vhub_add_back(const SPARC_OBJ *pSPARC, const HUB_PLAN *pl, int ncol, const double *beta, double *Hx, int ldo)
+{
+    int w = pl->w;
+    grow(&hub_buf_x, &hub_nbuf_x, (long)pl->maxR * ncol * w); grow(&hub_buf_c, &hub_nbuf_c, (long)pl->maxS * ncol * w);
+    for (int b = 0; b < pl->nbrick; b++) {
+        const HUB_BRICK *K = &pl->brk[b]; int R = K->nx * K->ny * K->nz;
+        for (int j = 0; j < K->na; j++) {
+            const HUB_ATOM *A = &pl->at[K->slot[j]]; const double *pa = beta + (size_t)pSPARC->IP_displ_U[A->atom_index] * ncol * w;
+            for (int n = 0; n < ncol; n++) for (int p = 0; p < A->nproj * w; p++)
+                hub_buf_c[K->coff[j] * w + p + (size_t)n * K->S * w] = pa[p + (size_t)n * A->nproj * w];
+        }
+        if (w == 1) {
+            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, R, ncol, K->S, 1.0, K->Phi, R, hub_buf_c, K->S, 0.0, hub_buf_x, R);
+        } else {
+            double _Complex one = 1.0, z = 0.0;
+            cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, R, ncol, K->S, &one, K->Phi, R, hub_buf_c, K->S, &z, hub_buf_x, R);
+        }
+        brick_scatter_add(pl, K, ncol, hub_buf_x, Hx, ldo);
+    }
+}
+
+// number of coefficient rows: IP_displ_U of the last atom with U correction
+static int n_coeff(const SPARC_OBJ *pSPARC)
+{
+    for (int J = pSPARC->n_atom; J >= 0; J--) if (pSPARC->IP_displ_U[J] >= 0) return pSPARC->IP_displ_U[J];
+    return 0;
+}
+
+/**
+ * @brief   pre_fac_alpha = U (1/2 I - rho) alpha for every U atom (alpha after the sum over the domain).
+ */
+static void Vhub_pre_factor_alpha(const SPARC_OBJ *pSPARC, LOC_PROJ_OBJ *locProj, int ncol, int spin,
+                                  double *alpha, double *pre_fac_alpha)
+{
+    int ityp, iat;
     double *pre_fac;
     int angnum;
     int atmcount = 0;
@@ -842,7 +1194,6 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
             atmcount += pSPARC->nAtomv[ityp];
             continue;
         }
-        // angnum = pSPARC->AtmU[ityp].angnum;
         angnum = locProj[ityp].nproj;
         for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++)
         {
@@ -873,126 +1224,16 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
             atmcount++;
         }
     }
-    free(alpha);
-
-    // multiply the inner product and the local projector
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++)
-    {
-        if (!pSPARC->atom_solve_flag[ityp]) {
-            continue;
-        }
-
-        if (!locProj[ityp].nproj){
-            continue;
-        }
-
-        for (iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-        {
-            ndc = Atom_Influence_loc[ityp].ndc[iat];
-            atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-            Vhub = (double *)calloc(ndc * ncol, sizeof(double));
-            cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, ndc, ncol, locProj[ityp].nproj, 1.0, locProj[ityp].Orb[iat], ndc,
-                        pre_fac_alpha + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj, 0.0, Vhub, ndc);
-            for (n = 0; n < ncol; n++)
-            {
-                for (i = 0; i < ndc; i++)
-                {
-                    Hx[n * ldo + Atom_Influence_loc[ityp].grid_pos[iat][i]] += Vhub[n * ndc + i];
-                }
-            }
-
-            free(Vhub);
-        }
-    }
-    free(pre_fac_alpha);
-
 }
 
-
 /**
- * @brief   Calculate Vhub times vectors in a matrix-free way with Bloch factor.
+ * @brief   pre_fac_alpha = U (1/2 I - rho) alpha for every U atom (alpha complex, after the sum over the domain).
  */
- void Vhub_vec_mult_kpt(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
-    LOC_PROJ_OBJ *locProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int spin, int kpt, MPI_Comm comm)
+static void Vhub_pre_factor_alpha_kpt(const SPARC_OBJ *pSPARC, LOC_PROJ_OBJ *locProj, int ncol, int spin,
+                                      double _Complex *alpha, double _Complex *pre_fac_alpha)
 {
-    int i, n, atm_idx;
-    //int np, count;
-    /* compute hubbard operator times vector(s) */
-    int ityp, iat, ndc, atom_index;
-    //int l, m, ldispl, lmax, nproj;
-    double x0_i, y0_i, z0_i;
-
-    double _Complex *alpha, *pre_fac, *pre_fac_alpha, *x_rc, *Vhub;
-
-    int n_atom = pSPARC->n_atom;
-    atm_idx = -1;
-    for (int JJ = n_atom; JJ >= 0; JJ--) {
-        if (pSPARC->IP_displ_U[JJ] >= 0) {
-            atm_idx = JJ; // last entry of IP_displ_U array corresponding to the last atom with U correction
-            break;
-        }
-    }
-
-    alpha = (double _Complex *)calloc(pSPARC->IP_displ_U[atm_idx] * ncol, sizeof(double _Complex));
-
-    pre_fac_alpha = (double _Complex *)calloc(pSPARC->IP_displ_U[atm_idx] * ncol, sizeof(double _Complex));
-
-    double Lx = pSPARC->range_x;
-    double Ly = pSPARC->range_y;
-    double Lz = pSPARC->range_z;
-    double k1 = pSPARC->k1_loc[kpt];
-    double k2 = pSPARC->k2_loc[kpt];
-    double k3 = pSPARC->k3_loc[kpt];
-    double theta;
-    double _Complex bloch_fac, a, b;
-
-    // first find inner product
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++)
-    {
-        if (!pSPARC->atom_solve_flag[ityp]) {
-            continue;
-        }
-
-        if (!locProj[ityp].nproj)
-            continue;
-        for (iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-        {
-            x0_i = Atom_Influence_loc[ityp].coords[iat*3  ];
-            y0_i = Atom_Influence_loc[ityp].coords[iat*3+1];
-            z0_i = Atom_Influence_loc[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-            bloch_fac = cos(theta) + sin(theta) * I;
-            a = bloch_fac * pSPARC->dV; // no cyclix
-            b = 1.0;
-
-            ndc = Atom_Influence_loc[ityp].ndc[iat];
-            x_rc = (double _Complex *)malloc(ndc * ncol * sizeof(double _Complex));
-            atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-            for (n = 0; n < ncol; n++)
-            {
-                for (i = 0; i < ndc; i++)
-                {
-                    x_rc[n * ndc + i] = x[n * ldi + Atom_Influence_loc[ityp].grid_pos[iat][i]];
-                }
-            }
-            // No cyclix
-            cblas_zgemm(CblasColMajor, CblasTrans, CblasNoTrans, locProj[ityp].nproj, ncol, ndc,
-                        &a, locProj[ityp].Orb_c[iat], ndc, x_rc, ndc, &b,
-                        alpha + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj);
-            
-            free(x_rc);
-        }
-    }
-
-    // if there are domain parallelization over each band, we need to sum over all processes over domain comm
-    int commsize;
-    MPI_Comm_size(comm, &commsize);
-    if (commsize > 1)
-    {
-        MPI_Allreduce(MPI_IN_PLACE, alpha, pSPARC->IP_displ_U[atm_idx] * ncol, MPI_C_DOUBLE_COMPLEX, MPI_SUM, comm);
-    }
-
-    // Multiply pre-factor
+    int ityp, iat;
+    double _Complex *pre_fac, a, b;
     int angnum;
     int atmcount = 0;
     for (ityp = 0; ityp < pSPARC->Ntypes; ityp++)
@@ -1006,7 +1247,6 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
             atmcount += pSPARC->nAtomv[ityp];
             continue;
         }
-        // angnum = pSPARC->AtmU[ityp].angnum;
         angnum = locProj[ityp].nproj;
         for (iat = 0; iat < pSPARC->nAtomv[ityp]; iat++)
         {
@@ -1017,7 +1257,6 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
                     if (row == col) {
                         pre_fac[angnum*col + row] += 0.5;
                     }
-                    // pre_fac[angnum*col + row] -= pSPARC->rho_mn_c[atmcount][spin][angnum*col + row];
                     pre_fac[angnum*col + row] -= pSPARC->rho_mn[atmcount][spin][angnum*col + row];
                 }
             }
@@ -1039,43 +1278,78 @@ void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influen
             atmcount++;
         }
     }
-    free(alpha);
+}
 
-    // multiply the inner product and the local projector
-    for (ityp = 0; ityp < pSPARC->Ntypes; ityp++)
-    {
-        if (!pSPARC->atom_solve_flag[ityp]) {
-            continue;
-        }
-
-        if (!locProj[ityp].nproj){
-            continue;
-        }
-
-        for (iat = 0; iat < Atom_Influence_loc[ityp].n_atom; iat++)
-        {
-            x0_i = Atom_Influence_loc[ityp].coords[iat*3  ];
-            y0_i = Atom_Influence_loc[ityp].coords[iat*3+1];
-            z0_i = Atom_Influence_loc[ityp].coords[iat*3+2];
-            theta = -k1 * (floor(x0_i/Lx) * Lx) - k2 * (floor(y0_i/Ly) * Ly) - k3 * (floor(z0_i/Lz) * Lz);
-            bloch_fac = cos(theta) - sin(theta) * I;
-            b = 0.0;
-
-            ndc = Atom_Influence_loc[ityp].ndc[iat];
-            atom_index = Atom_Influence_loc[ityp].atom_index[iat];
-            Vhub = (double _Complex *)calloc(ndc * ncol, sizeof(double _Complex));
-            cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, ndc, ncol, locProj[ityp].nproj, &bloch_fac, locProj[ityp].Orb_c[iat], ndc,
-                        pre_fac_alpha + pSPARC->IP_displ_U[atom_index] * ncol, locProj[ityp].nproj, &b, Vhub, ndc);
-            for (n = 0; n < ncol; n++)
-            {
-                for (i = 0; i < ndc; i++)
-                {
-                    Hx[n * ldo + Atom_Influence_loc[ityp].grid_pos[iat][i]] += Vhub[n * ndc + i];
-                }
-            }
-
-            free(Vhub);
-        }
+// Hx += V_U x with the plan of k-point kpt (-1: Gamma point; x, Hx: w doubles per value)
+static void Vhub_apply(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc, LOC_PROJ_OBJ *locProj, int ncol,
+                       double *x, int ldi, double *Hx, int ldo, int spin, int kpt, MPI_Comm comm)
+{
+    HUB_PLAN *pl = Vhub_get_plan(pSPARC, Atom_Influence_loc, locProj, kpt, NULL, comm);
+    long nal = (long)n_coeff(pSPARC) * ncol * pl->w;
+    if (nal > hub_nalpha) {
+        free(hub_alpha); free(hub_beta); hub_nalpha = nal;
+        hub_alpha = malloc(nal * sizeof(double)); hub_beta = malloc(nal * sizeof(double));
     }
-    free(pre_fac_alpha);
+    memset(hub_alpha, 0, nal * sizeof(double));
+    Vhub_project(pSPARC, pl, ncol, x, ldi, pSPARC->dV, hub_alpha);
+
+    // if there are domain parallelization over each band, we need to sum over all processes over domain comm
+    int commsize;
+    MPI_Comm_size(comm, &commsize);
+    if (commsize > 1) MPI_Allreduce(MPI_IN_PLACE, hub_alpha, nal, MPI_DOUBLE, MPI_SUM, comm);
+
+    if (pl->w == 1) Vhub_pre_factor_alpha(pSPARC, locProj, ncol, spin, hub_alpha, hub_beta);
+    else Vhub_pre_factor_alpha_kpt(pSPARC, locProj, ncol, spin, (double _Complex *)hub_alpha, (double _Complex *)hub_beta);
+    Vhub_add_back(pSPARC, pl, ncol, hub_beta, Hx, ldo);
+}
+
+/**
+ * @brief   Calculate Vhub times vectors in a matrix-free way.
+ */
+void Vhub_vec_mult(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
+                   LOC_PROJ_OBJ *locProj, int ncol, double *x, int ldi, double *Hx, int ldo, int spin, MPI_Comm comm)
+{
+    Vhub_apply(pSPARC, Atom_Influence_loc, locProj, ncol, x, ldi, Hx, ldo, spin, -1, comm);
+}
+
+/**
+ * @brief   Calculate Vhub times vectors in a matrix-free way with Bloch factor.
+ */
+void Vhub_vec_mult_kpt(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc,
+    LOC_PROJ_OBJ *locProj, int ncol, double _Complex *x, int ldi, double _Complex *Hx, int ldo, int spin, int kpt, MPI_Comm comm)
+{
+    Vhub_apply(pSPARC, Atom_Influence_loc, locProj, ncol, (double *)x, ldi, (double *)Hx, ldo, spin, kpt, comm);
+}
+
+/**
+ * @brief   out += scale * Phi~^H x for every U atom touching the local domain, without the sum over the domain
+ *          (occupation matrix). kpt = -1: Gamma point (real x, out); otherwise complex, as pairs of doubles.
+ */
+void Vhub_inner_product(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *Atom_Influence_loc, LOC_PROJ_OBJ *locProj,
+                        int ncol, const double *x, int ldi, double scale, double *out, int kpt, MPI_Comm comm)
+{
+    Vhub_project(pSPARC, Vhub_get_plan(pSPARC, Atom_Influence_loc, locProj, kpt, NULL, comm), ncol, x, ldi, scale, out);
+}
+
+/**
+ * @brief   Projections of the bands of this process for the forces, stress and pressure (x: DMnd x Nspinor x Nband_bandcomm):
+ *              out += scale * sum_R w_R Phi_R^T x,
+ *          w_R the Bloch factor at a k-point (kpt >= 0), times e . (x - R) if e is given (stress, pressure). With conj_out
+ *          the complex conjugate is added. No sum over the domain.
+ */
+void Vhub_inner_product_bands(const SPARC_OBJ *pSPARC, const double *x, int kpt, const double *e, double scale, int conj_out,
+                              double *out)
+{
+    int ncol = pSPARC->Nband_bandcomm, DMnd = pSPARC->Nd_d_dmcomm, Nspinor = pSPARC->Nspinor_spincomm, w = (kpt < 0) ? 1 : 2;
+    long len = (long)n_coeff(pSPARC) * ncol * w;   // one spinor
+    double *tmp = conj_out ? calloc(len > 0 ? len : 1, sizeof(double)) : NULL;
+    for (int s = 0; s < Nspinor; s++) {
+        HUB_PLAN *pl = Vhub_get_plan(pSPARC, pSPARC->Atom_Influence_loc_orb, pSPARC->locProj, kpt, e, pSPARC->dmcomm);
+        double *o = out + len * s;
+        if (!conj_out) { Vhub_project(pSPARC, pl, ncol, x + (size_t)s * DMnd * w, DMnd * Nspinor, scale, o); continue; }
+        memset(tmp, 0, len * sizeof(double));
+        Vhub_project(pSPARC, pl, ncol, x + (size_t)s * DMnd * w, DMnd * Nspinor, scale, tmp);
+        for (long i = 0; i < len; i += 2) { o[i] += tmp[i]; o[i + 1] -= tmp[i + 1]; }
+    }
+    free(tmp);
 }

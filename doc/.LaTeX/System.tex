@@ -1166,4 +1166,36 @@ Value of effective \texttt{U} for every azimuthal quantum number (s, p, d, and f
 \end{block}
 
 \end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{U\_RCUT}} \label{U_RCUT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+See description
+\end{block}
+
+\column{0.5\linewidth}
+\begin{block}{Unit}
+Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{U\_RCUT:} 10 \\
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Cutoff radius of the Hubbard projector orbitals of the current \hyperlink{U_ATOM_TYPE}{\texttt{U\_ATOM\_TYPE}}. Optional; if given, it must follow \hyperlink{U_ATOM_TYPE}{\texttt{U\_ATOM\_TYPE}} in the \hyperlink{HUBBARD}{\texttt{HUBBARD}} block and applies to that atom type only. If not given, the cutoff is the largest radius at which any U orbital (of all atom types with a U correction) exceeds $5 \times 10^{-3}$ in magnitude, rounded up to a whole Bohr.
+\end{block}
+
+\begin{block}{Remark}
+A cutoff beyond the radial grid of the pseudopotential is reduced to the end of the grid, with a warning. The \texttt{.out} file prints the cutoff used for each atom type and the orbital weight outside it; a warning is printed if this weight exceeds 1\%. To compare with Quantum ESPRESSO, which truncates the orbitals at 10 Bohr, use \texttt{U\_RCUT: 10}; a larger cutoff increases the cost of the Hubbard terms.
+\end{block}
+
+\end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
