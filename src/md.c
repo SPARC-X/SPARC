@@ -2888,6 +2888,17 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
     	fprintf(output_md,":Desc_FEN: Free energy F = U - TS. FEN = UEN + TSEN. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_UEN: Internal energy. Unit=Ha/atom \n");
     	fprintf(output_md,":Desc_TSEN: Electronic entropic contribution -TS to free energy F = U - TS. Unit=Ha/atom \n");
+    	if (pSPARC->param_thermo_int >= 0.0 && pSPARC->param_thermo_int <= 1.0) {
+    		fprintf(output_md,":Desc_TI: Thermodynamic integration, lambda = %.6f (PARAM_THERMO_INT): the ions move with forces\n"
+    		                  "     lambda*F + (1-lambda)*F_Yukawa, F from DFT (or MLFF). FEN and TEN above stay the DFT (or MLFF) values.\n"
+    		                  "     TI_* lines are printed for the mixed steps (delta-ML with MLFF_FLAG: 1: after the Yukawa fit).\n",
+    		                  pSPARC->param_thermo_int);
+    		fprintf(output_md,":Desc_TI_YEN: Yukawa energy. Unit=Ha/atom \n");
+    		fprintf(output_md,":Desc_TI_MEN: Mixed energy, the potential energy of the ions. TI_MEN = lambda*FEN + (1-lambda)*TI_YEN. Unit=Ha/atom \n");
+    		fprintf(output_md,":Desc_TI_DEN: TI integrand. TI_DEN = FEN - TI_YEN; its average at each lambda, integrated over lambda from 0 to 1,\n"
+    		                  "     gives the free energy difference F_DFT - F_Yukawa. Unit=Ha/atom \n");
+    		fprintf(output_md,":Desc_TI_TEN: Total energy with the mixed energy. TI_TEN = KEN + TI_MEN (conserved in NVE). Unit=Ha/atom \n");
+    	}
     	if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
     		fprintf(output_md,":Desc_TENX: Total energy of extended system. Unit=Ha/atom \n");
     	}
@@ -2959,6 +2970,14 @@ void Print_fullMD(SPARC_OBJ *pSPARC, FILE *output_md, double *avgvel, double *ma
 		fprintf(output_md,":FEN: %18.10E\n", pSPARC->PE);
 		fprintf(output_md,":UEN: %18.10E\n", pSPARC->PE - (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom);
 		fprintf(output_md,":TSEN:%18.10E\n", (pSPARC->Entropy + pSPARC->Entropy_xc)/pSPARC->n_atom);
+		if (Thermo_int_mixed()) {
+			double lam = pSPARC->param_thermo_int, yen = pSPARC->E_base_model / pSPARC->n_atom;
+			double men = lam * pSPARC->PE + (1.0 - lam) * yen;
+			fprintf(output_md,":TI_YEN: %18.10E\n", yen);
+			fprintf(output_md,":TI_MEN: %18.10E\n", men);
+			fprintf(output_md,":TI_DEN: %18.10E\n", pSPARC->PE - yen);
+			fprintf(output_md,":TI_TEN: %18.10E\n", pSPARC->KE + men);
+		}
 		if(strcmpi(pSPARC->MDMeth,"NVT_NH") == 0){
 			fprintf(output_md,":TENX:%18.10E \n", pSPARC->TE_ext);
 		}
@@ -3485,7 +3504,9 @@ void PrintMD(SPARC_OBJ *pSPARC, int Flag, int print_restart_typ) {
 
 		// Print Yukawa parameters if delta-ML
 		if (pSPARC->is_deltaML) {
-			fprintf(mdout,":YUKAWA_A: %.15g\n",pSPARC->A_yukawa);
+			fprintf(mdout,":YUKAWA_A:");
+			for (int p = 0; p < pSPARC->n_A_yukawa; p++) fprintf(mdout," %.15g",pSPARC->A_yukawa[p]);
+			fprintf(mdout,"\n");
 			fprintf(mdout,":YUKAWA_MU: %.15g\n",pSPARC->mu_yukawa);
 			fprintf(mdout,":YUKAWA_ECONST: %.15g\n",pSPARC->Econst_yukawa);
 		}
@@ -3553,7 +3574,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 
 		// delta-ML
 		if (pSPARC->is_deltaML) {
-			l_buff += 3*sizeof(double);
+			l_buff += (pSPARC->n_A_yukawa + 2)*sizeof(double); // A of each species pair, mu, Econst
 		}
 	}
 	else if(pSPARC->RestartFlag == -1)
@@ -3723,7 +3744,14 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 			// delta-ML
 			if (pSPARC->is_deltaML) {
 				if (strcmpi(str,":YUKAWA_A:") == 0 && pSPARC->RestartFlag == 1) {
-					fscanf(rst_fp,"%lf", &pSPARC->A_yukawa);
+					// one value per species pair, or one value (restart files from before the pair amplitudes)
+					int n = readDoubleInputsFromFile(rst_fp, pSPARC->n_A_yukawa, pSPARC->A_yukawa);
+					if (n == 1) {
+						for (int p = 1; p < pSPARC->n_A_yukawa; p++) pSPARC->A_yukawa[p] = pSPARC->A_yukawa[0];
+					} else if (n != pSPARC->n_A_yukawa) {
+						printf("\nERROR: :YUKAWA_A: in the restart file needs 1 or %d values!\n", pSPARC->n_A_yukawa);
+						exit(EXIT_FAILURE);
+					}
 				} else if (strcmpi(str,":YUKAWA_MU:") == 0 && pSPARC->RestartFlag == 1) {
 					fscanf(rst_fp,"%lf", &pSPARC->mu_yukawa);
 				} else if (strcmpi(str,":YUKAWA_ECONST:") == 0 && pSPARC->RestartFlag == 1) {
@@ -3798,7 +3826,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
             }
 			// delta-ML
 			if (pSPARC->is_deltaML) {
-				MPI_Pack(&pSPARC->A_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
+				MPI_Pack(pSPARC->A_yukawa, pSPARC->n_A_yukawa, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
 				MPI_Pack(&pSPARC->mu_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
 				MPI_Pack(&pSPARC->Econst_yukawa, 1, MPI_DOUBLE, buff, l_buff, &position, MPI_COMM_WORLD);
 			}
@@ -3882,7 +3910,7 @@ void RestartMD(SPARC_OBJ *pSPARC) {
 
 			// delta-ML
 			if (pSPARC->is_deltaML) {
-				MPI_Unpack(buff, l_buff, &position, &pSPARC->A_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+				MPI_Unpack(buff, l_buff, &position, pSPARC->A_yukawa, pSPARC->n_A_yukawa, MPI_DOUBLE, MPI_COMM_WORLD);
 				MPI_Unpack(buff, l_buff, &position, &pSPARC->mu_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
 				MPI_Unpack(buff, l_buff, &position, &pSPARC->Econst_yukawa, 1, MPI_DOUBLE, MPI_COMM_WORLD);
 			}

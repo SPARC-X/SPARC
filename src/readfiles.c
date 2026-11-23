@@ -120,6 +120,28 @@ int readStringInputsFromLine(char *line, const int max_nstr, char inputArgv[][L_
  * @param inputArgv (OUTPUT) The input arguments.
  * @return int Count of input arguments.
  */
+/**
+ * @brief Read numbers from the rest of the current line of a file, with comments ('#') removed.
+ *
+ * @param fp File pointer that points to the line to be read.
+ * @param max_n Maximum number of values allowed.
+ * @param vals (OUTPUT) The values.
+ * @return int Count of values, or -1 if there are more than max_n.
+ */
+int readDoubleInputsFromFile(FILE *fp, const int max_n, double *vals) {
+    char line[16384], *p = line, *end;
+    if (fgets(line, sizeof(line), fp) == NULL) return 0;
+    line[strcspn(line, "#")] = '\0';
+    int n = 0;
+    for (double v = strtod(p, &end); end != p; v = strtod(p, &end)) {
+        if (n == max_n) return -1;
+        vals[n++] = v;
+        p = end;
+    }
+    return n;
+}
+
+
 int readStringInputsFromFile(FILE *input_fp, const int max_nstr, char inputArgv[][L_STRING]) {
     char line[L_STRING*4+20]; // Assuming a maximum length for the line
     // Read the entire line from the file
@@ -745,12 +767,18 @@ void read_input(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
         } else if (strcmpi(str,"MLFF_FACTOR_MULTIPLY_SIGMATOL_COARSE:") == 0) { // MLFF Coarse Sigma factor if input
             fscanf(input_fp,"%lf", &pSPARC_Input->factor_multiply_sigma_tol_coarse);
             fscanf(input_fp, "%*[^\n]\n");
-        } else if (strcmpi(str,"YUKAWA_A:") == 0) { // pre-exponential Yukawa parameter
-            fscanf(input_fp,"%lf",&pSPARC_Input->A_yukawa);
+        } else if (strcmpi(str,"YUKAWA_A:") == 0) { // Yukawa amplitude: one value, or one per species pair (11 12 .. 1n 22 .. nn)
+            pSPARC_Input->n_A_yukawa = readDoubleInputsFromFile(input_fp, L_YUKAWA_A, pSPARC_Input->A_yukawa);
+            if (pSPARC_Input->n_A_yukawa < 1) {
+                printf("\nERROR: YUKAWA_A needs 1 to %d values!\n", L_YUKAWA_A);
+                exit(EXIT_FAILURE);
+            }
         } else if (strcmpi(str,"YUKAWA_MU:") == 0) { // exponential Yukawa parameter
             fscanf(input_fp,"%lf",&pSPARC_Input->mu_yukawa);
         } else if (strcmpi(str,"YUKAWA_ECONST:") == 0) { // Constant shift in Yukawa energy (MLFF end)
             fscanf(input_fp,"%lf",&pSPARC_Input->Econst_yukawa);
+        } else if (strcmpi(str,"PARAM_THERMO_INT:") == 0) { // Parameter for thermodynamic integration
+            fscanf(input_fp,"%lf",&pSPARC_Input->param_thermo_int); 
         } else if (strcmpi(str,"EXCHANGE_CORRELATION:") == 0) {
             fscanf(input_fp,"%s",pSPARC_Input->XC);  
             fscanf(input_fp, "%*[^\n]\n");

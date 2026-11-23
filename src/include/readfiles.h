@@ -47,6 +47,13 @@ void read_ion(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC);
 
 
 /**
+ * @brief   Read numbers from the rest of the current line of a file, with comments ('#') removed.
+ *          Returns the count of values, or -1 if there are more than max_n.
+ */
+int readDoubleInputsFromFile(FILE *fp, const int max_n, double *vals);
+
+
+/**
  * @brief   Read pseudopotential files (PSP format).
  */
 void read_pseudopotential_PSP(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC);

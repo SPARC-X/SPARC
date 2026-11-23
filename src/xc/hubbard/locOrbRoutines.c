@@ -812,6 +812,14 @@ static long hub_use_count = 0;
 static double *hub_buf_x = NULL, *hub_buf_c = NULL, *hub_alpha = NULL, *hub_beta = NULL;   // brick of X, brick coefficients
 static long hub_nbuf_x = 0, hub_nbuf_c = 0, hub_nalpha = 0;                                // their sizes in doubles
 
+// make room for n plans in hub_plans
+static void hub_plans_reserve(int n)
+{
+    if (n <= hub_cap_plans) return;
+    while (hub_cap_plans < n) hub_cap_plans = hub_cap_plans ? 2 * hub_cap_plans : 4;
+    hub_plans = realloc(hub_plans, hub_cap_plans * sizeof(HUB_PLAN));
+}
+
 static void free_plan(HUB_PLAN *pl)
 {
     for (int q = 0; q < pl->nat; q++) { free(pl->at[q].idx); free(pl->at[q].Phiu); }
@@ -1061,9 +1069,9 @@ static HUB_PLAN *Vhub_get_plan(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *
         }
     if (e) {
         Vhub_free_weighted();
-        long ib = Vhub_get_plan(pSPARC, Atom_Influence_loc, locProj, kpt, NULL, comm) - hub_plans;
-        if (hub_nplans == hub_cap_plans) { hub_cap_plans = hub_cap_plans ? 2 * hub_cap_plans : 4; hub_plans = realloc(hub_plans, hub_cap_plans * sizeof(HUB_PLAN)); }
-        HUB_PLAN *base = &hub_plans[ib], *pl = &hub_plans[hub_nplans++]; memset(pl, 0, sizeof(HUB_PLAN));
+        hub_plans_reserve(hub_nplans + 2);   // room for the unweighted plan and this one: no realloc while base is held
+        HUB_PLAN *base = Vhub_get_plan(pSPARC, Atom_Influence_loc, locProj, kpt, NULL, comm);
+        HUB_PLAN *pl = &hub_plans[hub_nplans++]; memset(pl, 0, sizeof(HUB_PLAN));
         pl->infl = base->infl; pl->proj = base->proj; pl->kpt = kpt; pl->w = base->w; pl->last_use = hub_use_count;
         pl->Nx = base->Nx; pl->Ny = base->Ny; pl->Nz = base->Nz; pl->gx0 = base->gx0; pl->gy0 = base->gy0; pl->gz0 = base->gz0;
         pl->weighted = 1; pl->e[0] = e[0]; pl->e[1] = e[1]; pl->e[2] = e[2];
@@ -1076,7 +1084,7 @@ static HUB_PLAN *Vhub_get_plan(const SPARC_OBJ *pSPARC, ATOM_LOC_INFLUENCE_OBJ *
         if (hub_nplans == 0 || total <= HUB_PLAN_MB) break;
         free_plan(&hub_plans[lru]); hub_plans[lru] = hub_plans[--hub_nplans];
     }
-    if (hub_nplans == hub_cap_plans) { hub_cap_plans = hub_cap_plans ? 2 * hub_cap_plans : 4; hub_plans = realloc(hub_plans, hub_cap_plans * sizeof(HUB_PLAN)); }
+    hub_plans_reserve(hub_nplans + 1);
     const int *DMV = (comm == pSPARC->kptcomm_topo) ? pSPARC->DMVertices_kptcomm : pSPARC->DMVertices_dmcomm;
     HUB_PLAN *pl = &hub_plans[hub_nplans++]; memset(pl, 0, sizeof(HUB_PLAN));
     pl->infl = Atom_Influence_loc; pl->proj = locProj; pl->kpt = kpt; pl->w = (kpt < 0) ? 1 : 2; pl->last_use = hub_use_count;

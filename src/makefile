@@ -66,7 +66,7 @@ USE_ACCELGT = 0
 # BLASROOT = /usr/lib64
 # LDFLAGS += -L$(BLASROOT)
 
-CPPFLAGS = -Iinclude/ -Isq3/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
+CPPFLAGS = -Iinclude/ -IhighT/sq3/ -Ixc/exx/include -Ixc/vdW/d3/include -Ixc/vdW/vdWDF/include -Ixc/mgga/include -IlinearScaling/include -Iofdft/ -Icyclix/include -Icyclix/mlff -IhighT/mlff -Imlff/ -IhighT/include \
            -Iatom/include -Iatom/mgga_atom/include -Iatom/exx_atom/include -Ixc/hubbard/include -IhighT/xc/include -IhighT/ff/
 LDLIBS   = -lrt
 
@@ -179,7 +179,7 @@ OBJSC = main.o initialization.o readfiles.o atomdata.o parallelization.o relax.o
         plumed/plumed_sparc.o \
         highT/xc/finiteTempXC.o \
         highT/ff/yukawa.o \
-        sq3/sq3.o
+        highT/sq3/sq3.o
 
 # Switch the socket compilation
 # For future developers: please keep the socket options separate from the

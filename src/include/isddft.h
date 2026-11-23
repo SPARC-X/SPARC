@@ -34,6 +34,8 @@
 #define L_QMASS  60
 // max length of kpoint set
 #define L_kpoint 512
+// max number of YUKAWA_A values (one per species pair, up to 20 species)
+#define L_YUKAWA_A 210
 
 // TO PRINT IN COLOR
 #define RED   "\x1B[31m"
@@ -1302,10 +1304,14 @@ typedef struct _SPARC_OBJ{
     double pres_base_model; // Base model pressure
 
     /* Yukawa */
-    double A_yukawa; // Pre-exponential Yukawa parameter
+    double *A_yukawa; // Yukawa amplitude of each species pair (11 12 .. 1n 22 .. nn), see Yukawa_pair_index
+    int n_A_yukawa; // number of species pairs, Ntypes*(Ntypes+1)/2
     double mu_yukawa; // Yukawa mu parameter
     double Econst_yukawa; // Yukawa constant energy shift
     struct _DFT_FIT_OBJ *Ref_struct_DFT; // To store dft info of structures to fit Yukawa parameters (DFT_FIT_OBJ, see yukawa.h)
+
+    /* Thermodynamic Integration */
+    double param_thermo_int; // To be used for thermodynamic integration, F = param_thermo_int * F_DFT + (1 - param_thermo_int) * F_model
 
     /* PLUMED (optional; used when built with -DUSE_PLUMED) */
     int PlumedFlag;
@@ -1388,9 +1394,13 @@ typedef struct _SPARC_INPUT_OBJ{
 
     /* Delta ML Yukawa */
     int is_deltaML; // Flag for deltaML calculations
-    double A_yukawa; // Pre-exponential Yukawa parameter
+    double A_yukawa[L_YUKAWA_A]; // YUKAWA_A values: one for all species pairs, or one per pair
+    int n_A_yukawa; // number of YUKAWA_A values given
     double mu_yukawa; // Yukawa mu parameter
     double Econst_yukawa; // Yukawa constant energy shift
+
+    /* Thermodynamic Integration */
+    double param_thermo_int; // To be used for thermodynamic integration, F = param_thermo_int * F_DFT + (1 - param_thermo_int) * F_model
     
     /* Parallelizing parameters */
     int num_node;       // number of processor nodes

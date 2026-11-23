@@ -54,6 +54,7 @@
 #include "ofdft.h"
 #include "printing.h"
 #include "sparc_mlff_interface.h"
+#include "yukawa.h"
 #include "spdft.h"
 #include "locOrbRoutines.h"
 #include "occupationMatrix.h"
@@ -66,6 +67,8 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define TEMP_TOL 1e-12
 
+static int thermo_int_mixed = 0; // see Thermo_int_mixed()
+
 /**
  * @brief   Calculate properties for fixed atom positions using DFT or MLFF
  */
@@ -74,6 +77,56 @@ void Calculate_Properties(SPARC_OBJ *pSPARC) {
         Calculate_electronicGroundState(pSPARC);
     else
         MLFF_call(pSPARC);
+    // thermodynamic integration: mix after DFT or MLFF, so that MLFF trains on the unmixed DFT forces
+    thermo_int_mixed = 0;
+    if (pSPARC->param_thermo_int >= 0.0 && pSPARC->param_thermo_int <= 1.0) {
+        // delta-ML with MLFF_FLAG 1 fits the Yukawa model on 5 DFT steps after MLFF_SWITCH_STEP (see MLFF_call):
+        // until then the forces stay unmixed (lambda = 1)
+        int yukawa_fitting = pSPARC->is_deltaML && pSPARC->mlff_flag == 1 && pSPARC->mlff_switch_step > 0
+                          && pSPARC->elecgs_Count < pSPARC->mlff_switch_step + 5;
+        if (!yukawa_fitting) {
+            Thermo_int_mix_forces(pSPARC);
+            thermo_int_mixed = 1;
+        }
+    }
+}
+
+/**
+ * @brief   1 if the forces of the last call of Calculate_Properties were mixed for thermodynamic integration
+ */
+int Thermo_int_mixed(void) {
+    return thermo_int_mixed;
+}
+
+/**
+ * @brief   Thermodynamic integration (PARAM_THERMO_INT = lambda): replace the forces of this MD step (DFT or MLFF)
+ *          by lambda*F + (1-lambda)*F_Yukawa and print the energies of the step.
+ */
+void Thermo_int_mix_forces(SPARC_OBJ *pSPARC) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    double lam = pSPARC->param_thermo_int;
+    /* Currently only Yukawa available as base model - include flags like XC later */
+    solve_Yukawa_broadcast(pSPARC);
+    if (rank == 0 && !pSPARC->is_deltaML) print_output_yukawa(pSPARC); // delta-ML has printed it already
+    // the Yukawa forces get the same atom constraint as the DFT forces
+    for (int i = 0; i < 3 * pSPARC->n_atom; i++)
+        pSPARC->forces[i] = lam * pSPARC->forces[i] + (1 - lam) * pSPARC->F_base_model[i] * pSPARC->mvAtmConstraint[i];
+
+    if (rank == 0 && pSPARC->Verbosity) {
+        FILE *output_fp = fopen(pSPARC->OutFilename,"a");
+        if (output_fp == NULL) {
+            printf("\nCannot open file \"%s\"\n",pSPARC->OutFilename);
+            exit(EXIT_FAILURE);
+        }
+        fprintf(output_fp,"Thermodynamic integration (lambda = %f)\n", lam);
+        fprintf(output_fp, pSPARC->mlff_flag ? "DFT or MLFF free energy            :%18.10E (Ha)\n"
+                                             : "DFT free energy                    :%18.10E (Ha)\n", pSPARC->Etot);
+        fprintf(output_fp,"Yukawa energy                      :%18.10E (Ha)\n", pSPARC->E_base_model);
+        fprintf(output_fp,"Mixed energy                       :%18.10E (Ha)\n", lam * pSPARC->Etot + (1.0 - lam) * pSPARC->E_base_model);
+        fprintf(output_fp,"DFT - Yukawa (TI integrand)        :%18.10E (Ha)\n", pSPARC->Etot - pSPARC->E_base_model);
+        fclose(output_fp);
+    }
 }
 
 /**
