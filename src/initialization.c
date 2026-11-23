@@ -57,7 +57,7 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define N_MEMBR 236
+#define N_MEMBR 238
 
 
 /**
@@ -1012,9 +1012,13 @@ void set_defaults(SPARC_INPUT_OBJ *pSPARC_Input, SPARC_OBJ *pSPARC) {
     pSPARC_Input->is_deltaML = 0;            // flag for using delta-ML
 
     /* Default Yukawa parameters */
-    pSPARC_Input->A_yukawa = 0.0;            // Yukawa pre-exponential
+    pSPARC_Input->A_yukawa[0] = 0.0;         // Yukawa amplitude (all species pairs)
+    pSPARC_Input->n_A_yukawa = 1;
     pSPARC_Input->mu_yukawa = 0.0;           // Yukawa mu
     pSPARC_Input->Econst_yukawa = 0.0;       // Yukawa energy constant
+
+    /* Thermodynamic Integration */
+    pSPARC_Input->param_thermo_int = -100.0; // To be used for thermodynamic integration, F = param_thermo_int * F_DFT + (1 - param_thermo_int) * F_model
 
     pSPARC_Input->SQ3Flag = 0;                // default SQ3 is disabled
     pSPARC_Input->sq3_npl = -1;               // default degree of polynomial for SQ3 method
@@ -1462,9 +1466,19 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
         pSPARC->mlff_switch_step = 0;
         pSPARC->factor_multiply_sigma_tol = pSPARC->factor_multiply_sigma_tol_ref;
     }
-    pSPARC->A_yukawa = pSPARC_Input->A_yukawa; // Yukawa A
+    // Yukawa amplitudes: one value for all species pairs, or one per pair (11 12 .. 1n 22 .. nn)
+    pSPARC->n_A_yukawa = pSPARC->Ntypes * (pSPARC->Ntypes + 1) / 2;
+    if (pSPARC_Input->n_A_yukawa != 1 && pSPARC_Input->n_A_yukawa != pSPARC->n_A_yukawa) {
+        if (!rank) printf("\nERROR: YUKAWA_A needs 1 value or one per species pair (%d values for %d species)!\n",
+                          pSPARC->n_A_yukawa, pSPARC->Ntypes);
+        exit(EXIT_FAILURE);
+    }
+    pSPARC->A_yukawa = (double *)malloc(pSPARC->n_A_yukawa * sizeof(double));
+    for (i = 0; i < pSPARC->n_A_yukawa; i++)
+        pSPARC->A_yukawa[i] = pSPARC_Input->A_yukawa[pSPARC_Input->n_A_yukawa == 1 ? 0 : i];
     pSPARC->mu_yukawa = pSPARC_Input->mu_yukawa; // Yukawa mu
     pSPARC->Econst_yukawa = pSPARC_Input->Econst_yukawa; // Yukawa energy constant
+    pSPARC->param_thermo_int = pSPARC_Input->param_thermo_int; // To be used for thermodynamic integration, F = param_thermo_int * F_DFT + (1 - param_thermo_int) * F_model
     // MLFF end
 
     pSPARC->SQ3Flag = pSPARC_Input->SQ3Flag;
@@ -2921,6 +2935,24 @@ void SPARC_copy_input(SPARC_OBJ *pSPARC, SPARC_INPUT_OBJ *pSPARC_Input) {
             printf(RED "ERROR: MLFF_DELTA_FLAG (Yukawa base model) is only supported for orthogonal cells\n"
                    "       with periodic boundary conditions in all three directions.\n" RESET);
         exit(EXIT_FAILURE);
+    }
+
+    // Thermodynamic integration (PARAM_THERMO_INT): forces lambda*F_DFT + (1-lambda)*F_Yukawa in MD; -100 = not given
+    if (pSPARC->param_thermo_int != -100.0) {
+        const char *err = NULL;
+        if (pSPARC->param_thermo_int < 0.0 || pSPARC->param_thermo_int > 1.0)
+            err = "PARAM_THERMO_INT must be between 0 and 1.";
+        else if (pSPARC->MDFlag != 1)
+            err = "PARAM_THERMO_INT needs MD (MD_FLAG: 1).";
+        else if (strcmpi(pSPARC->MDMeth,"NPT_NH") == 0 || strcmpi(pSPARC->MDMeth,"NPT_NP") == 0 || strcmpi(pSPARC->MDMeth,"NPH") == 0)
+            err = "PARAM_THERMO_INT mixes only the forces, not the stress: use a fixed-cell MD method (NVE, NVT_NH, NVK_G).";
+        else if (pSPARC->cell_typ != 0 || pSPARC->BCx || pSPARC->BCy || pSPARC->BCz)
+            err = "PARAM_THERMO_INT (Yukawa base model) is only supported for orthogonal cells\n"
+                  "       with periodic boundary conditions in all three directions.";
+        if (err) {
+            if (rank == 0) printf(RED "ERROR: %s\n" RESET, err);
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (pSPARC->ixc[2]) {
@@ -4390,6 +4422,10 @@ void write_output_init(SPARC_OBJ *pSPARC) {
             fprintf(output_fp, "MLFF_FACTOR_MULTIPLY_SIGMATOL: %lf\n", pSPARC->factor_multiply_sigma_tol_ref);
         }
     }
+
+    if ((pSPARC->param_thermo_int >= 0.0) && (pSPARC->param_thermo_int <= 1.0) ) {
+        fprintf(output_fp, "PARAM_THERMO_INT: %lf\n", pSPARC->param_thermo_int);
+    }
     
 
 	if(pSPARC->spDFT_Flag == 1){
@@ -4693,10 +4729,10 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT,
                                          MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT,
-                                         MPI_INT, MPI_INT, /* int */
+                                         MPI_INT, MPI_INT, MPI_INT, /* int */
 
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, /* double array */
+                                         MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, /* double array */
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                          MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
@@ -4744,9 +4780,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
                           1, 1, 1, 1, 1,
                           1, 1, 1, 1,
                           1, 1, 1, 1, 1,
-                          1, 1, /* int */ 
+                          1, 1, 1, /* int */ 
                           9, 3, L_QMASS, L_kpoint, L_kpoint,
-                          L_kpoint, 6, 6,/* double array */
+                          L_kpoint, 6, 6, L_YUKAWA_A, /* double array */
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1, 
                           1, 1, 1, 1, 1,
@@ -4909,6 +4945,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.REFERENCE_CUTOFF_FAC, addr + i++);
     MPI_Get_address(&sparc_input_tmp.is_hubbard, addr + i++);
     MPI_Get_address(&sparc_input_tmp.PlumedFlag, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.n_A_yukawa, addr + i++);
 
     // double array type
     MPI_Get_address(&sparc_input_tmp.LatVec, addr + i++);
@@ -4919,6 +4956,7 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.kredz, addr + i++);
     MPI_Get_address(&sparc_input_tmp.stress_rel_scale, addr + i++);
     MPI_Get_address(&sparc_input_tmp.stress_external, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.A_yukawa, addr + i++);
     
 
     // double type
@@ -4996,9 +5034,9 @@ void SPARC_Input_MPI_create(MPI_Datatype *pSPARC_INPUT_MPI) {
     MPI_Get_address(&sparc_input_tmp.relaxPrTarget, addr + i++);
     MPI_Get_address(&sparc_input_tmp.pressure_external, addr + i++);
     MPI_Get_address(&sparc_input_tmp.factor_multiply_sigma_tol_coarse, addr + i++);
-    MPI_Get_address(&sparc_input_tmp.A_yukawa, addr + i++);
     MPI_Get_address(&sparc_input_tmp.mu_yukawa, addr + i++);
     MPI_Get_address(&sparc_input_tmp.Econst_yukawa, addr + i++);
+    MPI_Get_address(&sparc_input_tmp.param_thermo_int, addr + i++);
     MPI_Get_address(&sparc_input_tmp.spDFT_tau_s, addr + i++);
 	MPI_Get_address(&sparc_input_tmp.spDFT_tol_occ, addr + i++);
     

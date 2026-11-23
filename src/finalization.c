@@ -337,11 +337,12 @@ void Free_basic(SPARC_OBJ *pSPARC) {
         free(pSPARC->mlff_str);
     }
 
-    // free base model arrays
-    if (pSPARC->is_deltaML) {
+    // free base model arrays (also allocated by thermodynamic integration, see Thermo_int_mix_forces)
+    if (pSPARC->is_deltaML || pSPARC->param_thermo_int != -100.0) {
         // deallocate memory for forces
         free(pSPARC->F_base_model);
     }
+    free(pSPARC->A_yukawa);
 }
 
 /**

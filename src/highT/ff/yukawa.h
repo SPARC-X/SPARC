@@ -25,9 +25,15 @@ typedef struct _GeomCache {
     double *weights;    // 0.5 for self-images, 1.0 otherwise [n_pairs]
     int *idx_i;         // Atom index i [n_pairs]
     int *idx_j;         // Atom index j [n_pairs]
+    int *pair_type;     // Species pair index (see Yukawa_pair_index) [n_pairs]
     double vol;         // Volume of the cell
     int Nat;            // Number of atoms in this snapshot
 } GeomCache;
+
+/**
+ * Index of the species pair (ti, tj) in A_yukawa: pairs ordered 11 12 .. 1n 22 .. nn
+ */
+int Yukawa_pair_index(int ti, int tj, int Ntypes);
 
 /**
 Function to solve Yukawa and broadcast the solution
@@ -58,17 +64,19 @@ void optimize_Yukawa_broadcast(SPARC_OBJ *pSPARC, int n_structs);
  * Main Optimization routine
  * 1. Pre-computes geometry for all reference structures.
  * 2. Uses Golden Section Search to find optimal mu.
- * 3. Solves for A and C at optimal mu.
+ * 3. Solves for A (one per species pair) and C at optimal mu.
  * 4. Updates pSPARC with new parameters.
  */
 void optimize_yukawa_parameters(SPARC_OBJ *pSPARC, int n_structs);
 
 /**
  * Objective Function: J(mu)
- * Calculates the best A and C for a given mu via Linear Least Squares
+ * Calculates the best A (one per species pair, fitted pairs in columns fit_col[p] < n_fit) and C for a given mu
+ * via Linear Least Squares (minimum-norm solution if the columns are dependent; rank returned)
  * Returns the sum of squared residuals.
  */
-double projected_objective(double mu, SPARC_OBJ *pSPARC, GeomCache *geom, int n_structs, double *opt_A, double *opt_C);
+double projected_objective(double mu, SPARC_OBJ *pSPARC, GeomCache *geom, int n_structs, const int *fit_col, int n_fit,
+                           double *opt_A, double *opt_C, int *rank);
 
 /**
  * Pre-computes neighbor lists (images) for all structures.

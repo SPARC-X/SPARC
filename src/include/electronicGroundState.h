@@ -22,6 +22,17 @@
  */
 void Calculate_Properties(SPARC_OBJ *pSPARC);
 
+/**
+ * @brief   Thermodynamic integration (PARAM_THERMO_INT = lambda): replace the forces of this MD step (DFT or MLFF)
+ *          by lambda*F + (1-lambda)*F_Yukawa and print the energies of the step.
+ */
+void Thermo_int_mix_forces(SPARC_OBJ *pSPARC);
+
+/**
+ * @brief   1 if the forces of the last call of Calculate_Properties were mixed for thermodynamic integration
+ */
+int Thermo_int_mixed(void);
+
 
 /**
  * @brief   Calculate the ground state energy and forces for fixed atom positions.  

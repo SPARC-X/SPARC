@@ -821,7 +821,143 @@ Flag to switch on $\Delta-$MLFF scheme with respect to some base model.
 \end{block}
 
 \begin{block}{Remark}
-Currently, the only available base model is Yukawa potential which is the default.
+Currently, the only available base model is Yukawa potential which is the default (\hyperlink{YUKAWA_A}{\texttt{YUKAWA\_A}}, \hyperlink{YUKAWA_MU}{\texttt{YUKAWA\_MU}}, \hyperlink{YUKAWA_ECONST}{\texttt{YUKAWA\_ECONST}}).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{YUKAWA\_A}}} \label{YUKAWA_A}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double array
+\end{block}
+
+\begin{block}{Default}
+0.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha-Bohr
+\end{block}
+
+\begin{block}{Example}
+\texttt{YUKAWA\_A}: 4.0 7.0 11.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Amplitudes $A_{st}$ of the Yukawa base model $E_Y = \sum_{i<j} A_{s_i s_j}\, e^{-\mu r_{ij}}/r_{ij} + c\,N$ (sum over atom pairs and periodic images with $r_{ij} \le 15$ Bohr; $s_i$ is the type of atom $i$, $N$ the number of atoms). One value is used for every pair of atom types. Otherwise give $n(n+1)/2$ values for $n$ atom types, one per pair, in the order $A_{11}\, A_{12} \ldots A_{1n}\, A_{22} \ldots A_{2n} \ldots A_{nn}$, with the atom types numbered in the order of the \texttt{.ion} file (e.g. B, N, C: B-B B-N B-C N-N N-C C-C). Any other number of values is an error.
+\end{block}
+
+\end{frame}
+
+\begin{frame}[allowframebreaks]{\texttt{{YUKAWA\_A}} (continued)}
+\begin{block}{Remark}
+In $\Delta$-MLFF with \texttt{MLFF\_FLAG}: 1, the amplitudes, \texttt{YUKAWA\_MU} and \texttt{YUKAWA\_ECONST} are fitted to the energy, forces and stress of the 5 DFT steps after \hyperlink{MLFF_SWITCH_STEP}{\texttt{MLFF\_SWITCH\_STEP}} (the input values are not used); the amplitudes and $c$ by linear least squares for each $\mu$, $\mu$ by a one-dimensional search. A pair of atom types that does not occur within 15 Bohr gets $A = 0$. The fitted values are printed in the \texttt{.out} file and written to the \texttt{.restart} file, from which a restart takes them. Only for orthogonal cells with periodic boundary conditions in all three directions.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{YUKAWA\_MU}}} \label{YUKAWA_MU}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Bohr$^{-1}$
+\end{block}
+
+\begin{block}{Example}
+\texttt{YUKAWA\_MU}: 0.8
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Inverse screening length $\mu$ of the Yukawa base model (see \hyperlink{YUKAWA_A}{\texttt{YUKAWA\_A}}), common to all pairs of atom types.
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{YUKAWA\_ECONST}}} \label{YUKAWA_ECONST}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+0.0
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+Ha/atom
+\end{block}
+
+\begin{block}{Example}
+\texttt{YUKAWA\_ECONST}: -5.0
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Constant energy per atom $c$ of the Yukawa base model (see \hyperlink{YUKAWA_A}{\texttt{YUKAWA\_A}}).
+\end{block}
+
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[allowframebreaks]{\texttt{{PARAM\_THERMO\_INT}}} \label{PARAM_THERMO_INT}
+\vspace*{-12pt}
+\begin{columns}
+\column{0.4\linewidth}
+\begin{block}{Type}
+Double
+\end{block}
+
+\begin{block}{Default}
+Not used
+\end{block}
+
+\column{0.4\linewidth}
+\begin{block}{Unit}
+No unit
+\end{block}
+
+\begin{block}{Example}
+\texttt{PARAM\_THERMO\_INT}: 0.5
+\end{block}
+\end{columns}
+
+\begin{block}{Description}
+Coupling parameter $\lambda \in [0, 1]$ for thermodynamic integration from the Yukawa base model to DFT. The ions move with the forces $\lambda F_{\text{DFT}} + (1-\lambda) F_Y$, where $F_{\text{DFT}}$ are the DFT forces (or the MLFF forces when MLFF is on) and $F_Y$ those of the Yukawa model (\hyperlink{YUKAWA_A}{\texttt{YUKAWA\_A}}, \hyperlink{YUKAWA_MU}{\texttt{YUKAWA\_MU}}, \hyperlink{YUKAWA_ECONST}{\texttt{YUKAWA\_ECONST}}).
+\end{block}
+
+\end{frame}
+
+\begin{frame}[allowframebreaks]{\texttt{{PARAM\_THERMO\_INT}} (continued)}
+\begin{block}{Remark}
+Each step prints the DFT, Yukawa and mixed energies and the integrand $E_{\text{DFT}} - E_Y$ in the \texttt{.out} file, and \texttt{TI\_YEN}, \texttt{TI\_MEN}, \texttt{TI\_DEN}, \texttt{TI\_TEN} in the \texttt{.aimd} file. The free energy difference is the integral over $\lambda$ from 0 to 1 of the average of \texttt{TI\_DEN} at each $\lambda$.
+
+Needs \texttt{MD\_FLAG}: 1 with a fixed-cell MD method (NVE, NVT\_NH, NVK\_G); only the forces are mixed. Only for orthogonal cells with periodic boundary conditions in all three directions. In $\Delta$-MLFF with \texttt{MLFF\_FLAG}: 1, the forces are mixed only after the Yukawa fit (see \hyperlink{YUKAWA_A}{\texttt{YUKAWA\_A}}); until then they are the DFT forces.
 \end{block}
 
 \end{frame}

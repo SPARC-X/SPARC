@@ -5,6 +5,28 @@
 
 
 --------------
+November 23, 2026
+Name: Sayan Bhowmik
+Changes: doc/.LaTeX/mlff/Introduction.tex, doc/.LaTeX/mlff/mlff.tex, doc/mlff_Manual.pdf, doc/Manual.pdf,
+         src/electronicGroundState.c, src/include/electronicGroundState.h, src/finalization.c,
+         src/highT/ff/yukawa.c, src/highT/ff/yukawa.h, src/include/isddft.h, src/initialization.c, src/md.c,
+         src/readfiles.c, src/include/readfiles.h, src/makefile, src/highT/sq3/ (moved from src/sq3/)
+1. Thermodynamic integration from the Yukawa base model to DFT (PARAM_THERMO_INT = lambda, ported from dev_SPARC):
+   the ions move with lambda*F_DFT + (1-lambda)*F_Yukawa (F_DFT = MLFF forces when MLFF is on). The forces are mixed
+   after DFT or MLFF, so MLFF trains on the unmixed DFT forces; in delta-MLFF with MLFF_FLAG 1 they are mixed only after
+   the Yukawa fit. Each step prints the DFT, Yukawa and mixed energies and the integrand in the .out file and
+   TI_YEN/TI_MEN/TI_DEN/TI_TEN in the .aimd file. Clear errors at startup for lambda outside [0,1], no MD,
+   variable-cell MD, non-orthogonal cells or non-periodic boundary conditions.
+2. Pair-specific Yukawa amplitudes for multicomponent systems: YUKAWA_A takes one value per pair of atom types
+   (A_11 A_12 .. A_1n A_22 .. A_nn, types in .ion order) or one value for all pairs (old inputs unchanged). The
+   delta-MLFF Yukawa fit determines all amplitudes and the energy constant by linear least squares for each mu;
+   pairs absent within the cutoff get 0, and linearly dependent amplitudes get the minimum-norm solution
+   (reported in the .out file). The .restart file stores all amplitudes. Single-species results are unchanged.
+3. Moved src/sq3/ to src/highT/sq3/ (makefile updated).
+4. Documented YUKAWA_A, YUKAWA_MU, YUKAWA_ECONST and PARAM_THERMO_INT in the MLFF manual.
+5. doc/Manual.pdf rebuilt: the November 19 build had grey instead of orange block titles (color Apricot undefined).
+
+--------------
 November 19, 2026
 Name: Sayan Bhowmik
 Changes: doc/.LaTeX/Introduction.tex, doc/.LaTeX/System.tex, doc/Manual.pdf,
